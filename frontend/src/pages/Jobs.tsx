@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { fetchJobs } from "../api/jobsApi";
 import JobCard from "../components/JobCard";
 import MouseSmokeEffect from '../components/MouseSmokeEffect';
+import Spinner from "../components/Spinner";
 
 // Todo
 // Add hover: styles or animations to JobCard.
@@ -14,7 +15,7 @@ const Jobs = () => {
     queryFn: fetchJobs,
   });
 
-  if (isLoading) return <p>Loading jobs....</p>;
+  if (isLoading) return <Spinner />;
   if (error instanceof Error) return <p>Error: {error.message}</p>;
 
   return (

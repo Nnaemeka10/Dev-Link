@@ -1,6 +1,7 @@
 import { useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { fetchJobById } from "../api/jobsApi";
+import Spinner from "../components/Spinner";
 
 
 const Jobdetails = () => {
@@ -12,7 +13,7 @@ const Jobdetails = () => {
     enabled: !!id, // Only run the query if id is defined
   });
 
-  if ( isLoading ) return <p>Loading job details...</p>;
+  if ( isLoading ) return <Spinner />;
   if (error instanceof Error) return <p>Error: {error.message}</p>;
   if (!job) return <p>No job found</p>;
 
