@@ -3,6 +3,9 @@ import cookieParser from 'cookie-parser';
 import path from 'path';
 import cors from 'cors';
 import { ENV } from './lib/env.js';
+import { connectDB } from './lib/db.js';
+
+import authRoutes from './routes/auth.route.js';
 
 
 
@@ -17,9 +20,7 @@ app.use(cookieParser()); //to be able to read cookies
 app.use(cors({ origin: ENV.CLIENT_URL, credentials: true, })) //to allow requests from client url (frontend URL) to communicate with backend
 
 //routes
-app.get ('/', (req, res) => {
-    res.send('Hello WOrld!');
-});
+app.use("/api/auth", authRoutes);  //auth routes
 
 //make ready for deployment
 if (ENV.NODE_ENV === 'production') {
@@ -33,4 +34,6 @@ if (ENV.NODE_ENV === 'production') {
 //server listen
 app.listen(PORT, ()=> {
     console.log(`Server is running on port ${PORT}`);
-})
+    //connect to database
+    connectDB();
+});
