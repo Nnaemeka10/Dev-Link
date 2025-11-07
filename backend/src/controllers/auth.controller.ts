@@ -185,4 +185,28 @@ export const logout = async (_req: Request, res: Response) => {
     }
 };
 
+//get current authenticated user
+export const getCurrentUser = async (_req: Request, res: Response) => {
+    try {
+        if (!_req.user) {
+            return res.status(401).json({ message: 'Authorization required, Please login' });
+        }
+
+        const user = await UserModel.findById(_req.user.userId);
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        // remove password hash from response
+        const { password_hash, ...userWithoutPassword } = user as any;
+
+        res.status(200).json({
+            user: userWithoutPassword,
+        });
+    } catch (error: any) {
+        console.error('Get current user error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+};
+
 
