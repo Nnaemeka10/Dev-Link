@@ -1,3 +1,5 @@
+CREATE EXTENSION IF NOT EXISTS citext;
+
 -- User and roles
 
 CREATE TABLE IF NOT EXISTS roles (
@@ -45,7 +47,7 @@ CREATE TABLE IF NOT EXISTS notifications_preferences (
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
     -- add to to notify of new job postings etc.
-)
+);
 
 -- Insert default roles
 INSERT INTO roles (name) VALUES
