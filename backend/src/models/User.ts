@@ -94,6 +94,24 @@ export const UserModel = {
 
         const result = await db.query(query, values);
         return result.rows[0] || null;
-    }
+    },
 
+    //update user password
+    async updatePassword(id: number, newPassword: string): Promise<User | null> {
+        const db = getDB();
+
+        //hash new password
+        const salt = await bcrypt.genSalt(10);
+        const password_hash = await bcrypt.hash(newPassword, salt);
+
+        const query = `
+            UPDATE users
+            SET password_hash = $1, updated_at = NOW()
+            WHERE id = $2
+            RETURNING *
+        `;
+
+        const result = await db.query(query, [password_hash, id]);
+        return result.rows[0] || null;
+    }
 };

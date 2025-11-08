@@ -1,7 +1,10 @@
 import { Request, Response } from 'express';
 import { UserModel } from '../models/User';
-import type { LoginBody, SignupBody } from '../types/auth.d.ts';
+import type { LoginBody, SignupBody, resetPasswordBody } from '../types/auth.d.ts';
 import { generateToken } from '../lib/utils';
+import { EmailVerificationModel } from '../models/userVerification';
+import { PasswordResetModel } from '../models/passwordReset';
+import { emailService } from '../emails/emailHandler';
 
 
 //signup controller
@@ -80,12 +83,20 @@ export const signup = async (_req: Request<{}, {}, SignupBody>, res: Response) =
             // remove password hash from response
             const { password_hash, ...userWithoutPassword } = newUser as any;
 
+            try {
+                const verification = await EmailVerificationModel.create(newUser.id!);
+                await emailService.sendVerificationEmail(newUser.email, verification.code);
+            } catch (emailError) {
+                console.error('Failed to send verificaton email:', emailError);
+                //dont fail signup if eamil fails
+            }
+
             res.status(201).json({
                 message: 'User created successfully.',
                 user: userWithoutPassword,
             });
 
-            //send welcome email later
+            
 
         }else {
             res.status(400).json({ message: 'invalid user data.' });
@@ -209,4 +220,172 @@ export const getCurrentUser = async (_req: Request, res: Response) => {
     }
 };
 
+//send or resend verification email
+export const sendVerificationEmail = async (req: Request, res: Response) => {
+    try {
+        if (!req.user) {
+            return res.status(401).json({ message: 'Authorization required, Please login' });
+        }
 
+        const user = await UserModel.findById(req.user.userId);
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        if (user.is_email_verified) {
+            return res.status(400).json({ message: 'Email is already verified' });
+        }
+
+        //create verification code
+        const verification = await EmailVerificationModel.create(user.id!);
+
+        //send email
+        await emailService.sendVerificationEmail(user.email, verification.code);
+
+        res.status(200).json({ 
+            message: 'Verification email sent successfully',
+            email: user.email
+        });
+
+    } catch (error: any) {
+        console.error('Send verification email error:', error);
+        res.status(500).json({ error: 'Internal server error:  Failed to send verification email' });
+    }
+};
+
+
+//verify email with code
+export const verifyEmail = async (req: Request, res: Response) => {
+    try {
+        const { code } = req.body;
+
+        if(!req.user) {
+            return res.status(401).json({ error: 'Authorization required, Please login' });
+        }
+
+        if(!code) {
+            return res.status(400).json({ error: 'Verification code is required' });
+        }
+
+        const user = await UserModel.findById(req.user.userId);
+        if(!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        if(user.is_email_verified) {
+            return res.status(400).json({ error: 'Email is already verified' });
+        }
+
+        //find valid verificatopn code
+        const verification = await EmailVerificationModel.findValidCode(user.id!, code);
+
+        if (!verification) {
+            res.status(400).json({error: 'Invalid or expired verification code'})
+            return;
+        }
+
+        //mark code as used
+        await EmailVerificationModel.markAsUsed(verification.id!);
+
+        //update Users email verification code
+        await UserModel.update(user.id!, {is_email_verified: true});
+
+        //send welcome email asynchronously
+            emailService.sendWelcomeEmail(
+                user.email,
+                user.full_name || user.username || 'Esteemed User'
+            ).catch (error => {
+                console.error('Failed to send welcome email:', error);
+                //log but dont fail the signup
+            });
+
+        res.status(200).json ({
+            message: 'Email verified successful',
+            user: {...user, is_email_verified: true}
+        });
+    } catch(error: any) {
+        console.error('Verify email error:', error);
+        res.status(500).json({error: 'Failed to verify  email'});
+    }
+};
+
+//request Passwod reset
+export const forgotPassword = async (req: Request<{}, {}, { email: string }>, res: Response) => {
+    try {
+        const { email } = req.body;
+
+        if(!email) {
+            return res.status(400).json({ error: 'Email is required' });
+        }
+
+        const user = await UserModel.findByEmail(email);
+
+        //Always return success to prevent email enumeration
+        if(!user) {
+            res.status(200).json({
+                message: 'If an account exist with this email, you will receive a password reset link'
+            });
+            return;
+        }
+
+        // Create reset token
+        const resetToken = await PasswordResetModel.create(user.id!);
+
+        //send reset email
+        await emailService.sendPasswordResetEmail(user.email, resetToken.token);
+
+        res.status(200).json({
+            message: 'If an account exists with this email, you will receive a passwrod reset link'
+        });
+    } catch (error: any) {
+        console.error('Forgot password error:', error);
+        res.status(500).json({error: 'Failed to process password reset request'});
+    }
+};
+
+
+//reset password wih token
+export const resetPassword = async (req: Request<{}, {}, resetPasswordBody>, res: Response) => {
+     const { token, inewPassword, iconfirmPassword} = req.body;
+     const newPassword = typeof inewPassword === 'string' ? inewPassword : '';
+     const confirmPassword = typeof iconfirmPassword === 'string' ? iconfirmPassword : '';
+    
+     try {   
+        if(!token || !newPassword || !confirmPassword) {
+           return res.status(400).json({error: 'All fields are required'});
+        }
+
+        if(newPassword !== confirmPassword) {
+            return res.status(400).json({error: 'Passwords do not match' });
+        }
+
+        if(newPassword.length < 6) {
+            return res.status(400).json({ error: 'Password must be at least 6 characters' });
+        }
+
+        //find valid tokens
+        const resetToken = await PasswordResetModel.findValidToken(token);
+
+        if(!resetToken) {
+            return res.status(400).json({ error: 'Invalid or expired reset token'});
+        }
+
+        //update password
+        const user = await UserModel.updatePassword(resetToken.user_id, newPassword);
+
+        if(!user) {
+            return res.status(404).json({error: 'User not found'});
+        }
+
+        //mark token as used 
+        await PasswordResetModel.markAsUsed(resetToken.id!);
+
+        //send confirmation email
+        await emailService.sendPasswordResetSuccessEmail(user.email);
+
+        return res.status(200).json({message: 'Password reset successfully'})
+    } catch (error: any) {
+        console.error('Rest password error:, error');
+        res.status(500).json({ error: 'Failed to reset password'});
+    }
+};

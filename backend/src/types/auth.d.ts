@@ -10,3 +10,9 @@ export interface LoginBody {
     iemail: string;
     ipassword: string;
 }
+
+export interface resetPasswordBody {
+    token: string; 
+    inewPassword: string; 
+    iconfirmPassword: string
+}
