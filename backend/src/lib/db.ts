@@ -35,18 +35,84 @@ async function runMigrations() {
 
     try {
         const __dirname = path.resolve();
-        const migrationPath = path.join(__dirname, 'migrations', '001_initial_schema.sql');
+        const migrationsDir = path.join(__dirname, 'migrations');
 
-        if( fs.existsSync(migrationPath) ) {
-            const migration = fs.readFileSync(migrationPath, 'utf-8');
-            await pool.query(migration);
-            console.log('Database migrations ran successfully');
-        } else {
+        if( !fs.existsSync(migrationsDir) ) {
             console.log('No migration files found, skipping....');
+            return;
         }
+            
+        //create migrations tracking table if it doesnt exist
+        await pool.query(`
+                CREATE TABLE IF NOT EXISTS schema_migrations(
+                    id SERIAL PRIMARY KEY,
+                    filename TEXT UNIQUE NOT NULL,
+                    executed_at TIMESTAMPTZ DEFAULT NOW()
+                )
+            `);
+
+        //read all migration files
+        const files = fs.readdirSync(migrationsDir)
+            .filter(file => file.endsWith('.sql'))
+            .sort(); //sorts alphabetically
+
+        if (files.length === 0) {
+            console.log('No migration files found, skipping....');
+            return;
+        }
+
+        console.log(`Found ${files.length} migration file(s)`);
+
+        //run each migratiion file
+        for( const file of files) {
+            //check if migrations have already beeen run
+            const checkResult = await pool.query(
+                `SELECT filename FROM schema_migrations WHERE filename = $1`,
+                [file]
+            );
+
+            if (checkResult.rows.length > 0) {
+                console.log(`⏭️  Skipping ${file} (already executed)`);
+                continue;
+            }
+
+            // Read and execute migration
+            const migrationPath = path.join(migrationsDir, file);
+            const migration = fs.readFileSync(migrationPath, 'utf-8');
+
+            console.log(`🔄 Running migration: ${file}`);
+            
+            // Execute migration in a transaction
+            const client = await pool.connect();
+            try {
+                await client.query('BEGIN');
+                await client.query(migration);
+                
+                // Record successful migration
+                await client.query(
+                    'INSERT INTO schema_migrations (filename) VALUES ($1)',
+                    [file]
+                );
+                
+                await client.query('COMMIT');
+                console.log(`✅ Successfully executed: ${file}`);
+            } catch (error: any) {
+                await client.query('ROLLBACK');
+                console.error(`❌ Error executing ${file}:`, error.message);
+                throw error; // Stop migration process on error
+            } finally {
+                client.release();
+            }
+        }
+
+        console.log('✅ All migrations completed successfully');
+
     } catch (error:any) {
         console.log(`Migration error: ${error.message}`);
         //dont exit the process if migration fails incase tables already exist
+        // But you might want to exit in production
+        // process.exit(1);
+        
     }
 }
 

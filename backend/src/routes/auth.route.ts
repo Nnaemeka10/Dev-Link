@@ -10,10 +10,14 @@ import {
     resetPassword 
 } from '../controllers/auth.controller.js';
 import { authenticateUser } from '../middleware/auth.middleware.js';
+import { arcjetProtection } from '../middleware/arcject.middleware.js';
 
 
 
 const router = express.Router();
+
+//arcject protection
+router.use(arcjetProtection)
 
 //public routes
 router.post('/signup', signup);

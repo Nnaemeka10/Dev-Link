@@ -82,7 +82,8 @@ export const signup = async (_req: Request<{}, {}, SignupBody>, res: Response) =
 
             // remove password hash from response
             const { password_hash, ...userWithoutPassword } = newUser as any;
-
+            
+            //send verification email
             try {
                 const verification = await EmailVerificationModel.create(newUser.id!);
                 await emailService.sendVerificationEmail(newUser.email, verification.code);

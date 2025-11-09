@@ -18,7 +18,7 @@ export const PasswordResetModel = {
         await this.deleteAllForUser(userId);
 
         const query = `
-            INSERT INTO password_resets (user_id, token, expires_at)
+            INSERT INTO password_reset_tokens (user_id, token, expires_at)
             VALUES ($1, $2, $3)
             RETURNING *
         `;
