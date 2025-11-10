@@ -15,6 +15,9 @@ export const EmailVerificationModel = {
         const code = this.generateCode();
         const expiresAt = new Date(Date.now() + 15 * 60 * 1000); //15 minutes from now
 
+        //delete old unused code before creating new one
+        await this.deleteUnusedForUser(userId);
+
         const query = `
             INSERT INTO email_verifications (user_id, code, expires_at)
             VALUES ($1, $2, $3)
@@ -55,6 +58,20 @@ export const EmailVerificationModel = {
         await db.query(query, [id]);
     },
 
+
+    //delete unused verification cods for user
+    async deleteUnusedForUser(userId: number): Promise<void> {
+
+        const db = getDB();
+
+        const query = `
+            DELETE FROM email_verifications
+            WHERE user_id = $1
+            AND used_at IS NULL 
+        `;
+        await db.query(query, [userId]);
+    },
+
     //deleete all verification codes for a user
     async deleteAllForUser(userId: number): Promise<void> {
         const db = getDB();
@@ -63,5 +80,36 @@ export const EmailVerificationModel = {
             WHERE user_id = $1
         `;
         await db.query(query, [userId]);
-    }
+    },
+
+    //check if user can request a new code (rate limiting)
+    async canRequestNewCode(userId: number): Promise< {canRequest: boolean; waitTime?:number}> {
+        const db = getDB();
+
+        //check for code created in the last two mins
+        const query = `
+            SELECT created_at FROM email_verifications
+            WHERE user_id = $1
+            ORDER BY created_at DESC
+            LIMIT 1
+        `;
+
+        const result = await db.query(query, [userId]);
+
+        if (result.rows.length === 0) {
+            return { canRequest: true};
+        }
+
+        const lastCreatedAt = new Date(result.rows[0].created_at);
+        const now = new Date();
+        const timeDiff = now.getTime() - lastCreatedAt.getTime();
+        const twoMins = 2*60*1000; 
+
+        if(timeDiff < twoMins) {
+            const waitTime = Math.ceil((twoMins - timeDiff) / 1000);
+            return { canRequest:false, waitTime};
+        }
+
+        return {canRequest: true};
+    },
 };

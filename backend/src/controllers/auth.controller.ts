@@ -78,10 +78,7 @@ export const signup = async (_req: Request<{}, {}, SignupBody>, res: Response) =
                 userId: newUser.id!,
                 email: newUser.email,
                 role_id: newUser.role_id,
-            }, res);
-
-            // remove password hash from response
-            const { password_hash, ...userWithoutPassword } = newUser as any;
+            }, res);  
             
             //send verification email
             try {
@@ -92,6 +89,10 @@ export const signup = async (_req: Request<{}, {}, SignupBody>, res: Response) =
                 //dont fail signup if eamil fails
             }
 
+            // remove password hash from response
+            const { password_hash, ...userWithoutPassword } = newUser as any;
+
+            //send response
             res.status(201).json({
                 message: 'User created successfully.',
                 user: userWithoutPassword,
@@ -237,7 +238,17 @@ export const sendVerificationEmail = async (req: Request, res: Response) => {
             return res.status(400).json({ message: 'Email is already verified' });
         }
 
-        //create verification code
+        //check rate limiting
+        const rateLimit = await EmailVerificationModel.canRequestNewCode(user.id!);
+        if(!rateLimit.canRequest) {
+            res.status(429).json({
+                error: `Please wait ${rateLimit.waitTime} seconds before requesting a new code`,
+                waitTime: rateLimit.waitTime
+            });
+            return;
+        }
+
+        //create verification code which will delete all old verification codes
         const verification = await EmailVerificationModel.create(user.id!);
 
         //send email
