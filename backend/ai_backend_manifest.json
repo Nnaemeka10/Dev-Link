@@ -1,0 +1,52 @@
+{
+  "project": "Dev-Link (backend)",
+  "description": "Node.js + TypeScript backend for Dev-Link job board. Express server with PostgreSQL (pg) and migrations.",
+  "server_entry": "backend/src/server.ts",
+  "db_connector": "backend/src/lib/db.ts",
+  "migrations": [
+    "backend/migrations/001_initial_schema.sql"
+  ],
+  "env_vars": {
+    "PORT": "server port",
+    "POSTGRES_URI": "postgres connection string (REDACTED)",
+    "NODE_ENV": "development|production",
+    "CLIENT_URL": "frontend origin for CORS",
+    "JWT_SECRET": "jwt signing secret (REDACTED)",
+    "CLOUDINARY_CLOUD_NAME": "cloudinary cloud name (REDACTED)",
+    "CLOUDINARY_API_KEY": "(REDACTED)",
+    "CLOUDINARY_API_SECRET": "(REDACTED)",
+    "ARCJET_KEY": "(REDACTED)",
+    "ARCJET_ENV": "development|production"
+  },
+  "dependencies": {
+    "@arcjet/inspect": "^1.0.0-beta.10",
+    "@arcjet/node": "^1.0.0-beta.10",
+    "bcryptjs": "^3.0.2",
+    "cloudinary": "^2.5.1",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.3",
+    "express": "^5.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "pg": "^8.16.3",
+    "resend": "^6.0.2"
+  },
+  "devDependencies": {
+    "tsx": "^4.20.6",
+    "typescript": "^5.9.3",
+    "@types/express": "^5.0.5",
+    "@types/node": "^24.9.2",
+    "@types/pg": "^8.15.6"
+  },
+  "notable_routes": [
+    "/api/auth/signup",
+    "/api/auth/login",
+    "/api/auth/logout"
+  ],
+  "migration_runner_summary": "connectDB() in backend/src/lib/db.ts connects with POSTGRES_URI and then runs runMigrations() which executes backend/migrations/001_initial_schema.sql if present.",
+  "how_to_share_with_ai": [
+    "Provide this JSON and BACKEND_AI_SUMMARY.md",
+    "Provide a redacted backend/.env.example with placeholders instead of secrets",
+    "Provide backend/package.json (already included)"
+  ]
+}
