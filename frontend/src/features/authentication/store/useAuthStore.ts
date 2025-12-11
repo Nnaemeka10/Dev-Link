@@ -1,0 +1,41 @@
+import { create } from 'zustand';
+import { axiosInstance } from '../../../lib/axios';
+import type { SignUpRequest } from '../types';
+import toast from 'react-hot-toast';    
+import axios from 'axios';
+
+export const useAuthStore = create((set) => ({
+    authUser: null,
+    isCheckingAuth: true,
+    isSigningUp: false,
+    isLoggingIn: false,
+
+    checkAuth: async () => {
+        try {
+            const res = await axiosInstance.get('/auth/me');
+            set({ authUser: res.data});
+        } catch (error) {
+            console.log('Error in authCheck:', error);
+            set({authUser: null})
+        } finally {
+            set({ isCheckingAuth: false})
+        }
+    },
+
+    signup: async(data: SignUpRequest) => {
+        set({ isSigningUp: true});
+        try {
+            const res = await axiosInstance.post('/auth/signup', data);
+            set({ authUser: res.data});
+            toast.success('Sign up successful!');
+        } catch (error: unknown) {
+            if (axios.isAxiosError(error) && error.response){
+                toast.error( error.response.data.message)
+            } else {
+                toast.error('An unexpected error occurred during sign up.')
+            }
+        } finally {
+            set({ isSigningUp: false});
+        }
+    }
+}))
