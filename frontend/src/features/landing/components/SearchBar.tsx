@@ -38,6 +38,9 @@ const SearchBar = () => {
           </div>
         </div>
       </section>
+
+      {/* Mobile menu overlay */}
+      
     </>
   )
 }
