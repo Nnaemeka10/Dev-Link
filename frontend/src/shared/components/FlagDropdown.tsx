@@ -16,7 +16,7 @@ interface FdProps {
     className?: string;
 }
 
-const FlagDropdown: React.FC<FdProps> = ({
+export const FlagDropdown: React.FC<FdProps> = ({
     value,
     onChange,
     isOpen,
@@ -80,5 +80,3 @@ const FlagDropdown: React.FC<FdProps> = ({
         </div>
     )
 }
-
-export default FlagDropdown

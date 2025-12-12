@@ -1,10 +1,10 @@
-import Button from "@shared/components/Button"
+import {Button} from "@shared/components/Button"
 import { Input } from "@shared/components/Input"
 import { BriefcaseBusiness, Search} from "lucide-react"
 import { useHomeStore } from "../store/usHomeStore"
 import { COUNTRIES, NAV_LINKS } from "../constants"
 import { Link } from "react-router-dom"
-import FlagDropdown from "@shared/components/FlagDropdown"
+import {FlagDropdown} from "@shared/components/FlagDropdown"
 
 
 const SearchBar = () => {
