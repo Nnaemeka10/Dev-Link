@@ -35,7 +35,7 @@ COPY backend/package.json ./backend/package.json
 COPY --from=frontend_builder /app/frontend/dist ./frontend/dist
 
 # Expose Express port (adjust if needed)
-EXPOSE 3000
+EXPOSE 8080
 
 # Final runtime command:
 CMD ["node", "backend/dist/server.js"]

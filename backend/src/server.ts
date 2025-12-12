@@ -14,7 +14,7 @@ import { fileURLToPath } from "url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const app = express(); 
-const PORT = Number(ENV.PORT) || 3000;
+const PORT = ENV.PORT || 8080;
 
 
 //middlewares
@@ -37,7 +37,7 @@ if (ENV.NODE_ENV === "production") {
 }
 
 //server listen
-app.listen(PORT, "0.0.0.0", () => {
+app.listen(PORT, ()=> {
     console.log(`Server is running on port ${PORT}`);
     console.log( __dirname)
     //connect to database
