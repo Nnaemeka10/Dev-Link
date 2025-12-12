@@ -8,7 +8,7 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   icon?: ReactNode;
 }
 
-export const Button = ({
+const Button = ({
   children,
   variant = 'primary',
   size = 'md',
@@ -55,3 +55,5 @@ export const Button = ({
     </button>
   );
 };
+
+export default Button;

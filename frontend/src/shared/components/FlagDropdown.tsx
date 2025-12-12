@@ -1,6 +1,6 @@
 import { ChevronDown } from "lucide-react";
 
-interface FlagDropdown {
+interface FlagDropdownType {
     [key: string]: unknown;
     flag?: string;
 }
@@ -10,13 +10,13 @@ interface FdProps {
     onChange: (value: string) => void;
     isOpen: boolean;
     onToggle: () => void;
-    options: FlagDropdown[];
+    options: FlagDropdownType[];
     labelKey: string;
     placeholder?: string;
     className?: string;
 }
 
-export const FlagDropdown: React.FC<FdProps> = ({
+const FlagDropdown: React.FC<FdProps> = ({
     value,
     onChange,
     isOpen,
@@ -80,3 +80,5 @@ export const FlagDropdown: React.FC<FdProps> = ({
         </div>
     )
 }
+
+export default FlagDropdown

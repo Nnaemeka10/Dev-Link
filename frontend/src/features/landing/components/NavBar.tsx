@@ -9,7 +9,7 @@ import { Link } from "react-router-dom";
 import { useHomeStore } from "../store/usHomeStore";
 import { Languages, NAV_LINKS } from "../constants";
 
-import { FlagDropdown } from "@shared/components/flagDropdown";
+import FlagDropdown from "@shared/components/FlagDropdown"; 
 
 
 

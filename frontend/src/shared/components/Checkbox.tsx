@@ -8,7 +8,7 @@ interface CheckboxProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'typ
   error?: string;
 }
 
-export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
+const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
   ({ label, error, className = '', ...props }, ref) => {
     return (
      <div className={`w-full ${className}`}>
@@ -39,3 +39,5 @@ export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
 );
 
 Checkbox.displayName = 'Checkbox';
+
+export default Checkbox
