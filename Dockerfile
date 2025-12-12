@@ -37,4 +37,6 @@ COPY --from=frontend_builder /app/frontend/dist ./frontend/dist
 # Expose Express port (adjust if needed)
 EXPOSE 3000
 
-CMD ["node", "backend/dist/index.js"]
+# Final runtime command:
+CMD ["node", "backend/dist/server.js"]
+
