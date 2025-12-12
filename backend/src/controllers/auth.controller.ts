@@ -1,10 +1,10 @@
 import { Request, Response } from 'express';
-import { UserModel } from '../models/User';
+import { UserModel } from '../models/User.js';
 import type { LoginBody, SignupBody, resetPasswordBody } from '../types/auth.d.ts';
-import { generateToken } from '../lib/utils';
-import { EmailVerificationModel } from '../models/userVerification';
-import { PasswordResetModel } from '../models/passwordReset';
-import { emailService } from '../emails/emailHandler';
+import { generateToken } from '../lib/utils.js';
+import { EmailVerificationModel } from '../models/userVerification.js';
+import { PasswordResetModel } from '../models/passwordReset.js';
+import { emailService } from '../emails/emailHandler.js';
 
 
 //signup controller

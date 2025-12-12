@@ -1,7 +1,7 @@
 import { getDB } from '../lib/db.js';
 import crypto from 'crypto';
 
-import { EmailVerification } from "../types/userVerification";
+import { EmailVerification } from "../types/userVerification.js";
 
 export const EmailVerificationModel = {
     //generate a 6-digit verification code

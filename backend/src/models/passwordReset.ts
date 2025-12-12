@@ -1,6 +1,6 @@
-import { getDB } from "../lib/db";
+import { getDB } from "../lib/db.js";
 import crypto from "crypto";
-import { PasswordResetToken } from "../types/passwordReset";
+import { PasswordResetToken } from "../types/passwordReset.js";
 
 export const PasswordResetModel = {
     //generate a secure random token

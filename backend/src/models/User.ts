@@ -1,4 +1,4 @@
-import { getDB } from "../lib/db";
+import { getDB } from "../lib/db.js";
 import bcrypt from 'bcryptjs';
 import type { User, CreateUserInput } from "../types/user.d.ts";
 

@@ -1,7 +1,7 @@
 import arcjet, { shield, detectBot, slidingWindow } from "@arcjet/node";
 
 
-import { ENV } from "./env";
+import { ENV } from "./env.js";
 
 if(!ENV.ARCJET_KEY) {
     throw new Error("Missing ARCJET_KEY environment variable")

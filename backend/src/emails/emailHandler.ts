@@ -1,11 +1,11 @@
-import { resend, sender } from "../lib/resend";
+import { resend, sender } from "../lib/resend.js";
 
 import { 
     getVerificationEmailTemplate, 
     getPasswordResetEmailTemplate, 
     getPasswordResetSuccessTemplate, 
     getWelcomeEmailTemplate
-} from "./emailTemplates";
+} from "./emailTemplates.js";
 
 export const emailService = {
     async sendVerificationEmail(email: string, code: string) {
