@@ -1,4 +1,4 @@
-// import { ChevronDown } from "lucide-react"
+
 import { COMPANY, NAV_LINKS } from "@constants/index";
 import AOS from "aos"
 import "aos/dist/aos.css"
@@ -27,8 +27,8 @@ const NavBar = () => {
 
 
   return (
-    <nav className=" text-secondary-900 bg-secondary-50 z-40 w-full py-3 px-6 lg:px-12 2xl:px-32 relative">
-      <div className="font-normal text-sm flex justify-between items-center">
+    <nav className=" text-secondary-900 bg-secondary-50 z-60 w-full py-3 px-6 lg:px-12 2xl:px-32 relative">
+      <div className="font-normal text-xs md:text-sm flex justify-between items-center">
 
         {/* links first nav content*/}
         <div className="hidden items-center gap-8 lg:flex" data-aos = "fade-down">
@@ -66,7 +66,7 @@ const NavBar = () => {
             </button>
 
             { isLanguageOpen && (
-              <div className="absolute left-4 top-full w-full bg-secondary-50 shadow-md z-50 px-4">
+              <div className={`absolute left-0 sm:left-4 top-full w-full bg-secondary-50 shadow-md z-50 px-4 transition-all overflow-hidden duration-[10000] ease-in-out  ${ isLanguageOpen ? 'max-h-40 opacity-100': 'max-h-0 opacity-0' }`}>
                 { Languages.map((l, i) => (
                   <button 
                     key={i} 
@@ -84,7 +84,7 @@ const NavBar = () => {
         {/* Menu 3rd nav content*/}
         <div className="flex items-center lg:hidden">
               <button 
-                className="p-2  hover:bg-primary-50 rounded-full transition"
+                className="p-2  hover:bg-primary-50 rounded-full transition duration-300"
                 onClick={() => toggleMenu()}
                 >
                   { isMenuOpen ? <X size={24} /> : <Menu size={24} /> }
