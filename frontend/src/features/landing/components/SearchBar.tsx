@@ -19,7 +19,7 @@ const SearchBar = () => {
 
   return (
     <>
-      <section className="relative text-secondary-900 bg-white w-full shadow-xs py-3 px-6 lg:px-12 2xl:px-32 z-50">
+      <section className="relative text-secondary-900 bg-white w-full shadow-xs py-3 px-6 lg:px-12 2xl:px-32 z-50 overflow-x-hidden">
         <div className="font-normal text-sm flex justify-between items-center">
           {/* logo and search bar section item 1 */}
           <div className="flex items-center gap-6">
@@ -66,7 +66,7 @@ const SearchBar = () => {
       
 
       {/* menu dropdown */}
-      <div className={`absolute top-31 right-0 py-2 pb-7 w-full bg-white shadow-2xl z-50 transform transition-transform duration-300 ease-in-out ${isMenuOpen ? 'translate-x-0' : 'translate-x-full hidden'}`}>
+      <div className={`fixed top-31 right-0 py-2 pb-7 w-full bg-white shadow-2xl z-50 transform transition-transform duration-300 ease-in-out ${isMenuOpen ? 'translate-x-0' : 'translate-x-full'}`}>
         <div className="flex flex-col h-full px-6">
           {/* Menu links */}
           {
