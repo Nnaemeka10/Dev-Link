@@ -27,7 +27,7 @@ app.use("/api/auth", authRoutes);  //auth routes
 
 //make ready for deployment
 if (ENV.NODE_ENV === "production") {
-  const frontendPath = path.join(__dirname, "../frontend/dist");
+  const frontendPath = path.join(__dirname, "/app/frontend/dist");
 
   app.use(express.static(frontendPath));
 
