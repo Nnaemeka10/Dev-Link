@@ -6,13 +6,16 @@ import { ENV } from './lib/env.js';
 import { connectDB } from './lib/db.js';
 
 import authRoutes from './routes/auth.route.js';
-
+import { fileURLToPath } from "url";
 
 
 //app initialization
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 const app = express(); 
 const PORT = ENV.PORT || 3000;
-const __dirname = path.resolve();
+
 
 //middlewares
 app.use(express.json()); //to be able to read json data from client
@@ -23,12 +26,14 @@ app.use(cors({ origin: ENV.CLIENT_URL, credentials: true, })) //to allow request
 app.use("/api/auth", authRoutes);  //auth routes
 
 //make ready for deployment
-if (ENV.NODE_ENV === 'production') {
-    app.use (express.static(path.join(__dirname, "../frontend/dist")));
+if (ENV.NODE_ENV === "production") {
+  const frontendPath = path.join(__dirname, "../frontend/dist");
 
-    app.get("*", (_, res) => {
-        res.sendFile(path.join(__dirname, "../frontend", "dist", "index.html"));
-    })
+  app.use(express.static(frontendPath));
+
+  app.get("*", (_, res) => {
+    res.sendFile(path.join(frontendPath, "index.html"));
+  });
 }
 
 //server listen
