@@ -1,14 +1,15 @@
 
-import { COMPANY, NAV_LINKS } from "@constants/index";
+import { COMPANY } from "@shared/constants/index";
 import AOS from "aos"
 import "aos/dist/aos.css"
-import { ChevronDown, Menu, PhoneCall, X } from "lucide-react";
+import { Menu, PhoneCall, X } from "lucide-react";
 import { useEffect } from "react"
 import { Link } from "react-router-dom";
 
 import { useHomeStore } from "../store/usHomeStore";
-import { Languages } from "../constants";
-import { findFLags } from "../hooks/findflag";
+import { Languages, NAV_LINKS } from "../constants";
+
+import { FlagDropdown } from "@shared/components/flagDropdown";
 
 
 
@@ -53,32 +54,15 @@ const NavBar = () => {
             </p>
           </div>
 
-          {/* language */}     
-          <div className="flex items-center justify-center relative">
-            
-            <div>  
-              <img src={findFLags(selectedLanguage)?.flag} alt="flag" className="h-5 w-6"/>
-            </div>
-
-            <button onClick={() => toggleLanguage()} className="flex items-center justify-between p-2 cursor-pointer">
-              { selectedLanguage }
-              <ChevronDown size={16} className="ml-0.5"/>
-            </button>
-
-            
-              <div className={`absolute left-0 sm:left-4 top-full w-full bg-secondary-50 shadow-md z-50 px-4 transition-all overflow-hidden duration-1000 ease-in-out  ${ isLanguageOpen ? 'max-h-40': 'max-h-0' }`}>
-                { Languages.map((l, i) => (
-                  <button 
-                    key={i} 
-                    onClick={() => {setSelectedLanguage(l.language); toggleLanguage()}} 
-                    className="w-full flex items-center gap-2 p-2 cursor-pointer hover:bg-secondary-200">
-                      {l.language}
-                  </button>
-                ))}
-
-              </div>
-        
-          </div>
+          <FlagDropdown 
+            value={selectedLanguage}
+            onChange={setSelectedLanguage}
+            isOpen = {isLanguageOpen}
+            onToggle={() => toggleLanguage()}
+            options={Languages}
+            labelKey="language"
+            className="bg-secondary-50"
+          />
         </div>
 
         {/* Menu 3rd nav content*/}

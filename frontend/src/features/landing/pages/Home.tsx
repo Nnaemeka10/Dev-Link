@@ -13,7 +13,7 @@ import {
 const Home = () => {
   return (
     
-      <>
+      <main>
         <NavBar />
         <SearchBar />
         <Hero />
@@ -23,7 +23,7 @@ const Home = () => {
         <Testimonial />
         <CTA />
         <Footer />
-      </>
+      </main>
   
   )
 }

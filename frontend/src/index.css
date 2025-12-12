@@ -37,6 +37,7 @@
   
   body {
     background-color: white;
+    overflow-x: hidden;
     color: theme('--color-secondary-900');
     font-family: theme('fontFamily.sans');
     -webkit-font-smoothing: antialiased;
@@ -69,5 +70,40 @@
     content: '';
     @apply after:absolute after:left-0 after:-bottom-1 after:h-[2px] after:w-0 after:bg-primary-600 after:transition-all after:duration-300 hover:after:w-full;
   }
+
+  .scrollbar-hide {
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+  }
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
+  }
+
+  /* Custom scrollbar */
+.scrollbar-thin {
+  scrollbar-width: thin; /* Firefox */
+  scrollbar-color: rgba(107,114,128,0.6) transparent; /* thumb color + track */
+}
+
+.scrollbar-thin::-webkit-scrollbar {
+  width: 6px; /* scrollbar width */
+}
+
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: transparent; /* or a subtle bg */
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background-color: rgba(107,114,128,0.6); /* gray thumb */
+  border-radius: 9999px; /* rounded edges */
+  border: 2px solid transparent; /* padding effect */
+  background-clip: content-box;
+}
+
+.scrollbar-thin:hover::-webkit-scrollbar-thumb {
+  background-color: rgba(107,114,128,0.9); /* darker on hover */
+}
+
 }
 

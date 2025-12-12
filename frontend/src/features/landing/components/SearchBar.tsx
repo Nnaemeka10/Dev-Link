@@ -2,12 +2,20 @@ import { Button } from "@shared/components/Button"
 import { Input } from "@shared/components/Input"
 import { BriefcaseBusiness, Search} from "lucide-react"
 import { useHomeStore } from "../store/usHomeStore"
-import { NAV_LINKS } from "@constants/index"
+import { COUNTRIES, NAV_LINKS } from "../constants"
 import { Link } from "react-router-dom"
+import { FlagDropdown } from "@shared/components/flagDropdown"
 
 
 const SearchBar = () => {
-  const {isMenuOpen, toggleMenu} = useHomeStore();
+  const {
+    isMenuOpen, 
+    toggleMenu, 
+    isCountriesOpen, 
+    toggleCountry, 
+    selectedCountry, 
+    setSelectedCountry
+  } = useHomeStore();
 
   return (
     <>
@@ -21,7 +29,18 @@ const SearchBar = () => {
               <h1 className="font-bold text-lg">DevLink</h1>
             </div>
             {/* search bar */}
-            <div className="hidden border-2 border-secondary-100 items-center rounded-sm lg:flex xl:w-2xl lg:w-xl ">
+            <div className="hidden px-4 border-2 border-secondary-100 items-center gap-2 rounded-sm lg:flex xl:w-2xl lg:w-xl ">
+              
+              <FlagDropdown 
+                value= {selectedCountry}
+                onChange={setSelectedCountry}
+                isOpen = {isCountriesOpen}
+                onToggle={() => toggleCountry()}
+                options={COUNTRIES}
+                labelKey="country"
+                className="bg-white -left-4"
+              />
+              <div className="border-l-[1.5px] h-6 border-secondary-300" />
               <Input 
                 name = 'SearchBar'
                 type="search" 
@@ -33,7 +52,7 @@ const SearchBar = () => {
 
           {/* buttons item 2 in nav bar */}
           <div className="flex items-center gap-2">
-            <Search className="not-sm:hidden lg:hidden"/>
+            <Search className="inline-flex lg:hidden"/>
             <Button variant="outline" className="not-sm:hidden">
               Sign In
             </Button>
@@ -47,7 +66,7 @@ const SearchBar = () => {
       
 
       {/* menu dropdown */}
-      <div className={`absolute top-31 right-0 py-2 pb-7 w-full bg-white shadow-2xl z-50 transform transition-transform duration-300 ease-in-out lg:hidden ${isMenuOpen ? 'translate-x-0' : 'translate-x-full'}`}>
+      <div className={`absolute top-31 right-0 py-2 pb-7 w-full bg-white shadow-2xl z-50 transform transition-transform duration-300 ease-in-out ${isMenuOpen ? 'translate-x-0' : 'translate-x-full hidden'}`}>
         <div className="flex flex-col h-full px-6">
           {/* Menu links */}
           {
@@ -65,7 +84,7 @@ const SearchBar = () => {
           {/* buttons */}
           <div className="flex items-center gap-3 mt-6">
             <Button>Create Account</Button>
-            <Button>Sign In</Button>
+            <Button variant="outline">Sign In</Button>
           </div>
         </div>
 

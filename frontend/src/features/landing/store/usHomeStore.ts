@@ -7,6 +7,8 @@ interface HomeState {
     isMenuOpen: boolean;
     isLanguageOpen: boolean;
     selectedLanguage: string;
+    isCountriesOpen: boolean;
+    selectedCountry: string;
 
     //actions
     setSearchQuery: (query:string) => void;
@@ -15,6 +17,8 @@ interface HomeState {
     clearSearch: () => void;
     toggleLanguage: () => void;
     setSelectedLanguage: (language:string) => void;
+    toggleCountry: () => void;
+    setSelectedCountry: (country:string) => void;
 }
 
 export const useHomeStore = create<HomeState>((set) => ({
@@ -24,7 +28,8 @@ export const useHomeStore = create<HomeState>((set) => ({
     isMenuOpen: false,
     isLanguageOpen: false,
     selectedLanguage: 'English',
-
+    isCountriesOpen: false,
+    selectedCountry: 'India',
     //actions
     setSearchQuery: (query) => set({ searchQuery: query }),
 
@@ -39,6 +44,9 @@ export const useHomeStore = create<HomeState>((set) => ({
 
     toggleLanguage: () => set((state) => ({ isLanguageOpen: !state.isLanguageOpen})),
     setSelectedLanguage: (language) => set({ selectedLanguage: language}),
+
+    toggleCountry: () => set((state) => ({ isCountriesOpen: !state.isCountriesOpen})),
+    setSelectedCountry: (country) => set({ selectedCountry: country})
 
 
 }));
