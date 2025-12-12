@@ -32,7 +32,7 @@ COPY --from=backend_builder /app/backend/node_modules ./backend/node_modules
 COPY backend/package.json ./backend/package.json
 
 # Copy frontend build output
-COPY --from=frontend_builder /app/frontend/dist ./frontend/dist
+COPY --from=frontend_builder /app/frontend/dist ./backend/frontend/dist
 
 # Expose Express port (adjust if needed)
 EXPOSE 8080
