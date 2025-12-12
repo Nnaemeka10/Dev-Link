@@ -1,49 +1,40 @@
-# -------------------------------------------------
-# 1. Build stage
-# -------------------------------------------------
-FROM node:20-alpine AS builder
-WORKDIR /app
+# ---------- FRONTEND BUILD ----------
+FROM node:20-alpine AS frontend_builder
+WORKDIR /app/frontend
 
-# Install root dependencies (if any)
-COPY package.json ./
+COPY frontend/package.json .
+COPY frontend/package-lock.json .
+RUN npm install
 
-# Copy backend and frontend package files
-COPY backend/package.json ./backend/
-COPY frontend/package.json ./frontend/
+COPY frontend .
+RUN npm run build
 
-# Install backend deps
-RUN npm install --prefix backend
 
-# Install frontend deps
-RUN npm install --prefix frontend
+# ---------- BACKEND BUILD ----------
+FROM node:20-alpine AS backend_builder
+WORKDIR /app/backend
 
-# Copy everything
-COPY . .
+COPY backend/package.json .
+COPY backend/package-lock.json .
+RUN npm install
 
-# Build frontend → outputs to frontend/dist
-RUN npm run build --prefix frontend
+COPY backend .
+RUN npm run build
 
-# Build backend → outputs to backend/dist
-RUN npm run build --prefix backend
 
-# -------------------------------------------------
-# 2. Production stage
-# -------------------------------------------------
+# ---------- FINAL IMAGE ----------
 FROM node:20-alpine
 WORKDIR /app
 
-ENV NODE_ENV=production
-
-# Copy only built backend + frontend
+# Copy backend build output
+COPY --from=backend_builder /app/backend/dist ./backend/dist
+COPY --from=backend_builder /app/backend/node_modules ./backend/node_modules
 COPY backend/package.json ./backend/package.json
-COPY backend/node_modules ./backend/node_modules
-COPY backend/dist ./backend/dist
 
-# Copy built frontend dist folder
-COPY frontend/dist ./frontend/dist
+# Copy frontend build output
+COPY --from=frontend_builder /app/frontend/dist ./frontend/dist
 
-# Expose API port (match your Express app)
+# Expose Express port (adjust if needed)
 EXPOSE 3000
 
-# Start backend (which also serves frontend)
-CMD ["node", "backend/dist/server.js"]
+CMD ["node", "backend/dist/index.js"]
