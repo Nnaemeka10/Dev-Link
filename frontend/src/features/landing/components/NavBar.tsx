@@ -65,8 +65,8 @@ const NavBar = () => {
               <ChevronDown size={16} className="ml-0.5"/>
             </button>
 
-            { isLanguageOpen && (
-              <div className={`absolute left-0 sm:left-4 top-full w-full bg-secondary-50 shadow-md z-50 px-4 transition-all overflow-hidden duration-[10000] ease-in-out  ${ isLanguageOpen ? 'max-h-40 opacity-100': 'max-h-0 opacity-0' }`}>
+            
+              <div className={`absolute left-0 sm:left-4 top-full w-full bg-secondary-50 shadow-md z-50 px-4 transition-all overflow-hidden duration-1000 ease-in-out  ${ isLanguageOpen ? 'max-h-40': 'max-h-0' }`}>
                 { Languages.map((l, i) => (
                   <button 
                     key={i} 
@@ -77,7 +77,7 @@ const NavBar = () => {
                 ))}
 
               </div>
-            )}
+        
           </div>
         </div>
 
