@@ -5,6 +5,7 @@ import { useHomeStore } from "../store/usHomeStore"
 import { COUNTRIES, NAV_LINKS } from "../constants"
 import { Link } from "react-router-dom"
 import {FlagDropdown} from "@shared/components/FlagDropdown"
+import { useEffect } from "react"
 
 
 const SearchBar = () => {
@@ -16,6 +17,18 @@ const SearchBar = () => {
     selectedCountry, 
     setSelectedCountry
   } = useHomeStore();
+
+  useEffect(() => {
+    if(isMenuOpen) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = 'unset'
+    }
+
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isMenuOpen])
 
   return (
     <>
