@@ -28,7 +28,7 @@ const NavBar = () => {
 
 
   return (
-    <nav className=" text-secondary-900 bg-secondary-50 z-60 w-full py-3 px-6 lg:px-12 2xl:px-32 relative">
+    <nav className=" text-secondary-900 bg-secondary-50 z-60 w-full py-3 bodypad relative">
       <div className="font-normal text-xs md:text-sm flex justify-between items-center">
 
         {/* links first nav content*/}

@@ -32,7 +32,7 @@ const SearchBar = () => {
 
   return (
     <>
-      <section className="relative text-secondary-900 bg-white w-full shadow-xs py-3 px-6 lg:px-12 2xl:px-32 z-50 overflow-x-hidden">
+      <section className="relative text-secondary-900 bg-white w-full shadow-xs py-4 bodypad z-50 overflow-x-hidden">
         <div className="font-normal text-sm flex justify-between items-center">
           {/* logo and search bar section item 1 */}
           <div className="flex items-center gap-6">

@@ -1,7 +1,7 @@
 import { forwardRef, useState } from 'react';
 import type { InputHTMLAttributes } from 'react';
 
-import { Eye, EyeOff, Search } from 'lucide-react';
+import { Eye, EyeOff, LocationEdit, Search } from 'lucide-react';
 
 
 interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
@@ -15,7 +15,8 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
     const [showPassword, setShowPassword] = useState(false);
     const isPassword = type === 'password';
     const isSearchBar = type === 'search';
-    const inputType = isPassword && showPassword ? 'text' : isSearchBar ? 'text' : type;
+    const isLocation = type === 'location';
+    const inputType = isPassword && showPassword ? 'text' : isSearchBar ? 'text' : isLocation ? 'text' : type;
 
     return (
       <div className={`w-full`}>
@@ -25,11 +26,19 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
           </label>
         )}
 
-        <div className="flex items-center gap-1 px-2">
+        <div className="flex items-center gap-1">
           {
             isSearchBar && (
               <div className=" text-primary-500"> 
                 <Search />
+              </div>
+            )
+          }
+
+          {
+            isLocation && (
+              <div className=" text-primary-500"> 
+                <LocationEdit />
               </div>
             )
           }
@@ -38,7 +47,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             type={inputType}
             className={`
               w-full rounded-lg border border-secondary-300
-              focus:outline-none ${isSearchBar ? '': 'focus:ring-2 focus:ring-primary-500 focus:border-transparent'}
+              focus:outline-none ${isSearchBar || isLocation ? '': 'focus:ring-2 focus:ring-primary-500 focus:border-transparent'}
               disabled:bg-secondary-50 disabled:text-secondary-500 disabled:cursor-not-allowed
               ${error ? 'border-red-500 focus:ring-red-500' : ''}
               ${isPassword && showPasswordToggle ? 'pr-12' : ''}

@@ -3,8 +3,8 @@
 /* Tailwind v4 Custom Theme */
 @theme {
   /* Primary Colors (Blue) */
-  --color-primary-50: #eff6ff;
-  --color-primary-100: #dbeafe;
+  --color-primary-50: #f1f2f4;
+  --color-primary-100: #e4e5e8;
   --color-primary-200: #bfdbfe;
   --color-primary-300: #93c5fd;
   --color-primary-400: #60a5fa;
@@ -62,6 +62,10 @@
 }
 
 @layer utilities {
+
+  .bodypad {
+    @apply px-8 lg:px-12 2xl:px-52
+  }
   .text-balance {
     text-wrap: balance;
   }
