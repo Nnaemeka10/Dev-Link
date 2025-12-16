@@ -12,7 +12,7 @@ const Hero = () => {
         {/* hero content and image */}
         <div className="flex items-center justify-between gap-28">
           {/* hero content */}
-          <div className="flex flex-col w-full lg:w-[60%] gap-4 ">
+          <article className="flex flex-col w-full lg:w-[60%] gap-4 ">
             <h1 className="font-[600] text-4xl w-[80%]">Find a job that suits your interests & skills</h1>
             <p className="text-secondary-600 w-[80%]">Lorem ipsum dolor sit amet consectetur adipisicing elit. Animi, excepturi minus deserunt accusantium, labore dolores fugiat perspiciatis impedit quidem, doloremque molestiae vitae? Accusamus, saepe!</p>
             <div className="flex bg-white border-2 border-secondary-100 py-3 px-2 items-center gap-2 pl-5">
@@ -34,7 +34,7 @@ const Hero = () => {
               </Button>
             </div>
             <p><span className="text-secondary-500">Suggestion: </span>Designer, Programming, <span className="text-primary-600 font-medium">Digital marketing </span>Video, Animation</p>           
-          </div>
+          </article>
 
           {/* hero image */}
           <div className="flex w-full lg:w-[40%] fixed left-[40vw] opacity-10 lg:relative lg:left-0 lg:opacity-100">
