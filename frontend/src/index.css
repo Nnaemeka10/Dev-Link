@@ -4,9 +4,9 @@
 @theme {
   /* Primary Colors (Blue) */
   --color-primary-50: #f1f2f4;
-  --color-primary-100: #e4e5e8;
+  --color-primary-100: #E7F0FA;
   --color-primary-200: #bfdbfe;
-  --color-primary-300: #93c5fd;
+  --color-primary-300: #0A65CC;
   --color-primary-400: #60a5fa;
   --color-primary-500: #0A65CC;
   --color-primary-600: #2563eb;
@@ -31,9 +31,10 @@
 }
 
 @layer base {
-  * {
+  /* * {
     border-color: theme('--color-secondary-200');
-  }
+    outline: 1px solid red;
+  } */
   
   body {
     background-color: white;
@@ -69,6 +70,10 @@
 
   .header{
     @apply font-[600] text-4xl
+  }
+
+  .header-md {
+    @apply font-[600] text-2xl
   }
 
   .text-balance {
