@@ -4,7 +4,7 @@ import type { CSSProperties } from 'react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import cartoonMechanic from '@assets/cartoonmechanic.png'
 
-const STATUS_COPY = 'This site is under coonstruction, await something huge.'
+const STATUS_COPY = 'This site is under coonstruction, await something hooge.'
 
 type Spark = {
   id: number
@@ -57,7 +57,7 @@ const Construction = () => {
       const elapsed = now - startTime
       const progress = Math.min(elapsed / DURATION_MS, 1)
       const eased = 1 - Math.pow(1 - progress, 4)
-      setLaunchReadiness(Math.round(eased * 100))
+      setLaunchReadiness(Math.round(eased * 90))
 
       if (progress < 1) {
         frameId = window.requestAnimationFrame(animate)
@@ -136,11 +136,11 @@ const Construction = () => {
 
       <section className='construction-shell'>
         <div className='construction-content'>
-          <span className='construction-tag'>DEV-LINK // BUILD MODE</span>
+          <span className='construction-tag'>EVENTVNV // BUILD MODE</span>
           <h1 className='construction-title'>
-            Platform Upgrade
+            EVENTVNV
             <br />
-            In Hyperdrive
+            Is Coming!!
           </h1>
           <p className='construction-copy'>
             {typedCopy}
@@ -162,11 +162,11 @@ const Construction = () => {
           <div className='construction-metrics'>
             <div className='construction-metric'>
               <span className='construction-metric-value'>18+</span>
-              <span className='construction-metric-label'>Systems rebuilding</span>
+              <span className='construction-metric-label'>Nuts Tightened</span>
             </div>
             <div className='construction-metric'>
               <span className='construction-metric-value'>24/7</span>
-              <span className='construction-metric-label'>Engineering velocity</span>
+              <span className='construction-metric-label'>Screws Screwed</span>
             </div>
             <div className='construction-metric'>
               <span className='construction-metric-value'>∞</span>
@@ -176,7 +176,7 @@ const Construction = () => {
         </div>
 
         <div className='construction-visual' aria-hidden='true'>
-          <div className='construction-ring construction-ring-outer' />
+          {/* <div className='construction-ring construction-ring-outer' /> */}
           <div className='construction-ring construction-ring-inner' />
           <div className='construction-image-wrap'>
             <img
