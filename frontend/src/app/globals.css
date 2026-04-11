@@ -77,11 +77,20 @@ p {
   line-height: 1.5;
 }
 
+.logo {
+  font-size: var(--text-heading-m);
+  font-weight: 600;
+}
+
 ::selection {
   background: rgba(214, 92, 58, 0.18);
 }
 
 @layer utilities {
+  .pad {
+    @apply flex w-full px-4 py-4 md:px-8 lg:px-12;
+  }
+
   .no-scrollbar {
     -ms-overflow-style: none;
     scrollbar-width: none;
