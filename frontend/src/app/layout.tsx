@@ -10,8 +10,8 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "eventvnv",
-  description: "Static-first event planning frontend for halls and services.",
+  title: "EventVnV - Eventhalls, Djs, Caterers & More",
+  description: "Discover and book Nigeria's finest event halls, DJs, caterers, and more with EventVnV. Your one-stop platform for unforgettable events.",
 };
 
 export default function RootLayout({

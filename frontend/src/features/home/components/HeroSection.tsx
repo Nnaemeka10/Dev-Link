@@ -32,13 +32,13 @@ const HERO_RESPONSE: HeroResponse = {
 
 export default function HeroSection() {
   return (
-    <section className="home-hero-shell border-b border-text-primary/5 px-4 pb-8 pt-8 md:px-8 md:pb-12 md:pt-14">
-      <div className="mx-auto max-w-7xl">
+    <section className="home-hero-shell border-b border-text-primary/5">
+      <div className="px-4 pb-8 pt-8 md:px-8 md:pb-40 md:pt-40">
         <motion.h1
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.55, ease: "easeOut" }}
-          className="mx-auto max-w-4xl text-center text-[40px] font-semibold leading-[1.08] tracking-[-0.02em] text-text-primary md:text-[76px]"
+          className="mx-auto max-w-4xl text-center text-[40px] font-semibold leading-[1.08] tracking-[-0.02em] text-text-primary md:text-[106px]"
         >
           Curating Nigeria{"'"}s <span className="text-accent-primary">{HERO_RESPONSE.highlight}</span>
         </motion.h1>

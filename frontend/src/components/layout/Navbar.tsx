@@ -30,7 +30,7 @@ export default function Navbar() {
       <div className="items-center justify-between pad">
         <Link href="/" className="text-2xl flex font-semibold tracking-[-0.02em] text-text-primary items-end gap-1">
           <Image src="/logo.svg" alt="EventVnv" width={30} height={30} />
-          <p className="font-semibold logo translate-y-1.5">EventVnv </p>
+          <p className="font-semibold logo translate-y-1.5">EventVnV </p>
         </Link>
 
         <nav className="hidden items-center gap-1 md:flex">
