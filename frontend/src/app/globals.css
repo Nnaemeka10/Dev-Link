@@ -8,6 +8,7 @@
   --color-accent-secondary: #c9993a;
 
   --font-sans: var(--font-inter), system-ui;
+  --font-man: var(--font-manrope), system-ui;
 
   --text-heading-xl: 2rem;
   --text-heading-l: 1.5rem;
@@ -55,6 +56,7 @@
   h3,
   h4 {
     letter-spacing: -0.01em;
+    font-family: var(--font-man);
   }
 
   h1 {
@@ -104,9 +106,227 @@
   }
 
   .home-hero-shell {
-    background:
-      radial-gradient(circle at 82% -8%, rgba(201, 153, 58, 0.12), transparent 35%),
-      radial-gradient(circle at 8% 115%, rgba(214, 92, 58, 0.08), transparent 30%),
-      linear-gradient(180deg, rgba(245, 230, 200, 0.5) 0%, rgba(249, 246, 239, 0) 100%);
+    position: relative;
+    overflow: hidden;
+    background-color: var(--color-bg-primary);
+  }
+
+  /* ─── Shared spotlight base ───────────────────────────────────────────────────
+    Circles are ~3× the previous size. Center sits on or just outside the hero
+    boundary so overflow: hidden clips them into a crescent at the edges —
+    this is what creates the "hugging" effect.
+    will-change: transform = GPU compositor layer, zero paint cost per frame.
+  ────────────────────────────────────────────────────────────────────────────── */
+
+  .hero-spotlight {
+    position: absolute;
+    border-radius: 50%;
+    pointer-events: none;
+    will-change: transform;
+    filter: blur(80px);
+  }
+
+  /* ─── Spotlight 1: Gold ───────────────────────────────────────────────────────
+    Size: ~3× previous (38vw → 110vw), capped so it stays a "spotlight" not a flood.
+    
+    START: center sits just outside the top-right corner.
+    The circle bleeds off the top and right edges simultaneously.
+    
+    PATH (then retraces):
+      0%  → slightly inside top-right    (start)
+      25% → flush top-right corner edge
+      50% → flush bottom-right corner edge  
+      75% → slightly left of bottom-right
+      100%→ retraces: back through 75→50→25→0
+    
+    We achieve the retrace by mirroring waypoints:
+      0%   start
+      25%  waypoint A
+      50%  waypoint B  (deepest point)
+      75%  waypoint A  (same as 25%, reversed)
+      100% start       (same as 0%)
+    
+    animation-direction: alternate paired with a 50% keyframe at the far point
+    would also work, but explicit mirrored keyframes give more control over easing
+    at the turn-around point
+  ────────────────────────────────────────────────────────────────────────────── */
+
+  .hero-spotlight--gold {
+    width: clamp(300px, 110vw, 600px);
+    height: clamp(300px, 110vw, 600px);
+
+    /* 
+      Anchor the CENTER of this giant circle at the top-right corner.
+      top: 0, right: 0 would put the top-left corner of the div at the hero corner.
+      We need the circle's center there, so offset by half the element's size.
+      Since width = 110vw, half = 55vw. We use negative positioning to push center
+      to the corner — overflow: hidden clips the rest
+    */
+    top: -50%;
+    right: -10%;
+
+    background: linear-gradient(90deg, rgba(255, 201, 101, 0.28) 0%, rgba(255, 201, 101, 0.1) 50%);
+
+    /*
+      Path: start slightly inside top-right → top-right edge → bottom-right edge
+      → slightly left of bottom-right → retrace back.
+      
+      translate() moves relative to the element's own position.
+      Since the element is anchored top-right with center at the corner:
+      - Moving left (negative X) brings it into the hero
+      - Moving down (positive Y) brings it toward bottom-right
+      
+      "Slightly inside top-right" = pulled left and down a little from the corner
+      "Top-right edge flush" = center exactly at top-right corner (0, 0)
+      "Bottom-right edge" = moved down the full hero height
+      "Slightly left of bottom-right" = moved left a bit from there
+    */
+    animation: orbit-gold 12s ease-in-out infinite;
+  }
+
+  /* ─── Spotlight 2: Ember ──────────────────────────────────────────────────────
+    START: slightly to the right of the bottom-left corner (inside the hero).
+    
+    PATH (then retraces):
+      0%  → slightly right of bottom-left   (start)
+      25% → flush bottom-left corner edge
+      50% → flush top-left corner edge
+      75% → slightly right of top-left
+      100%→ retraces back to start
+    
+    animation-delay: -6s starts it mid-cycle so gold and ember are never
+    at the same vertical position simultaneously from the very first frame.
+  ────────────────────────────────────────────────────────────────────────────── */
+
+  .hero-spotlight--ember {
+    width: clamp(300px, 110vw, 600px);
+    height: clamp(300px, 110vw, 600px);
+
+    /*
+      Anchor center at the bottom-left corner.
+      bottom: 0, left: 0 puts the bottom-right corner of the div at the hero corner.
+      Offset by half the element size to center it on the corner.
+    */
+    bottom: -50%;
+    left: -10%;
+
+    background: radial-gradient(
+      circle,
+      rgba(214, 92, 58, 0.2) 0%,
+      rgba(214, 92, 58, 0.07) 50%,
+      transparent 70%
+    );
+
+    /*
+      Path: slightly right of bottom-left → bottom-left edge → top-left edge
+      → slightly right of top-left → retrace.
+      
+      Since element is anchored bottom-left with center at the corner:
+      - Moving right (positive X) brings it into the hero
+      - Moving up (negative Y) brings it toward top-left
+      
+      "Slightly right of bottom-left" = pulled right a little
+      "Bottom-left flush" = center at corner (0, 0)
+      "Top-left flush" = moved up the full hero height
+      "Slightly right of top-left" = moved right a bit from there
+    */
+    animation: orbit-ember 10s ease-in-out infinite;
+    animation-delay: -5s;
+  }
+
+  /* ─── Keyframes ───────────────────────────────────────────────────────────────
+
+    GOLD — right edge, top to bottom and back.
+    
+    The element's center starts at the top-right corner (top:-50%, right:-50%).
+    translate() values move it from that anchor:
+    
+      0%   slightly inside top-right:   pull left 8%, down 8%   → (-8vw,  8vh)
+      25%  flush top-right corner:      no translation           → (0,     0)
+      50%  flush bottom-right corner:   move down full height    → (0,     100vh) 
+      75%  slightly left of bottom-right: pull left a bit        → (-8vw,  100vh)
+      100% = 0% to complete the retrace
+    
+    Because 100% === 0%, the browser interpolates smoothly back through
+    75% → 50% → 25% → 0% creating the retrace effect within a single
+    forward-playing animation loop
+
+  ────────────────────────────────────────────────────────────────────────────── */
+
+  @keyframes orbit-gold {
+    0% {
+      transform: translate(-8vw, 8vh);
+    }
+    10% {
+      transform: translate(0vw, 0vh);
+    }
+    20% {
+      transform: translate(0vw, 25vh);
+    }
+    30% {
+      transform: translate(0vw, 50vh);
+    }
+    40% {
+      transform: translate(0vw, 80vh);
+    }
+    50% {
+      transform: translate(-8vw, 80vh);
+    }
+    60% {
+      transform: translate(0vw, 80vh);
+    }
+    70% {
+      transform: translate(0vw, 50vh);
+    }
+    80% {
+      transform: translate(0vw, 25vh);
+    }
+    90% {
+      transform: translate(0vw, 0vh);
+    }
+    100% {
+      transform: translate(-8vw, 8vh);
+    }
+  }
+
+  /* ─────────────────────────────────────────────────────────────────────────────
+
+    EMBER — left edge, bottom to top and back
+    
+    The element's center starts at the bottom-left corner (bottom:-50%, left:-50%).
+    translate() values move it from that anchor:
+    
+      0%   slightly right of bottom-left: pull right 8%, up 0   → (8vw,   0vh)
+      25%  flush bottom-left corner:      no translation         → (0,     0)
+      50%  flush top-left corner:         move up full height    → (0,    -100vh)
+      75%  slightly right of top-left:    pull right a bit       → (8vw,  -100vh)
+      100% = 0% to complete the retrace
+
+  ────────────────────────────────────────────────────────────────────────────── */
+
+  @keyframes orbit-ember {
+    0% {
+      transform: translate(8vw, 0vh);
+    }
+    25% {
+      transform: translate(0vw, 0vh);
+    }
+    50% {
+      transform: translate(0vw, -100vh);
+    }
+    75% {
+      transform: translate(8vw, -100vh);
+    }
+    100% {
+      transform: translate(8vw, 0vh);
+    }
+  }
+
+  /* ─── Reduced motion ──────────────────────────────────────────────────────── */
+
+  @media (prefers-reduced-motion: reduce) {
+    .hero-spotlight {
+      animation: none;
+    }
   }
 }

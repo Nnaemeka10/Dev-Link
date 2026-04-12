@@ -26,7 +26,7 @@ export default function Navbar() {
   };
 
   return (
-    <header className="sticky top-0 z-40 border-b border-text-primary/8 bg-bg-primary/90 backdrop-blur-md">
+    <header className="sticky top-0 z-40 bg-bg-primary/90 backdrop-blur-md">
       <div className="items-center justify-between pad">
         <Link href="/" className="text-2xl flex font-semibold tracking-[-0.02em] text-text-primary items-end gap-1">
           <Image src="/logo.svg" alt="EventVnv" width={30} height={30} />
