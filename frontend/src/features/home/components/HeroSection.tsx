@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
-import { CalendarDays, MapPin, Search, X } from "lucide-react";
+import { MapPin, Search, X } from "lucide-react";
 import mobileHero from "@/assets/home/mobilehero.png";
 import { useState, useRef, startTransition, useTransition} from "react";
 import { useForm, Controller } from "react-hook-form";
@@ -10,7 +10,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 
 import { searchSchema, type SearchFormData } from "../utils/searchSchema";
 import { useLocationSuggestions, useSearch } from "../hooks/useHeroSearch";
-
+import { DateRangePicker } from "./DateRange";
 
 const TABS = [
   { id: "halls", label: "Event Halls" },
@@ -40,7 +40,7 @@ export default function HeroSection() {
     defaultValues: {
       category: "halls",
       location: "",
-      date: undefined,
+      dateRange: undefined,
     },
   });
 
@@ -57,7 +57,8 @@ export default function HeroSection() {
     {
       category: herotoggle,
       location: searchParams.location,
-      date: searchParams.date,
+      dateFrom: searchParams.dateRange?.from?.toISOString(),
+      dateTo:   searchParams.dateRange?.to?.toISOString(),
     },
     searchKey
   );
@@ -249,40 +250,17 @@ export default function HeroSection() {
               </AnimatePresence>
             </div>
  
-            {/* ── "When" date input ─────────────────────────────────────── */}
-            <div className="flex flex-1 items-center gap-3 border-l border-text-primary/10 px-5 py-3">
-              <CalendarDays className="h-5 w-5 shrink-0 text-text-primary/50" />
-              <div className="flex-1">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-text-primary/45">
-                  When
-                </p>
-                <Controller
-                  name="date"
-                  control={control}
-                  render={({ field }) => (
-                    <input
-                      {...field}
-                      type="date"
-                      aria-label="Event date"
-                      aria-invalid={!!errors.date}
-                      aria-describedby={errors.date ? "date-error" : undefined}
-                      // Prevent past dates at the browser level too
-                      min={new Date().toISOString().split("T")[0]}
-                      className="w-full bg-transparent text-sm text-text-primary/55 focus:text-text-primary focus:outline-none not-valid:text-text-primary/55 cursor-pointer"
-                    />
-                  )}
+            <Controller
+              name="dateRange"
+              control={control}
+              render={({ field }) => (
+                <DateRangePicker
+                  value={field.value}
+                  onChange={field.onChange}
+                  error={errors.dateRange?.from?.message ?? errors.dateRange?.message}
                 />
-                {errors.date && (
-                  <p
-                    id="date-error"
-                    role="alert"
-                    className="text-[11px] text-red-500 mt-0.5"
-                  >
-                    {errors.date.message}
-                  </p>
-                )}
-              </div>
-            </div>
+              )}
+            />
  
             {/* ── Search button ─────────────────────────────────────────── */}
             <button

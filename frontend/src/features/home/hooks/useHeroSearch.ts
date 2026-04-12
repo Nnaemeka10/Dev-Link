@@ -55,7 +55,8 @@ export function useLocationSuggestions(rawQuery: string) {
 export interface SearchParams {
   category: "halls" | "services";
   location: string;
-  date?: string; // ISO string, e.g. "2025-12-01"
+  dateFrom?: string;   // ISO string
+  dateTo?: string;     // ISO string
 }
 
 /**
@@ -70,7 +71,8 @@ export function useSearch(params: SearchParams, searchKey: number) {
       const qs = new URLSearchParams({
         category: params.category,
         location: params.location,
-        ...(params.date ? { date: params.date } : {}),
+          ...(params.dateFrom ? { dateFrom: params.dateFrom } : {}),
+          ...(params.dateTo   ? { dateTo:   params.dateTo   } : {}),
       });
       return apiFetch<SearchPayload>(`/api/search?${qs.toString()}`);
     },

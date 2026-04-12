@@ -111,6 +111,501 @@
     background-color: var(--color-bg-primary);
   }
 
+  /* ─── Shell (positioning context for the popover) ─────────────────────────────
+   Sits inside the hero search bar's "When" cell, which is already
+   `position: relative` via the flex layout. We make the shell relative
+   so the popover can absolute-position itself below.
+  ────────────────────────────────────────────────────────────────────────────── */
+
+  .date-picker-shell {
+    position: relative;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ─── Trigger ─────────────────────────────────────────────────────────────────
+    Mirrors the visual style of the "Where" input cell — icon + label + value.
+    No native button chrome; we paint our own focus ring.
+  ────────────────────────────────────────────────────────────────────────────── */
+
+  .date-picker-trigger {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    width: 100%;
+    padding: 0.75rem 1.25rem;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    text-align: left;
+    border-left: 1px solid rgba(26, 31, 60, 0.1);
+    transition: background 0.15s ease;
+    border-radius: 0; /* sits flush in the search bar */
+  }
+
+  .date-picker-trigger:focus-visible {
+    outline: 2px solid var(--color-accent-primary);
+    outline-offset: -2px;
+    border-radius: 0.5rem;
+  }
+
+  .date-picker-trigger--open {
+    background: rgba(26, 31, 60, 0.03);
+  }
+
+  .date-picker-icon {
+    width: 1.25rem;
+    height: 1.25rem;
+    flex-shrink: 0;
+    color: rgba(26, 31, 60, 0.5);
+  }
+
+  .date-picker-trigger-text {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .date-picker-label {
+    font-size: 0.6875rem; /* 11px */
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: rgba(26, 31, 60, 0.45);
+    line-height: 1;
+    margin-bottom: 0.2rem;
+  }
+
+  .date-picker-value {
+    font-size: 0.875rem;
+    color: var(--color-text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .date-picker-value--placeholder {
+    color: rgba(26, 31, 60, 0.55);
+  }
+
+  .date-picker-clear {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.25rem;
+    height: 1.25rem;
+    border-radius: 50%;
+    border: none;
+    background: rgba(26, 31, 60, 0.08);
+    color: rgba(26, 31, 60, 0.5);
+    cursor: pointer;
+    flex-shrink: 0;
+    transition:
+      background 0.15s,
+      color 0.15s;
+  }
+
+  .date-picker-clear:hover {
+    background: rgba(26, 31, 60, 0.14);
+    color: var(--color-text-primary);
+  }
+
+  .date-picker-error {
+    font-size: 0.6875rem;
+    color: #e53e3e;
+    margin: 0.25rem 0 0 1.25rem;
+  }
+
+  /* ─── Popover ─────────────────────────────────────────────────────────────────
+    Absolute-positioned below the trigger. On desktop it spans wide enough
+    for two months. On mobile it collapses to a single month and is centered.
+  ────────────────────────────────────────────────────────────────────────────── */
+
+  .date-picker-popover {
+    position: absolute;
+    top: calc(100% + 0.75rem);
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 100;
+
+    background: white;
+    border-radius: 1.5rem;
+    box-shadow:
+      0 16px 48px rgba(26, 31, 60, 0.18),
+      0 2px 8px rgba(26, 31, 60, 0.08);
+    padding: 1.5rem;
+
+    /* Wide enough for two months on desktop */
+    width: 680px;
+    max-width: calc(100vw - 2rem);
+  }
+
+  /* On small screens: center on viewport, full-width-ish, single month */
+  @media (max-width: 720px) {
+    .date-picker-popover {
+      position: fixed;
+      top: auto;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      transform: none;
+      width: 100%;
+      max-width: 100%;
+      border-radius: 1.5rem 1.5rem 0 0;
+      padding: 1.25rem 1rem 2rem;
+    }
+  }
+
+  /* ─── Hint text ───────────────────────────────────────────────────────────────
+    Instruction line above the calendar — updates as the user picks dates.
+  ────────────────────────────────────────────────────────────────────────────── */
+
+  .date-picker-hint {
+    font-size: 0.8125rem;
+    color: rgba(26, 31, 60, 0.55);
+    text-align: center;
+    margin: 0 0 1rem;
+    line-height: 1.4;
+  }
+
+  /* ─── react-day-picker overrides ──────────────────────────────────────────────
+    We pass custom classNames into DayPicker so every element is ours to style.
+    No third-party stylesheet needed — zero specificity battles.
+  ────────────────────────────────────────────────────────────────────────────── */
+
+  /* Root wrapper */
+  .rdp-root {
+    --rdp-accent: var(--color-accent-primary); /* #d65c3a */
+    --rdp-accent-secondary: var(--color-accent-secondary); /* #c9993a */
+    --rdp-range-bg: rgba(214, 92, 58, 0.08);
+    --rdp-range-bg-hover: rgba(214, 92, 58, 0.05);
+
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    color: var(--color-text-primary);
+  }
+
+  /* Months container: side-by-side on desktop, stacked on mobile */
+  .rdp-months {
+    display: flex;
+    gap: 2rem;
+  }
+
+  @media (max-width: 720px) {
+    .rdp-months {
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    /* Hide second month on mobile */
+    .rdp-month:nth-child(2) {
+      display: none;
+    }
+  }
+
+  .rdp-month {
+    flex: 1;
+    min-width: 0;
+  }
+
+  /* Month header: "April 2026" centered, nav buttons on sides */
+  .rdp-month-caption {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.75rem;
+    padding: 0 0.25rem;
+  }
+
+  .rdp-caption-label {
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: var(--color-text-primary);
+    letter-spacing: -0.01em;
+  }
+
+  /* Nav buttons */
+  .rdp-nav {
+    display: flex;
+    gap: 0.25rem;
+  }
+
+  .rdp-nav-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 50%;
+    border: 1px solid rgba(26, 31, 60, 0.1);
+    background: transparent;
+    color: rgba(26, 31, 60, 0.6);
+    cursor: pointer;
+    transition:
+      background 0.15s,
+      color 0.15s,
+      border-color 0.15s;
+  }
+
+  .rdp-nav-btn:hover {
+    background: rgba(26, 31, 60, 0.05);
+    color: var(--color-text-primary);
+    border-color: rgba(26, 31, 60, 0.2);
+  }
+
+  .rdp-nav-btn:focus-visible {
+    outline: 2px solid var(--rdp-accent);
+    outline-offset: 2px;
+  }
+
+  /* Grid */
+  .rdp-grid {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  /* Weekday headers: Mon Tue Wed... */
+  .rdp-weekdays {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    margin-bottom: 0.25rem;
+  }
+
+  .rdp-weekday {
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: rgba(26, 31, 60, 0.35);
+    text-align: center;
+    padding: 0.25rem 0;
+  }
+
+  /* Week rows */
+  .rdp-week {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+  }
+
+  /* ─── Day cell ────────────────────────────────────────────────────────────────
+    Each day is a cell that spans the full column width. The background color
+    (range highlight) is applied to the cell, while the circle (selected state)
+    is applied to the inner button. This is the Airbnb trick that makes the
+    range span look like a continuous colored bar with rounded pill ends.
+  ────────────────────────────────────────────────────────────────────────────── */
+
+  .rdp-day {
+    position: relative;
+    padding: 0;
+    text-align: center;
+    background: transparent;
+    transition: background 0.1s;
+  }
+
+  /* Range middle: the soft fill between start and end */
+  .rdp-day--range-middle {
+    background: var(--rdp-range-bg);
+  }
+
+  /* Range start: only right half colored so the pill cap is visible */
+  .rdp-day--range-start {
+    background: linear-gradient(to right, transparent 50%, var(--rdp-range-bg) 50%);
+  }
+
+  /* Range end: only left half colored */
+  .rdp-day--range-end {
+    background: linear-gradient(to left, transparent 50%, var(--rdp-range-bg) 50%);
+  }
+
+  /* When start === end (single day selected): no range bar */
+  .rdp-day--range-start.rdp-day--range-end {
+    background: transparent;
+  }
+
+  /* ─── Day button (the clickable circle) ───────────────────────────────────── */
+
+  .rdp-day-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    margin: 0.125rem auto;
+    border-radius: 50%;
+    border: none;
+    background: transparent;
+    color: var(--color-text-primary);
+    font-size: 0.8125rem;
+    font-weight: 400;
+    cursor: pointer;
+    transition:
+      background 0.12s,
+      color 0.12s,
+      transform 0.1s;
+    position: relative;
+    z-index: 1;
+  }
+
+  .rdp-day-btn:hover:not(:disabled) {
+    background: rgba(26, 31, 60, 0.07);
+    transform: scale(1.08);
+  }
+
+  .rdp-day-btn:focus-visible {
+    outline: 2px solid var(--rdp-accent);
+    outline-offset: 1px;
+  }
+
+  /* Today indicator: subtle dot below the number */
+  .rdp-day--today .rdp-day-btn::after {
+    content: "";
+    position: absolute;
+    bottom: 0.2rem;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0.25rem;
+    height: 0.25rem;
+    border-radius: 50%;
+    background: var(--rdp-accent);
+  }
+
+  /* Disabled (past dates) */
+  .rdp-day--disabled .rdp-day-btn {
+    color: rgba(26, 31, 60, 0.2);
+    cursor: not-allowed;
+  }
+
+  .rdp-day--disabled .rdp-day-btn:hover {
+    background: transparent;
+    transform: none;
+  }
+
+  /* Selected: range start and end get the accent circle */
+  .rdp-day--range-start .rdp-day-btn,
+  .rdp-day--range-end .rdp-day-btn,
+  .rdp-day--selected .rdp-day-btn {
+    background: var(--rdp-accent);
+    color: white;
+    font-weight: 600;
+  }
+
+  .rdp-day--range-start .rdp-day-btn:hover,
+  .rdp-day--range-end .rdp-day-btn:hover,
+  .rdp-day--selected .rdp-day-btn:hover {
+    background: var(--rdp-accent);
+    opacity: 0.9;
+  }
+
+  /* ─── Footer ─────────────────────────────────────────────────────────────────
+    Clear + Apply buttons at the bottom of the popover — Airbnb pattern.
+  ────────────────────────────────────────────────────────────────────────────── */
+
+  .date-picker-footer {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.75rem;
+    margin-top: 1.25rem;
+    padding-top: 1rem;
+    border-top: 1px solid rgba(26, 31, 60, 0.08);
+  }
+
+  .date-picker-footer-clear {
+    padding: 0.5rem 1rem;
+    border-radius: 0.625rem;
+    border: 1px solid rgba(26, 31, 60, 0.15);
+    background: transparent;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--color-text-primary);
+    cursor: pointer;
+    transition:
+      background 0.15s,
+      border-color 0.15s;
+  }
+
+  .date-picker-footer-clear:hover {
+    background: rgba(26, 31, 60, 0.05);
+    border-color: rgba(26, 31, 60, 0.25);
+  }
+
+  .date-picker-footer-apply {
+    padding: 0.5rem 1.25rem;
+    border-radius: 0.625rem;
+    border: none;
+    background: var(--color-accent-primary);
+    color: white;
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition:
+      opacity 0.15s,
+      transform 0.1s;
+  }
+
+  .date-picker-footer-apply:hover:not(:disabled) {
+    opacity: 0.88;
+    transform: scale(1.02);
+  }
+
+  .date-picker-footer-apply:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  /* ─── Dark mode ───────────────────────────────────────────────────────────────
+    Respects your existing [data-theme="dark"] setup.
+  ────────────────────────────────────────────────────────────────────────────── */
+
+  [data-theme="dark"] .date-picker-popover {
+    background: var(--color-bg-secondary);
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.4);
+  }
+
+  [data-theme="dark"] .date-picker-trigger {
+    border-left-color: rgba(245, 240, 230, 0.1);
+  }
+
+  [data-theme="dark"] .rdp-root {
+    color: var(--color-text-primary);
+  }
+
+  [data-theme="dark"] .rdp-day-btn {
+    color: var(--color-text-primary);
+  }
+
+  [data-theme="dark"] .rdp-day-btn:hover:not(:disabled) {
+    background: rgba(245, 240, 230, 0.08);
+  }
+
+  [data-theme="dark"] .rdp-day--disabled .rdp-day-btn {
+    color: rgba(245, 240, 230, 0.2);
+  }
+
+  [data-theme="dark"] .rdp-nav-btn {
+    border-color: rgba(245, 240, 230, 0.1);
+    color: rgba(245, 240, 230, 0.6);
+  }
+
+  [data-theme="dark"] .rdp-nav-btn:hover {
+    background: rgba(245, 240, 230, 0.06);
+  }
+
+  [data-theme="dark"] .date-picker-footer {
+    border-top-color: rgba(245, 240, 230, 0.08);
+  }
+
+  [data-theme="dark"] .date-picker-footer-clear {
+    border-color: rgba(245, 240, 230, 0.15);
+    color: var(--color-text-primary);
+  }
+
+  [data-theme="dark"] .date-picker-footer-clear:hover {
+    background: rgba(245, 240, 230, 0.05);
+  }
+
   /* ─── Shared spotlight base ───────────────────────────────────────────────────
     Circles are ~3× the previous size. Center sits on or just outside the hero
     boundary so overflow: hidden clips them into a crescent at the edges —
@@ -295,25 +790,43 @@
       25%  flush bottom-left corner:      no translation         → (0,     0)
       50%  flush top-left corner:         move up full height    → (0,    -100vh)
       75%  slightly right of top-left:    pull right a bit       → (8vw,  -100vh)
-      100% = 0% to complete the retrace
+      100% = 0% to complete the retrace.
 
   ────────────────────────────────────────────────────────────────────────────── */
 
   @keyframes orbit-ember {
     0% {
-      transform: translate(8vw, -8vh);
+      transform: translate(8vw, -80vh);
     }
-    25% {
-      transform: translate(0vw, 0vh);
+    10% {
+      transform: translate(0vw, -80vh);
+    }
+    20% {
+      transform: translate(0vw, -50vh);
+    }
+    30% {
+      transform: translate(0vw, -25vh);
+    }
+    40% {
+      transform: translate(0vw, -8vh);
     }
     50% {
-      transform: translate(0vw, -100vh);
+      transform: translate(8vw, -8vh);
     }
-    75% {
-      transform: translate(8vw, -100vh);
+    60% {
+      transform: translate(0vw, -8vh);
+    }
+    70% {
+      transform: translate(0vw, -25vh);
+    }
+    80% {
+      transform: translate(0vw, -50vh);
+    }
+    90% {
+      transform: translate(0vw, -80vh);
     }
     100% {
-      transform: translate(8vw, -8vh);
+      transform: translate(8vw, -80vh);
     }
   }
 
