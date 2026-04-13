@@ -4,8 +4,8 @@ import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { MapPin, Search, X } from "lucide-react";
 import mobileHero from "@/assets/home/mobilehero.png";
-import { useState, useRef, startTransition, useTransition} from "react";
-import { useForm, Controller } from "react-hook-form";
+import { useRef, useState, useTransition } from "react";
+import { Controller, useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
 import { searchSchema, type SearchFormData } from "../utils/searchSchema";
@@ -17,11 +17,8 @@ const TABS = [
   { id: "services", label: "Services" },
 ] as const;
 
-
-
-
 export default function HeroSection() {
-  const [herotoggle, setHerotoggle] = useState<"halls" | "services">("halls"); 
+  const [herotoggle, setHerotoggle] = useState<"halls" | "services">("halls");
 
   //search submit gate - incrementing tells react query to re-run eve if params didnt change
   const [searchKey, setSearchKey] = useState(0);
@@ -35,7 +32,7 @@ export default function HeroSection() {
   const [isPending, startTransition] = useTransition();
 
   //react hook form for validation and state management
-  const { control, handleSubmit, setValue, watch, formState: { errors }, } = useForm<SearchFormData>({
+  const { control, handleSubmit, setValue, formState: { errors }, } = useForm<SearchFormData>({
     resolver: zodResolver(searchSchema),
     defaultValues: {
       category: "halls",
@@ -44,19 +41,24 @@ export default function HeroSection() {
     },
   });
 
-  //keep categort insync with toggle state
-  const currentLocation = watch("location");
-
   //location autocomplete
   const { data: suggestions = [] } = useLocationSuggestions(locationRaw);
 
   //search query - fires only after submit
-  const searchParams = watch();
+  const searchParams = useWatch({
+    control,
+    defaultValue: {
+      category: "halls",
+      location: "",
+      dateRange: undefined,
+    },
+  });
+  const searchLocation = searchParams.location ?? "";
 
-  const { data: searchResults, isFetching: isSearching } = useSearch(
+  const { isFetching: isSearching } = useSearch(
     {
       category: herotoggle,
-      location: searchParams.location,
+      location: searchLocation,
       dateFrom: searchParams.dateRange?.from?.toISOString(),
       dateTo:   searchParams.dateRange?.to?.toISOString(),
     },
@@ -81,7 +83,7 @@ export default function HeroSection() {
     setShowSuggestions(false);
   }
 
-  function onSubmit(_data: SearchFormData) {
+  function onSubmit() {
     // Wrap the state update that triggers results rendering in startTransition
     // so the input stays snappy while React reconciles the results tree.
     startTransition(() => {
@@ -91,9 +93,11 @@ export default function HeroSection() {
 
   return (
     <section className="home-hero-shell border-b border-text-primary/5">
-      {/* ── Animated spotlights — rendered first so they sit behind all content ── */}
-      <div aria-hidden="true" className="hero-spotlight hero-spotlight--gold" />
-      <div aria-hidden="true" className="hero-spotlight hero-spotlight--ember" />
+      {/* ── Animated spotlights — isolated so hero art can clip without clipping popovers ── */}
+      <div aria-hidden="true" className="hero-spotlight-layer">
+        <div className="hero-spotlight hero-spotlight--gold" />
+        <div className="hero-spotlight hero-spotlight--ember" />
+      </div>
 
       <div className="z-10 relative px-4 pb-8 pt-8 md:px-8 md:pb-40 md:pt-40">
 
@@ -292,6 +296,7 @@ export default function HeroSection() {
               src={mobileHero}
               alt="eventvnv mobile planner preview"
               className="h-auto w-full rounded-[28px]"
+              style={{ height: "auto" }}
               priority
             />
           </div>
