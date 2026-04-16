@@ -1,7 +1,7 @@
 import Link from "next/link";
 import Card from "@/components/ui/Card";
 import Button from "@/components/ui/Button";
-import type { Listing } from "../listings.types";
+import type { Listing } from "../../home/types/listings.types";
 
 interface ListingCardProps {
   listing: Listing;

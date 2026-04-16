@@ -16,7 +16,7 @@ export interface SearchResult {
   id: string;
   name: string;
   category: "halls" | "services";
-  location: string;
+  location?: string;
   date?: string;
 }
 
@@ -54,7 +54,7 @@ export function useLocationSuggestions(rawQuery: string) {
 
 export interface SearchParams {
   category: "halls" | "services";
-  location: string;
+  location?: string;
   dateFrom?: string;   // ISO string
   dateTo?: string;     // ISO string
 }
@@ -68,15 +68,25 @@ export function useSearch(params: SearchParams, searchKey: number) {
   return useQuery<SearchPayload>({
     queryKey: ["search", params, searchKey],
     queryFn: () => {
-      const qs = new URLSearchParams({
-        category: params.category,
-        location: params.location,
-          ...(params.dateFrom ? { dateFrom: params.dateFrom } : {}),
-          ...(params.dateTo   ? { dateTo:   params.dateTo   } : {}),
-      });
+      const qs = new URLSearchParams();
+
+      qs.set("category", params.category);
+
+      if (params.location) {
+        qs.set("location", params.location);
+      }
+
+      if (params.dateFrom) {
+        qs.set("dateFrom", params.dateFrom);
+      }
+
+      if (params.dateTo) {
+        qs.set("dateTo", params.dateTo);
+      }
+
       return apiFetch<SearchPayload>(`/api/search?${qs.toString()}`);
     },
-    enabled: searchKey > 0 && params.location.trim().length > 0,
+    enabled: searchKey > 0,
     staleTime: 1000 * 30, // search results go stale after 30s
     gcTime: 1000 * 60 * 5,
   });

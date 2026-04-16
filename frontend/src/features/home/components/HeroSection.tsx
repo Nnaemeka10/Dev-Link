@@ -4,13 +4,15 @@ import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { MapPin, Search, X } from "lucide-react";
 import mobileHero from "@/assets/home/mobilehero.png";
+import { useRouter } from "next/navigation";
 import { useRef, useState, useTransition } from "react";
-import { Controller, useForm, useWatch } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
 import { searchSchema, type SearchFormData } from "../utils/searchSchema";
-import { useLocationSuggestions, useSearch } from "../hooks/useHeroSearch";
+import { useLocationSuggestions } from "../hooks/useHeroSearch";
 import { DateRangePicker } from "./DateRange";
+import { buildListingsHref } from "@/features/listings/searchParams";
 
 const TABS = [
   { id: "halls", label: "Event Halls" },
@@ -18,10 +20,8 @@ const TABS = [
 ] as const;
 
 export default function HeroSection() {
+  const router = useRouter();
   const [herotoggle, setHerotoggle] = useState<"halls" | "services">("halls");
-
-  //search submit gate - incrementing tells react query to re-run eve if params didnt change
-  const [searchKey, setSearchKey] = useState(0);
 
   //location suggestion dropdown
   const [locationRaw, setLocationRaw] = useState("");
@@ -44,27 +44,6 @@ export default function HeroSection() {
   //location autocomplete
   const { data: suggestions = [] } = useLocationSuggestions(locationRaw);
 
-  //search query - fires only after submit
-  const searchParams = useWatch({
-    control,
-    defaultValue: {
-      category: "halls",
-      location: "",
-      dateRange: undefined,
-    },
-  });
-  const searchLocation = searchParams.location ?? "";
-
-  const { isFetching: isSearching } = useSearch(
-    {
-      category: herotoggle,
-      location: searchLocation,
-      dateFrom: searchParams.dateRange?.from?.toISOString(),
-      dateTo:   searchParams.dateRange?.to?.toISOString(),
-    },
-    searchKey
-  );
-
   //handlers
   function handleTabChange(id: "halls" | "services") {
     setHerotoggle(id);
@@ -83,11 +62,16 @@ export default function HeroSection() {
     setShowSuggestions(false);
   }
 
-  function onSubmit() {
-    // Wrap the state update that triggers results rendering in startTransition
-    // so the input stays snappy while React reconciles the results tree.
+  function onSubmit(data: SearchFormData) {
     startTransition(() => {
-      setSearchKey((prev) => prev + 1);
+      router.push(
+        buildListingsHref({
+          category: data.category,
+          location: data.location || undefined,
+          dateFrom: data.dateRange?.from?.toISOString(),
+          dateTo: data.dateRange?.to?.toISOString(),
+        })
+      );
     });
   }
 
@@ -269,11 +253,11 @@ export default function HeroSection() {
             {/* ── Search button ─────────────────────────────────────────── */}
             <button
               type="submit"
-              disabled={isSearching || isPending}
+              disabled={isPending}
               aria-label="Search events"
               className="inline-flex items-center justify-center gap-2 rounded-4xl bg-accent-primary px-6 py-3 text-base font-semibold text-white transition-all duration-200 hover:scale-[1.01] disabled:opacity-70 disabled:cursor-not-allowed disabled:scale-100"
             >
-              {isSearching || isPending ? (
+              {isPending ? (
                 // Minimal inline spinner — no extra dependency needed
                 <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
               ) : (

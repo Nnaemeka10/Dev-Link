@@ -1,44 +1,46 @@
+import { Suspense } from "react";
 import type { Metadata } from "next";
-import ListingCard from "@/features/listings/components/ListingCard";
-import { getListings } from "@/features/listings/listings.api";
+import ListingsResults from "@/features/listings/components/ListingsResults";
+import ListingsSkeleton from "@/features/listings/components/ListingsSkeleton";
+import {
+  getListingCategoryLabel,
+  type ListingSearchParams,
+} from "@/features/listings/searchParams";
 
 export const metadata: Metadata = {
   title: "Listings | eventvnv",
   description: "Explore curated halls and services for unforgettable events.",
 };
 
-export default async function ListingsPage() {
-  const listings = await getListings();
+interface ListingsPageProps {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}
 
-  const halls = listings.filter((listing) => listing.category === "hall");
-  const services = listings.filter((listing) => listing.category === "service");
+function buildMetadataDescription(search: ListingSearchParams): string {
+  const heading = getListingCategoryLabel(search.category).toLowerCase();
 
+  if (search.location) {
+    return `Explore ${heading} available in ${search.location} on eventvnv.`;
+  }
+
+  return `Explore curated ${heading} for unforgettable events on eventvnv.`;
+}
+
+// export async function generateMetadata({ searchParams }: ListingsPageProps): Promise<Metadata> {
+//   const resolvedSearchParams = await searchParams;
+//   const search = normalizeListingSearchParams(resolvedSearchParams);
+//   const heading = getListingCategoryLabel(search.category);
+
+//   return {
+//     title: search.location ? `${heading} in ${search.location} | eventvnv` : `${heading} | eventvnv`,
+//     description: buildMetadataDescription(search),
+//   };
+// }
+
+export default function ListingsPage({ searchParams }: ListingsPageProps) {
   return (
-    <main className="mx-auto w-full max-w-6xl space-y-8 px-4 py-8 md:px-6 md:py-12">
-      <section>
-        <h1 className="text-[32px] font-semibold text-text-primary">Explore listings</h1>
-        <p className="mt-2 text-base text-text-primary/80">
-          Discover halls and services independently so planning stays clear and structured.
-        </p>
-      </section>
-
-      <section className="space-y-4">
-        <h2 className="text-2xl font-semibold text-text-primary">Halls</h2>
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {halls.map((listing) => (
-            <ListingCard key={listing.id} listing={listing} />
-          ))}
-        </div>
-      </section>
-
-      <section className="space-y-4">
-        <h2 className="text-2xl font-semibold text-text-primary">Services</h2>
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {services.map((listing) => (
-            <ListingCard key={listing.id} listing={listing} />
-          ))}
-        </div>
-      </section>
-    </main>
+    <Suspense fallback={<ListingsSkeleton />}>
+      <ListingsResults searchParams={searchParams} />
+    </Suspense>
   );
 }

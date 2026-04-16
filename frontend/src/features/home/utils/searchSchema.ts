@@ -26,8 +26,8 @@ export const searchSchema = z.object({
 
   location: z
     .string()
-    .min(2, "Enter at least 2 characters")
-    .transform((v) => v.replace(/[<>"'`]/g, "").trim()),
+    .transform((v) => v.replace(/[<>"'`]/g, "").trim())
+    .refine((v) => v.length === 0 || v.length >= 2, "Enter at least 2 characters"),
 
   // undefined = no date filter applied
   dateRange: dateRangeSchema.optional(),
