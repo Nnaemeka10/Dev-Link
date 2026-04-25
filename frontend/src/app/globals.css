@@ -1,8 +1,10 @@
 @import "tailwindcss";
 
+/* Shared theme tokens */
 @theme {
   --color-bg-primary: #f9f6ef;
   --color-bg-secondary: #f5e6c8;
+  --color-bg-tertiary: #f6f3ec;
   --color-text-primary: #1a1f3c;
   --color-accent-primary: #d65c3a;
   --color-accent-secondary: #c9993a;
@@ -23,8 +25,42 @@
   --shadow-card: 0 1px 3px rgba(26, 31, 60, 0.08);
   --shadow-card-hover: 0 8px 20px rgba(26, 31, 60, 0.12);
   --shadow-modal: 0 14px 40px rgba(26, 31, 60, 0.24);
+
+  --animate-fade-in: fade-in 360ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  --animate-fade-up: fade-up 420ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  --animate-marquee: marquee 18s linear infinite;
+
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  @keyframes fade-up {
+    from {
+      opacity: 0;
+      transform: translateY(18px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes marquee {
+    0% {
+      transform: translateX(0%);
+    }
+    100% {
+      transform: translateX(-50%);
+    }
+  }
 }
 
+/* Shared base */
 @layer base {
   :root {
     color-scheme: light;
@@ -89,6 +125,7 @@
   }
 }
 
+/* Shared components */
 @layer components {
   .pad {
     @apply flex w-full px-4 py-4 md:px-8 lg:px-12;
@@ -96,6 +133,7 @@
 }
 
 @layer utilities {
+  /* Shared utilities */
   .no-scrollbar {
     -ms-overflow-style: none;
     scrollbar-width: none;
@@ -105,6 +143,7 @@
     display: none;
   }
 
+  /* Home feature */
   .home-hero-shell {
     position: relative;
     overflow-x: hidden;
@@ -121,6 +160,7 @@
     z-index: 0;
   }
 
+  /* Home feature: date picker */
   /* ─── Shell (positioning context for the popover) ─────────────────────────────
    Sits inside the hero search bar's "When" cell, which is already
    `position: relative` via the flex layout. We make the shell relative
@@ -245,7 +285,7 @@
     position: fixed;
     left: 30%;
     transform: translateX(-50%);
-    z-index: 1000;
+    z-index: 1200;
 
     background: rgba(255, 255, 255, 0.88);
     border: 1px solid rgba(26, 31, 60, 0.08);
@@ -271,7 +311,7 @@
   .date-picker-scrim {
     position: fixed;
     inset: 0;
-    z-index: 900;
+    z-index: 1100;
     border: 0;
     background: rgba(26, 31, 60, 0.14);
     cursor: default;
@@ -290,7 +330,7 @@
     .date-picker-popover {
       position: fixed;
       top: auto;
-      bottom: 0;
+      bottom: calc(env(safe-area-inset-bottom, 0px) + 6.5rem);
       left: 0;
       right: 0;
       transform: none;
@@ -298,6 +338,8 @@
       max-width: 100%;
       border-radius: 1.5rem 1.5rem 0 0;
       padding: 1.25rem 1rem 2rem;
+      max-height: min(78vh, 42rem);
+      overflow-y: auto;
     }
   }
 
@@ -653,6 +695,7 @@
     background: rgba(245, 240, 230, 0.05);
   }
 
+  /* Home feature: hero spotlights */
   /* ─── Shared spotlight base ───────────────────────────────────────────────────
     Circles are ~3× the previous size. Center sits on or just outside the hero
     boundary so overflow: hidden clips them into a crescent at the edges —

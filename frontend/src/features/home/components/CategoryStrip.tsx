@@ -1,6 +1,5 @@
 "use client";
 
-import { motion } from "framer-motion";
 import {
   Camera,
   Clapperboard,
@@ -10,12 +9,14 @@ import {
   Sparkles,
   Users,
   WandSparkles,
+  CarIcon,
+  House
 } from "lucide-react";
 
 interface CategoryItem {
   id: string;
   label: string;
-  icon: "drum" | "mic" | "camera" | "video" | "planner" | "makeup" | "ushers" | "security";
+  icon: "drum" | "mic" | "camera" | "video" | "planner" | "makeup" | "ushers" | "security" | "car-rental" | "hall-decorator";
 }
 
 interface CategoryResponse {
@@ -32,6 +33,8 @@ const CATEGORY_RESPONSE: CategoryResponse = {
     { id: "makeup", label: "Make-up Artist", icon: "makeup" },
     { id: "ushers", label: "Ushers", icon: "ushers" },
     { id: "security", label: "Security", icon: "security" },
+    { id: "car-rental", label: "Car Rental", icon: "car-rental" },
+    { id: "hall-decorator", label: "Hall Decorator", icon: "hall-decorator" },
   ],
 };
 
@@ -51,6 +54,10 @@ function iconByType(type: CategoryItem["icon"]) {
       return WandSparkles;
     case "ushers":
       return Users;
+    case "car-rental":
+      return CarIcon;
+    case "hall-decorator":
+      return House;
     default:
       return ShieldCheck;
   }
@@ -58,27 +65,24 @@ function iconByType(type: CategoryItem["icon"]) {
 
 export default function CategoryStrip() {
   return (
-    <section className="border-b border-text-primary/6 px-4 py-8 md:px-8 md:py-10">
+    <section className="px-4 py-8 md:px-8 md:py-10 bg-bg-primary">
       <div className="mx-auto max-w-7xl">
-        <div className="no-scrollbar flex gap-4 overflow-x-auto pb-2 md:grid md:grid-cols-8 md:gap-6 md:overflow-visible md:pb-0">
+        <div className="no-scrollbar flex gap-4 overflow-x-auto pb-2 md:grid md:grid-cols-10 md:gap-4 md:overflow-visible md:pb-0">
           {CATEGORY_RESPONSE.data.map((item, index) => {
             const Icon = iconByType(item.icon);
             return (
-              <motion.article
+              <article
                 key={item.id}
-                initial={{ opacity: 0, y: 18 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, amount: 0.2 }}
-                transition={{ duration: 0.34, delay: index * 0.04 }}
-                className="flex min-w-[84px] flex-col items-center gap-2 md:min-w-0"
+                className="flex min-w-21 flex-col items-center gap-2 md:min-w-0 motion-safe:animate-[var(--animate-fade-up)]"
+                style={{ animationDelay: `${index * 40}ms` }}
               >
                 <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white text-text-primary shadow-sm md:h-14 md:w-14">
                   <Icon className="h-5 w-5" />
                 </div>
-                <p className="text-center text-[11px] font-semibold uppercase tracking-[0.06em] text-text-primary/72 md:text-xs md:normal-case md:tracking-normal">
+                <p className="text-[11px] text-center font-semibold uppercase tracking-[0.05em] text-text-primary/72 md:text-xs md:normal-case md:tracking-normal">
                   {item.label}
                 </p>
-              </motion.article>
+              </article>
             );
           })}
         </div>

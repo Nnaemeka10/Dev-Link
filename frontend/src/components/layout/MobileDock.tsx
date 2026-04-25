@@ -1,6 +1,6 @@
 "use client";
 
-import { CalendarDays, Compass, Heart, Plus, UserRound } from "lucide-react";
+import { CalendarDays, Compass, Heart, UserRound } from "lucide-react";
 
 interface MobileDockItem {
   id: string;
@@ -31,25 +31,18 @@ function dockIcon(icon: MobileDockItem["icon"]) {
 
 export default function MobileDock() {
   return (
-    <div className="fixed inset-x-0 bottom-0 z-30 border-t border-text-primary/10 bg-white/98 px-4 pb-4 pt-2 md:hidden">
-      <div className="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2">
-        <button
-          type="button"
-          className="flex h-14 w-14 items-center justify-center rounded-full bg-accent-primary text-white shadow-[0_10px_24px_rgba(214,92,58,0.36)]"
-        >
-          <Plus className="h-5 w-5" />
-        </button>
-      </div>
-
-      <div className="mx-auto mt-4 grid max-w-md grid-cols-4 gap-2">
+    <div className="fixed inset-x-0 bottom-0 z-30 px-4 pb-4 md:hidden">
+      <div className="mx-auto grid max-w-md grid-cols-4 gap-2 rounded-[1.75rem] border border-[#F1E5D5] bg-white/96 p-2 shadow-[0_18px_34px_rgba(26,31,60,0.08)] backdrop-blur">
         {MOBILE_DOCK_RESPONSE.items.map((item) => {
           const Icon = dockIcon(item.icon);
           return (
             <button
               key={item.id}
               type="button"
-              className={`flex flex-col items-center justify-center gap-1 py-2 text-[10px] font-semibold uppercase tracking-[0.06em] ${
-                item.selected ? "text-text-primary" : "text-text-primary/45"
+              className={`flex flex-col items-center justify-center gap-1 rounded-[1.15rem] py-3 text-[10px] font-semibold uppercase tracking-[0.08em] ${
+                item.selected
+                  ? "bg-[#FFF1DE] text-[#5A2A12] shadow-[inset_0_1px_0_rgba(255,255,255,0.6)]"
+                  : "text-text-primary/45"
               }`}
             >
               <Icon className="h-4 w-4" />

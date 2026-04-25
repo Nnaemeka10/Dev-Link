@@ -1,7 +1,6 @@
 "use client";
 
 import Image, { type StaticImageData } from "next/image";
-import { motion } from "framer-motion";
 import { Star } from "lucide-react";
 import serviceA from "@/assets/home/curatedeventsa.png";
 import serviceB from "@/assets/home/curatedservicesb.png";
@@ -75,10 +74,10 @@ export default function CuratedServicesSection() {
       <div className="mx-auto max-w-7xl">
         <div className="mb-6 flex items-end justify-between md:mb-7">
           <div>
-            <h2 className="text-[34px] font-semibold leading-tight text-text-primary md:text-[44px]">
+            <h2 className="text-heading-m font-semibold leading-tight text-text-primary md:text-[44px]">
               {CURATED_SERVICES_RESPONSE.heading}
             </h2>
-            <p className="mt-2 text-sm text-text-primary/62 md:text-base">
+            <p className="mt-2 text-small text-text-primary/62 md:text-base">
               {CURATED_SERVICES_RESPONSE.subheading}
             </p>
           </div>
@@ -89,33 +88,30 @@ export default function CuratedServicesSection() {
 
         <div className="no-scrollbar flex gap-4 overflow-x-auto pb-2 md:grid md:grid-cols-4 md:gap-4 md:overflow-visible">
           {CURATED_SERVICES_RESPONSE.data.map((service, index) => (
-            <motion.article
+            <article
               key={service.id}
-              initial={{ opacity: 0, y: 18 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, amount: 0.15 }}
-              transition={{ duration: 0.35, delay: index * 0.05 }}
-              className="min-w-[270px] md:min-w-0"
+              className="min-w-[270px] md:min-w-0 motion-safe:animate-[var(--animate-fade-up)]"
+              style={{ animationDelay: `${index * 50}ms` }}
             >
               <div className="relative overflow-hidden rounded-2xl">
                 <Image src={service.image} alt={service.name} className="h-[250px] w-full object-cover" />
                 <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/65 to-transparent p-3 text-white">
-                  <p className="text-[10px] uppercase tracking-[0.1em] text-white/75">{service.role}</p>
-                  <h3 className="text-[30px] font-semibold leading-none">{service.name}</h3>
+                  <p className="text-small uppercase tracking-[0.1em] text-white/75 md:text-[10px]">{service.role}</p>
+                  <h3 className="text-heading-m font-semibold leading-none md:text-[30px]">{service.name}</h3>
                 </div>
               </div>
 
               <div className="mt-3 flex items-center justify-between">
-                <p className="text-[24px] font-semibold text-text-primary">
+                <p className="text-heading-m font-semibold text-text-primary md:text-[24px]">
                   {service.price}
-                  <span className="ml-1 text-sm font-normal text-text-primary/60">/{service.unit}</span>
+                  <span className="ml-1 text-small font-normal text-text-primary/60 md:text-sm">/{service.unit}</span>
                 </p>
-                <p className="inline-flex items-center gap-1 rounded-full bg-[#F6E9BE] px-2 py-1 text-xs font-semibold text-[#7E6000]">
+                <p className="inline-flex items-center gap-1 rounded-full bg-[#F6E9BE] px-2 py-1 text-small font-semibold text-[#7E6000] md:text-xs">
                   <Star className="h-3 w-3 fill-current" />
                   {service.rating.toFixed(1)}
                 </p>
               </div>
-            </motion.article>
+            </article>
           ))}
         </div>
       </div>

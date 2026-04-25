@@ -27,7 +27,7 @@ export default function Navbar() {
 
   return (
     <header className="sticky top-0 z-40 bg-bg-primary/90 backdrop-blur-md">
-      <div className="items-center justify-between pad">
+      <div className="hidden items-center justify-between pad md:flex">
         <Link href="/" className="text-2xl flex font-semibold tracking-[-0.02em] text-text-primary items-end gap-1">
           <Image src="/logo.svg" alt="EventVnv" width={30} height={30} />
           <p className="font-semibold logo translate-y-1.5">EventVnV </p>
@@ -66,6 +66,30 @@ export default function Navbar() {
             </Link>
           )}
         </div>
+      </div>
+
+      <div className="flex items-center justify-between gap-3 px-5 py-5 md:hidden">
+        <Link href="/" className="flex min-w-0 flex-1 items-end gap-1 text-text-primary">
+          <Image src="/logo.svg" alt="EventVnv" width={26} height={26} />
+          <span className="logo translate-y-1 truncate font-semibold">EventVnV</span>
+        </Link>
+
+        {isAuthenticated ? (
+          <button
+            type="button"
+            onClick={handleLogout}
+            className="inline-flex min-w-[4.25rem] items-center justify-center rounded-full bg-accent-primary px-4 py-2 text-xs font-semibold text-white shadow-[0_8px_18px_rgba(214,92,58,0.22)]"
+          >
+            Logout
+          </button>
+        ) : (
+          <Link
+            href="/login"
+            className="inline-flex min-w-[4.25rem] items-center justify-center rounded-full bg-accent-primary px-4 py-2 text-xs font-semibold text-white shadow-[0_8px_18px_rgba(214,92,58,0.22)]"
+          >
+            Login
+          </Link>
+        )}
       </div>
     </header>
   );
