@@ -21,6 +21,7 @@ interface ServicesResponse {
   heading: string;
   subheading: string;
   ctaLabel: string;
+  ctaLink: string;
   data: ServiceItem[];
 }
 
@@ -28,6 +29,7 @@ const CURATED_SERVICES_RESPONSE: ServicesResponse = {
   heading: "Curated Event Services",
   subheading: "Top-rated professionals for your special day.",
   ctaLabel: "Explore all services",
+  ctaLink: "services",
   data: [
     {
       id: "service-1",
@@ -74,7 +76,7 @@ export default function CuratedServicesSection() {
       <div className="mx-auto max-w-7xl">
         <div className="mb-6 flex items-end justify-between md:mb-7">
           <div>
-            <h2 className="text-heading-m font-semibold leading-tight text-text-primary md:text-[44px]">
+            <h2 className="text-heading-m font-semibold leading-tight text-text-primary md:text-4xl">
               {CURATED_SERVICES_RESPONSE.heading}
             </h2>
             <p className="mt-2 text-small text-text-primary/62 md:text-base">
@@ -90,19 +92,19 @@ export default function CuratedServicesSection() {
           {CURATED_SERVICES_RESPONSE.data.map((service, index) => (
             <article
               key={service.id}
-              className="min-w-[270px] md:min-w-0 motion-safe:animate-[var(--animate-fade-up)]"
+              className="min-w-67.5 md:min-w-0 motion-safe:animate-fade-up"
               style={{ animationDelay: `${index * 50}ms` }}
             >
               <div className="relative overflow-hidden rounded-2xl">
-                <Image src={service.image} alt={service.name} className="h-[250px] w-full object-cover" />
-                <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/65 to-transparent p-3 text-white">
-                  <p className="text-small uppercase tracking-[0.1em] text-white/75 md:text-[10px]">{service.role}</p>
-                  <h3 className="text-heading-m font-semibold leading-none md:text-[30px]">{service.name}</h3>
+                <Image src={service.image} alt={service.name} className="h-62.5 w-full object-cover" />
+                <div className="absolute inset-x-0 bottom-0 bg-linear-to-t from-black/65 to-transparent p-3 text-white">
+                  <p className="uppercase tracking-widest text-white/75 md:text-[0.625rem] font-bold">{service.role}</p>
+                  <h3 className="text-heading-m font-semibold leading-none md:text-xl">{service.name}</h3>
                 </div>
               </div>
 
               <div className="mt-3 flex items-center justify-between">
-                <p className="text-heading-m font-semibold text-text-primary md:text-[24px]">
+                <p className="text-heading-m font-semibold text-text-primary md:text-base">
                   {service.price}
                   <span className="ml-1 text-small font-normal text-text-primary/60 md:text-sm">/{service.unit}</span>
                 </p>

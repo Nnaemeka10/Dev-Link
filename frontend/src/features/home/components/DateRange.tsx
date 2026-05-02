@@ -6,6 +6,7 @@ import { DayPicker, type DateRange as DayPickerRange } from "react-day-picker";
 import { motion, AnimatePresence } from "framer-motion";
 import { CalendarDays, ChevronLeft, ChevronRight, X } from "lucide-react";
 import type { DateRange } from "../utils/searchSchema"; // adjust path
+import { useMediaQuery } from "@/hooks/useMediaQuery";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -36,6 +37,7 @@ export function DateRangePicker({ value, onChange, error }: DateRangePickerProps
   const containerRef = useRef<HTMLDivElement>(null);
   const popoverRef = useRef<HTMLDivElement>(null);
   const portalTarget = typeof document !== "undefined" ? document.body : null;
+  const isMobile = useMediaQuery("(max-width: 720px)");
 
   function openPicker() {
     setDraftRange(value ? { from: value.from, to: value.to } : undefined);
@@ -218,7 +220,7 @@ export function DateRangePicker({ value, onChange, error }: DateRangePickerProps
                       mode="range"
                       selected={draftRange}
                       onSelect={handleSelect}
-                      numberOfMonths={2}
+                      numberOfMonths={isMobile ? 1 : 2}
                       disabled={{ before: today }}
                       showOutsideDays={false}
                       classNames={{

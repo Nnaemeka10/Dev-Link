@@ -325,21 +325,35 @@
     }
   }
 
-  /* On small screens: center on viewport, full-width-ish, single month */
+  /* On small screens: full-screen picker with sticky footer */
   @media (max-width: 720px) {
+    .date-picker-scrim {
+      z-index: 1999;
+    }
+
     .date-picker-popover {
       position: fixed;
-      top: auto;
-      bottom: calc(env(safe-area-inset-bottom, 0px) + 6.5rem);
-      left: 0;
-      right: 0;
+      inset: 0;
       transform: none;
       width: 100%;
       max-width: 100%;
-      border-radius: 1.5rem 1.5rem 0 0;
-      padding: 1.25rem 1rem 2rem;
-      max-height: min(78vh, 42rem);
+      border-radius: 0;
+      padding: 1.5rem 1.25rem 6rem;
+      max-height: 100vh;
       overflow-y: auto;
+      z-index: 2000;
+    }
+
+    .rdp-day-btn {
+      width: 2.75rem;
+      height: 2.75rem;
+    }
+
+    .date-picker-footer {
+      position: sticky;
+      bottom: 0;
+      background: white;
+      padding: 1rem 0 env(safe-area-inset-bottom, 0px);
     }
   }
 
