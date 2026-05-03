@@ -29,7 +29,7 @@ export default function Homepage() {
         <PopularHallsSection />
         <CuratedServicesSection />
         {/* for future */}
-        {/* <TrendingSection /> */}
+        <TrendingSection />
         <HomeFooter />
         <MobileDock />
 

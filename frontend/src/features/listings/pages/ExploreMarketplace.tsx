@@ -3,6 +3,7 @@
 import { Map } from "lucide-react";
 import { useMemo, useState } from "react";
 
+
 import {
   DESKTOP_EXPLORE_LISTINGS,
   INITIAL_DESKTOP_COMPARE_IDS,
@@ -31,10 +32,33 @@ export default function ExploreMarketplace() {
     [desktopSelectedIds]
   );
 
+  const [searchQuery, setSearchQuery] = useState("");
+  const [activeTab, setActiveTab] = useState<"halls" | "services">("halls");
+  const [activeFilters, setActiveFilters] = useState<Set<string>>(new Set());
+
+  function handleToggleFilter(name: string) {
+    setActiveFilters((prev) => {
+      const next = new Set(prev);
+      if (next.has(name)) {
+        next.delete(name);
+      } else {
+        next.add(name);
+      }
+      return next;
+    });
+  }
   return (
     <main className="min-h-screen bg-bg-primary text-[#252423]">
       <section className="lg:hidden">
-        <MobileExploreHeader />
+        <MobileExploreHeader
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
+          onOpenFilters={() => console.log("open filters")}
+          activeFilters={activeFilters}
+          onToggleFilter={handleToggleFilter}
+        />
 
         <div className="space-y-8 px-5 pb-44">
           {MOBILE_EXPLORE_LISTINGS.map((listing) => (
@@ -79,8 +103,10 @@ export default function ExploreMarketplace() {
 
             <ExploreFooter />
           </div>
+          
 
-          <StaticMapPanel />
+          {/* map will be implemened later */}
+          {/* <StaticMapPanel /> */}
         </div>
 
         <DesktopCompareBar selectedListings={desktopSelectedListings} onClear={() => setDesktopSelectedIds(new Set())} />

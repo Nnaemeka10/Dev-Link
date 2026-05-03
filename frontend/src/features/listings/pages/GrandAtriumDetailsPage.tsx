@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { GRAND_ATRIUM_DETAILS } from "../details.data";
+import { BOOKING_STORAGE_KEY } from "@/features/bookings/booking.data";
 import BookingCard from "../components/details/BookingCard";
 import { DetailsActions, DesktopDetailsHeader, MobileDetailsHeader, TabletDetailsHeader } from "../components/details/DetailsHeader";
 import DetailsFooter from "../components/details/DetailsFooter";
@@ -27,6 +28,14 @@ function useBookingState() {
     guests,
     time,
     bookNow: () => {
+      // Persist booking selection to localStorage so wizard can load it
+      const bookingPayload = { date, guests, time };
+      try {
+        localStorage.setItem(BOOKING_STORAGE_KEY, JSON.stringify(bookingPayload));
+      } catch (error) {
+        console.error("Failed to save booking to localStorage:", error);
+      }
+
       setBooked(true);
       router.push("/bookings/grand-atrium?step=1");
     },

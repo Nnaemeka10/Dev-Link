@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { BOOKING_STEPS, MOBILE_BOOKING_STEPS, BOOKING_STORAGE_KEY } from "../booking.data";
 import BookingDetailsStep from "../components/BookingDetailsStep";
@@ -16,13 +17,26 @@ export default function GrandAtriumBookingPage() {
   const isDesktop = useMediaQuery("(min-width: 1024px)");
   const maxStep = isDesktop ? 4 : 3;
   const wizard = useBookingWizard(maxStep);
+  const searchParams = useSearchParams();
+  const router = useRouter();
   const activeStep = Math.min(wizard.step, maxStep);
 
+  // Sync URL query param (?step=X) with wizard state
   useEffect(() => {
-    if (wizard.step > maxStep) {
-      wizard.goToStep(maxStep);
+    const urlStep = searchParams.get("step");
+    if (urlStep) {
+      const parsedStep = parseInt(urlStep, 10);
+      if (!isNaN(parsedStep) && parsedStep > 0 && parsedStep <= maxStep) {
+        if (wizard.step !== parsedStep) {
+          wizard.goToStep(parsedStep);
+        }
+      } else if (!isNaN(parsedStep) && parsedStep > maxStep) {
+        // If URL step exceeds maxStep, clamp it and update URL
+        wizard.goToStep(maxStep);
+        router.replace(`?step=${maxStep}`);
+      }
     }
-  }, [maxStep, wizard]);
+  }, [searchParams, maxStep, wizard, router]);
 
   function handlePaymentComplete() {
     wizard.goToStep(isDesktop ? 3 : 3);

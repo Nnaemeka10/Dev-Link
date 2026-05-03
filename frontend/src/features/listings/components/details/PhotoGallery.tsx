@@ -11,6 +11,14 @@ export function MobileHeroPhoto({ image, name }: { image: StaticImageData; name:
 }
 
 export function TabletPhotoGallery({ gallery, name }: { gallery: StaticImageData[]; name: string }) {
+  if (gallery.length === 0) {
+    return (
+      <section className="grid h-[30rem] grid-cols-[2fr_1fr] gap-1 overflow-hidden bg-gray-200">
+        <div className="flex items-center justify-center text-gray-500">No images available</div>
+      </section>
+    );
+  }
+
   return (
     <section className="grid h-[30rem] grid-cols-[2fr_1fr] gap-1 overflow-hidden">
       <div className="relative">
@@ -35,10 +43,22 @@ export function TabletPhotoGallery({ gallery, name }: { gallery: StaticImageData
 }
 
 export function DesktopPhotoGallery({ gallery, name }: { gallery: StaticImageData[]; name: string }) {
+  if (gallery.length === 0) {
+    return (
+      <section className="grid h-[34rem] grid-cols-[1.15fr_1fr] gap-3 overflow-hidden rounded-[2rem] bg-gray-200">
+        <div className="flex items-center justify-center text-gray-500">No images available</div>
+      </section>
+    );
+  }
+
+  const primaryImageIndex = Math.min(4, gallery.length - 1);
+
   return (
     <section className="grid h-[34rem] grid-cols-[1.15fr_1fr] gap-3 overflow-hidden rounded-[2rem]">
       <div className="relative">
-        <Image src={gallery[4]} alt={name} fill priority className="object-cover" sizes="48vw" />
+        {gallery[primaryImageIndex] && (
+          <Image src={gallery[primaryImageIndex]} alt={name} fill priority className="object-cover" sizes="48vw" />
+        )}
       </div>
       <div className="grid grid-cols-2 gap-3">
         {gallery.slice(0, 4).map((image, index) => (

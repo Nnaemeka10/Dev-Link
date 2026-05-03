@@ -74,7 +74,7 @@ export default function CuratedServicesSection() {
   return (
     <section className="px-4 py-10 md:px-8 md:py-12">
       <div className="mx-auto max-w-7xl">
-        <div className="mb-6 flex items-end justify-between md:mb-7">
+        <div className="mb-6 flex items-start md:items-end justify-between md:mb-7">
           <div>
             <h2 className="text-heading-m font-semibold leading-tight text-text-primary md:text-4xl">
               {CURATED_SERVICES_RESPONSE.heading}
@@ -83,7 +83,7 @@ export default function CuratedServicesSection() {
               {CURATED_SERVICES_RESPONSE.subheading}
             </p>
           </div>
-          <button type="button" className="hidden text-sm font-semibold text-text-primary underline md:block">
+          <button type="button" className="text-small font-semibold text-text-primary underline md:text-sm">
             {CURATED_SERVICES_RESPONSE.ctaLabel}
           </button>
         </div>
@@ -98,17 +98,17 @@ export default function CuratedServicesSection() {
               <div className="relative overflow-hidden rounded-2xl">
                 <Image src={service.image} alt={service.name} className="h-62.5 w-full object-cover" />
                 <div className="absolute inset-x-0 bottom-0 bg-linear-to-t from-black/65 to-transparent p-3 text-white">
-                  <p className="uppercase tracking-widest text-white/75 md:text-[0.625rem] font-bold">{service.role}</p>
-                  <h3 className="text-heading-m font-semibold leading-none md:text-xl">{service.name}</h3>
+                  <p className="uppercase tracking-widest text-white/75 text-tiny font-bold">{service.role}</p>
+                  <h3 className="text-xl font-semibold leading-none">{service.name}</h3>
                 </div>
               </div>
 
               <div className="mt-3 flex items-center justify-between">
-                <p className="text-heading-m font-semibold text-text-primary md:text-base">
+                <p className="font-semibold text-text-primary text-base">
                   {service.price}
-                  <span className="ml-1 text-small font-normal text-text-primary/60 md:text-sm">/{service.unit}</span>
+                  <span className="ml-1 text-sm font-normal text-text-primary/60">/{service.unit}</span>
                 </p>
-                <p className="inline-flex items-center gap-1 rounded-full bg-[#F6E9BE] px-2 py-1 text-small font-semibold text-[#7E6000] md:text-xs">
+                <p className="inline-flex items-center gap-1 rounded-full bg-[#F6E9BE] px-2 py-1 text-xs font-semibold text-[#7E6000]">
                   <Star className="h-3 w-3 fill-current" />
                   {service.rating.toFixed(1)}
                 </p>

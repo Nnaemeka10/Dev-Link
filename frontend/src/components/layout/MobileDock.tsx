@@ -1,11 +1,11 @@
 "use client";
 
-import { CalendarDays, Compass, Heart, UserRound } from "lucide-react";
+import { Compass, Heart, MessageCircleMore, UserRound } from "lucide-react";
 
 interface MobileDockItem {
   id: string;
   label: string;
-  icon: "explore" | "saved" | "bookings" | "profile";
+  icon: "explore" | "saved" | "Messages" | "profile";
   selected: boolean;
 }
 
@@ -17,7 +17,7 @@ const MOBILE_DOCK_RESPONSE: MobileDockResponse = {
   items: [
     { id: "explore", label: "Explore", icon: "explore", selected: true },
     { id: "saved", label: "Saved", icon: "saved", selected: false },
-    { id: "bookings", label: "Bookings", icon: "bookings", selected: false },
+    { id: "Messages", label: "Messages", icon: "Messages", selected: false },
     { id: "profile", label: "Profile", icon: "profile", selected: false },
   ],
 };
@@ -25,14 +25,14 @@ const MOBILE_DOCK_RESPONSE: MobileDockResponse = {
 function dockIcon(icon: MobileDockItem["icon"]) {
   if (icon === "explore") return Compass;
   if (icon === "saved") return Heart;
-  if (icon === "bookings") return CalendarDays;
+  if (icon === "Messages") return MessageCircleMore;
   return UserRound;
 }
 
 export default function MobileDock() {
   return (
-    <div className="fixed inset-x-0 bottom-0 z-30 px-4 pb-4 md:hidden">
-      <div className="mx-auto grid max-w-md grid-cols-4 gap-2 rounded-[1.75rem] border border-[#F1E5D5] bg-white/96 p-2 shadow-[0_18px_34px_rgba(26,31,60,0.08)] backdrop-blur">
+    <div className="fixed inset-x-0 bottom-0 z-30  md:hidden">
+      <div className="mx-auto grid max-w-md grid-cols-4 gap-2 rounded-t-[1.75rem] border border-[#F1E5D5] bg-white/96 p-2 shadow-[0_18px_34px_rgba(26,31,60,0.08)] backdrop-blur">
         {MOBILE_DOCK_RESPONSE.items.map((item) => {
           const Icon = dockIcon(item.icon);
           return (
