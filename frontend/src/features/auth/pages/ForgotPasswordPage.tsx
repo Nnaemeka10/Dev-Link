@@ -1,18 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { apiFetch, ApiError } from "@/lib/api";
 import type { ResetPasswordFormValues } from "../auth.types";
-import { withReturnTo } from "../auth.utils";
 import { AuthInput } from "../components/AuthFields";
 import AuthShell from "../components/AuthShell";
 
 export default function ForgotPasswordPage() {
-  const searchParams = useSearchParams();
-  const returnTo = searchParams.get("returnTo");
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const { register, handleSubmit, formState } = useForm<ResetPasswordFormValues>({
@@ -40,8 +36,8 @@ export default function ForgotPasswordPage() {
     <AuthShell>
       <section className="w-full max-w-[35rem] rounded-[2.25rem] bg-white px-6 py-10 shadow-[0_24px_70px_rgba(34,27,18,0.08)] md:px-14 md:py-16">
         <div className="text-center">
-          <h1 className="text-4xl font-extrabold tracking-[-0.03em]">Reset Password</h1>
-          <p className="mt-4 text-lg leading-7 text-[#555B7F]">Enter your email to receive reset instructions</p>
+          <h1 className="md:text-4xl text-2xl font-extrabold tracking-[-0.03em]">Reset Password</h1>
+          <p className="mt-4 md:text-lg text-sm leading-7 text-[#555B7F]">Enter your email to receive reset instructions</p>
         </div>
 
         <form className="mt-10 space-y-7" onSubmit={onSubmit}>
@@ -60,14 +56,14 @@ export default function ForgotPasswordPage() {
           <button
             type="submit"
             disabled={formState.isSubmitting}
-            className="w-full rounded-full bg-[#B9401D] px-8 py-5 text-lg font-extrabold text-white shadow-[0_14px_28px_rgba(185,64,29,0.2)] disabled:opacity-60"
+            className="w-full rounded-full bg-[#B9401D] px-8 py-5 md:text-lg text-sm font-extrabold text-white shadow-[0_14px_28px_rgba(185,64,29,0.2)] disabled:opacity-60"
           >
             {formState.isSubmitting ? "Sending..." : "Send Reset Link →"}
           </button>
         </form>
 
         <div className="mt-10 border-t border-[#EFE8DE] pt-8 text-center">
-          <Link href={withReturnTo("/login", returnTo)} className="font-semibold text-[#6B5F57]">
+          <Link href="/login" className="font-semibold text-[#6B5F57]">
             ← Back to Login
           </Link>
         </div>

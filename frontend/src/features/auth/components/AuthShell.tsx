@@ -1,8 +1,9 @@
 import Image from "next/image";
-import Link from "next/link";
+
 import hallA from "@/assets/home/populareventsa.png";
 import hallD from "@/assets/home/populareventsd.png";
 import serviceB from "@/assets/home/curatedservicesb.png";
+import Footer from "@/components/layout/Footer";
 
 interface AuthShellProps {
   children: React.ReactNode;
@@ -12,48 +13,38 @@ interface AuthShellProps {
 export default function AuthShell({ children, variant = "centered" }: AuthShellProps) {
   return (
     <main className="min-h-screen bg-bg-primary text-[#252423]">
-      <header className="flex h-20 items-center border-b border-[#EFE8DE] bg-bg-primary/95 px-6 backdrop-blur md:px-10">
-        <Link href="/" className="text-xl font-extrabold md:text-2xl">
-          Eventvnv
-        </Link>
-        <nav className="ml-auto hidden items-center gap-9 text-base font-semibold text-[#5E6588] md:flex">
-          <Link href="/listings">Venues</Link>
-          <Link href="/listings">Vendors</Link>
-          <Link href="/">Inspiration</Link>
-          {variant === "centered" ? (
-            <Link href="/login" className="rounded-full bg-[#B9401D] px-7 py-3 text-sm font-extrabold text-white">
-              Sign In
-            </Link>
-          ) : null}
-        </nav>
-      </header>
-
       {variant === "split" ? (
-        <section className="mx-auto grid min-h-[calc(100vh-10rem)] max-w-[92rem] gap-12 px-6 py-10 md:px-10 lg:grid-cols-[minmax(0,1fr)_minmax(28rem,40rem)] lg:items-center">
-          <aside className="hidden min-h-[42rem] flex-col justify-between lg:flex">
-            <div>
-                <p className="text-2xl font-extrabold">Eventvnv</p>
-              <h1 className="mt-12 max-w-2xl text-[4.6rem] font-extrabold leading-[0.98] tracking-[-0.04em]">
-                Discover Nigeria&apos;s finest <span className="text-[#B9401D]">curated</span> experiences.
-              </h1>
-            </div>
-            <div className="relative h-[24rem]">
-              <Image
-                src={hallA}
-                alt="Curated event venue"
-                className="absolute bottom-0 left-0 h-[22rem] w-[19rem] -rotate-2 rounded-[2.2rem] object-cover shadow-[0_22px_50px_rgba(34,27,18,0.18)]"
-              />
-              <Image
-                src={serviceB}
-                alt="Curated dining"
-                className="absolute bottom-2 left-[18rem] h-[16rem] w-[14rem] rotate-6 rounded-[2rem] border-8 border-bg-primary object-cover shadow-[0_18px_42px_rgba(34,27,18,0.2)]"
-              />
-            </div>
-          </aside>
-          {children}
+        <section className="mx-auto grid min-h-screen max-w-[92rem] gap-8 px-4 py-8 md:px-10 md:gap-12 md:py-10 lg:grid-cols-2 lg:items-center">
+          {/* Aside: Form first on mobile, then aside */}
+          <div className="order-2 lg:order-1">
+            <aside className="flex flex-col justify-between">
+              <div>
+                <h1 className="text-2xl font-extrabold leading-tight tracking-[-0.04em] md:text-3xl lg:text-[4.6rem] lg:leading-[0.98]">
+                  Discover Nigeria&apos;s finest <span className="text-[#B9401D]">curated</span> experiences.
+                </h1>
+              </div>
+              {/* Mobile: Stacked images, Desktop: Overlapping images */}
+              <div className="relative mt-8 h-auto md:h-80 lg:mt-0 lg:h-[24rem]">
+                <div className="grid grid-cols-2 gap-4 md:gap-6 lg:absolute lg:h-[24rem] lg:w-full">
+                  <Image
+                    src={hallA}
+                    alt="Curated event venue"
+                    className="col-span-1 h-32 w-full rounded-2xl object-cover shadow-md md:h-40 lg:absolute lg:bottom-0 lg:left-0 lg:h-[22rem] lg:w-[19rem] lg:-rotate-2 lg:rounded-[2.2rem] lg:shadow-[0_22px_50px_rgba(34,27,18,0.18)]"
+                  />
+                  <Image
+                    src={serviceB}
+                    alt="Curated dining"
+                    className="col-span-1 h-32 w-full rounded-2xl object-cover shadow-md md:h-40 lg:absolute lg:bottom-2 lg:left-[18rem] lg:h-[16rem] lg:w-[14rem] lg:rotate-6 lg:rounded-[2rem] lg:border-8 lg:border-bg-primary lg:shadow-[0_18px_42px_rgba(34,27,18,0.2)]"
+                  />
+                </div>
+              </div>
+            </aside>
+          </div>
+          {/* Form: Mobile first */}
+          <div className="order-1 lg:order-2">{children}</div>
         </section>
       ) : (
-        <section className="relative mx-auto flex min-h-[calc(100vh-15rem)] w-full max-w-5xl items-center justify-center px-6 py-10">
+        <section className="relative mx-auto flex min-h-[calc(100vh-15rem)] w-full max-w-5xl items-center justify-center px-4 py-10 md:px-6">
           {children}
           <Image
             src={hallD}
@@ -63,18 +54,7 @@ export default function AuthShell({ children, variant = "centered" }: AuthShellP
         </section>
       )}
 
-      <footer className="flex flex-col gap-6 border-t border-[#EFE8DE] bg-[#F4F1EA] px-6 py-10 text-[#6B5F57] md:flex-row md:items-center md:px-10">
-        <div>
-          <p className="text-lg font-extrabold text-[#252423]">Eventvnv.</p>
-          <p className="mt-2">© 2024 Eventvnv. Designed for Lagos.</p>
-        </div>
-        <nav className="flex flex-wrap gap-7 md:ml-auto">
-          <Link href="/">Privacy Policy</Link>
-          <Link href="/">Terms of Service</Link>
-          <Link href="/">Help Center</Link>
-          <Link href="/">Contact</Link>
-        </nav>
-      </footer>
+      <Footer />
     </main>
   );
 }

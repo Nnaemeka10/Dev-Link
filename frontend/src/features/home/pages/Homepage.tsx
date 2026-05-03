@@ -4,7 +4,7 @@ import { Sparkles } from "lucide-react";
 import CategoryStrip from "../components/CategoryStrip";
 import CuratedServicesSection from "../components/CuratedServicesSection";
 import HeroSection from "../components/HeroSection";
-import HomeFooter from "../components/HomeFooter";
+import HomeFooter from "../../../components/layout/Footer";
 import MobileDock from "../../../components/layout/MobileDock";
 import PopularHallsSection from "../components/PopularHallsSection";
 import TrendingSection from "../components/TrendingSection";
