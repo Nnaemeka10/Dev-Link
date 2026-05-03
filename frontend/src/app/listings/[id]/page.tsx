@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Card from "@/components/ui/Card";
 import Button from "@/components/ui/Button";
+import { GRAND_ATRIUM_DETAILS, GRAND_ATRIUM_ID } from "@/features/listings/details.data";
+import GrandAtriumDetailsPage from "@/features/listings/pages/GrandAtriumDetailsPage";
 import { getListingById, getListingIds } from "@/features/listings/listings.api";
 
 interface ListingPageProps {
@@ -10,11 +12,23 @@ interface ListingPageProps {
 
 export async function generateStaticParams() {
   const ids = await getListingIds();
-  return ids.map((id) => ({ id }));
+  return Array.from(new Set([...ids, GRAND_ATRIUM_ID])).map((id) => ({ id }));
 }
 
 export async function generateMetadata({ params }: ListingPageProps): Promise<Metadata> {
   const { id } = await params;
+
+  if (id === GRAND_ATRIUM_ID) {
+    return {
+      title: `${GRAND_ATRIUM_DETAILS.name} | Eventvnv`,
+      description: GRAND_ATRIUM_DETAILS.description[0],
+      openGraph: {
+        title: `${GRAND_ATRIUM_DETAILS.name} | Eventvnv`,
+        description: GRAND_ATRIUM_DETAILS.description[0],
+      },
+    };
+  }
+
   const listing = await getListingById(id);
 
   if (!listing) {
@@ -35,6 +49,11 @@ export async function generateMetadata({ params }: ListingPageProps): Promise<Me
 
 export default async function ListingDetailPage({ params }: ListingPageProps) {
   const { id } = await params;
+
+  if (id === GRAND_ATRIUM_ID) {
+    return <GrandAtriumDetailsPage />;
+  }
+
   const listing = await getListingById(id);
 
   if (!listing) {

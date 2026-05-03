@@ -20,7 +20,7 @@ export default function Homepage() {
   return (
     <>
       <main
-        className="bg-bg-primary motion-safe:animate-[var(--animate-fade-in)]"
+        className="bg-bg-primary motion-safe:animate-fade-in"
         aria-label={HOME_PAGE_RESPONSE.message}
       >
         <HeroSection />
@@ -28,7 +28,8 @@ export default function Homepage() {
         <TrustSignalsBar />
         <PopularHallsSection />
         <CuratedServicesSection />
-        <TrendingSection />
+        {/* for future */}
+        {/* <TrendingSection /> */}
         <HomeFooter />
         <MobileDock />
 

@@ -325,21 +325,39 @@
     }
   }
 
-  /* On small screens: center on viewport, full-width-ish, single month */
+  /* On small screens: full-screen picker with sticky footer */
   @media (max-width: 720px) {
+    .date-picker-scrim {
+      z-index: 1999;
+    }
+
     .date-picker-popover {
       position: fixed;
-      top: auto;
-      bottom: calc(env(safe-area-inset-bottom, 0px) + 6.5rem);
-      left: 0;
-      right: 0;
+      inset: 0;
       transform: none;
       width: 100%;
       max-width: 100%;
-      border-radius: 1.5rem 1.5rem 0 0;
-      padding: 1.25rem 1rem 2rem;
-      max-height: min(78vh, 42rem);
+      border-radius: 0;
+      padding: 1.5rem 1.25rem 6rem;
+      max-height: 100vh;
       overflow-y: auto;
+      z-index: 2000;
+    }
+
+    .rdp-day-btn {
+      width: 2.75rem;
+      height: 2.75rem;
+    }
+
+    .date-picker-footer {
+      position: sticky;
+      bottom: 0;
+
+      padding: 1rem 0 env(safe-area-inset-bottom, 0px);
+    }
+
+    .date-picker-trigger-row {
+      border: none;
     }
   }
 
@@ -384,9 +402,9 @@
       gap: 1.5rem;
     }
 
-    /* Hide second month on mobile */
+    /* Ensure month displays as block on mobile */
     .rdp-month:nth-child(2) {
-      display: none;
+      display: block;
     }
   }
 
@@ -594,7 +612,6 @@
     gap: 0.75rem;
     margin-top: 1.25rem;
     padding-top: 1rem;
-    border-top: 1px solid rgba(26, 31, 60, 0.08);
   }
 
   .date-picker-footer-clear {
@@ -638,6 +655,49 @@
   .date-picker-footer-apply:disabled {
     opacity: 0.4;
     cursor: not-allowed;
+  }
+
+  /* ─── CategoryStrip: seamless marquee ────────────────────────────────────────
+   Add these into your existing @layer utilities block in globals.css.
+
+   WHY translateX(-50%) works perfectly:
+   The track contains [set-A][set-B]. Both sets are identical, so the track's
+   total width is exactly 2× one set. Animating to -50% scrolls exactly one
+   set width — landing on the frame where set-B looks exactly like set-A did
+   at 0%. The browser resets to 0% invisibly. One category exits left,
+   the next enters from the right of set-B. No jump.
+
+   The `gap` between items is 1rem (gap-4). Because both sets share the same
+   gap styling, the visual rhythm is continuous across the seam.
+────────────────────────────────────────────────────────────────────────────── */
+
+  .category-marquee-track {
+    /* GPU-composited transform — no layout or paint cost per frame */
+    will-change: transform;
+    animation: category-marquee 22s linear infinite;
+  }
+
+  @keyframes category-marquee {
+    0% {
+      transform: translateX(0);
+    }
+    100% {
+      transform: translateX(-50%);
+    }
+  }
+
+  /* Pause on hover (desktop fallback, low cost) */
+  .category-marquee-track:hover {
+    animation-play-state: paused;
+  }
+
+  /* ── Reduced motion: freeze the track, let user scroll manually ───────────── */
+  @media (prefers-reduced-motion: reduce) {
+    .category-marquee-track {
+      animation: none;
+      /* Allow manual touch-scroll on the outer overflow-hidden container instead */
+      /* The outer div would need overflow-x: auto for this to work */
+    }
   }
 
   /* ─── Dark mode ───────────────────────────────────────────────────────────────

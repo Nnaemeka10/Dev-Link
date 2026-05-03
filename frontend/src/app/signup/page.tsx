@@ -1,16 +1,16 @@
 import { Suspense } from "react";
 import type { Metadata } from "next";
-import LoginPage from "@/features/auth/pages/LoginPage";
+import SignupPage from "@/features/auth/pages/SignupPage";
 
 export const metadata: Metadata = {
-  title: "Sign In | Eventvnv",
-  description: "Sign in to Eventvnv.",
+  title: "Create Account | Eventvnv",
+  description: "Create your Eventvnv account.",
 };
 
-export default function LoginRoute() {
+export default function SignupRoute() {
   return (
     <Suspense fallback={<main className="min-h-screen bg-bg-primary" />}>
-      <LoginPage />
+      <SignupPage />
     </Suspense>
   );
 }

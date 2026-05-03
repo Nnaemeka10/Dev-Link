@@ -1,4 +1,7 @@
-import { Globe, AtSign } from "lucide-react";
+import { Globe, AtSign, X} from "lucide-react";
+import Image from "next/image";
+import Link from "next/link";
+
 
 interface FooterResponse {
   company: string[];
@@ -29,10 +32,13 @@ function FooterColumn({ title, items }: { title: string; items: string[] }) {
 
 export default function HomeFooter() {
   return (
-    <footer className="border-t border-text-primary/7 px-4 pb-28 pt-10 md:px-8 md:pb-10 md:pt-12">
+    <footer className="bg-bg-tertiary min-h-50 px-4 pb-28 pt-10 md:px-8 md:pb-10 md:pt-12">
       <div className="mx-auto grid max-w-7xl gap-8 md:grid-cols-[1fr_280px_180px_140px_90px] md:items-start">
         <div>
-          <p className="text-[40px] font-semibold tracking-[-0.02em] text-text-primary">Eventvnv</p>
+          <Link href="/" className="text-2xl flex font-semibold tracking-[-0.02em] text-text-primary items-end gap-1">
+          <Image src="/logo.svg" alt="EventVnv" width={30} height={30} />
+          <p className="font-semibold logo translate-y-1.5">EventVnV </p>
+        </Link>
           <p className="mt-4 max-w-md text-sm text-text-primary/60">
             © 2026 Eventvnv. Nigeria{"'"}s premier event concierge, curating elegance across West
             Africa.
@@ -48,6 +54,7 @@ export default function HomeFooter() {
           <div className="mt-4 flex items-center gap-3 text-text-primary/80">
             <Globe className="h-4 w-4" />
             <AtSign className="h-4 w-4" />
+            <X className="h-4 w-4" />
           </div>
         </div>
       </div>

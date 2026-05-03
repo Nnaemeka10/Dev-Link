@@ -17,6 +17,10 @@ export default function Navbar() {
   const pathname = usePathname();
   const { isAuthenticated, user, refetchAuth } = useAuth();
 
+  if (pathname?.startsWith("/listings") || pathname?.startsWith("/bookings")) {
+    return null;
+  }
+
   const handleLogout = async () => {
     try {
       await apiFetch("/api/auth/logout", { method: "POST", redirectOn401: false });
