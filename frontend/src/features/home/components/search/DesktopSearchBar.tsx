@@ -9,6 +9,8 @@ import type { SearchFormData } from "../../utils/searchSchema";
 import { useHomeStore } from "../../store/homeStore";
 import { useLocationSuggestions } from "../../hooks/useHeroSearch";
 import { DateRangePicker } from "../DateRange";
+import { CapacityDropdown } from "./CapacityDropdown";
+import { RoleDropdown } from "./RoleDropdown";
 
 const TABS = [
   { id: "halls", label: "Event Halls" },
@@ -26,10 +28,11 @@ interface DesktopSearchBarProps {
  *
  * Responsibilities:
  * - Render form UI with form validation via prop
- * - Read category/location/dateRange from Zustand selectors
+ * - Read category/location/dateRange/capacity/role from Zustand selectors
  * - Update Zustand on state changes
  * - Handle location suggestions (debounced API call)
  * - Manage local UI state (showSuggestions)
+ * - Show/hide fields based on category
  */
 export default function DesktopSearchBar({
   form,
@@ -41,8 +44,12 @@ export default function DesktopSearchBar({
   // Read from Zustand using selectors
   const category = useHomeStore((state) => state.category);
   const location = useHomeStore((state) => state.location);
+  const capacity = useHomeStore((state) => state.capacity);
+  const role = useHomeStore((state) => state.role);
   const setCategory = useHomeStore((state) => state.setCategory);
   const setLocation = useHomeStore((state) => state.setLocation);
+  const setCapacity = useHomeStore((state) => state.setCapacity);
+  const setRole = useHomeStore((state) => state.setRole);
 
   // Location autocomplete state
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -65,8 +72,33 @@ export default function DesktopSearchBar({
     (newCategory: "halls" | "services") => {
       setCategory(newCategory);
       setValue("category", newCategory);
+      
+      // Clear incompatible fields
+      if (newCategory === "halls") {
+        setRole(undefined);
+        setValue("role", undefined);
+      } else {
+        setCapacity(undefined);
+        setValue("capacity", undefined);
+      }
     },
-    [setCategory, setValue]
+    [setCategory, setValue, setCapacity, setRole]
+  );
+
+  const handleCapacityChange = useCallback(
+    (value: number | undefined) => {
+      setCapacity(value);
+      setValue("capacity", value);
+    },
+    [setCapacity, setValue]
+  );
+
+  const handleRoleChange = useCallback(
+    (value: string | undefined) => {
+      setRole(value);
+      setValue("role", value);
+    },
+    [setRole, setValue]
   );
 
   const handleSuggestionSelect = useCallback(
@@ -93,7 +125,7 @@ export default function DesktopSearchBar({
       <form
         onSubmit={handleSubmit(onSubmit)}
         noValidate
-        className="flex gap-4 rounded-[28px] bg-white p-2 shadow-[0_10px_26px_rgba(26,31,60,0.12)]"
+        className="flex gap-4 rounded-[28px] bg-white p-2 shadow-[0_10px_26px_rgba(26,31,60,0.12)] overflow-visible"
       >
         {/* Category toggle pill */}
         <div className="relative flex min-w-55 items-center rounded-[28px] bg-bg-primary">
@@ -128,96 +160,116 @@ export default function DesktopSearchBar({
           })}
         </div>
 
-        {/* Location input with autocomplete */}
-        <div
-          ref={locationRef}
-          className="relative flex flex-1 items-center gap-3 border-l border-text-primary/10 px-5 py-3"
-        >
-          <MapPin className="h-5 w-5 shrink-0 text-text-primary/50" />
-          <div className="flex-1">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-text-primary/45">
-              Where
-            </p>
-            <Controller
-              name="location"
-              control={control}
-              render={({ field }) => (
-                <input
-                  {...field}
-                  type="text"
-                  autoComplete="off"
-                  placeholder="Lagos, Abuja, PH..."
-                  aria-label="Search location"
-                  aria-invalid={!!errors.location}
-                  aria-describedby={errors.location ? "location-error" : undefined}
-                  className="w-full bg-transparent text-sm text-text-primary placeholder:text-text-primary/55 focus:outline-none"
-                  onChange={(e) => {
-                    field.onChange(e);
-                    handleLocationChange(e.target.value);
-                  }}
-                  onFocus={() => setShowSuggestions(true)}
-                  onBlur={() =>
-                    setTimeout(() => setShowSuggestions(false), 150)
-                  }
-                />
-              )}
-            />
-          </div>
+        {/* Location input with autocomplete - HALLS ONLY */}
+        {category === "halls" && (
+          <div
+            ref={locationRef}
+            className="relative flex flex-1 items-center gap-3 border-l border-text-primary/10 px-5 py-3"
+          >
+            <MapPin className="h-5 w-5 shrink-0 text-text-primary/50" />
+            <div className="flex-1">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-text-primary/45">
+                Where
+              </p>
+              <Controller
+                name="location"
+                control={control}
+                render={({ field }) => (
+                  <input
+                    {...field}
+                    type="text"
+                    autoComplete="off"
+                    placeholder="Lagos, Abuja, PH..."
+                    aria-label="Search location"
+                    aria-invalid={!!errors.location}
+                    aria-describedby={errors.location ? "location-error" : undefined}
+                    className="w-full bg-transparent text-sm text-text-primary placeholder:text-text-primary/55 focus:outline-none"
+                    onChange={(e) => {
+                      field.onChange(e);
+                      handleLocationChange(e.target.value);
+                    }}
+                    onFocus={() => setShowSuggestions(true)}
+                    onBlur={() =>
+                      setTimeout(() => setShowSuggestions(false), 150)
+                    }
+                  />
+                )}
+              />
+            </div>
 
-          {/* Clear button */}
-          {location && (
-            <button
-              type="button"
-              onClick={handleClearLocation}
-              className="text-text-primary/40 hover:text-text-primary/70 transition-colors"
-              aria-label="Clear location"
-            >
-              <X className="h-4 w-4" />
-            </button>
-          )}
-
-          {/* Validation error */}
-          {errors.location && (
-            <p
-              id="location-error"
-              role="alert"
-              className="absolute -bottom-5 left-5 text-[11px] text-red-500"
-            >
-              {errors.location.message}
-            </p>
-          )}
-
-          {/* Autocomplete dropdown */}
-          <AnimatePresence>
-            {showSuggestions && suggestions.length > 0 && (
-              <motion.ul
-                initial={{ opacity: 0, y: 6 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 4 }}
-                transition={{ duration: 0.15 }}
-                role="listbox"
-                aria-label="Location suggestions"
-                className="absolute left-0 top-full z-50 mt-2 w-full min-w-55 overflow-hidden rounded-2xl bg-white py-2 shadow-[0_8px_24px_rgba(26,31,60,0.14)]"
+            {/* Clear button */}
+            {location && (
+              <button
+                type="button"
+                onClick={handleClearLocation}
+                className="text-text-primary/40 hover:text-text-primary/70 transition-colors"
+                aria-label="Clear location"
               >
-                {suggestions.map((s) => (
-                  <li key={s.id} role="option" aria-selected={false}>
-                    <button
-                      type="button"
-                      onMouseDown={() => handleSuggestionSelect(s.name)}
-                      className="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-text-primary hover:bg-bg-primary transition-colors"
-                    >
-                      <MapPin className="h-4 w-4 shrink-0 text-text-primary/40" />
-                      <span>
-                        {s.name}
-                        <span className="ml-1 text-text-primary/45">{s.state}</span>
-                      </span>
-                    </button>
-                  </li>
-                ))}
-              </motion.ul>
+                <X className="h-4 w-4" />
+              </button>
             )}
-          </AnimatePresence>
-        </div>
+
+            {/* Validation error */}
+            {errors.location && (
+              <p
+                id="location-error"
+                role="alert"
+                className="absolute -bottom-5 left-5 text-[11px] text-red-500"
+              >
+                {errors.location.message}
+              </p>
+            )}
+
+            {/* Autocomplete dropdown */}
+            <AnimatePresence>
+              {showSuggestions && suggestions.length > 0 && (
+                <motion.ul
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 4 }}
+                  transition={{ duration: 0.15 }}
+                  role="listbox"
+                  aria-label="Location suggestions"
+                  className="absolute left-0 top-full z-50 mt-2 w-full min-w-55 overflow-hidden rounded-2xl bg-white py-2 shadow-[0_8px_24px_rgba(26,31,60,0.14)]"
+                >
+                  {suggestions.map((s) => (
+                    <li key={s.id} role="option" aria-selected={false}>
+                      <button
+                        type="button"
+                        onMouseDown={() => handleSuggestionSelect(s.name)}
+                        className="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-text-primary hover:bg-bg-primary transition-colors"
+                      >
+                        <MapPin className="h-4 w-4 shrink-0 text-text-primary/40" />
+                        <span>
+                          {s.name}
+                          <span className="ml-1 text-text-primary/45">{s.state}</span>
+                        </span>
+                      </button>
+                    </li>
+                  ))}
+                </motion.ul>
+              )}
+            </AnimatePresence>
+          </div>
+        )}
+
+        {/* Capacity dropdown - HALLS ONLY */}
+        {category === "halls" && (
+          <CapacityDropdown
+            value={capacity}
+            onChange={handleCapacityChange}
+            disabled={isPending}
+          />
+        )}
+
+        {/* Role dropdown - SERVICES ONLY */}
+        {category === "services" && (
+          <RoleDropdown
+            value={role}
+            onChange={handleRoleChange}
+            disabled={isPending}
+          />
+        )}
 
         {/* Date picker */}
         <Controller

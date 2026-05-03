@@ -1,7 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { MapPin, Search, X } from "lucide-react";
+import { Building, MapPin, Search, User2, X } from "lucide-react";
 import { useEffect, useRef, useState, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { Controller, UseFormReturn } from "react-hook-form";
@@ -10,6 +10,8 @@ import type { SearchFormData } from "../../utils/searchSchema";
 import { useHomeStore } from "../../store/homeStore";
 import { useLocationSuggestions } from "../../hooks/useHeroSearch";
 import { DateRangePicker } from "../DateRange";
+import { CapacityDropdown } from "./CapacityDropdown";
+import { RoleDropdown } from "./RoleDropdown";
 
 const TABS = [
   { id: "halls", label: "Event Halls" },
@@ -27,11 +29,12 @@ interface MobileSearchModalProps {
  *
  * Responsibilities:
  * - Render form UI with form validation via prop
- * - Read category/location from Zustand selectors
+ * - Read category/location/capacity/role from Zustand selectors
  * - Update Zustand on state changes
  * - Handle location suggestions
  * - Manage local UI state (showSuggestions)
  * - Handle focus trap and keyboard navigation
+ * - Show/hide fields based on category
  */
 export default function MobileSearchModal({
   form,
@@ -43,9 +46,13 @@ export default function MobileSearchModal({
   // Read from Zustand using selectors
   const category = useHomeStore((state) => state.category);
   const location = useHomeStore((state) => state.location);
+  const capacity = useHomeStore((state) => state.capacity);
+  const role = useHomeStore((state) => state.role);
   const isMobileSearchOpen = useHomeStore((state) => state.isMobileSearchOpen);
   const setCategory = useHomeStore((state) => state.setCategory);
   const setLocation = useHomeStore((state) => state.setLocation);
+  const setCapacity = useHomeStore((state) => state.setCapacity);
+  const setRole = useHomeStore((state) => state.setRole);
   const setIsMobileSearchOpen = useHomeStore((state) => state.setIsMobileSearchOpen);
 
   // Location autocomplete state
@@ -71,8 +78,33 @@ export default function MobileSearchModal({
     (newCategory: "halls" | "services") => {
       setCategory(newCategory);
       setValue("category", newCategory);
+      
+      // Clear incompatible fields
+      if (newCategory === "halls") {
+        setRole(undefined);
+        setValue("role", undefined);
+      } else {
+        setCapacity(undefined);
+        setValue("capacity", undefined);
+      }
     },
-    [setCategory, setValue]
+    [setCategory, setValue, setCapacity, setRole]
+  );
+
+  const handleCapacityChange = useCallback(
+    (value: number | undefined) => {
+      setCapacity(value);
+      setValue("capacity", value);
+    },
+    [setCapacity, setValue]
+  );
+
+  const handleRoleChange = useCallback(
+    (value: string | undefined) => {
+      setRole(value);
+      setValue("role", value);
+    },
+    [setRole, setValue]
   );
 
   const handleSuggestionSelect = useCallback(
@@ -233,88 +265,118 @@ export default function MobileSearchModal({
                   </div>
                 </div>
 
-                {/* Location input with autocomplete */}
-                <div className="rounded-3xl border border-text-primary/10 bg-white px-4 py-4 shadow-[0_12px_30px_rgba(26,31,60,0.08)]">
-                  <div className="flex items-start gap-3">
-                    <MapPin className="mt-1 h-5 w-5 text-text-primary/50" />
-                    <div className="flex-1">
-                      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-text-primary/40">
-                        Where
-                      </p>
-                      <Controller
-                        name="location"
-                        control={control}
-                        render={({ field }) => (
-                          <input
-                            {...field}
-                            type="text"
-                            autoComplete="off"
-                            placeholder="Lagos, Abuja, PH..."
-                            aria-label="Search location"
-                            aria-invalid={!!errors.location}
-                            aria-describedby={
-                              errors.location
-                                ? "mobile-location-error"
-                                : undefined
-                            }
-                            className="mt-2 w-full bg-transparent text-base text-text-primary placeholder:text-text-primary/40 focus:outline-none"
-                            onChange={(event) => {
-                              field.onChange(event);
-                              handleLocationChange(event.target.value);
-                            }}
-                            onFocus={() => setShowSuggestions(true)}
-                            onBlur={() =>
-                              setTimeout(() => setShowSuggestions(false), 150)
-                            }
-                          />
-                        )}
-                      />
+                {/* Location input with autocomplete - HALLS ONLY */}
+                {category === "halls" && (
+                  <div className="rounded-3xl border border-text-primary/10 bg-white px-4 py-4 shadow-[0_12px_30px_rgba(26,31,60,0.08)]">
+                    <div className="flex items-center gap-3">
+                      <MapPin className="mt-1 h-5 w-5 text-text-primary/50" />
+                      <div className="flex-1">
+                        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-text-primary/40">
+                          Where
+                        </p>
+                        <Controller
+                          name="location"
+                          control={control}
+                          render={({ field }) => (
+                            <input
+                              {...field}
+                              type="text"
+                              autoComplete="off"
+                              placeholder="Lagos, Abuja, PH..."
+                              aria-label="Search location"
+                              aria-invalid={!!errors.location}
+                              aria-describedby={
+                                errors.location
+                                  ? "mobile-location-error"
+                                  : undefined
+                              }
+                              className="mt-2 w-full bg-transparent text-base text-text-primary placeholder:text-text-primary/40 focus:outline-none"
+                              onChange={(event) => {
+                                field.onChange(event);
+                                handleLocationChange(event.target.value);
+                              }}
+                              onFocus={() => setShowSuggestions(true)}
+                              onBlur={() =>
+                                setTimeout(() => setShowSuggestions(false), 150)
+                              }
+                            />
+                          )}
+                        />
+                      </div>
+                      {location && (
+                        <button
+                          type="button"
+                          onClick={handleClearLocation}
+                          className="mt-1 inline-flex h-8 w-8 items-center justify-center rounded-full bg-text-primary/5 text-text-primary/60"
+                          aria-label="Clear location"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                      )}
                     </div>
-                    {location && (
-                      <button
-                        type="button"
-                        onClick={handleClearLocation}
-                        className="mt-1 inline-flex h-8 w-8 items-center justify-center rounded-full bg-text-primary/5 text-text-primary/60"
-                        aria-label="Clear location"
+                    {errors.location && (
+                      <p
+                        id="mobile-location-error"
+                        role="alert"
+                        className="mt-2 text-xs text-red-500"
                       >
-                        <X className="h-4 w-4" />
-                      </button>
+                        {errors.location.message}
+                      </p>
+                    )}
+
+                    {/* Autocomplete suggestions */}
+                    {showSuggestions && suggestions.length > 0 && (
+                      <div className="mt-4 space-y-2 rounded-2xl border border-text-primary/10 bg-bg-primary/40 p-2">
+                        {suggestions.map((suggestion) => (
+                          <button
+                            key={suggestion.id}
+                            type="button"
+                            onMouseDown={() =>
+                              handleSuggestionSelect(suggestion.name)
+                            }
+                            className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm text-text-primary hover:bg-white"
+                          >
+                            <MapPin className="h-4 w-4 text-text-primary/45" />
+                            <span>
+                              {suggestion.name}
+                              <span className="ml-1 text-text-primary/45">
+                                {suggestion.state}
+                              </span>
+                            </span>
+                          </button>
+                        ))}
+                      </div>
                     )}
                   </div>
-                  {errors.location && (
-                    <p
-                      id="mobile-location-error"
-                      role="alert"
-                      className="mt-2 text-xs text-red-500"
-                    >
-                      {errors.location.message}
-                    </p>
-                  )}
+                )}
 
-                  {/* Autocomplete suggestions */}
-                  {showSuggestions && suggestions.length > 0 && (
-                    <div className="mt-4 space-y-2 rounded-2xl border border-text-primary/10 bg-bg-primary/40 p-2">
-                      {suggestions.map((suggestion) => (
-                        <button
-                          key={suggestion.id}
-                          type="button"
-                          onMouseDown={() =>
-                            handleSuggestionSelect(suggestion.name)
-                          }
-                          className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm text-text-primary hover:bg-white"
-                        >
-                          <MapPin className="h-4 w-4 text-text-primary/45" />
-                          <span>
-                            {suggestion.name}
-                            <span className="ml-1 text-text-primary/45">
-                              {suggestion.state}
-                            </span>
-                          </span>
-                        </button>
-                      ))}
+                {/* Capacity dropdown - HALLS ONLY */}
+                {category === "halls" && (
+                  <div className="rounded-3xl border border-text-primary/10 bg-white px-4 py-4 shadow-[0_12px_30px_rgba(26,31,60,0.08)]">
+                    <div className="flex items-center gap-3">
+                        <Building className="mt-1 h-5 w-5 text-text-primary/50" />
+                        <CapacityDropdown
+                        value={capacity}
+                        onChange={handleCapacityChange}
+                        disabled={isPending}
+                        />
                     </div>
-                  )}
-                </div>
+                  </div>
+                )}
+
+                {/* Role dropdown - SERVICES ONLY */}
+                {category === "services" && (
+                  <div className="rounded-3xl border border-text-primary/10 bg-white px-4 py-4 shadow-[0_12px_30px_rgba(26,31,60,0.08)]">
+                    <div className="flex items-center gap-3">
+                        <User2 className="mt-1 h-5 w-5 text-text-primary/50" />
+                        <RoleDropdown
+                        value={role}
+                        onChange={handleRoleChange}
+                        disabled={isPending}
+                        />
+                    </div>
+                  </div>
+                )}
 
                 {/* Date picker */}
                 <div className="rounded-3xl border border-text-primary/10 bg-white px-2 py-1 shadow-[0_12px_30px_rgba(26,31,60,0.08)] relative z-0">

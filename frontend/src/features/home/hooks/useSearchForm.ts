@@ -16,7 +16,7 @@ import { useHomeStore } from "../store/homeStore";
  * State updates go to both react-hook-form and Zustand.
  */
 export function useSearchForm(): UseFormReturn<SearchFormData> {
-  const { category, location, dateRange } = useHomeStore();
+  const { category, location, dateRange, capacity, role } = useHomeStore();
 
   const form = useForm<SearchFormData>({
     resolver: zodResolver(searchSchema),
@@ -25,6 +25,8 @@ export function useSearchForm(): UseFormReturn<SearchFormData> {
       category,
       location,
       dateRange,
+      capacity,
+      role,
     },
   });
 

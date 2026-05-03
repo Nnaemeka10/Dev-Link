@@ -47,6 +47,10 @@ export default function HeroSection() {
   }, []);
 
   // Watch form values for mobile summary display
+  const selectedCategory = useWatch({
+    control: form.control,
+    name: "category",
+  });
   const selectedDateRange = useWatch({
     control: form.control,
     name: "dateRange",
@@ -54,6 +58,14 @@ export default function HeroSection() {
   const selectedLocation = useWatch({
     control: form.control,
     name: "location",
+  });
+  const selectedCapacity = useWatch({
+    control: form.control,
+    name: "capacity",
+  });
+  const selectedRole = useWatch({
+    control: form.control,
+    name: "role",
   });
 
   // Handle form submission
@@ -65,6 +77,8 @@ export default function HeroSection() {
           location: data.location || undefined,
           dateFrom: data.dateRange?.from?.toISOString(),
           dateTo: data.dateRange?.to?.toISOString(),
+          capacity: data.capacity,
+          role: data.role,
         })
       );
     });
@@ -77,10 +91,21 @@ export default function HeroSection() {
     return `${formatDateLabel(selectedDateRange.from)} - ${formatDateLabel(selectedDateRange.to)}`;
   })();
 
-  const mobileSummaryLines = [
-    selectedLocation?.trim() || "",
-    mobileDateLabel,
-  ].filter(Boolean);
+  // Build mobile summary based on category
+  const mobileSummaryLines = (() => {
+    const lines: string[] = [];
+    
+    if (selectedCategory === "halls") {
+      if (selectedLocation?.trim()) lines.push(selectedLocation.trim());
+      if (selectedCapacity) lines.push(`${selectedCapacity} guests`);
+      if (mobileDateLabel) lines.push(mobileDateLabel);
+    } else if (selectedCategory === "services") {
+      if (selectedRole) lines.push(selectedRole);
+      if (mobileDateLabel) lines.push(mobileDateLabel);
+    }
+    
+    return lines;
+  })();
 
   return (
     <section className="home-hero-shell min-h-72">

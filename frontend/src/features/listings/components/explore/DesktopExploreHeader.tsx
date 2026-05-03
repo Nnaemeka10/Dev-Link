@@ -1,21 +1,26 @@
-import { ChevronDown, Heart, Search, SlidersHorizontal, UserCircle } from "lucide-react";
+import { ChevronDown, Search, SlidersHorizontal } from "lucide-react";
+import Image from "next/image";
+import Link from "next/link";
 
 const DESKTOP_FILTERS = ["Price: ₦50k - ₦500k", "Rating 4.5+", "Verified Only", "Capacity: 200+", "Instant Book"];
 
 export function DesktopExploreHeader() {
   return (
     <header className="border-b border-[#EDE4D8] bg-bg-primary">
-      <div className="flex h-[6.25rem] items-center gap-8 px-8">
-        <h1 className="min-w-[18rem] text-2xl font-extrabold tracking-[-0.02em]">Eventvnv</h1>
+      <div className="flex h-25 items-center gap-8 px-8">
+        <Link href="/" className="text-2xl flex font-semibold tracking-[-0.02em] text-text-primary items-end gap-1">
+          <Image src="/logo.svg" alt="EventVnv" width={30} height={30} />
+          <p className="font-semibold logo translate-y-1.5">EventVnV </p>
+        </Link>
 
-        <div className="flex h-14 w-[25rem] items-center rounded-full bg-[#E9E5DF]">
+        <div className="flex h-14 w-100 items-center rounded-full bg-[#E9E5DF]">
           <div className="flex-1 px-5">
-            <p className="text-[10px] font-extrabold uppercase text-[#555B7F]">Location</p>
+            <p className="text-tiny font-extrabold uppercase text-[#555B7F]">Location</p>
             <p className="text-sm text-[#777067]">Lagos, Nigeria</p>
           </div>
           <div className="h-8 w-px bg-[#DAD2C8]" />
           <div className="flex-1 px-5">
-            <p className="text-[10px] font-extrabold uppercase text-[#555B7F]">Date</p>
+            <p className="text-tiny font-extrabold uppercase text-[#555B7F]">Date</p>
             <p className="text-sm text-[#777067]">Add dates</p>
           </div>
           <button type="button" className="mr-3 inline-flex h-9 w-9 items-center justify-center rounded-full bg-[#A83A1C] text-white">
@@ -27,10 +32,8 @@ export function DesktopExploreHeader() {
           <button type="button" className="border-b-2 border-[#A83A1C] pb-2 text-[#A83A1C]">
             Browse Venues
           </button>
-          <button type="button">Find Talent</button>
-          <button type="button">How it Works</button>
-          <Heart className="h-6 w-6" />
-          <UserCircle className="h-6 w-6" />
+          <button type="button">Become a Vendor</button>
+          <button type="button">Login</button>
         </nav>
       </div>
 
