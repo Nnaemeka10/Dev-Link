@@ -102,7 +102,7 @@ export default function HeroSection() {
   ].filter(Boolean);
 
   return (
-    <section className="home-hero-shell min-h-96">
+    <section className="home-hero-shell min-h-72">
       {/* ── Animated spotlights — isolated so hero art can clip without clipping popovers ── */}
       <div aria-hidden="true" className="hero-spotlight-layer">
         <div className="hero-spotlight hero-spotlight--gold" />
