@@ -1,9 +1,14 @@
 "use client";
 
 import { Map } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useWatch } from "react-hook-form";
+import { useMemo, useState, useTransition } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchForm } from "@/features/search/hooks/useSearchForm";
+import { buildListingsHref, normalizeListingSearchParams } from "@/features/listings/searchParams";
+import type { SearchFormData } from "@/features/search/utils/searchSchema";//
 
-
+import SideNavBar from "../components/SideNavBar";
 import {
   DESKTOP_EXPLORE_LISTINGS,
   INITIAL_DESKTOP_COMPARE_IDS,
@@ -15,13 +20,26 @@ import { DesktopExploreCard, MobileExploreCard } from "../components/explore/Exp
 import { DesktopExploreHeader, DesktopResultsHeader } from "../components/explore/DesktopExploreHeader";
 import ExploreFooter from "../components/explore/ExploreFooter";
 import MobileBottomNav from "../components/explore/MobileBottomNav";
-import MobileExploreHeader from "../components/explore/MobileExploreHeader";
+import MobileExploreHeader, { MobileResultsHeader } from "../components/explore/MobileExploreHeader";
 import StaticMapPanel from "../components/explore/StaticMapPanel";
 import { toggleSelection } from "../utils/compareSelection";
+
+function formatDateLabel(date: Date) {
+  return date.toLocaleDateString("en-NG", {
+    day: "numeric",
+    month: "short",
+  });
+}
+
 
 export default function ExploreMarketplace() {
   const [mobileSelectedIds, setMobileSelectedIds] = useState(() => new Set(INITIAL_MOBILE_COMPARE_IDS));
   const [desktopSelectedIds, setDesktopSelectedIds] = useState(() => new Set(INITIAL_DESKTOP_COMPARE_IDS));
+  const router = useRouter();//
+  const [isPending, startTransition] = useTransition(); //
+
+  const form = useSearchForm(); //
+
 
   const mobileSelectedListings = useMemo(
     () => MOBILE_EXPLORE_LISTINGS.filter((listing) => mobileSelectedIds.has(listing.id)),
@@ -32,33 +50,84 @@ export default function ExploreMarketplace() {
     [desktopSelectedIds]
   );
 
-  const [searchQuery, setSearchQuery] = useState("");
-  const [activeTab, setActiveTab] = useState<"halls" | "services">("halls");
-  const [activeFilters, setActiveFilters] = useState<Set<string>>(new Set());
+  
+  
+  const handleSearch = (data: SearchFormData) => {
+      startTransition(() => {
+        router.push(
+          buildListingsHref({
+            category: data.category,
+            location: data.location || undefined,
+            dateFrom: data.dateRange?.from?.toISOString(),
+            dateTo: data.dateRange?.to?.toISOString(),
+            capacity: data.capacity,
+            role: data.role,
+          })
+        );
+      });
+    };
 
-  function handleToggleFilter(name: string) {
-    setActiveFilters((prev) => {
-      const next = new Set(prev);
-      if (next.has(name)) {
-        next.delete(name);
-      } else {
-        next.add(name);
-      }
-      return next;
+
+  
+   // Watch form values for mobile summary display
+    const selectedCategory = useWatch({
+      control: form.control,
+      name: "category",
     });
-  }
+    const selectedDateRange = useWatch({
+      control: form.control,
+      name: "dateRange",
+    });
+    const selectedLocation = useWatch({
+      control: form.control,
+      name: "location",
+    });
+    const selectedCapacity = useWatch({
+      control: form.control,
+      name: "capacity",
+    });
+    const selectedRole = useWatch({
+      control: form.control,
+      name: "role",
+    });
+
+
+
+    // Compute mobile summary labels
+    const mobileDateLabel = (() => {
+      if (!selectedDateRange?.from) return "";
+      if (!selectedDateRange.to) return formatDateLabel(selectedDateRange.from);
+      return `${formatDateLabel(selectedDateRange.from)} - ${formatDateLabel(selectedDateRange.to)}`;
+    })();
+
+    // Build mobile summary based on category
+    const mobileSummaryLines = (() => {
+      const lines: string[] = [];
+      
+      if (selectedCategory === "halls") {
+        if (selectedLocation?.trim()) lines.push(selectedLocation.trim());
+        if (selectedCapacity) lines.push(`${selectedCapacity} guests`);
+        if (mobileDateLabel) lines.push(mobileDateLabel);
+      } else if (selectedCategory === "services") {
+        if (selectedRole) lines.push(selectedRole);
+        if (mobileDateLabel) lines.push(mobileDateLabel);
+      }
+      
+      return lines;
+    })();
+
+
   return (
     <main className="min-h-screen bg-bg-primary text-[#252423]">
       <section className="lg:hidden">
         <MobileExploreHeader
-          searchQuery={searchQuery}
-          onSearchChange={setSearchQuery}
-          activeTab={activeTab}
-          onTabChange={setActiveTab}
-          onOpenFilters={() => console.log("open filters")}
-          activeFilters={activeFilters}
-          onToggleFilter={handleToggleFilter}
+          handleSearch={handleSearch}
+          form={form}
+          isPending={isPending}
+          mobileSummary={mobileSummaryLines}
         />
+
+        <MobileResultsHeader />
 
         <div className="space-y-8 px-5 pb-44">
           {MOBILE_EXPLORE_LISTINGS.map((listing) => (
@@ -83,33 +152,32 @@ export default function ExploreMarketplace() {
         <MobileBottomNav />
       </section>
 
-      <section className="hidden min-h-screen lg:block">
-        <DesktopExploreHeader />
+      <section className="hidden lg:flex h-screen">
+        <SideNavBar />
+        <div className="w-[85%] flex flex-col overflow-hidden">
+          <DesktopExploreHeader handleSearch={handleSearch} form={form} isPending={isPending}  />
 
-        <div className="grid min-h-[calc(100vh-11.25rem)] grid-cols-[minmax(0,1fr)_34%] xl:grid-cols-[minmax(0,1fr)_35%]">
-          <div className="px-8 pb-48 pt-10">
-            <DesktopResultsHeader />
+          <div className="flex flex-1 overflow-hidden">
+            <div className="flex-1 overflow-y-auto px-8 pb-12 pt-10">
+              <DesktopResultsHeader />
 
-            <div className="grid grid-cols-2 gap-8">
-              {DESKTOP_EXPLORE_LISTINGS.map((listing) => (
-                <DesktopExploreCard
-                  key={listing.id}
-                  listing={listing}
-                  selected={desktopSelectedIds.has(listing.id)}
-                  onToggleCompare={() => setDesktopSelectedIds((current) => toggleSelection(current, listing.id))}
-                />
-              ))}
+              <div className="grid grid-cols-2 gap-8">
+                {DESKTOP_EXPLORE_LISTINGS.map((listing) => (
+                  <DesktopExploreCard
+                    key={listing.id}
+                    listing={listing}
+                    selected={desktopSelectedIds.has(listing.id)}
+                    onToggleCompare={() => setDesktopSelectedIds((current) => toggleSelection(current, listing.id))}
+                  />
+                ))}
+              </div>
+
+              <ExploreFooter />
             </div>
 
-            <ExploreFooter />
+            <DesktopCompareBar selectedListings={desktopSelectedListings} onClear={() => setDesktopSelectedIds(new Set())} />
           </div>
-          
-
-          {/* map will be implemened later */}
-          {/* <StaticMapPanel /> */}
         </div>
-
-        <DesktopCompareBar selectedListings={desktopSelectedListings} onClear={() => setDesktopSelectedIds(new Set())} />
       </section>
     </main>
   );

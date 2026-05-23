@@ -8,9 +8,9 @@ import { useSearchForm } from "../hooks/useSearchForm";
 import { useHomeStore } from "../store/homeStore";
 import { buildListingsHref } from "@/features/listings/searchParams";
 import type { SearchFormData } from "../utils/searchSchema";
-import DesktopSearchBar from "./search/DesktopSearchBar";
-import MobileSearchTrigger from "./search/MobileSearchTrigger";
-import MobileSearchModal from "./search/MobileSearchModal";
+import DesktopSearchBar from "@/features/search/components/DesktopSearchBar";
+import MobileSearchTrigger from "@/features/search/components/MobileSearchTrigger";
+import MobileSearchModal from "@/features/search/components/MobileSearchModal";
 
 /**
  * Utility: Format date for display

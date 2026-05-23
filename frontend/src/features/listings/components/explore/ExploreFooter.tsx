@@ -6,7 +6,7 @@ const FOOTER_GROUPS = [
 
 export default function ExploreFooter() {
   return (
-    <footer className="mt-20 border-t border-[#E8DED2] pt-14 text-[#555B7F]">
+    <footer className="mt-64 border-t border-[#E8DED2] pt-14 text-[#555B7F]">
       <div className="grid grid-cols-4 gap-12">
         <div>
           <h3 className="text-base font-extrabold text-[#252423]">Eventvnv</h3>

@@ -3,12 +3,11 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { MapPin, Search, X } from "lucide-react";
 import { useRef, useState, useCallback } from "react";
-import { Controller, UseFormReturn } from "react-hook-form";
+import { Controller, type UseFormReturn } from "react-hook-form";
 
-import type { SearchFormData } from "../../utils/searchSchema";
-import { useHomeStore } from "../../store/homeStore";
-import { useLocationSuggestions } from "../../hooks/useHeroSearch";
-import { DateRangePicker } from "../DateRange";
+import type { SearchFormData } from "../utils/searchSchema";
+import { useLocationSuggestions } from "../../home/hooks/useHeroSearch";
+import { DateRangePicker } from "./DateRange";
 import { CapacityDropdown } from "./CapacityDropdown";
 import { RoleDropdown } from "./RoleDropdown";
 
@@ -21,99 +20,57 @@ interface DesktopSearchBarProps {
   form: UseFormReturn<SearchFormData>;
   onSubmit: (data: SearchFormData) => void;
   isPending: boolean;
+  showShadow?: boolean;
 }
 
-/**
- * DesktopSearchBar: Desktop-only search form
- *
- * Responsibilities:
- * - Render form UI with form validation via prop
- * - Read category/location/dateRange/capacity/role from Zustand selectors
- * - Update Zustand on state changes
- * - Handle location suggestions (debounced API call)
- * - Manage local UI state (showSuggestions)
- * - Show/hide fields based on category
- */
-export default function DesktopSearchBar({
-  form,
-  onSubmit,
-  isPending,
-}: DesktopSearchBarProps) {
-  const { control, handleSubmit, formState: { errors }, setValue } = form;
+export default function DesktopSearchBar({ form, onSubmit, isPending, showShadow = true }: DesktopSearchBarProps) {
+  const { control, handleSubmit, formState: { errors }, watch, setValue } = form;
 
-  // Read from Zustand using selectors
-  const category = useHomeStore((state) => state.category);
-  const location = useHomeStore((state) => state.location);
-  const capacity = useHomeStore((state) => state.capacity);
-  const role = useHomeStore((state) => state.role);
-  const setCategory = useHomeStore((state) => state.setCategory);
-  const setLocation = useHomeStore((state) => state.setLocation);
-  const setCapacity = useHomeStore((state) => state.setCapacity);
-  const setRole = useHomeStore((state) => state.setRole);
+  // Watch form values (single source)
+  const category = watch("category");
+  const location = watch("location");
+  const capacity = watch("capacity");
+  const role = watch("role");
 
-  // Location autocomplete state
   const [showSuggestions, setShowSuggestions] = useState(false);
   const { data: suggestions = [] } = useLocationSuggestions(location);
   const locationRef = useRef<HTMLDivElement>(null);
 
-  // Sync handlers: update both Zustand and form
-  const handleLocationChange = useCallback(
-    (value: string) => {
-      setLocation(value);
-      setValue("location", value, {
-        shouldValidate: value.length >= 2,
-      });
-      setShowSuggestions(true);
-    },
-    [setLocation, setValue]
-  );
+  /**
+   * REFACTORED: Single write path - form only (no Zustand)
+   * This is the clean pattern that prevents desync.
+   */
+  const handleLocationChange = useCallback((value: string) => {
+    setValue("location", value, { shouldValidate: value.length >= 2 });
+    setShowSuggestions(true);
+  }, [setValue]);
 
-  const handleCategoryChange = useCallback(
-    (newCategory: "halls" | "services") => {
-      setCategory(newCategory);
-      setValue("category", newCategory);
-      
-      // Clear incompatible fields
-      if (newCategory === "halls") {
-        setRole(undefined);
-        setValue("role", undefined);
-      } else {
-        setCapacity(undefined);
-        setValue("capacity", undefined);
-      }
-    },
-    [setCategory, setValue, setCapacity, setRole]
-  );
+  const handleCategoryChange = useCallback((newCategory: "halls" | "services") => {
+    setValue("category", newCategory);
+    // Clear fields that don't apply to new category
+    if (newCategory === "halls") {
+      setValue("role", undefined);
+    } else {
+      setValue("capacity", undefined);
+    }
+  }, [setValue]);
 
-  const handleCapacityChange = useCallback(
-    (value: number | undefined) => {
-      setCapacity(value);
-      setValue("capacity", value);
-    },
-    [setCapacity, setValue]
-  );
+  const handleCapacityChange = useCallback((value: number | undefined) => {
+    setValue("capacity", value);
+  }, [setValue]);
 
-  const handleRoleChange = useCallback(
-    (value: string | undefined) => {
-      setRole(value);
-      setValue("role", value);
-    },
-    [setRole, setValue]
-  );
+  const handleRoleChange = useCallback((value: string | undefined) => {
+    setValue("role", value);
+  }, [setValue]);
 
-  const handleSuggestionSelect = useCallback(
-    (name: string) => {
-      setLocation(name);
-      setValue("location", name, { shouldValidate: true });
-      setShowSuggestions(false);
-    },
-    [setLocation, setValue]
-  );
+  const handleSuggestionSelect = useCallback((name: string) => {
+    setValue("location", name, { shouldValidate: true });
+    setShowSuggestions(false);
+  }, [setValue]);
 
   const handleClearLocation = useCallback(() => {
-    handleLocationChange("");
     setValue("location", "", { shouldValidate: false });
-  }, [handleLocationChange, setValue]);
+  }, [setValue]);
 
   return (
     <motion.div
@@ -125,7 +82,9 @@ export default function DesktopSearchBar({
       <form
         onSubmit={handleSubmit(onSubmit)}
         noValidate
-        className="flex gap-4 rounded-[28px] bg-white p-2 shadow-[0_10px_26px_rgba(26,31,60,0.12)] overflow-visible"
+        className={`flex gap-4 rounded-[28px] bg-white p-2 overflow-visible ${
+          showShadow ? "shadow-[0_10px_26px_rgba(26,31,60,0.12)]" : ""
+        }`}
       >
         {/* Category toggle pill */}
         <div className="relative flex min-w-55 items-center rounded-[28px] bg-bg-primary">
@@ -160,7 +119,7 @@ export default function DesktopSearchBar({
           })}
         </div>
 
-        {/* Location input with autocomplete - HALLS ONLY */}
+        {/* Location — halls only */}
         {category === "halls" && (
           <div
             ref={locationRef}
@@ -189,15 +148,12 @@ export default function DesktopSearchBar({
                       handleLocationChange(e.target.value);
                     }}
                     onFocus={() => setShowSuggestions(true)}
-                    onBlur={() =>
-                      setTimeout(() => setShowSuggestions(false), 150)
-                    }
+                    onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
                   />
                 )}
               />
             </div>
 
-            {/* Clear button */}
             {location && (
               <button
                 type="button"
@@ -209,7 +165,6 @@ export default function DesktopSearchBar({
               </button>
             )}
 
-            {/* Validation error */}
             {errors.location && (
               <p
                 id="location-error"
@@ -220,7 +175,6 @@ export default function DesktopSearchBar({
               </p>
             )}
 
-            {/* Autocomplete dropdown */}
             <AnimatePresence>
               {showSuggestions && suggestions.length > 0 && (
                 <motion.ul
@@ -253,7 +207,7 @@ export default function DesktopSearchBar({
           </div>
         )}
 
-        {/* Capacity dropdown - HALLS ONLY */}
+        {/* Capacity — halls only */}
         {category === "halls" && (
           <CapacityDropdown
             value={capacity}
@@ -262,7 +216,7 @@ export default function DesktopSearchBar({
           />
         )}
 
-        {/* Role dropdown - SERVICES ONLY */}
+        {/* Role — services only */}
         {category === "services" && (
           <RoleDropdown
             value={role}
@@ -278,13 +232,15 @@ export default function DesktopSearchBar({
           render={({ field }) => (
             <DateRangePicker
               value={field.value}
-              onChange={field.onChange}
+              onChange={(range) => {
+                field.onChange(range);
+              }}
               error={errors.dateRange?.from?.message ?? errors.dateRange?.message}
             />
           )}
         />
 
-        {/* Search button */}
+        {/* Submit */}
         <button
           type="submit"
           disabled={isPending}

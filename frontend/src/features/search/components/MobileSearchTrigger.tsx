@@ -3,7 +3,7 @@
 import { motion } from "framer-motion";
 import { Search } from "lucide-react";
 
-import { useHomeStore } from "../../store/homeStore";
+import { useSearchStore } from "../store/useSearchStore";
 
 interface MobileSearchTriggerProps {
   mobileSummaryLines: string[];
@@ -20,8 +20,9 @@ interface MobileSearchTriggerProps {
 export default function MobileSearchTrigger({
   mobileSummaryLines,
 }: MobileSearchTriggerProps) {
-  const setIsMobileSearchOpen = useHomeStore((state) => state.setIsMobileSearchOpen);
-
+  const setIsMobileSearchOpen = useSearchStore((state) => state.setIsMobileSearchOpen);
+  
+  
   return (
     <motion.div
       initial={{ opacity: 0, y: 16 }}

@@ -244,7 +244,7 @@ function DesktopDetailsView({ booking }: { booking: ReturnType<typeof useBooking
   );
 }
 
-export default function GrandAtriumDetailsPage() {
+export default function ListingDetails() {
   const booking = useBookingState();
 
   return (

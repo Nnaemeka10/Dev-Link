@@ -7,7 +7,7 @@ export const metadata: Metadata = {
   description: "View listing details with Eventvnv.",
 };
 
-export default function ListingsDetailsRoute() {
+export default function ListingsDetailsPage() {
   return (
     <Suspense fallback={<main className="min-h-screen bg-bg-primary" />}>
       <GrandAtriumDetailsPage />

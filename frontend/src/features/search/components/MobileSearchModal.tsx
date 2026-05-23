@@ -4,12 +4,12 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Building, MapPin, Search, User2, X } from "lucide-react";
 import { useEffect, useRef, useState, useCallback } from "react";
 import { createPortal } from "react-dom";
-import { Controller, UseFormReturn } from "react-hook-form";
+import { Controller, type UseFormReturn } from "react-hook-form";
 
-import type { SearchFormData } from "../../utils/searchSchema";
-import { useHomeStore } from "../../store/homeStore";
-import { useLocationSuggestions } from "../../hooks/useHeroSearch";
-import { DateRangePicker } from "../DateRange";
+import type { SearchFormData } from "../utils/searchSchema";
+import { useSearchStore } from "../store/useSearchStore";
+import { useLocationSuggestions } from "../../home/hooks/useHeroSearch";
+import { DateRangePicker } from "./DateRange";
 import { CapacityDropdown } from "./CapacityDropdown";
 import { RoleDropdown } from "./RoleDropdown";
 
@@ -24,170 +24,99 @@ interface MobileSearchModalProps {
   isPending: boolean;
 }
 
-/**
- * MobileSearchModal: Fullscreen mobile search modal
- *
- * Responsibilities:
- * - Render form UI with form validation via prop
- * - Read category/location/capacity/role from Zustand selectors
- * - Update Zustand on state changes
- * - Handle location suggestions
- * - Manage local UI state (showSuggestions)
- * - Handle focus trap and keyboard navigation
- * - Show/hide fields based on category
- */
-export default function MobileSearchModal({
-  form,
-  onSubmit,
-  isPending,
-}: MobileSearchModalProps) {
-  const { control, handleSubmit, formState: { errors }, setValue } = form;
+export default function MobileSearchModal({ form, onSubmit, isPending }: MobileSearchModalProps) {
+  const { control, handleSubmit, formState: { errors }, setValue, watch } = form;
 
-  // Read from Zustand using selectors
-  const category = useHomeStore((state) => state.category);
-  const location = useHomeStore((state) => state.location);
-  const capacity = useHomeStore((state) => state.capacity);
-  const role = useHomeStore((state) => state.role);
-  const isMobileSearchOpen = useHomeStore((state) => state.isMobileSearchOpen);
-  const setCategory = useHomeStore((state) => state.setCategory);
-  const setLocation = useHomeStore((state) => state.setLocation);
-  const setCapacity = useHomeStore((state) => state.setCapacity);
-  const setRole = useHomeStore((state) => state.setRole);
-  const setIsMobileSearchOpen = useHomeStore((state) => state.setIsMobileSearchOpen);
+  // Watch form values (single source of truth)
+  const category = watch("category");
+  const location = watch("location");
+  const capacity = watch("capacity");
+  const role = watch("role");
 
-  // Location autocomplete state
+  // UI state from store only
+  const isMobileSearchOpen = useSearchStore((s) => s.isMobileSearchOpen);
+  const setIsMobileSearchOpen = useSearchStore((s) => s.setIsMobileSearchOpen);
+
   const [showSuggestions, setShowSuggestions] = useState(false);
   const { data: suggestions = [] } = useLocationSuggestions(location);
   const dialogRef = useRef<HTMLDivElement>(null);
-  const portalTarget =
-    typeof document !== "undefined" ? document.body : null;
+  const portalTarget = typeof document !== "undefined" ? document.body : null;
 
-  // Sync handlers: update both Zustand and form
-  const handleLocationChange = useCallback(
-    (value: string) => {
-      setLocation(value);
-      setValue("location", value, {
-        shouldValidate: value.length >= 2,
-      });
-      setShowSuggestions(true);
-    },
-    [setLocation, setValue]
-  );
+  // Single write path: form only (no Zustand)
+  const handleLocationChange = useCallback((value: string) => {
+    setValue("location", value, { shouldValidate: value.length >= 2 });
+    setShowSuggestions(true);
+  }, [setValue]);
 
-  const handleCategoryChange = useCallback(
-    (newCategory: "halls" | "services") => {
-      setCategory(newCategory);
-      setValue("category", newCategory);
-      
-      // Clear incompatible fields
-      if (newCategory === "halls") {
-        setRole(undefined);
-        setValue("role", undefined);
-      } else {
-        setCapacity(undefined);
-        setValue("capacity", undefined);
-      }
-    },
-    [setCategory, setValue, setCapacity, setRole]
-  );
+  const handleCategoryChange = useCallback((newCategory: "halls" | "services") => {
+    setValue("category", newCategory);
+    if (newCategory === "halls") {
+      setValue("role", undefined);
+    } else {
+      setValue("capacity", undefined);
+    }
+  }, [setValue]);
 
-  const handleCapacityChange = useCallback(
-    (value: number | undefined) => {
-      setCapacity(value);
-      setValue("capacity", value);
-    },
-    [setCapacity, setValue]
-  );
+  const handleCapacityChange = useCallback((value: number | undefined) => {
+    setValue("capacity", value);
+  }, [setValue]);
 
-  const handleRoleChange = useCallback(
-    (value: string | undefined) => {
-      setRole(value);
-      setValue("role", value);
-    },
-    [setRole, setValue]
-  );
+  const handleRoleChange = useCallback((value: string | undefined) => {
+    setValue("role", value);
+  }, [setValue]);
 
-  const handleSuggestionSelect = useCallback(
-    (name: string) => {
-      setLocation(name);
-      setValue("location", name, { shouldValidate: true });
-      setShowSuggestions(false);
-    },
-    [setLocation, setValue]
-  );
+  const handleSuggestionSelect = useCallback((name: string) => {
+    setValue("location", name, { shouldValidate: true });
+    setShowSuggestions(false);
+  }, [setValue]);
 
   const handleClearLocation = useCallback(() => {
-    handleLocationChange("");
     setValue("location", "", { shouldValidate: false });
-  }, [handleLocationChange, setValue]);
+  }, [setValue]);
 
-  // Lock body scroll when modal is open
+  // Lock body scroll when open
   useEffect(() => {
     if (!isMobileSearchOpen) return;
-
-    const previousOverflow = document.body.style.overflow;
+    const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
-
-    return () => {
-      document.body.style.overflow = previousOverflow;
-    };
+    return () => { document.body.style.overflow = prev; };
   }, [isMobileSearchOpen]);
 
-  // Focus trap and keyboard handling
+  // Focus trap + Escape
   useEffect(() => {
     if (!isMobileSearchOpen) return;
 
-    function getFocusableElements(container: HTMLElement | null) {
-      if (!container) return [];
+    function getFocusable(el: HTMLElement | null) {
+      if (!el) return [];
       return Array.from(
-        container.querySelectorAll<HTMLElement>(
+        el.querySelectorAll<HTMLElement>(
           "button, [href], input, select, textarea, [tabindex]:not([tabindex='-1'])"
         )
-      ).filter((el) => !el.hasAttribute("disabled"));
+      ).filter((e) => !e.hasAttribute("disabled"));
     }
 
-    function handleKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape") {
-        setIsMobileSearchOpen(false);
-        return;
-      }
-
-      if (event.key !== "Tab") {
-        return;
-      }
-
-      const items = getFocusableElements(dialogRef.current);
-      if (items.length === 0) return;
-
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") { setIsMobileSearchOpen(false); return; }
+      if (e.key !== "Tab") return;
+      const items = getFocusable(dialogRef.current);
+      if (!items.length) return;
       const first = items[0];
       const last = items[items.length - 1];
-      const activeEl = document.activeElement as HTMLElement;
-
-      if (event.shiftKey && activeEl === first) {
-        event.preventDefault();
-        last?.focus();
-      } else if (!event.shiftKey && activeEl === last) {
-        event.preventDefault();
-        first?.focus();
-      }
+      const active = document.activeElement as HTMLElement;
+      if (e.shiftKey && active === first) { e.preventDefault(); last?.focus(); }
+      else if (!e.shiftKey && active === last) { e.preventDefault(); first?.focus(); }
     }
 
     document.addEventListener("keydown", handleKeyDown);
-
-    return () => {
-      document.removeEventListener("keydown", handleKeyDown);
-    };
+    return () => document.removeEventListener("keydown", handleKeyDown);
   }, [isMobileSearchOpen, setIsMobileSearchOpen]);
 
-  if (!portalTarget) {
-    return null;
-  }
+  if (!portalTarget) return null;
 
   return createPortal(
     <AnimatePresence>
       {isMobileSearchOpen && (
         <>
-          {/* Backdrop */}
           <motion.button
             type="button"
             aria-label="Close search"
@@ -199,7 +128,6 @@ export default function MobileSearchModal({
             onClick={() => setIsMobileSearchOpen(false)}
           />
 
-          {/* Modal */}
           <motion.div
             role="dialog"
             aria-modal="true"
@@ -210,7 +138,6 @@ export default function MobileSearchModal({
             exit={{ opacity: 0, y: 60 }}
             transition={{ duration: 0.25, ease: "easeOut" }}
             className="fixed inset-0 z-50 flex flex-col bg-white overflow-hidden"
-            onKeyDown={(e) => e.key === "Escape" && setIsMobileSearchOpen(false)}
           >
             {/* Header */}
             <div className="flex items-center justify-between border-b border-text-primary/10 px-5 py-4">
@@ -218,9 +145,7 @@ export default function MobileSearchModal({
                 <p className="text-xs font-semibold uppercase tracking-[0.2em] text-text-primary/40">
                   Search
                 </p>
-                <h2 className="text-lg font-semibold text-text-primary">
-                  Begin your search
-                </h2>
+                <h2 className="text-lg font-semibold text-text-primary">Begin your search</h2>
               </div>
               <button
                 type="button"
@@ -265,7 +190,7 @@ export default function MobileSearchModal({
                   </div>
                 </div>
 
-                {/* Location input with autocomplete - HALLS ONLY */}
+                {/* Location — halls only */}
                 {category === "halls" && (
                   <div className="rounded-3xl border border-text-primary/10 bg-white px-4 py-4 shadow-[0_12px_30px_rgba(26,31,60,0.08)]">
                     <div className="flex items-center gap-3">
@@ -285,20 +210,14 @@ export default function MobileSearchModal({
                               placeholder="Lagos, Abuja, PH..."
                               aria-label="Search location"
                               aria-invalid={!!errors.location}
-                              aria-describedby={
-                                errors.location
-                                  ? "mobile-location-error"
-                                  : undefined
-                              }
+                              aria-describedby={errors.location ? "mobile-location-error" : undefined}
                               className="mt-2 w-full bg-transparent text-base text-text-primary placeholder:text-text-primary/40 focus:outline-none"
-                              onChange={(event) => {
-                                field.onChange(event);
-                                handleLocationChange(event.target.value);
+                              onChange={(e) => {
+                                field.onChange(e);
+                                handleLocationChange(e.target.value);
                               }}
                               onFocus={() => setShowSuggestions(true)}
-                              onBlur={() =>
-                                setTimeout(() => setShowSuggestions(false), 150)
-                              }
+                              onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
                             />
                           )}
                         />
@@ -315,33 +234,23 @@ export default function MobileSearchModal({
                       )}
                     </div>
                     {errors.location && (
-                      <p
-                        id="mobile-location-error"
-                        role="alert"
-                        className="mt-2 text-xs text-red-500"
-                      >
+                      <p id="mobile-location-error" role="alert" className="mt-2 text-xs text-red-500">
                         {errors.location.message}
                       </p>
                     )}
-
-                    {/* Autocomplete suggestions */}
                     {showSuggestions && suggestions.length > 0 && (
                       <div className="mt-4 space-y-2 rounded-2xl border border-text-primary/10 bg-bg-primary/40 p-2">
-                        {suggestions.map((suggestion) => (
+                        {suggestions.map((s) => (
                           <button
-                            key={suggestion.id}
+                            key={s.id}
                             type="button"
-                            onMouseDown={() =>
-                              handleSuggestionSelect(suggestion.name)
-                            }
+                            onMouseDown={() => handleSuggestionSelect(s.name)}
                             className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm text-text-primary hover:bg-white"
                           >
                             <MapPin className="h-4 w-4 text-text-primary/45" />
                             <span>
-                              {suggestion.name}
-                              <span className="ml-1 text-text-primary/45">
-                                {suggestion.state}
-                              </span>
+                              {s.name}
+                              <span className="ml-1 text-text-primary/45">{s.state}</span>
                             </span>
                           </button>
                         ))}
@@ -350,30 +259,30 @@ export default function MobileSearchModal({
                   </div>
                 )}
 
-                {/* Capacity dropdown - HALLS ONLY */}
+                {/* Capacity — halls only */}
                 {category === "halls" && (
                   <div className="rounded-3xl border border-text-primary/10 bg-white px-4 py-4 shadow-[0_12px_30px_rgba(26,31,60,0.08)]">
                     <div className="flex items-center gap-3">
-                        <Building className="mt-1 h-5 w-5 text-text-primary/50" />
-                        <CapacityDropdown
+                      <Building className="mt-1 h-5 w-5 text-text-primary/50" />
+                      <CapacityDropdown
                         value={capacity}
                         onChange={handleCapacityChange}
                         disabled={isPending}
-                        />
+                      />
                     </div>
                   </div>
                 )}
 
-                {/* Role dropdown - SERVICES ONLY */}
+                {/* Role — services only */}
                 {category === "services" && (
                   <div className="rounded-3xl border border-text-primary/10 bg-white px-4 py-4 shadow-[0_12px_30px_rgba(26,31,60,0.08)]">
                     <div className="flex items-center gap-3">
-                        <User2 className="mt-1 h-5 w-5 text-text-primary/50" />
-                        <RoleDropdown
+                      <User2 className="mt-1 h-5 w-5 text-text-primary/50" />
+                      <RoleDropdown
                         value={role}
                         onChange={handleRoleChange}
                         disabled={isPending}
-                        />
+                      />
                     </div>
                   </div>
                 )}
@@ -386,11 +295,10 @@ export default function MobileSearchModal({
                     render={({ field }) => (
                       <DateRangePicker
                         value={field.value}
-                        onChange={field.onChange}
-                        error={
-                          errors.dateRange?.from?.message ??
-                          errors.dateRange?.message
-                        }
+                        onChange={(range) => {
+                          field.onChange(range);
+                        }}
+                        error={errors.dateRange?.from?.message ?? errors.dateRange?.message}
                       />
                     )}
                   />

@@ -66,7 +66,7 @@ export default function Navbar() {
             </>
           ) : (
             <Link href="/login">
-              <Button variant="primary">Login</Button>
+              <Button variant="primary" size="xs">Login</Button>
             </Link>
           )}
         </div>

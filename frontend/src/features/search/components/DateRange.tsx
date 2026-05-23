@@ -5,8 +5,8 @@ import { createPortal } from "react-dom";
 import { DayPicker, type DateRange as DayPickerRange } from "react-day-picker";
 import { motion, AnimatePresence } from "framer-motion";
 import { CalendarDays, ChevronLeft, ChevronRight, X } from "lucide-react";
-import type { DateRange } from "../utils/searchSchema"; // adjust path
 import { useMediaQuery } from "@/hooks/useMediaQuery";
+import type { DateRange } from "@/features/search";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 

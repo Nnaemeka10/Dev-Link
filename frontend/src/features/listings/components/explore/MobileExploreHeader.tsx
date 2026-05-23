@@ -1,121 +1,113 @@
-import { ListFilter, Search, SlidersHorizontal } from "lucide-react";
+"use client";
 
-type Tab = "halls" | "services";
+import { ListFilter, SlidersHorizontal } from "lucide-react";
+import Image from "next/image";
+import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
+import FilterModal from "../FilterModal";
+import type { FilterState } from "@/features/listings/components/FilterModal";
+import { useState } from "react";
+import { MobileSearchModal, MobileSearchTrigger, useSearchForm } from "@/features/search";
+import { SearchFormData } from "@/features/search/utils/searchSchema";
+import { SortDropdown } from "./SortDropdown";
+import { buildListingsHref, normalizeListingSearchParams } from "@/features/listings/searchParams";
+import type { SortBy, SortOrder } from "@/features/listings/searchParams";
+
+
 
 interface MobileExploreHeaderProps {
-  searchQuery: string;
-  onSearchChange: (query: string) => void;
-  activeTab: Tab;
-  onTabChange: (tab: Tab) => void;
-  onOpenFilters: () => void;
-  activeFilters: Set<string>;
-  onToggleFilter: (name: string) => void;
+  handleSearch: (data: SearchFormData) => void;
+  form: ReturnType<typeof useSearchForm>;
+  isPending: boolean;
+  mobileSummary: string[]; // Array of lines for mobile summary display
 }
 
-function FilterPill({
-  children,
-  active = false,
-  onClick,
-}: {
-  children: React.ReactNode;
-  active?: boolean;
-  onClick?: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`shrink-0 rounded-full px-5 py-3 text-sm font-bold ${
-        active ? "bg-[#FFDFA7] text-[#2C2926]" : "bg-[#EEECE7] text-[#6A6786]"
-      }`}
-    >
-      {children}
-    </button>
-  );
-}
 
 export default function MobileExploreHeader({
-  searchQuery,
-  onSearchChange,
-  activeTab,
-  onTabChange,
-  onOpenFilters,
-  activeFilters,
-  onToggleFilter,
+ handleSearch,
+ form,
+ isPending,
+ mobileSummary,
 }: MobileExploreHeaderProps) {
-  const filterOptions = ["Price", "Rating", "Verified"];
+
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+
+   const handleApplyFilters = (filters: FilterState) => {
+    // Handle filter application - can update search params or trigger filtering
+    console.log("Filters applied:", filters);
+  };
 
   return (
     <>
-      <header className="sticky top-0 z-30 bg-bg-primary/95 px-6 py-5 backdrop-blur">
+      <header className="sticky top-0 z-30 bg-bg-primary/95 px-6 py-5 backdrop-blur flex flex-col gap-8">
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-extrabold tracking-[-0.01em]">Explore</h1>
+          <Link href="/" className="text-2xl flex font-semibold tracking-[-0.02em] text-text-primary items-end gap-1">
+            <Image src="/logo.svg" alt="EventVnv" width={30} height={30} />
+            <p className="font-semibold logo translate-y-1.5">EventVnV </p>
+          </Link>
           <button
             type="button"
-            onClick={onOpenFilters}
+            onClick={() => setIsFilterOpen(true)}
             className="text-[#B9401D]"
             aria-label="Open filters"
           >
             <SlidersHorizontal className="h-5 w-5" />
           </button>
         </div>
+        
 
-        <label className="mt-5 flex h-14 items-center gap-3 rounded-full bg-[#EEECE7] px-5 text-[#6B6E91]">
-          <Search className="h-5 w-5" />
-          <input
-            type="search"
-            placeholder="Search venues or services..."
-            value={searchQuery}
-            onChange={(e) => onSearchChange(e.target.value)}
-            className="w-full bg-transparent text-sm font-semibold placeholder:text-[#7B7E9B] focus:outline-none"
-          />
-        </label>
+        <MobileSearchTrigger mobileSummaryLines={mobileSummary} />
 
-        <div className="mt-5 grid grid-cols-2 text-center text-sm font-extrabold">
-          <button
-            type="button"
-            onClick={() => onTabChange("halls")}
-            className={`border-b-2 pb-3 ${
-              activeTab === "halls"
-                ? "border-[#B9401D] text-[#B9401D]"
-                : "border-transparent text-[#686987]"
-            }`}
-          >
-            Event Halls
-          </button>
-          <button
-            type="button"
-            onClick={() => onTabChange("services")}
-            className={`border-b-2 pb-3 ${
-              activeTab === "services"
-                ? "border-[#B9401D] text-[#B9401D]"
-                : "border-transparent text-[#686987]"
-            }`}
-          >
-            Services
-          </button>
-        </div>
+        <MobileSearchModal onSubmit={handleSearch} form={form} isPending={isPending} />
       </header>
 
-      <div className="no-scrollbar flex gap-3 overflow-x-auto px-6 py-4">
-        <button
-          type="button"
-          onClick={onOpenFilters}
-          className="inline-flex shrink-0 items-center gap-2 rounded-full bg-[#1D1D1A] px-6 py-3 text-xs font-extrabold uppercase tracking-[0.05em] text-white"
-        >
-          <ListFilter className="h-4 w-4" />
-          Filter
-        </button>
-        {filterOptions.map((option) => (
-          <FilterPill
-            key={option}
-            active={activeFilters.has(option)}
-            onClick={() => onToggleFilter(option)}
-          >
-            {option}
-          </FilterPill>
-        ))}
-      </div>
+      <FilterModal isOpen={isFilterOpen} onClose={() => setIsFilterOpen(false)} onApplyFilters={handleApplyFilters} />
     </>
+  );
+}
+
+export function MobileResultsHeader() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  function nullableToUndefined(value: string | null) {
+    return value ?? undefined;
+  }
+
+  const params = normalizeListingSearchParams({
+    category: searchParams.get("category") || "halls",
+    location: nullableToUndefined(searchParams.get("location")),
+    dateFrom: nullableToUndefined(searchParams.get("dateFrom")),
+    dateTo: nullableToUndefined(searchParams.get("dateTo")),
+    capacity: nullableToUndefined(searchParams.get("capacity")),
+    role: nullableToUndefined(searchParams.get("role")),
+    sort: nullableToUndefined(searchParams.get("sort")),
+    sortOrder: nullableToUndefined(searchParams.get("sortOrder")),
+  });
+
+  const handleSort = (sort: SortBy, sortOrder: SortOrder) => {
+    const newParams = {
+      ...params,
+      sort,
+      sortOrder,
+    };
+
+    router.push(buildListingsHref(newParams));
+  };
+
+  return (
+    <div className="mb-6 px-6 py-4 space-y-3">
+      <div>
+        <h2 className="text-xl font-extrabold tracking-[-0.02em] text-text-primary">Venues in Lagos</h2>
+        <p className="mt-1 text-sm text-[#555B7F]">248 spaces found for your event</p>
+      </div>
+      <div className="flex items-center justify-between">
+        <SortDropdown 
+          currentSort={params.sort} 
+          currentSortOrder={params.sortOrder} 
+          onSort={handleSort} 
+        />
+      </div>
+    </div>
   );
 }
