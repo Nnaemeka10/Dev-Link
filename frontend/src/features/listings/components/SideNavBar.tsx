@@ -41,11 +41,11 @@ export default function SideNavBar() {
   const pathname = usePathname();
 
   return (
-    <aside className="w-[15%] h-screen flex flex-col border-r border-[#F1E5D5] bg-bg-primary overflow-y-auto">
-      <div className="flex h-32 items-center border-b border-[#F1E5D5] px-6 font-semibold tracking-[-0.02em] text-text-primary flex-shrink-0">
-        <Link href="/" className="flex items-center gap-2">
-          <Image src="/logo.svg" alt="EventVnv" width={30} height={30} />
-          <p className="logo text-lg font-semibold">EventVnV</p>
+    <aside className="w-[15%] h-screen flex flex-col border-r border-[#F1E5D5] bg-bg-primary overflow-y-auto fixed">
+      <div className="flex h-32 items-center border-b border-[#F1E5D5] px-6 font-semibold tracking-[-0.02em] text-text-primary shrink-0">
+        <Link href="/" className="text-2xl flex font-semibold tracking-[-0.02em] text-text-primary items-end gap-1">
+            <Image src="/logo.svg" alt="EventVnv" width={30} height={30} />
+            <p className="font-semibold logo translate-y-1.5">EventVnV </p>
         </Link>
       </div>
 

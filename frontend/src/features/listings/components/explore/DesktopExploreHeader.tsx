@@ -18,9 +18,10 @@ interface DesktopExploreHeaderProps {
   handleSearch: (data: SearchFormData) => void;
   form: ReturnType<typeof useSearchForm>;
   isPending: boolean;
+  filter?: boolean; // Optional prop to conditionally show filter button
 }
 
-export function DesktopExploreHeader({ handleSearch, form, isPending }: DesktopExploreHeaderProps) {
+export function DesktopExploreHeader({ handleSearch, form, isPending, filter }: DesktopExploreHeaderProps) {
   
   
   const [isFilterOpen, setIsFilterOpen] = useState(false); //
@@ -39,14 +40,16 @@ export function DesktopExploreHeader({ handleSearch, form, isPending }: DesktopE
         <div className="flex items-center gap-8 px-8 py-6 max-w-full">
           <DesktopSearchBar form={form} onSubmit={handleSearch} isPending={isPending} showShadow={true} />
 
-          <button
-            type="button"
-            onClick={() => setIsFilterOpen(true)}
-            className="ml-auto inline-flex items-center gap-2 rounded-full bg-[#FFDFA7] px-6 py-3 text-sm font-extrabold hover:brightness-95 transition-all flex-shrink-0"
-          >
-            <SlidersHorizontal className="h-4 w-4" />
-            Filters
-          </button>
+          {filter && (
+            <button
+              type="button"
+              onClick={() => setIsFilterOpen(true)}
+              className="ml-auto inline-flex items-center gap-2 rounded-full bg-[#FFDFA7] px-6 py-3 text-sm font-extrabold hover:brightness-95 transition-all flex-shrink-0"
+            >
+              <SlidersHorizontal className="h-4 w-4" />
+              Filters
+            </button>
+          )}
         </div>
       </header>
 

@@ -2,18 +2,34 @@
 
 import { MapPin, MessageSquare, Star } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useTransition } from "react";
 
 import { GRAND_ATRIUM_DETAILS } from "../details.data";
 import { BOOKING_STORAGE_KEY } from "@/features/bookings/booking.data";
 import BookingCard from "../components/details/BookingCard";
-import { DetailsActions, DesktopDetailsHeader, MobileDetailsHeader, TabletDetailsHeader } from "../components/details/DetailsHeader";
+import { DetailsActions, MobileDetailsHeader, TabletDetailsHeader } from "../components/details/DetailsHeader";
 import DetailsFooter from "../components/details/DetailsFooter";
 import { ListingBadge, RatingBadge, VerifiedVenueBadge } from "../components/details/DetailBadges";
 import ListingFeatures from "../components/details/ListingFeatures";
 import { DesktopPhotoGallery, MobileHeroPhoto, TabletPhotoGallery } from "../components/details/PhotoGallery";
 import ReviewsSection from "../components/details/ReviewsSection";
 import SimilarVenues from "../components/details/SimilarVenues";
+import SideNavBar from "../components/SideNavBar";
+import { DesktopExploreHeader } from "../components/explore/DesktopExploreHeader";
+import { useSearchForm } from "@/features/search";
+import { buildListingsHref } from "../searchParams";
+import { SearchFormData } from "@/features/search/utils/searchSchema";
+import ExploreFooter from "../components/explore/ExploreFooter";
+
+interface SearchProps {
+  handleSearch: (data: SearchFormData) => void;
+  form: ReturnType<typeof useSearchForm>;
+  isPending: boolean;
+}
+
+interface DesktopDetailsViewProps extends SearchProps {
+  booking: ReturnType<typeof useBookingState>;
+}
 
 function useBookingState() {
   const router = useRouter();
@@ -184,12 +200,75 @@ function TabletDetailsView({ booking }: { booking: ReturnType<typeof useBookingS
   );
 }
 
-function DesktopDetailsView({ booking }: { booking: ReturnType<typeof useBookingState> }) {
+function DesktopDetailsView({ booking, handleSearch, form, isPending }: DesktopDetailsViewProps) {
   const details = GRAND_ATRIUM_DETAILS;
 
   return (
-    <section className="hidden xl:block">
-      <DesktopDetailsHeader />
+    <section className="hidden xl:flex">
+    
+      <SideNavBar />
+      <div className="ml-[15%] w-[85%] flex flex-col overflow-hidden">
+        <DesktopExploreHeader handleSearch={handleSearch} form={form} isPending={isPending}  filter = {false}/>
+
+        <div className="flex flex-1 overflow-hidden">
+          <div className="flex-1 overflow-y-auto px-8 pb-12 pt-10">
+            <DesktopPhotoGallery gallery={details.gallery} name={details.name} />
+            <div className="grid grid-cols-[minmax(0,1fr)_20rem] gap-20 pr-8 py-12">
+              <div>
+                <div className="flex items-start justify-between gap-8">
+                  <div>
+                    <h1 className="text-[2rem] font-extrabold text-[#252423]">{details.name}</h1>
+                    <span className="flex gap-8"> 
+                      <p className="mt-1 flex items-center gap-1 text-sm font-semibold text-[#5E6588]">
+                        <MapPin className="h-4 w-4" />
+                        {details.location}
+                      </p>
+                      <DetailsActions />
+                    </span>
+                  </div>
+                  <div className="flex flex-col items-end gap-2">
+                    <RatingBadge rating={details.rating} reviewsCount={details.reviewsCount} />
+                    <VerifiedVenueBadge />
+                  </div>
+                </div>
+
+                <div className="mt-7 flex gap-3">
+                  {details.badges.map((badge) => (
+                    <ListingBadge key={badge}>{badge}</ListingBadge>
+                  ))}
+                </div>
+
+                <AboutCopy />
+                <ListingFeatures features={details.features} />
+                
+              </div>
+
+              <BookingCard
+                booked={booking.booked}
+                date={booking.date}
+                guests={booking.guests}
+                time={booking.time}
+                onBook={booking.bookNow}
+                onDateChange={booking.setDate}
+                onGuestsChange={booking.setGuests}
+                onTimeChange={booking.setTime}
+                price={details.price}
+              />
+          </div>
+
+        
+            <ReviewsSection metrics={details.reviewMetrics} reviews={details.reviews} />
+            <SimilarVenues venues={details.similarVenues} />
+               
+      </div>
+    </div>
+      <DetailsFooter />
+    </div>
+      
+  
+          
+      
+      {/* <DesktopDetailsHeader />
       <div className="mx-auto max-w-[90rem] px-8 pb-20">
         <div className="mt-5 flex items-end justify-between">
           <div>
@@ -239,19 +318,37 @@ function DesktopDetailsView({ booking }: { booking: ReturnType<typeof useBooking
         <ReviewsSection metrics={details.reviewMetrics} reviews={details.reviews} />
         <SimilarVenues venues={details.similarVenues} />
       </div>
-      <DetailsFooter />
+      <DetailsFooter /> */}
     </section>
   );
 }
 
-export default function ListingDetails() {
+export default function ListingDetails() { 
   const booking = useBookingState();
+  const [isPending, startTransition] = useTransition(); //
+  const form = useSearchForm();
+  const router = useRouter();
+
+  const handleSearch = (data: SearchFormData) => {
+        startTransition(() => {
+          router.push(
+            buildListingsHref({
+              category: data.category,
+              location: data.location || undefined,
+              dateFrom: data.dateRange?.from?.toISOString(),
+              dateTo: data.dateRange?.to?.toISOString(),
+              capacity: data.capacity,
+              role: data.role,
+            })
+          );
+        });
+      };
 
   return (
     <main className="min-h-screen bg-bg-primary text-[#252423]">
       <MobileDetailsView booking={booking} />
       <TabletDetailsView booking={booking} />
-      <DesktopDetailsView booking={booking} />
+      <DesktopDetailsView booking={booking} handleSearch={handleSearch} form={form} isPending={isPending} />
     </main>
   );
 }

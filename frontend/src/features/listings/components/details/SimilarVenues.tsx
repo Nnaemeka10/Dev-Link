@@ -8,7 +8,7 @@ export default function SimilarVenues({ venues, variant = "desktop" }: { venues:
   return (
     <section className={mobile ? "px-5 py-10" : "py-16"}>
       <div className="mb-8 flex items-center justify-between">
-        <h2 className={mobile ? "text-xl font-extrabold text-[#252423]" : "text-2xl font-medium text-[#3A3734]"}>
+        <h2 className={mobile ? "text-xl font-extrabold text-[#252423]" : "text-2xl font-extrabold text-[#3A3734]"}>
           Similar Premium Venues
         </h2>
         {mobile ? <button className="text-sm font-extrabold text-[#B9401D]">See All</button> : null}

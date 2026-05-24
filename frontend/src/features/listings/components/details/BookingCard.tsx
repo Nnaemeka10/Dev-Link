@@ -32,7 +32,7 @@ export default function BookingCard({
 
   return (
     <aside
-      className={`rounded-[2rem] bg-white shadow-[0_24px_54px_rgba(34,27,18,0.1)] ${
+      className={`rounded-4xl bg-white shadow-[0_24px_54px_rgba(34,27,18,0.1)] h-fit ${
         compact ? "p-6" : "sticky top-8 p-8"
       }`}
     >
@@ -41,12 +41,12 @@ export default function BookingCard({
           {price}
           <span className="text-sm font-bold text-[#5E6588]">/event</span>
         </p>
-        <p className="text-xs font-extrabold text-[#252423]">★ 4.9</p>
+       
       </div>
 
       <div className="mt-7 overflow-hidden rounded-[1.35rem] border border-[#E8DDD2]">
         <label className="block border-b border-[#E8DDD2] px-4 py-3">
-          <span className="text-[10px] font-extrabold uppercase text-[#9A9AAE]">Event Date</span>
+          <span className="text-tiny font-extrabold uppercase text-[#9A9AAE]">Event Date</span>
           <input
             type="date"
             value={date}
@@ -56,7 +56,7 @@ export default function BookingCard({
         </label>
         <div className="grid grid-cols-2">
           <label className="block border-r border-[#E8DDD2] px-4 py-3">
-            <span className="text-[10px] font-extrabold uppercase text-[#9A9AAE]">Guests</span>
+            <span className="text-tiny font-extrabold uppercase text-[#9A9AAE]">Guests</span>
             <select
               value={guests}
               onChange={(event) => onGuestsChange(event.target.value)}
@@ -68,7 +68,7 @@ export default function BookingCard({
             </select>
           </label>
           <label className="block px-4 py-3">
-            <span className="text-[10px] font-extrabold uppercase text-[#9A9AAE]">Time</span>
+            <span className="text-tiny font-extrabold uppercase text-[#9A9AAE]">Time</span>
             <select
               value={time}
               onChange={(event) => onTimeChange(event.target.value)}

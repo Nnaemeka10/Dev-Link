@@ -1,4 +1,6 @@
 import { ArrowLeft, Heart, Share2 } from "lucide-react";
+import Image from "next/image";
+import Link from "next/link";
 
 export function MobileDetailsHeader() {
   return (
@@ -34,14 +36,11 @@ export function TabletDetailsHeader() {
 export function DesktopDetailsHeader() {
   return (
     <header className="mx-auto flex h-16 max-w-[90rem] items-center gap-8 px-8">
-      <h1 className="text-xl font-extrabold text-[#252423]">Eventvnv</h1>
-      <nav className="flex items-center gap-8 text-sm font-extrabold text-[#5E6588]">
-        <button type="button" className="border-b-2 border-[#B9401D] pb-2 text-[#B9401D]">
-          Browse Venues
-        </button>
-        <button type="button">Find Services</button>
-        <button type="button">Journal</button>
-      </nav>
+      <Link href="/" className="text-2xl flex font-semibold tracking-[-0.02em] text-text-primary items-end gap-1">
+          <Image src="/logo.svg" alt="EventVnv" width={30} height={30} />
+          <p className="font-semibold logo translate-y-1.5">EventVnV </p>
+      </Link>
+      
       <div className="ml-auto flex items-center gap-4">
         <button type="button" className="rounded-full border border-[#DDB6AA] px-6 py-2 text-sm font-extrabold text-[#252423]">
           Sign In

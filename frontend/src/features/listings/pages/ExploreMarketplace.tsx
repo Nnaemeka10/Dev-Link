@@ -154,7 +154,7 @@ export default function ExploreMarketplace() {
 
       <section className="hidden lg:flex h-screen">
         <SideNavBar />
-        <div className="w-[85%] flex flex-col overflow-hidden">
+        <div className="ml-[15%] w-[85%] flex flex-col overflow-hidden">
           <DesktopExploreHeader handleSearch={handleSearch} form={form} isPending={isPending}  />
 
           <div className="flex flex-1 overflow-hidden">
