@@ -14,7 +14,7 @@ function formatDate(date: Date): string {
   return date.toLocaleDateString("en-NG", { day: "numeric", month: "short" });
 }
 
-function formatTriggerLabel(range: DateRange | undefined): string {
+export function formatTriggerLabel(range: DateRange | undefined): string {
   if (!range) return "";
   if (!range.to) return formatDate(range.from);
   return `${formatDate(range.from)} – ${formatDate(range.to)}`;
@@ -26,11 +26,13 @@ interface DateRangePickerProps {
   value: DateRange | undefined;
   onChange: (range: DateRange | undefined) => void;
   error?: string;
+  variant?: "default" | "ghost";
+  triggerClassName?: string;
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export function DateRangePicker({ value, onChange, error }: DateRangePickerProps) {
+export function DateRangePicker({ value, onChange, error, variant = "default", triggerClassName }: DateRangePickerProps) {
   const [open, setOpen] = useState(false);
   const [popoverTop, setPopoverTop] = useState<number | null>(null);
   const [draftRange, setDraftRange] = useState<DayPickerRange | undefined>(value);
@@ -140,7 +142,18 @@ export function DateRangePicker({ value, onChange, error }: DateRangePickerProps
   // ─── Render ──────────────────────────────────────────────────────────────────
 
   return (
-    <div ref={containerRef} className="date-picker-shell md:px-4 xl:px-5">
+    <div ref={containerRef} className={variant === "ghost" ? "flex flex-1" : "date-picker-shell md:px-4 xl:px-5"}>
+      {variant === "ghost" ? (
+        <button
+          type="button"
+          onClick={() => (open ? closePicker({ apply: false }) : openPicker())}
+          aria-haspopup="dialog"
+          aria-expanded={open}
+          className={triggerClassName || "text-sm text-left w-full"}
+        >
+          {label || "Select date"}
+        </button>
+      ) : (
       <div className={`date-picker-trigger-row ${open ? "date-picker-trigger-row--open" : ""}`}>
         {/* ── Trigger ────────────────────────────────────────────────────────── */}
         <button
@@ -171,9 +184,10 @@ export function DateRangePicker({ value, onChange, error }: DateRangePickerProps
           </button>
         )}
       </div>
+      )}
 
       {/* ── Validation error ──────────────────────────────────────────────────── */}
-      {error && (
+      {error && variant !== "ghost" && (
         <p role="alert" className="date-picker-error">
           {error}
         </p>

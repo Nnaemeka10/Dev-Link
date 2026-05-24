@@ -1,3 +1,4 @@
+import type { DateRange } from "@/features/search/utils/searchSchema";
 import type { StaticImageData } from "next/image";
 
 export type BookingPaymentMethod = "card" | "transfer" | "crypto";
@@ -9,7 +10,7 @@ export interface BookingFormState {
   cardNumber: string;
   contactEmail: string;
   contactName: string;
-  date: string;
+  dateRange: DateRange | undefined;
   endTime: string;
   guestNames: string[];
   guests: number;

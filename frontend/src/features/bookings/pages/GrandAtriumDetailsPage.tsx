@@ -58,8 +58,7 @@ export default function GrandAtriumDetailsPage() {
       {activeStep === 1 ? (
         <>
           <div className="mt-4 text-center">
-            <p className="text-sm font-extrabold uppercase tracking-[0.12em] text-[#B9401D]">Step 1: Booking Details</p>
-            <h1 className="mt-2 text-4xl font-extrabold">Secure Your Canvas</h1>
+            <h1 className="mt-2 text-4xl font-extrabold">Secure Your Venue</h1>
           </div>
           <BookingDetailsStep form={wizard.form} onContinue={() => wizard.goToStep(2)} onUpdate={wizard.updateForm} />
         </>

@@ -1,7 +1,7 @@
 "use client";
 
-import { MapPin, MessageSquare, Star } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { MapPin, MessageSquare } from "lucide-react";
+import { useParams, useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 
 import { GRAND_ATRIUM_DETAILS } from "../details.data";
@@ -19,10 +19,8 @@ import { DesktopExploreHeader } from "../components/explore/DesktopExploreHeader
 import { useSearchForm } from "@/features/search";
 import { buildListingsHref } from "../searchParams";
 import { SearchFormData } from "@/features/search/utils/searchSchema";
-import ExploreFooter from "../components/explore/ExploreFooter";
+
 import type { DateRange } from "@/features/search/utils/searchSchema";
-import Link from "next/link";
-import Image from "next/image";
 import HomeFooter from "@/components/layout/Footer";
 import { MobileBookingDock } from "../components/details/MobileBookingDock.tsx";
 
@@ -42,6 +40,8 @@ function useBookingState() {
   const [guests, setGuests] = useState("Up to 500");
   const [time, setTime] = useState("Evening");
   const [booked, setBooked] = useState(false);
+  const params = useParams();
+  const id = params.id as string;
 
   return {
     booked,
@@ -58,7 +58,7 @@ function useBookingState() {
       }
 
       setBooked(true);
-      router.push("/bookings/grand-atrium?step=1");
+      router.push(`/bookings/${id}?step=1`);
     },
     setDateRange,
     setGuests,

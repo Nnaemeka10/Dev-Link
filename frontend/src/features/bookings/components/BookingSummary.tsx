@@ -86,6 +86,7 @@ export function VenueSelectionCard() {
           <MapPin className="h-4 w-4" />
           {BOOKING_VENUE.location}
         </p>
+        <p className="mt-2 text-xs font-extrabold text-[#B9401D]">{BOOKING_VENUE.capacity}</p>
       </div>
     </article>
   );
