@@ -135,10 +135,10 @@ export function CapacityDropdown({
               left: dropdownLeft ? `${dropdownLeft}px` : 0,
               width: dropdownWidth ? `${dropdownWidth}px` : "auto",
             }}
-            className="z-50 min-w-48 overflow-hidden rounded-2xl bg-white py-3 shadow-[0_8px_24px_rgba(26,31,60,0.14)]"
+            className="z-50 min-w-48 overflow-hidden rounded-2xl bg-white py-2 xl:py-3 shadow-[0_8px_24px_rgba(26,31,60,0.14)]"
           >
-            <div className="px-4 space-y-4">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-text-primary/45">
+            <div className="px-3 xl:px-4 space-y-3 xl:space-y-4">
+              <p className="text-[10px] xl:text-[11px] font-semibold uppercase tracking-[0.12em] text-text-primary/45">
                 Adjust capacity
               </p>
 
@@ -151,24 +151,24 @@ export function CapacityDropdown({
                   onBlur={handleInputBlur}
                   onKeyDown={handleInputKeyDown}
                   min="1"
-                  className="w-full rounded-lg border border-text-primary/10 px-3 py-2 text-center text-lg font-semibold text-text-primary focus:outline-none focus:border-accent-primary transition-colors"
+                  className="w-full rounded-lg border border-text-primary/10 px-2 xl:px-3 py-1.5 xl:py-2 text-center text-base xl:text-lg font-semibold text-text-primary focus:outline-none focus:border-accent-primary transition-colors"
                 />
               ) : (
                 <>
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2 xl:gap-3">
                     {/* Left: Plus buttons */}
                     <div className="flex gap-2 flex-col-reverse">
                       <button
                         type="button"
                         onClick={() => handleIncrement(100)}
-                        className="rounded-lg border border-text-primary/10 px-2 py-2.5 text-xs font-semibold text-text-primary hover:bg-bg-primary transition-colors"
+                        className="rounded-lg border border-text-primary/10 px-1.5 xl:px-2 py-2 xl:py-2.5 text-[10px] xl:text-xs font-semibold text-text-primary hover:bg-bg-primary transition-colors"
                       >
                         +100
                       </button>
                       <button
                         type="button"
                         onClick={() => handleIncrement(10)}
-                        className="rounded-lg border border-text-primary/10 px-2 py-2.5 text-xs font-semibold text-text-primary hover:bg-bg-primary transition-colors"
+                        className="rounded-lg border border-text-primary/10 px-1.5 xl:px-2 py-2 xl:py-2.5 text-[10px] xl:text-xs font-semibold text-text-primary hover:bg-bg-primary transition-colors"
                       >
                         +10
                       </button>
@@ -178,7 +178,7 @@ export function CapacityDropdown({
                     <button
                       type="button"
                       onClick={handleValueClick}
-                      className="flex-1 text-center text-3xl font-bold text-text-primary py-3 hover:bg-bg-primary rounded-lg transition-colors cursor-pointer"
+                      className="flex-1 text-center text-2xl xl:text-3xl font-bold text-text-primary py-2 xl:py-3 hover:bg-bg-primary rounded-lg transition-colors cursor-pointer"
                     >
                       {value ?? 1}
                     </button>
@@ -189,7 +189,7 @@ export function CapacityDropdown({
                         type="button"
                         onClick={() => handleIncrement(-10)}
                         disabled={!value || value <= 10}
-                        className="rounded-lg border border-text-primary/10 px-2 py-2.5 text-xs font-semibold text-text-primary hover:bg-bg-primary transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                        className="rounded-lg border border-text-primary/10 px-1.5 xl:px-2 py-2 xl:py-2.5 text-[10px] xl:text-xs font-semibold text-text-primary hover:bg-bg-primary transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
                       >
                         -10
                       </button>
@@ -197,7 +197,7 @@ export function CapacityDropdown({
                         type="button"
                         onClick={() => handleIncrement(-100)}
                         disabled={!value || value <= 100}
-                        className="rounded-lg border border-text-primary/10 px-2 py-2.5 text-xs font-semibold text-text-primary hover:bg-bg-primary transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                        className="rounded-lg border border-text-primary/10 px-1.5 xl:px-2 py-2 xl:py-2.5 text-[10px] xl:text-xs font-semibold text-text-primary hover:bg-bg-primary transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
                       >
                         -100
                       </button>
@@ -220,17 +220,17 @@ export function CapacityDropdown({
     <>
       <div
         ref={containerRef}
-        className="relative flex-1 flex items-center gap-3 md:border-l md:border-text-primary/10 px-5"
+        className="relative flex-1 flex items-center gap-2 xl:gap-3 md:border-l md:border-text-primary/10 px-4 xl:px-5"
       >
         <div className="flex-1">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-text-primary/45">
+          <p className="text-[10px] xl:text-[11px] font-semibold uppercase tracking-[0.12em] text-text-primary/45">
             Capacity
           </p>
           <button
             type="button"
             onClick={() => setIsOpen(!isOpen)}
             disabled={disabled}
-            className={`w-full bg-transparent text-left text-sm focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed transition-colors ${value ? "text-text-primary" : "text-text-primary/45"}`}
+            className={`w-full bg-transparent text-left text-xs xl:text-sm focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed transition-colors ${value ? "text-text-primary" : "text-text-primary/45"}`}
           >
             {displayValue}
           </button>

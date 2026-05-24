@@ -55,7 +55,7 @@ export function DesktopDetailsHeader() {
 
 export function DetailsActions() {
   return (
-    <div className="flex items-center gap-8 text-sm font-extrabold text-[#252423]">
+    <div className="flex items-center gap-2 lg:gap-8 text-sm font-extrabold text-[#252423]">
       <button type="button" className="inline-flex items-center gap-2 underline">
         <Share2 className="h-4 w-4" />
         Share

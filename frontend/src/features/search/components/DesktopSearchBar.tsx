@@ -2,7 +2,7 @@
 
 import { motion, AnimatePresence } from "framer-motion";
 import { MapPin, Search, X } from "lucide-react";
-import { useRef, useState, useCallback } from "react";
+import { useRef, useState, useCallback, useId } from "react";
 import { Controller, type UseFormReturn } from "react-hook-form";
 
 import type { SearchFormData } from "../utils/searchSchema";
@@ -35,6 +35,8 @@ export default function DesktopSearchBar({ form, onSubmit, isPending, showShadow
   const [showSuggestions, setShowSuggestions] = useState(false);
   const { data: suggestions = [] } = useLocationSuggestions(location);
   const locationRef = useRef<HTMLDivElement>(null);
+
+  const uniqueId = useId();
 
   /**
    * REFACTORED: Single write path - form only (no Zustand)
@@ -82,7 +84,7 @@ export default function DesktopSearchBar({ form, onSubmit, isPending, showShadow
       <form
         onSubmit={handleSubmit(onSubmit)}
         noValidate
-        className={`flex gap-4 rounded-[28px] bg-white p-2 overflow-visible ${
+        className={`flex gap-2 xl:gap-4 rounded-[28px] bg-white p-1.5 xl:p-2 overflow-visible ${
           showShadow ? "shadow-[0_10px_26px_rgba(26,31,60,0.12)]" : ""
         }`}
       >
@@ -95,13 +97,13 @@ export default function DesktopSearchBar({ form, onSubmit, isPending, showShadow
                 key={tab.id}
                 type="button"
                 onClick={() => handleCategoryChange(tab.id)}
-                className={`relative w-1/2 rounded-[28px] px-4 py-3 text-sm font-semibold transition-colors duration-300 h-full z-10 ${
+                className={`relative w-1/2 rounded-[28px] px-3 py-2 xl:px-4 xl:py-3 text-xs xl:text-sm font-semibold transition-colors duration-300 h-full z-10 ${
                   isActive ? "text-text-primary" : "text-text-primary/55"
                 }`}
               >
                 {isActive && (
                   <motion.div
-                    layoutId="active-pill"
+                    layoutId={`active-pill-${uniqueId}`}
                     drag="x"
                     dragConstraints={{ left: 0, right: 0 }}
                     dragElastic={0.1}
@@ -123,11 +125,11 @@ export default function DesktopSearchBar({ form, onSubmit, isPending, showShadow
         {category === "halls" && (
           <div
             ref={locationRef}
-            className="relative flex flex-1 items-center gap-3 border-l border-text-primary/10 px-5 py-3"
+            className="relative flex flex-1 items-center gap-2 xl:gap-3 border-l border-text-primary/10 px-4 py-2 xl:px-5 xl:py-3"
           >
-            <MapPin className="h-5 w-5 shrink-0 text-text-primary/50" />
+            <MapPin className="h-4 w-4 xl:h-5 xl:w-5 shrink-0 text-text-primary/50" />
             <div className="flex-1">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-text-primary/45">
+              <p className="text-[10px] xl:text-[11px] font-semibold uppercase tracking-[0.12em] text-text-primary/45">
                 Where
               </p>
               <Controller
@@ -142,7 +144,7 @@ export default function DesktopSearchBar({ form, onSubmit, isPending, showShadow
                     aria-label="Search location"
                     aria-invalid={!!errors.location}
                     aria-describedby={errors.location ? "location-error" : undefined}
-                    className="w-full bg-transparent text-sm text-text-primary placeholder:text-text-primary/55 focus:outline-none"
+                    className="w-full bg-transparent text-xs xl:text-sm text-text-primary placeholder:text-text-primary/55 focus:outline-none"
                     onChange={(e) => {
                       field.onChange(e);
                       handleLocationChange(e.target.value);
@@ -191,7 +193,7 @@ export default function DesktopSearchBar({ form, onSubmit, isPending, showShadow
                       <button
                         type="button"
                         onMouseDown={() => handleSuggestionSelect(s.name)}
-                        className="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-text-primary hover:bg-bg-primary transition-colors"
+                        className="flex w-full items-center gap-3 px-3 py-2 xl:px-4 xl:py-2.5 text-left text-xs xl:text-sm text-text-primary hover:bg-bg-primary transition-colors"
                       >
                         <MapPin className="h-4 w-4 shrink-0 text-text-primary/40" />
                         <span>
@@ -245,12 +247,12 @@ export default function DesktopSearchBar({ form, onSubmit, isPending, showShadow
           type="submit"
           disabled={isPending}
           aria-label="Search events"
-          className="inline-flex items-center justify-center gap-2 rounded-4xl bg-accent-primary px-6 py-3 text-base font-semibold text-white transition-all duration-200 hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-70 disabled:scale-100"
+          className="inline-flex items-center justify-center gap-2 rounded-4xl bg-accent-primary px-4 py-2.5 xl:px-6 xl:py-3 text-sm xl:text-base font-semibold text-white transition-all duration-200 hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-70 disabled:scale-100"
         >
           {isPending ? (
-            <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+            <span className="h-4 w-4 xl:h-5 xl:w-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
           ) : (
-            <Search className="h-4 w-4" />
+            <Search className="h-4 w-4 xl:h-5 xl:w-5" />
           )}
           Search
         </button>

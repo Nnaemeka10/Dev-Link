@@ -20,7 +20,7 @@ export function TabletPhotoGallery({ gallery, name }: { gallery: StaticImageData
   }
 
   return (
-    <section className="grid h-[30rem] grid-cols-[2fr_1fr] gap-1 overflow-hidden">
+    <section className="relative grid h-120 grid-cols-[2fr_1fr] gap-1 overflow-hidden">
       <div className="relative">
         <Image src={gallery[0]} alt={name} fill priority className="object-cover" sizes="65vw" />
       </div>

@@ -152,23 +152,26 @@ function TabletDetailsView({ booking, handleSearch, form, isPending }: DesktopDe
 
   return (
     <section className="hidden md:block xl:hidden w-full">
-      <header className="flex h-fit items-center justify-between bg-bg-primary">       
+            
         <DesktopExploreHeader handleSearch={handleSearch} form={form} isPending={isPending}  filter = {false}/>
-      </header>
+     
 
       <TabletPhotoGallery gallery={details.gallery} name={details.name} />
 
-      <div className="mx-auto grid max-w-5xl grid-cols-[minmax(0,1fr)_20rem] gap-10 px-8 py-12">
+      <div className="mx-auto grid grid-cols-[minmax(0,1fr)_20rem] gap-10 px-8 py-12">
         <div>
           <div className="flex items-start justify-between gap-8">
             <div>
               <h1 className="text-[2rem] font-extrabold text-[#252423]">{details.name}</h1>
-              <p className="mt-1 flex items-center gap-1 text-sm font-semibold text-[#5E6588]">
-                <MapPin className="h-4 w-4" />
-                {details.location}
-              </p>
+              <span className="flex gap-8"> 
+                <p className="mt-1 flex items-center gap-1 text-sm font-semibold text-[#5E6588]">
+                  <MapPin className="h-4 w-4" />
+                  {details.location}
+                </p>
+                <DetailsActions />
+              </span>
             </div>
-            <div className="flex flex-col items-end gap-2">
+            <div className="flex items-end gap-2">
               <RatingBadge rating={details.rating} reviewsCount={details.reviewsCount} />
               <VerifiedVenueBadge />
             </div>

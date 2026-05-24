@@ -37,16 +37,16 @@ export function DesktopExploreHeader({ handleSearch, form, isPending, filter }: 
   return (
     <>
       <header className="border-b border-[#EDE4D8] bg-bg-primary flex-shrink-0">
-        <div className="flex items-center gap-8 px-8 py-6 max-w-full">
+        <div className="flex items-center gap-4 xl:gap-8 px-4 xl:px-8 py-4 xl:py-6 max-w-full">
           <DesktopSearchBar form={form} onSubmit={handleSearch} isPending={isPending} showShadow={true} />
 
           {filter && (
             <button
               type="button"
               onClick={() => setIsFilterOpen(true)}
-              className="ml-auto inline-flex items-center gap-2 rounded-full bg-[#FFDFA7] px-6 py-3 text-sm font-extrabold hover:brightness-95 transition-all flex-shrink-0"
+              className="ml-auto inline-flex items-center gap-2 rounded-full bg-[#FFDFA7] px-4 py-2 xl:px-6 xl:py-3 text-xs xl:text-sm font-extrabold hover:brightness-95 transition-all flex-shrink-0"
             >
-              <SlidersHorizontal className="h-4 w-4" />
+              <SlidersHorizontal className="h-3.5 w-3.5 xl:h-4 xl:w-4" />
               Filters
             </button>
           )}
@@ -119,10 +119,10 @@ export function DesktopResultsHeader() {
   };
 
   return (
-    <div className="mb-8 flex items-end justify-between">
+    <div className="mb-6 xl:mb-8 flex items-end justify-between">
       <div>
-        <h2 className="text-[2rem] font-extrabold tracking-[-0.02em]">Venues in Lagos</h2>
-        <p className="mt-1 text-lg text-[#555B7F]">248 premium spaces found for your event</p>
+        <h2 className="text-[1.5rem] xl:text-[2rem] font-extrabold tracking-[-0.02em]">Venues in Lagos</h2>
+        <p className="mt-1 text-base xl:text-lg text-[#555B7F]">248 premium spaces found for your event</p>
       </div>
       <SortDropdown 
         currentSort={params.sort} 

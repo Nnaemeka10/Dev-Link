@@ -140,7 +140,7 @@ export function DateRangePicker({ value, onChange, error }: DateRangePickerProps
   // ─── Render ──────────────────────────────────────────────────────────────────
 
   return (
-    <div ref={containerRef} className="date-picker-shell">
+    <div ref={containerRef} className="date-picker-shell md:px-4 xl:px-5">
       <div className={`date-picker-trigger-row ${open ? "date-picker-trigger-row--open" : ""}`}>
         {/* ── Trigger ────────────────────────────────────────────────────────── */}
         <button
@@ -149,12 +149,12 @@ export function DateRangePicker({ value, onChange, error }: DateRangePickerProps
           aria-haspopup="dialog"
           aria-expanded={open}
           aria-label={label ? `Date: ${label}` : "Select date"}
-          className="date-picker-trigger"
+          className="date-picker-trigger md:py-2 md:px-4 xl:py-3 xl:px-5 md:gap-2 xl:gap-3"
         >
-          <CalendarDays className="date-picker-icon" aria-hidden="true" />
+          <CalendarDays className="date-picker-icon md:w-4 md:h-4 xl:w-5 xl:h-5" aria-hidden="true" />
           <div className="date-picker-trigger-text">
-            <span className="date-picker-label">When</span>
-            <span className={`date-picker-value ${!label ? "date-picker-value--placeholder" : ""}`}>
+            <span className="date-picker-label md:text-[10px] xl:text-[11px] md:mb-0 xl:mb-[0.2rem]">When</span>
+            <span className={`date-picker-value md:text-xs xl:text-sm ${!label ? "date-picker-value--placeholder" : ""}`}>
               {label || "Add dates"}
             </span>
           </div>
@@ -165,9 +165,9 @@ export function DateRangePicker({ value, onChange, error }: DateRangePickerProps
             type="button"
             onClick={handleClear}
             aria-label="Clear dates"
-            className="date-picker-clear"
+            className="date-picker-clear md:w-4 md:h-4 xl:w-5 xl:h-5 md:mr-2 xl:mr-5"
           >
-            <X className="h-3.5 w-3.5" />
+            <X className="h-3.5 w-3.5 md:w-3 md:h-3 xl:w-3.5 xl:h-3.5" />
           </button>
         )}
       </div>
@@ -212,9 +212,9 @@ export function DateRangePicker({ value, onChange, error }: DateRangePickerProps
                       type="button"
                       onClick={() => closePicker({ apply: false })}
                       aria-label="Close date picker"
-                      className="absolute right-6 top-6 p-2 rounded-full hover:bg-black/5 text-[#555B7F] transition-colors"
+                      className="absolute right-4 top-4 xl:right-6 xl:top-6 p-1.5 xl:p-2 rounded-full hover:bg-black/5 text-[#555B7F] transition-colors"
                     >
-                      <X className="h-5 w-5" />
+                      <X className="h-4 w-4 xl:h-5 xl:w-5" />
                     </button>
 
                     <p className="date-picker-hint">

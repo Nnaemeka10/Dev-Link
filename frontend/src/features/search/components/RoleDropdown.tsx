@@ -103,18 +103,18 @@ export function RoleDropdown({
               left: dropdownLeft ? `${dropdownLeft}px` : 0,
               width: dropdownWidth ? `${dropdownWidth}px` : "auto",
             }}
-            className="z-50 min-w-48 max-h-80 overflow-y-auto rounded-2xl bg-white py-2 shadow-[0_8px_24px_rgba(26,31,60,0.14)]"
+            className="z-50 min-w-48 max-h-80 overflow-y-auto rounded-2xl bg-white py-1.5 xl:py-2 shadow-[0_8px_24px_rgba(26,31,60,0.14)]"
           >
             {SERVICE_CATEGORIES.map((category) => (
               <li key={category.id} role="option" aria-selected={value === category.id}>
                 <button
                   type="button"
                   onClick={() => handleSelect(category.id)}
-                  className="flex w-full items-center justify-between gap-3 px-4 py-2.5 text-left text-sm text-text-primary hover:bg-bg-primary transition-colors"
+                  className="flex w-full items-center justify-between gap-3 px-3 py-2 xl:px-4 xl:py-2.5 text-left text-xs xl:text-sm text-text-primary hover:bg-bg-primary transition-colors"
                 >
                   <span>{category.label}</span>
                   {value === category.id && (
-                    <Check className="h-4 w-4 shrink-0 text-accent-primary" />
+                    <Check className="h-3.5 w-3.5 xl:h-4 xl:w-4 shrink-0 text-accent-primary" />
                   )}
                 </button>
               </li>
@@ -129,17 +129,17 @@ export function RoleDropdown({
     <>
       <div
         ref={containerRef}
-        className="relative flex flex-1 items-center gap-3 md:border-l md:border-text-primary/10 px-5"
+        className="relative flex flex-1 items-center gap-2 xl:gap-3 md:border-l md:border-text-primary/10 px-4 xl:px-5"
       >
         <div className="flex-1">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-text-primary/45">
+          <p className="text-[10px] xl:text-[11px] font-semibold uppercase tracking-[0.12em] text-text-primary/45">
             Role
           </p>
           <button
             type="button"
             onClick={() => setIsOpen(!isOpen)}
             disabled={disabled}
-            className={`w-full bg-transparent text-left text-sm focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed transition-colors ${value ? "text-text-primary" : "text-text-primary/45"}`}
+            className={`w-full bg-transparent text-left text-xs xl:text-sm focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed transition-colors ${value ? "text-text-primary" : "text-text-primary/45"}`}
           >
             {selectedLabel}
           </button>
