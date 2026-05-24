@@ -205,9 +205,18 @@ export function DateRangePicker({ value, onChange, error }: DateRangePickerProps
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: 8, scale: 0.98 }}
                     transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
-                    className="date-picker-popover"
+                    className="date-picker-popover relative"
                     style={popoverTop ? { top: popoverTop } : undefined}
                   >
+                    <button
+                      type="button"
+                      onClick={() => closePicker({ apply: false })}
+                      aria-label="Close date picker"
+                      className="absolute right-6 top-6 p-2 rounded-full hover:bg-black/5 text-[#555B7F] transition-colors"
+                    >
+                      <X className="h-5 w-5" />
+                    </button>
+
                     <p className="date-picker-hint">
                       {!draftRange?.from
                         ? "Select a start date"

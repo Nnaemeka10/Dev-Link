@@ -119,7 +119,7 @@ export default function ExploreMarketplace() {
 
   return (
     <main className="min-h-screen bg-bg-primary text-[#252423]">
-      <section className="lg:hidden">
+      <section className="xl:hidden">
         <MobileExploreHeader
           handleSearch={handleSearch}
           form={form}
@@ -152,7 +152,7 @@ export default function ExploreMarketplace() {
         <MobileBottomNav />
       </section>
 
-      <section className="hidden lg:flex h-screen">
+      <section className="hidden xl:flex h-screen">
         <SideNavBar />
         <div className="ml-[15%] w-[85%] flex flex-col overflow-hidden">
           <DesktopExploreHeader handleSearch={handleSearch} form={form} isPending={isPending}  />

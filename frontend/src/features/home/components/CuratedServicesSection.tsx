@@ -45,7 +45,7 @@ const CURATED_SERVICES_RESPONSE: ServicesResponse = {
       role: "Master of Ceremony",
       name: "Basketmouth",
       price: "₦750,000",
-      unit: "event",
+      unit: "day",
       rating: 5,
       image: serviceB,
     },

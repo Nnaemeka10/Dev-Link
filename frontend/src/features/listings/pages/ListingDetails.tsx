@@ -20,6 +20,9 @@ import { useSearchForm } from "@/features/search";
 import { buildListingsHref } from "../searchParams";
 import { SearchFormData } from "@/features/search/utils/searchSchema";
 import ExploreFooter from "../components/explore/ExploreFooter";
+import type { DateRange } from "@/features/search/utils/searchSchema";
+import Link from "next/link";
+import Image from "next/image";
 
 interface SearchProps {
   handleSearch: (data: SearchFormData) => void;
@@ -33,19 +36,19 @@ interface DesktopDetailsViewProps extends SearchProps {
 
 function useBookingState() {
   const router = useRouter();
-  const [date, setDate] = useState("");
+  const [dateRange, setDateRange] = useState<DateRange | undefined>();
   const [guests, setGuests] = useState("Up to 500");
   const [time, setTime] = useState("Evening");
   const [booked, setBooked] = useState(false);
 
   return {
     booked,
-    date,
+    dateRange,
     guests,
     time,
     bookNow: () => {
       // Persist booking selection to localStorage so wizard can load it
-      const bookingPayload = { date, guests, time };
+      const bookingPayload = { dateRange, guests, time };
       try {
         localStorage.setItem(BOOKING_STORAGE_KEY, JSON.stringify(bookingPayload));
       } catch (error) {
@@ -55,7 +58,7 @@ function useBookingState() {
       setBooked(true);
       router.push("/bookings/grand-atrium?step=1");
     },
-    setDate,
+    setDateRange,
     setGuests,
     setTime,
   };
@@ -128,7 +131,7 @@ function MobileDetailsView({ booking }: { booking: ReturnType<typeof useBookingS
             <p className="text-[10px] font-extrabold uppercase tracking-[0.12em] text-[#7B7E9B]">Investment</p>
             <p className="text-xl font-extrabold text-[#252423]">
               {details.price}
-              <span className="text-xs font-bold text-[#5E6588]"> / event</span>
+              <span className="text-xs font-bold text-[#5E6588]"> / day</span>
             </p>
           </div>
           <button
@@ -144,12 +147,15 @@ function MobileDetailsView({ booking }: { booking: ReturnType<typeof useBookingS
   );
 }
 
-function TabletDetailsView({ booking }: { booking: ReturnType<typeof useBookingState> }) {
+function TabletDetailsView({ booking, handleSearch, form, isPending }: DesktopDetailsViewProps) {
   const details = GRAND_ATRIUM_DETAILS;
 
   return (
-    <section className="hidden md:block xl:hidden">
-      <TabletDetailsHeader />
+    <section className="hidden md:block xl:hidden w-full">
+      <header className="flex h-fit items-center justify-between bg-bg-primary">       
+        <DesktopExploreHeader handleSearch={handleSearch} form={form} isPending={isPending}  filter = {false}/>
+      </header>
+
       <TabletPhotoGallery gallery={details.gallery} name={details.name} />
 
       <div className="mx-auto grid max-w-5xl grid-cols-[minmax(0,1fr)_20rem] gap-10 px-8 py-12">
@@ -181,11 +187,11 @@ function TabletDetailsView({ booking }: { booking: ReturnType<typeof useBookingS
 
         <BookingCard
           booked={booking.booked}
-          date={booking.date}
+          dateRange={booking.dateRange}
           guests={booking.guests}
           time={booking.time}
           onBook={booking.bookNow}
-          onDateChange={booking.setDate}
+          onDateChange={booking.setDateRange}
           onGuestsChange={booking.setGuests}
           onTimeChange={booking.setTime}
           price={details.price}
@@ -245,11 +251,11 @@ function DesktopDetailsView({ booking, handleSearch, form, isPending }: DesktopD
 
               <BookingCard
                 booked={booking.booked}
-                date={booking.date}
+                dateRange={booking.dateRange}
                 guests={booking.guests}
                 time={booking.time}
                 onBook={booking.bookNow}
-                onDateChange={booking.setDate}
+                onDateChange={booking.setDateRange}
                 onGuestsChange={booking.setGuests}
                 onTimeChange={booking.setTime}
                 price={details.price}
@@ -347,7 +353,7 @@ export default function ListingDetails() {
   return (
     <main className="min-h-screen bg-bg-primary text-[#252423]">
       <MobileDetailsView booking={booking} />
-      <TabletDetailsView booking={booking} />
+      <TabletDetailsView booking={booking} handleSearch={handleSearch} form={form} isPending={isPending} />
       <DesktopDetailsView booking={booking} handleSearch={handleSearch} form={form} isPending={isPending} />
     </main>
   );

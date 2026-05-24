@@ -39,7 +39,7 @@ export default function SimilarVenues({ venues, variant = "desktop" }: { venues:
             </div>
             <p className="mt-2 text-lg font-extrabold text-[#252423]">
               {venue.price}
-              <span className="text-xs font-bold text-[#5E6588]"> / event</span>
+              <span className="text-xs font-bold text-[#5E6588]"> / day</span>
             </p>
           </article>
         ))}

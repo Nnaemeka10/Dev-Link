@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import type { Metadata } from "next";
-import GrandAtriumBookingPage from "@/features/bookings/pages/GrandAtriumBookingPage";
+import GrandAtriumBookingPage from "@/features/bookings/pages/GrandAtriumDetailsPage";
 
 export const metadata: Metadata = {
   title: "Listings Details | Eventvnv",
