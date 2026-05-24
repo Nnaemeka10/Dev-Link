@@ -196,26 +196,27 @@ export default function ExploreMarketplace() {
           <DesktopExploreHeader handleSearch={handleSearch} form={form} isPending={isPending}  />
 
           <div className="flex flex-1 overflow-hidden">
-            <div className="flex-1 overflow-y-auto px-8 pb-12 pt-10">
-              <DesktopResultsHeader />
+            <div className="flex-1 overflow-y-auto">
+              <div className="px-8 pb-12 pt-10">
+                <DesktopResultsHeader />
 
-              <div className="grid grid-cols-2 gap-8">
-                {DESKTOP_EXPLORE_LISTINGS.map((listing) => (
-                  <DesktopExploreCard
-                    key={listing.id}
-                    listing={listing}
-                    selected={desktopSelectedIds.has(listing.id)}
-                    onToggleCompare={() => setDesktopSelectedIds((current) => toggleSelection(current, listing.id))}
-                  />
-                ))}
+                <div className="grid grid-cols-2 gap-8">
+                  {DESKTOP_EXPLORE_LISTINGS.map((listing) => (
+                    <DesktopExploreCard
+                      key={listing.id}
+                      listing={listing}
+                      selected={desktopSelectedIds.has(listing.id)}
+                      onToggleCompare={() => setDesktopSelectedIds((current) => toggleSelection(current, listing.id))}
+                    />
+                  ))}
+                </div>
               </div>
 
-              
+              <ExploreFooter />
             </div>
 
             <DesktopCompareBar selectedListings={desktopSelectedListings} onClear={() => setDesktopSelectedIds(new Set())} />
           </div>
-          <ExploreFooter />
         </div>
       </section>
     </main>
