@@ -150,6 +150,7 @@ export default function ExploreMarketplace() {
 
         <MobileCompareBar selectedListings={mobileSelectedListings} onClear={() => setMobileSelectedIds(new Set())} />
         <MobileBottomNav />
+        <ExploreFooter />
       </section>
 
 
@@ -209,11 +210,12 @@ export default function ExploreMarketplace() {
                 ))}
               </div>
 
-              <ExploreFooter />
+              
             </div>
 
             <DesktopCompareBar selectedListings={desktopSelectedListings} onClear={() => setDesktopSelectedIds(new Set())} />
           </div>
+          <ExploreFooter />
         </div>
       </section>
     </main>
