@@ -9,7 +9,7 @@ const MOBILE_NAV_ITEMS = [
 
 export default function MobileBottomNav() {
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-[#EEE4D9] bg-[#FFFCF4] px-4 py-3 lg:hidden">
+    <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-[#EEE4D9] bg-[#FFFCF4] px-4 py-3 xl:hidden">
       <div className="grid grid-cols-4 gap-2">
         {MOBILE_NAV_ITEMS.map((item) => {
           const Icon = item.icon;

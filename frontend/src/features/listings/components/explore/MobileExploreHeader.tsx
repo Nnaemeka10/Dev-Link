@@ -96,10 +96,10 @@ export function MobileResultsHeader() {
   };
 
   return (
-    <div className="mb-6 px-6 py-4 space-y-3">
+    <div className="mb-6 px-6 py-4 justify-between flex">
       <div>
-        <h2 className="text-xl font-extrabold tracking-[-0.02em] text-text-primary">Venues in Lagos</h2>
-        <p className="mt-1 text-sm text-[#555B7F]">248 spaces found for your event</p>
+        <h2 className="text-lg font-extrabold tracking-[-0.02em] text-text-primary">Venues in Lagos</h2>
+        <p className="mt-1 text-xs text-[#555B7F]">248 spaces found for your event</p>
       </div>
       <div className="flex items-center justify-between">
         <SortDropdown 

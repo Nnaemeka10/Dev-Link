@@ -23,6 +23,8 @@ import ExploreFooter from "../components/explore/ExploreFooter";
 import type { DateRange } from "@/features/search/utils/searchSchema";
 import Link from "next/link";
 import Image from "next/image";
+import HomeFooter from "@/components/layout/Footer";
+import { MobileBookingDock } from "../components/details/MobileBookingDock.tsx";
 
 interface SearchProps {
   handleSearch: (data: SearchFormData) => void;
@@ -125,24 +127,15 @@ function MobileDetailsView({ booking }: { booking: ReturnType<typeof useBookingS
       <ReviewsSection metrics={details.reviewMetrics} reviews={details.reviews} variant="mobile" />
       <SimilarVenues venues={details.similarVenues} variant="mobile" />
 
-      <div className="fixed inset-x-0 bottom-0 z-50 rounded-t-[2rem] bg-white px-5 py-4 shadow-[0_-16px_36px_rgba(36,28,18,0.1)]">
-        <div className="flex items-center justify-between gap-4">
-          <div>
-            <p className="text-[10px] font-extrabold uppercase tracking-[0.12em] text-[#7B7E9B]">Investment</p>
-            <p className="text-xl font-extrabold text-[#252423]">
-              {details.price}
-              <span className="text-xs font-bold text-[#5E6588]"> / day</span>
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={booking.bookNow}
-            className="rounded-full bg-[#B9401D] px-9 py-4 text-sm font-extrabold text-white"
-          >
-            {booking.booked ? "Booked" : "Book Now"}
-          </button>
-        </div>
-      </div>
+      <MobileBookingDock
+        price={details.price}           // e.g. "₦1,250,000"
+        priceRaw={details.priceRaw}     // e.g. 1250000  ← add this field to your details object
+        booked={booking.booked}
+        dateRange={booking.dateRange}
+        onDateChange={booking.setDateRange}
+        onBook={booking.bookNow}
+      />
+       <HomeFooter />
     </section>
   );
 }
@@ -216,11 +209,11 @@ function DesktopDetailsView({ booking, handleSearch, form, isPending }: DesktopD
     <section className="hidden xl:flex">
     
       <SideNavBar />
-      <div className="ml-[15%] w-[85%] flex flex-col overflow-hidden">
+      <div className="ml-[15%] w-[85%] flex flex-col">
         <DesktopExploreHeader handleSearch={handleSearch} form={form} isPending={isPending}  filter = {false}/>
 
-        <div className="flex flex-1 overflow-hidden">
-          <div className="flex-1 overflow-y-auto px-8 pb-12 pt-10">
+        <div className="flex flex-1">
+          <div className="flex-1 px-8 pb-12 pt-10">
             <DesktopPhotoGallery gallery={details.gallery} name={details.name} />
             <div className="grid grid-cols-[minmax(0,1fr)_20rem] gap-20 pr-8 py-12">
               <div>
@@ -249,7 +242,7 @@ function DesktopDetailsView({ booking, handleSearch, form, isPending }: DesktopD
 
                 <AboutCopy />
                 <ListingFeatures features={details.features} />
-                
+                <ReviewsSection metrics={details.reviewMetrics} reviews={details.reviews} />
               </div>
 
               <BookingCard
@@ -265,69 +258,13 @@ function DesktopDetailsView({ booking, handleSearch, form, isPending }: DesktopD
               />
           </div>
 
-        
-            <ReviewsSection metrics={details.reviewMetrics} reviews={details.reviews} />
-            <SimilarVenues venues={details.similarVenues} />
+          <SimilarVenues venues={details.similarVenues} />
                
       </div>
     </div>
       <DetailsFooter />
     </div>
       
-  
-          
-      
-      {/* <DesktopDetailsHeader />
-      <div className="mx-auto max-w-[90rem] px-8 pb-20">
-        <div className="mt-5 flex items-end justify-between">
-          <div>
-            <h1 className="text-[3rem] font-extrabold leading-tight text-[#252423]">{details.name}</h1>
-            <div className="mt-2 flex items-center gap-4 text-sm font-extrabold text-[#252423]">
-              <span className="flex items-center gap-1">
-                <Star className="h-4 w-4 fill-current" />
-                {details.rating} <span className="text-[#5E6588] underline">({details.reviewsCount})</span>
-              </span>
-              <span>•</span>
-              <span>Verified Venue</span>
-              <span>•</span>
-              <span className="underline">{details.location}</span>
-            </div>
-          </div>
-          <DetailsActions />
-        </div>
-
-        <div className="mt-8">
-          <DesktopPhotoGallery gallery={details.gallery} name={details.name} />
-        </div>
-
-        <div className="grid grid-cols-[minmax(0,1fr)_22rem] gap-16 py-12">
-          <div>
-            <div className="flex gap-3">
-              {details.badges.map((badge) => (
-                <ListingBadge key={badge}>{badge}</ListingBadge>
-              ))}
-            </div>
-            <AboutCopy />
-            <ListingFeatures features={details.features} />
-          </div>
-
-          <BookingCard
-            booked={booking.booked}
-            date={booking.date}
-            guests={booking.guests}
-            time={booking.time}
-            onBook={booking.bookNow}
-            onDateChange={booking.setDate}
-            onGuestsChange={booking.setGuests}
-            onTimeChange={booking.setTime}
-            price={details.price}
-          />
-        </div>
-
-        <ReviewsSection metrics={details.reviewMetrics} reviews={details.reviews} />
-        <SimilarVenues venues={details.similarVenues} />
-      </div>
-      <DetailsFooter /> */}
     </section>
   );
 }

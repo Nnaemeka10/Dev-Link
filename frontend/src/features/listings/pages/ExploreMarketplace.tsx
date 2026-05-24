@@ -119,7 +119,7 @@ export default function ExploreMarketplace() {
 
   return (
     <main className="min-h-screen bg-bg-primary text-[#252423]">
-      <section className="xl:hidden">
+      <section className="md:hidden">
         <MobileExploreHeader
           handleSearch={handleSearch}
           form={form}
@@ -129,7 +129,7 @@ export default function ExploreMarketplace() {
 
         <MobileResultsHeader />
 
-        <div className="space-y-8 px-5 pb-44">
+        <div className="flex flex-col gap-12 px-5 pb-44">
           {MOBILE_EXPLORE_LISTINGS.map((listing) => (
             <MobileExploreCard
               key={listing.id}
@@ -140,17 +140,54 @@ export default function ExploreMarketplace() {
           ))}
         </div>
 
-        <button
+        {/* <button
           type="button"
           className="fixed bottom-[5.8rem] left-1/2 z-30 inline-flex -translate-x-1/2 items-center gap-2 rounded-full bg-[#1D1D1A] px-7 py-3 text-sm font-extrabold text-white shadow-[0_12px_24px_rgba(0,0,0,0.25)]"
         >
           <Map className="h-4 w-4" />
           Show Map
-        </button>
+        </button> */}
 
         <MobileCompareBar selectedListings={mobileSelectedListings} onClear={() => setMobileSelectedIds(new Set())} />
         <MobileBottomNav />
       </section>
+
+
+
+
+
+
+
+      <section className="hidden md:block xl:hidden">
+        <DesktopExploreHeader handleSearch={handleSearch} form={form} isPending={isPending}  />
+        <div className="flex flex-1 overflow-hidden">
+            <div className="flex-1 overflow-y-auto px-8 pb-12 pt-10">
+              <DesktopResultsHeader />
+
+              <div className="grid grid-cols-2 gap-8">
+                {DESKTOP_EXPLORE_LISTINGS.map((listing) => (
+                  <DesktopExploreCard
+                    key={listing.id}
+                    listing={listing}
+                    selected={desktopSelectedIds.has(listing.id)}
+                    onToggleCompare={() => setDesktopSelectedIds((current) => toggleSelection(current, listing.id))}
+                  />
+                ))}
+              </div>
+            </div>
+
+            <DesktopCompareBar selectedListings={desktopSelectedListings} onClear={() => setDesktopSelectedIds(new Set())} />
+          </div>
+
+        <MobileBottomNav />
+        <ExploreFooter />
+      </section>
+
+
+
+
+
+
 
       <section className="hidden xl:flex h-screen">
         <SideNavBar />

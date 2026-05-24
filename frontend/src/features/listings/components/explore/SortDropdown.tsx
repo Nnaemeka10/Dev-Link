@@ -48,7 +48,7 @@ export function SortDropdown({ currentSort, currentSortOrder, onSort }: SortDrop
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-1 text-sm font-extrabold text-[#A83A1C] hover:opacity-80 transition-opacity"
+        className="flex items-center gap-1 lg:text-sm text-micro font-extrabold text-[#A83A1C] hover:opacity-80 transition-opacity"
         aria-expanded={isOpen}
         aria-haspopup="listbox"
       >

@@ -9,7 +9,7 @@ const FOOTER_GROUPS = [
 
 export default function ExploreFooter() {
   return (
-    <footer className="mt-64 border-t border-[#E8DED2] pt-14 text-[#555B7F] bg-[#E8E4DC]">
+    <footer className="mt-64 border-t border-[#E8DED2] pt-14 text-[#555B7F] bg-[#E8E4DC] px-5 pb-40">
       <div className="grid grid-cols-4 gap-12">
         <div>
           <Link href="/" className="text-2xl flex font-semibold tracking-[-0.02em] text-text-primary items-end gap-1">

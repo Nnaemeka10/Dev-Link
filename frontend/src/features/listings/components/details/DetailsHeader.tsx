@@ -1,17 +1,27 @@
 import { ArrowLeft, Heart, Share2 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import { useParams, useRouter } from "next/navigation";
 
 export function MobileDetailsHeader() {
+  const router = useRouter();
+  const params  = useParams();
+  const id = params.id as string;
+
+  function formatSlug(slug: string): string {
+    return slug
+      .replace(/-/g, ' ') // Replace all hyphens with spaces
+      .replace(/\b\w/g, (char) => char.toUpperCase()); // Capitalize first letter of each word
+  }
+
+  const listing = formatSlug(id);
   return (
     <header className="sticky top-0 z-40 flex h-14 items-center justify-between bg-bg-primary px-5">
-      <button type="button" aria-label="Go back" className="text-[#B9401D]">
+      <button type="button" aria-label="Go back" className="text-[#B9401D]" onClick={() => router.back()}>
         <ArrowLeft className="h-5 w-5" />
       </button>
-      <h1 className="text-base font-extrabold text-[#252423]">Listing Details</h1>
-      <button type="button" aria-label="Share listing" className="text-[#B9401D]">
-        <Share2 className="h-5 w-5" />
-      </button>
+      <h1 className="text-base font-extrabold text-[#252423]">{listing}</h1>
+      <DetailsActions />
     </header>
   );
 }
@@ -55,7 +65,7 @@ export function DesktopDetailsHeader() {
 
 export function DetailsActions() {
   return (
-    <div className="flex items-center gap-2 lg:gap-8 text-sm font-extrabold text-[#252423]">
+    <div className="flex items-center gap-2 lg:gap-8 text-sm font-extrabold  md:text-[#252423] text-[#B9401D]">
       <button type="button" className="inline-flex items-center gap-2 underline">
         <Share2 className="h-4 w-4" />
         Share
