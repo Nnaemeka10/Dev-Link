@@ -4,8 +4,8 @@ import { BOOKING_FEES, BOOKING_TOTAL, BOOKING_VENUE, PAYMENT_FEES, PAYMENT_TOTAL
 
 export function EstimateSummary({ onContinue }: { onContinue: () => void }) {
   return (
-    <aside className="rounded-[2.2rem] bg-white p-8 shadow-[0_24px_54px_rgba(34,27,18,0.08)]">
-      <h2 className="text-2xl font-medium text-[#252423]">Estimated Investment</h2>
+    <aside className="rounded-[2.2rem] h-fit bg-white p-8 shadow-[0_24px_54px_rgba(34,27,18,0.08)]">
+      <h2 className="text-2xl font-medium text-[#252423]">Estimated Cost</h2>
       <div className="mt-7 space-y-5 border-b border-[#E8DED2] pb-6">
         {BOOKING_FEES.map((fee) => (
           <div key={fee.label} className="flex justify-between gap-8 text-base">
@@ -34,7 +34,7 @@ export function EstimateSummary({ onContinue }: { onContinue: () => void }) {
 export function PaymentSummary({ onPay }: { onPay: () => void }) {
   return (
     <aside className="overflow-hidden rounded-[2rem] bg-white shadow-[0_24px_54px_rgba(34,27,18,0.08)]">
-      <div className="relative h-48">
+      <div className="relative h-64">
         <Image src={BOOKING_VENUE.image} alt={BOOKING_VENUE.name} fill className="object-cover brightness-75" sizes="34vw" />
         <div className="absolute bottom-6 left-8 text-white">
           <h2 className="text-xl font-extrabold">{BOOKING_VENUE.name}, Victoria Island</h2>
@@ -42,7 +42,7 @@ export function PaymentSummary({ onPay }: { onPay: () => void }) {
         </div>
       </div>
       <div className="p-8">
-        <div className="grid grid-cols-2 gap-8 border-b border-[#E8DED2] pb-7">
+        <div className="grid lg:grid-cols-2 grid-cols-1 gap-8 border-b border-[#E8DED2] pb-7">
           <div>
             <p className="text-xs font-extrabold uppercase tracking-[0.14em] text-[#555B7F]">Event Date</p>
             <p className="mt-2 font-extrabold">December 24, 2024</p>

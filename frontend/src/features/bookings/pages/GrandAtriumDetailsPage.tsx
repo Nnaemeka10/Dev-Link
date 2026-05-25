@@ -4,7 +4,7 @@ import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { BOOKING_STEPS, MOBILE_BOOKING_STEPS, BOOKING_STORAGE_KEY } from "../booking.data";
 import BookingDetailsStep from "../components/BookingDetailsStep";
 import BookingFooter from "../components/BookingFooter";
-import { BookingNavHeader, DesktopBookingHeader, MobileBookingHeader } from "../components/BookingHeader";
+import { DesktopBookingHeader, MobileBookingHeader } from "../components/BookingHeader";
 import BookingStepper from "../components/BookingStepper";
 import ConfirmationStep from "../components/ConfirmationStep";
 import PaymentStep from "../components/PaymentStep";
@@ -12,7 +12,7 @@ import ReviewStep from "../components/ReviewStep";
 import { useBookingWizard } from "../hooks/useBookingWizard";
 
 export default function GrandAtriumDetailsPage() {
-  const isDesktop = useMediaQuery("(min-width: 1024px)");
+  const isDesktop = useMediaQuery("(min-width: 768px)");
   const maxStep = isDesktop ? 4 : 3;
   const wizard = useBookingWizard(maxStep);
   const activeStep = Math.min(wizard.step, maxStep);
@@ -47,11 +47,11 @@ export default function GrandAtriumDetailsPage() {
   }
 
   const checkoutHeader = activeStep === 2;
-  const confirmation = activeStep === 4;
+
 
   return (
     <main className="flex min-h-screen flex-col bg-bg-primary text-[#252423]">
-      {confirmation ? <BookingNavHeader /> : <DesktopBookingHeader checkout={checkoutHeader} />}
+      <DesktopBookingHeader checkout={checkoutHeader} />
       <div className="pt-8">
         <BookingStepper labels={BOOKING_STEPS} step={activeStep} />
       </div>

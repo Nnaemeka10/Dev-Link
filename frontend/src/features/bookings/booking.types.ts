@@ -18,6 +18,7 @@ export interface BookingFormState {
   preferences: string;
   startTime: string;
   termsAccepted: boolean;
+  date: string; // --- DEPRECATED, use dateRange instead ---
 }
 
 export interface BookingVenue {

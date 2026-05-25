@@ -3,6 +3,8 @@
 import { Bitcoin, Building2, CreditCard, LockKeyhole, ShieldCheck } from "lucide-react";
 import type { BookingFormState, BookingPaymentMethod } from "../booking.types";
 import { PaymentSummary, SecuritySignals } from "./BookingSummary";
+import { BOOKING_VENUE, PAYMENT_FEES, PAYMENT_TOTAL } from "../booking.data";
+import { MobilePaymentDock } from "./MobilePaymentDock";
 
 interface PaymentStepProps {
   form: BookingFormState;
@@ -74,6 +76,20 @@ function CardFields({ form, onUpdate }: Pick<PaymentStepProps, "form" | "onUpdat
 }
 
 export default function PaymentStep({ form, onPay, onUpdate, variant = "desktop" }: PaymentStepProps) {
+
+  const summary = {
+    venueName:     BOOKING_VENUE.name,           // "The Grand Atrium"
+    venueLocation: "Victoria Island, Lagos",
+    venueImage:    BOOKING_VENUE.image,
+    eventName:     "Corporate Dinner",            // "Corporate Dinner"
+    eventDate:     "December 24, 2024",            // "December 24, 2024"
+    guests:        `350 Attendees`,
+    verified:      true,
+    fees:          PAYMENT_FEES,                 // your existing array
+    total:         PAYMENT_TOTAL,                // "₦495,000"
+    totalNote:     "Includes all taxes and marketplace fees",
+  };
+
   if (variant === "mobile") {
     return (
       <section className="px-6 pb-28">
@@ -84,13 +100,7 @@ export default function PaymentStep({ form, onPay, onUpdate, variant = "desktop"
         <div className="mt-8">
           <CardFields form={form} onUpdate={onUpdate} />
         </div>
-        <div className="fixed inset-x-0 bottom-0 z-40 flex items-center justify-between bg-bg-primary px-6 py-5 shadow-[0_-12px_32px_rgba(34,27,18,0.08)]">
-          <div>
-            <p className="text-xs font-extrabold uppercase tracking-[0.14em] text-[#555B7F]">Total Amount</p>
-            <p className="text-2xl font-extrabold">₦450,000</p>
-          </div>
-          <button type="button" onClick={onPay} className="rounded-full bg-[#B9401D] px-9 py-4 font-extrabold text-white">Pay Now →</button>
-        </div>
+        <MobilePaymentDock summary={summary} onPay={onPay} />
       </section>
     );
   }

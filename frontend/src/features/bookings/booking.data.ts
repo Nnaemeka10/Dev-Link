@@ -19,6 +19,10 @@ export const DEFAULT_BOOKING_FORM: BookingFormState = {
   preferences: "",
   startTime: "16:00",
   termsAccepted: true,
+  dateRange: {
+    from: new Date("2024-12-14"),
+    to: new Date("2024-12-14"),
+  },
 };
 
 export const BOOKING_VENUE: BookingVenue = {
@@ -34,13 +38,13 @@ export const BOOKING_GALLERY_IMAGE = hallA;
 
 export const BOOKING_FEES: BookingFee[] = [
   { label: "Base venue hire (Full Day)", value: "₦1,250,000" },
-  { label: "Technical & Security fee", value: "₦150,000" },
-  { label: "Marketplace service fee", value: "₦42,000" },
+  { label: "VAT", value: "₦150,000" },
+  { label: "Service fee", value: "₦42,000" },
 ];
 
 export const PAYMENT_FEES: BookingFee[] = [
   { label: "Venue Rental (Full Day)", value: "₦1,200,000" },
-  { label: "Security Deposit (Refundable)", value: "₦100,000" },
+  { label: "VAT", value: "₦100,000" },
   { label: "Service Charge (5%)", value: "₦75,000" },
 ];
 

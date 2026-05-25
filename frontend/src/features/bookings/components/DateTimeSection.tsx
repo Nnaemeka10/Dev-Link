@@ -118,7 +118,7 @@ export function DateTimeSection({
           <div>
             <FieldLabel>Start Time</FieldLabel>
             <div className="mt-2.5 flex items-center gap-2 rounded-full bg-[#E8E4DC] px-4 py-3">
-              <Clock className="h-4 w-4 shrink-0 text-[#B9401D]" aria-hidden="true" />
+              <Clock className="sm-h-4 sm:w-4 h-2.5 w-2.5 shrink-0 text-[#B9401D]" aria-hidden="true" />
               {/*
                 We render a minimal inline trigger here that wraps Dropdown
                 so the clock icon sits outside the Dropdown's own trigger,
@@ -132,7 +132,7 @@ export function DateTimeSection({
                 options={START_TIMES}
                 value={startTime}
                 onChange={onStartTimeChange}
-                triggerClassName="!p-0 font-semibold text-[#252423] text-sm"
+                triggerClassName="!p-0 font-semibold text-[#252423] text-tiny lg:text-sm"
               />
             </div>
           </div>
@@ -141,7 +141,7 @@ export function DateTimeSection({
           <div>
             <FieldLabel>End Time</FieldLabel>
             <div className="mt-2.5 flex items-center gap-2 rounded-full bg-[#E8E4DC] px-4 py-3">
-              <Clock className="h-4 w-4 shrink-0 text-[#B9401D]" aria-hidden="true" />
+              <Clock className="sm-h-4 sm:w-4 h-2.5 w-2.5 shrink-0 text-[#B9401D]" aria-hidden="true" />
               <Dropdown
                 aria-label="End time"
                 variant="ghost"
@@ -150,7 +150,7 @@ export function DateTimeSection({
                 options={END_TIMES}
                 value={endTime}
                 onChange={onEndTimeChange}
-                triggerClassName="!p-0 font-semibold text-[#252423] text-sm"
+                triggerClassName="!p-0 font-semibold text-[#252423]"
               />
             </div>
           </div>

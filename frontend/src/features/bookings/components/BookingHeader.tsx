@@ -33,22 +33,4 @@ export function MobileBookingHeader() {
   );
 }
 
-export function BookingNavHeader() {
-  return (
-    <header className="flex h-20 items-center px-8 lg:px-12">
-      <h1 className="text-2xl font-extrabold text-[#252423]">Eventvnv</h1>
-      <nav className="mx-auto flex items-center gap-8 text-base font-semibold text-[#555B7F]">
-        <button type="button">Venues</button>
-        <button type="button">Vendors</button>
-        <button type="button">Inspiration</button>
-        <button type="button" className="border-b-2 border-[#B9401D] pb-2 font-extrabold text-[#B9401D]">
-          My Bookings
-        </button>
-      </nav>
-      <div className="flex items-center gap-5 text-[#555B7F]">
-        <Briefcase className="h-5 w-5" />
-        <ShoppingBag className="h-5 w-5" />
-      </div>
-    </header>
-  );
-}
+

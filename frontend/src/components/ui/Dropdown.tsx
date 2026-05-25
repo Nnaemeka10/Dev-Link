@@ -58,7 +58,7 @@ const SIZE = {
   sm: {
     trigger: "px-3 py-2",
     label:   "text-[10px]",
-    value:   "text-xs",
+    value:   "sm:text-xs text-micro",
     chevron: "h-3 w-3",
     option:  "px-3 py-2 text-xs",
   },
@@ -214,7 +214,7 @@ export function Dropdown<T extends string = string>({
       ?.scrollIntoView({ block: "nearest" });
   // focusedIdx intentionally excluded — this only runs on open transition.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, triggerRect]);
+  }, [open, !!triggerRect]);
 
   // ── Scroll focused option into view on keyboard nav ────────────────────────
   useEffect(() => {
@@ -223,7 +223,8 @@ export function Dropdown<T extends string = string>({
       ?.querySelectorAll<HTMLElement>("[role='option']")
       [focusedIdx]
       ?.scrollIntoView({ block: "nearest" });
-  }, [focusedIdx, open, triggerRect]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps      
+  }, [focusedIdx, open, !!triggerRect]);
 
   // ── Keyboard handler ───────────────────────────────────────────────────────
   function onKeyDown(e: React.KeyboardEvent) {
