@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import type { Metadata } from "next";
 import ExploreMarketplace from "@/features/listings/pages/ExploreMarketplace";
 
@@ -7,5 +8,9 @@ export const metadata: Metadata = {
 };
 
 export default function ListingsPage() {
-  return <ExploreMarketplace />;
+  return (
+    <Suspense fallback={<main className="min-h-screen bg-bg-primary" />}>
+      <ExploreMarketplace />
+    </Suspense>
+  );
 }

@@ -1,3 +1,4 @@
 node_modules
 .env
 LOCAL_CHANGES_SINCE_3bb4ae2.md
+*.md

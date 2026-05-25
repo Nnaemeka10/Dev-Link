@@ -17,7 +17,20 @@ function readStoredForm(): BookingFormState {
 
   try {
     const stored = window.localStorage.getItem(BOOKING_STORAGE_KEY);
-    return stored ? { ...DEFAULT_BOOKING_FORM, ...JSON.parse(stored) } : DEFAULT_BOOKING_FORM;
+    if (!stored) return DEFAULT_BOOKING_FORM;
+
+    const parsed = JSON.parse(stored);
+
+    const dateRange = parsed.dateRange
+      ? {
+          from: new Date(parsed.dateRange.from),
+          to: parsed.dateRange.to
+            ? new Date(parsed.dateRange.to)
+            : undefined,
+        }
+      : undefined;
+
+    return { ...DEFAULT_BOOKING_FORM, ...parsed, dateRange };
   } catch {
     return DEFAULT_BOOKING_FORM;
   }

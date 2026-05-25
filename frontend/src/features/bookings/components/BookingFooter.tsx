@@ -5,7 +5,7 @@ export default function BookingFooter() {
       <div className="ml-auto flex flex-wrap items-center gap-8">
         <span>Privacy Policy</span>
         <span>Terms of Service</span>
-        <span>Vendor Portal</span>
+        <span>List your space</span>
         <span>Contact</span>
       </div>
     </footer>

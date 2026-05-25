@@ -5,8 +5,8 @@ import { createPortal } from "react-dom";
 import { DayPicker, type DateRange as DayPickerRange } from "react-day-picker";
 import { motion, AnimatePresence } from "framer-motion";
 import { CalendarDays, ChevronLeft, ChevronRight, X } from "lucide-react";
-import type { DateRange } from "../utils/searchSchema"; // adjust path
 import { useMediaQuery } from "@/hooks/useMediaQuery";
+import type { DateRange } from "@/features/search";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -14,7 +14,7 @@ function formatDate(date: Date): string {
   return date.toLocaleDateString("en-NG", { day: "numeric", month: "short" });
 }
 
-function formatTriggerLabel(range: DateRange | undefined): string {
+export function formatTriggerLabel(range: DateRange | undefined): string {
   if (!range) return "";
   if (!range.to) return formatDate(range.from);
   return `${formatDate(range.from)} – ${formatDate(range.to)}`;
@@ -26,11 +26,13 @@ interface DateRangePickerProps {
   value: DateRange | undefined;
   onChange: (range: DateRange | undefined) => void;
   error?: string;
+  variant?: "default" | "ghost";
+  triggerClassName?: string;
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export function DateRangePicker({ value, onChange, error }: DateRangePickerProps) {
+export function DateRangePicker({ value, onChange, error, variant = "default", triggerClassName }: DateRangePickerProps) {
   const [open, setOpen] = useState(false);
   const [popoverTop, setPopoverTop] = useState<number | null>(null);
   const [draftRange, setDraftRange] = useState<DayPickerRange | undefined>(value);
@@ -140,7 +142,18 @@ export function DateRangePicker({ value, onChange, error }: DateRangePickerProps
   // ─── Render ──────────────────────────────────────────────────────────────────
 
   return (
-    <div ref={containerRef} className="date-picker-shell">
+    <div ref={containerRef} className={variant === "ghost" ? "flex flex-1" : "date-picker-shell md:px-4 xl:px-5"}>
+      {variant === "ghost" ? (
+        <button
+          type="button"
+          onClick={() => (open ? closePicker({ apply: false }) : openPicker())}
+          aria-haspopup="dialog"
+          aria-expanded={open}
+          className={triggerClassName || "text-sm text-left w-full"}
+        >
+          {label || "Select date"}
+        </button>
+      ) : (
       <div className={`date-picker-trigger-row ${open ? "date-picker-trigger-row--open" : ""}`}>
         {/* ── Trigger ────────────────────────────────────────────────────────── */}
         <button
@@ -149,12 +162,12 @@ export function DateRangePicker({ value, onChange, error }: DateRangePickerProps
           aria-haspopup="dialog"
           aria-expanded={open}
           aria-label={label ? `Date: ${label}` : "Select date"}
-          className="date-picker-trigger"
+          className="date-picker-trigger md:py-2 md:px-4 xl:py-3 xl:px-5 md:gap-2 xl:gap-3"
         >
-          <CalendarDays className="date-picker-icon" aria-hidden="true" />
+          <CalendarDays className="date-picker-icon md:w-4 md:h-4 xl:w-5 xl:h-5" aria-hidden="true" />
           <div className="date-picker-trigger-text">
-            <span className="date-picker-label">When</span>
-            <span className={`date-picker-value ${!label ? "date-picker-value--placeholder" : ""}`}>
+            <span className="date-picker-label md:text-[10px] xl:text-[11px] md:mb-0 xl:mb-[0.2rem]">When</span>
+            <span className={`date-picker-value md:text-xs xl:text-sm ${!label ? "date-picker-value--placeholder" : ""}`}>
               {label || "Add dates"}
             </span>
           </div>
@@ -165,15 +178,16 @@ export function DateRangePicker({ value, onChange, error }: DateRangePickerProps
             type="button"
             onClick={handleClear}
             aria-label="Clear dates"
-            className="date-picker-clear"
+            className="date-picker-clear md:w-4 md:h-4 xl:w-5 xl:h-5 md:mr-2 xl:mr-5"
           >
-            <X className="h-3.5 w-3.5" />
+            <X className="h-3.5 w-3.5 md:w-3 md:h-3 xl:w-3.5 xl:h-3.5" />
           </button>
         )}
       </div>
+      )}
 
       {/* ── Validation error ──────────────────────────────────────────────────── */}
-      {error && (
+      {error && variant !== "ghost" && (
         <p role="alert" className="date-picker-error">
           {error}
         </p>
@@ -205,9 +219,18 @@ export function DateRangePicker({ value, onChange, error }: DateRangePickerProps
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: 8, scale: 0.98 }}
                     transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
-                    className="date-picker-popover"
+                    className="date-picker-popover relative"
                     style={popoverTop ? { top: popoverTop } : undefined}
                   >
+                    <button
+                      type="button"
+                      onClick={() => closePicker({ apply: false })}
+                      aria-label="Close date picker"
+                      className="absolute right-4 top-4 xl:right-6 xl:top-6 p-1.5 xl:p-2 rounded-full hover:bg-black/5 text-[#555B7F] transition-colors"
+                    >
+                      <X className="h-4 w-4 xl:h-5 xl:w-5" />
+                    </button>
+
                     <p className="date-picker-hint">
                       {!draftRange?.from
                         ? "Select a start date"

@@ -3,6 +3,7 @@
 import { CalendarDays, CheckCircle, CreditCard, UsersRound } from "lucide-react";
 import type { BookingFormState } from "../booking.types";
 import { BOOKING_FEES, BOOKING_TOTAL, BOOKING_VENUE, HOST_CONTACT } from "../booking.data";
+import { formatTriggerLabel } from "@/features/search/components/DateRange";
 
 export default function ReviewStep({
   form,
@@ -20,7 +21,7 @@ export default function ReviewStep({
         <div className="mt-8 grid gap-5">
           {[
             { label: "Venue", value: BOOKING_VENUE.name, icon: CheckCircle },
-            { label: "Date", value: form.date || "December 14, 2024", icon: CalendarDays },
+            { label: "Date", value: formatTriggerLabel(form.dateRange) || "December 14, 2024", icon: CalendarDays },
             { label: "Guests", value: `${form.guests} Attendees`, icon: UsersRound },
             { label: "Payment Method", value: form.paymentMethod.toUpperCase(), icon: CreditCard },
           ].map((item) => {

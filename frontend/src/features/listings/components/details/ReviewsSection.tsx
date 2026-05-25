@@ -49,7 +49,7 @@ export default function ReviewsSection({
       </h2>
 
       <div className={mobile ? "mt-6 grid gap-4 md:grid-cols-2" : "mt-8 grid gap-x-24 gap-y-4 md:grid-cols-2"}>
-        {metrics.slice(0, mobile ? 2 : metrics.length).map((metric) => (
+        {metrics.map((metric) => (
           <MetricBar key={metric.label} metric={metric} />
         ))}
       </div>

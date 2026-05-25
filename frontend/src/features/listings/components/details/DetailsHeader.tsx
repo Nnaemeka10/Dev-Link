@@ -1,15 +1,27 @@
 import { ArrowLeft, Heart, Share2 } from "lucide-react";
+import Image from "next/image";
+import Link from "next/link";
+import { useParams, useRouter } from "next/navigation";
 
 export function MobileDetailsHeader() {
+  const router = useRouter();
+  const params  = useParams();
+  const id = params.id as string;
+
+  function formatSlug(slug: string): string {
+    return slug
+      .replace(/-/g, ' ') // Replace all hyphens with spaces
+      .replace(/\b\w/g, (char) => char.toUpperCase()); // Capitalize first letter of each word
+  }
+
+  const listing = formatSlug(id);
   return (
     <header className="sticky top-0 z-40 flex h-14 items-center justify-between bg-bg-primary px-5">
-      <button type="button" aria-label="Go back" className="text-[#B9401D]">
+      <button type="button" aria-label="Go back" className="text-[#B9401D]" onClick={() => router.back()}>
         <ArrowLeft className="h-5 w-5" />
       </button>
-      <h1 className="text-base font-extrabold text-[#252423]">Listing Details</h1>
-      <button type="button" aria-label="Share listing" className="text-[#B9401D]">
-        <Share2 className="h-5 w-5" />
-      </button>
+      <h1 className="text-base font-extrabold text-[#252423]">{listing}</h1>
+      <DetailsActions />
     </header>
   );
 }
@@ -34,14 +46,11 @@ export function TabletDetailsHeader() {
 export function DesktopDetailsHeader() {
   return (
     <header className="mx-auto flex h-16 max-w-[90rem] items-center gap-8 px-8">
-      <h1 className="text-xl font-extrabold text-[#252423]">Eventvnv</h1>
-      <nav className="flex items-center gap-8 text-sm font-extrabold text-[#5E6588]">
-        <button type="button" className="border-b-2 border-[#B9401D] pb-2 text-[#B9401D]">
-          Browse Venues
-        </button>
-        <button type="button">Find Services</button>
-        <button type="button">Journal</button>
-      </nav>
+      <Link href="/" className="text-2xl flex font-semibold tracking-[-0.02em] text-text-primary items-end gap-1">
+          <Image src="/logo.svg" alt="EventVnv" width={30} height={30} />
+          <p className="font-semibold logo translate-y-1.5">EventVnV </p>
+      </Link>
+      
       <div className="ml-auto flex items-center gap-4">
         <button type="button" className="rounded-full border border-[#DDB6AA] px-6 py-2 text-sm font-extrabold text-[#252423]">
           Sign In
@@ -56,7 +65,7 @@ export function DesktopDetailsHeader() {
 
 export function DetailsActions() {
   return (
-    <div className="flex items-center gap-8 text-sm font-extrabold text-[#252423]">
+    <div className="flex items-center gap-2 lg:gap-8 text-sm font-extrabold  md:text-[#252423] text-[#B9401D]">
       <button type="button" className="inline-flex items-center gap-2 underline">
         <Share2 className="h-4 w-4" />
         Share

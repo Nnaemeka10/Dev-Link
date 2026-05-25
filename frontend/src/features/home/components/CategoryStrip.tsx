@@ -169,11 +169,13 @@ export default function CategoryStrip() {
     const container = containerRef.current;
     if (!container) return;
 
-    let resumeTimer: ReturnType<typeof setTimeout>;
+    let resumeTimer: ReturnType<typeof setTimeout> | undefined;
 
     const pause = () => {
       pausedRef.current = true;
-      clearTimeout(resumeTimer);
+      if (resumeTimer !== undefined) {
+        clearTimeout(resumeTimer);
+      }
     };
     const resume = () => {
       resumeTimer = setTimeout(() => {
@@ -191,7 +193,9 @@ export default function CategoryStrip() {
       container.removeEventListener("touchmove",   pause);
       container.removeEventListener("touchend",    resume);
       container.removeEventListener("touchcancel", resume);
-      clearTimeout(resumeTimer);
+      if (resumeTimer !== undefined) {
+        clearTimeout(resumeTimer);
+      }
     };
   }, [isMobile]);
 
@@ -227,7 +231,7 @@ export default function CategoryStrip() {
                   <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white text-text-primary shadow-sm">
                     <Icon className="h-5 w-5" />
                   </div>
-                  <p className="w-full text-center text-[11px] font-semibold uppercase tracking-[0.05em] text-text-primary/72 leading-tight">
+                  <p className="w-full text-center text-[0.5rem] md:text-[11px] font-semibold uppercase tracking-[0.05em] text-text-primary/72 leading-tight">
                     {item.label}
                   </p>
                 </div>

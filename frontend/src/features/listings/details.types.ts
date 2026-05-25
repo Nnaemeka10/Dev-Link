@@ -34,6 +34,7 @@ export interface GrandAtriumDetails {
   name: string;
   location: string;
   price: string;
+  priceRaw: number;
   rating: string;
   reviewsCount: string;
   badges: string[];

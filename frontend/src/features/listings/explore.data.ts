@@ -3,6 +3,7 @@ import hallA from "@/assets/home/populareventsa.png";
 import hallB from "@/assets/home/populareventsb.png";
 import hallC from "@/assets/home/populareventsc.png";
 import hallD from "@/assets/home/populareventsd.png";
+import { GRAND_ATRIUM_ID, GRAND_ATRIUM_DETAILS } from "./details.data";
 import type { ExploreListing, MapPricePin } from "./explore.types";
 
 export const MOBILE_EXPLORE_LISTINGS: ExploreListing[] = [
@@ -11,7 +12,7 @@ export const MOBILE_EXPLORE_LISTINGS: ExploreListing[] = [
     name: "Grand Atrium",
     location: "Victoria Island, Lagos",
     price: "₦1,250,000",
-    unit: "event",
+    unit: "day",
     rating: "4.9",
     image: hallD,
     kind: "venue",
@@ -35,7 +36,7 @@ export const MOBILE_EXPLORE_LISTINGS: ExploreListing[] = [
     name: "The Terra Gardens",
     location: "Lekki, Lagos",
     price: "₦800,000",
-    unit: "event",
+    unit: "day",
     rating: "4.7",
     image: hallC,
     kind: "venue",
@@ -102,3 +103,42 @@ export const MAP_PRICE_PINS: MapPricePin[] = [
 
 export const INITIAL_MOBILE_COMPARE_IDS = ["grand-atrium", "dj-spinall"];
 export const INITIAL_DESKTOP_COMPARE_IDS = ["heritage-loft", "imperial-ballroom"];
+
+// Utility functions to get listings by ID
+export function getExploreListingById(id: string): ExploreListing | undefined {
+  // Check if it's the grand atrium (special case)
+  if (id === GRAND_ATRIUM_ID) {
+    return {
+      id: GRAND_ATRIUM_ID,
+      name: GRAND_ATRIUM_DETAILS.name,
+      location: GRAND_ATRIUM_DETAILS.location,
+      price: GRAND_ATRIUM_DETAILS.price,
+      unit: "day",
+      rating: GRAND_ATRIUM_DETAILS.rating,
+      image: GRAND_ATRIUM_DETAILS.gallery[0],
+      kind: "venue",
+      badges: GRAND_ATRIUM_DETAILS.badges,
+      verified: true,
+    };
+  }
+
+  // Search in mobile listings
+  const mobileListing = MOBILE_EXPLORE_LISTINGS.find((listing) => listing.id === id);
+  if (mobileListing) return mobileListing;
+
+  // Search in desktop listings
+  return DESKTOP_EXPLORE_LISTINGS.find((listing) => listing.id === id);
+}
+
+export function getDetailedListingById(id: string) {
+  // For grand-atrium, return the detailed data
+  if (id === GRAND_ATRIUM_ID) {
+    return {
+      listing: GRAND_ATRIUM_DETAILS,
+      bookingPath: "/bookings/grand-atrium",
+    };
+  }
+
+  // For other listings, return null (can be extended for other detailed listings)
+  return null;
+}

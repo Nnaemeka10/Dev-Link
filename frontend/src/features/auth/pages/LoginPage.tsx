@@ -50,15 +50,15 @@ export default function LoginPage() {
 
   return (
     <AuthShell>
-      <section className="w-full max-w-[40rem] rounded-[2.25rem] bg-white px-6 py-10 shadow-[0_24px_70px_rgba(34,27,18,0.08)] md:px-14 md:py-16">
+      <section className="w-full max-w-160 rounded-[2.25rem] bg-white px-6 py-10 shadow-[0_24px_70px_rgba(34,27,18,0.08)] md:px-14 md:py-16">
         <div className="text-center">
           <h1 className="text-4xl font-extrabold tracking-[-0.03em] md:text-5xl">Welcome Back</h1>
           <p className="mt-4 text-lg text-[#555B7F]">Sign in to curate your next extraordinary event</p>
         </div>
 
-        <div className="mt-10 grid gap-4 md:grid-cols-2">
-          <button type="button" className="rounded-full border border-[#EFE0D8] px-6 py-4 font-extrabold">Google</button>
-          <button type="button" className="rounded-full border border-[#EFE0D8] px-6 py-4 font-extrabold">Facebook</button>
+        <div className="mt-10 grid gap-4 grid-cols-2">
+          <button type="button" className="rounded-full border border-[#EFE0D8] px-2 w-full py-4 font-extrabold text-xs md:text-sm">Google</button>
+          <button type="button" className="rounded-full border border-[#EFE0D8] px-2 w-full py-4 font-extrabold text-xs md:text-sm">Facebook</button>
         </div>
 
         <div className="my-10">
@@ -74,23 +74,16 @@ export default function LoginPage() {
             error={formState.errors.email?.message}
             {...register("email", { required: "Email is required" })}
           />
-          <div>
-            <div className="mb-3 flex items-center justify-between">
-              <span className="text-xs font-extrabold uppercase tracking-[0.16em] text-[#3F211B]">Password</span>
-              <Link href={withReturnTo("/forgot-password", returnTo)} className="text-sm font-extrabold text-[#B9401D]">
-                Forgot Password?
-              </Link>
-            </div>
             <AuthInput
-              label=""
+              label="Password"
+              rightIcon="password"
               type="password"
               placeholder="••••••••"
               autoComplete="current-password"
               error={formState.errors.password?.message}
               {...register("password", { required: "Password is required" })}
             />
-          </div>
-
+          
           {error ? <p className="text-sm font-semibold text-[#B9401D]">{error}</p> : null}
 
           <button

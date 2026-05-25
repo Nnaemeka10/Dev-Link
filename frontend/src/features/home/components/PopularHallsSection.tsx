@@ -70,7 +70,7 @@ export default function PopularHallsSection() {
   return (
     <section className="px-4 py-10 md:px-8 md:py-12">
       <div className="mx-auto max-w-7xl">
-        <div className="mb-6 flex items-end justify-between md:mb-7">
+        <div className="mb-6 flex items-start md:items-end justify-between md:mb-7">
           <div>
             <h2 className="text-heading-m font-semibold leading-tight text-text-primary md:text-4xl">
               {POPULAR_HALLS_RESPONSE.heading}
@@ -79,8 +79,11 @@ export default function PopularHallsSection() {
               {POPULAR_HALLS_RESPONSE.subheading}
             </p>
           </div>
-          <button type="button" className="hidden text-sm font-semibold text-text-primary underline md:block">
-            <Link href={`/${POPULAR_HALLS_RESPONSE.ctaLink}`}>{POPULAR_HALLS_RESPONSE.ctaLabel}</Link>
+          <button type="button" className="md:text-sm text-small font-semibold text-text-primary underline">
+            <Link href={`/${POPULAR_HALLS_RESPONSE.ctaLink}`} className=" md:block">
+              {POPULAR_HALLS_RESPONSE.ctaLabel}
+            </Link>
+
           </button>
         </div>
 
@@ -93,27 +96,27 @@ export default function PopularHallsSection() {
             >
               <div className="relative overflow-hidden rounded-2xl">
                 <Image src={hall.image} alt={hall.name} className="h-62.5 w-full object-cover" />
-                <span className="absolute left-3 top-3 rounded-full bg-white px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.08em] text-text-primary">
+                <span className="absolute left-3 top-3 rounded-full bg-white px-3 py-1 text-[0.55rem] md:text-[0.625rem] font-semibold uppercase tracking-[0.08em] text-text-primary">
                   Verified
                 </span>
               </div>
 
               <div className="mt-3 flex items-start justify-between gap-2">
-                <h3 className="text-heading-m font-semibold text-text-primary md:text-base">{hall.name}</h3>
-                <p className="inline-flex items-center gap-1 text-small font-semibold text-text-primary md:text-[0.625rem]">
+                <h3 className="text-lg font-semibold text-text-primary ">{hall.name}</h3>
+                <p className="inline-flex items-center gap-1 text-small font-semibold text-text-primary">
                   <Star className="h-4 w-4 fill-current text-accent-secondary" />
                   {hall.rating.toFixed(1)}
                 </p>
               </div>
 
-              <p className="mt-1 inline-flex items-center gap-1 text-small text-text-primary/58 md:text-sm">
+              <p className="mt-1 inline-flex items-center gap-1 text-tiny text-text-primary/58">
                 <MapPin className="h-4 w-4" />
                 {hall.location}
               </p>
 
-              <p className="mt-2 text-heading-m font-semibold text-text-primary md:text-base">
+              <p className="mt-2 text-base font-semibold text-text-primary">
                 {hall.pricePerDay}
-                <span className="ml-1 text-small font-normal text-text-primary/60 md:text-sm">/day</span>
+                <span className="ml-1 text-sm font-normal text-text-primary/60">/day</span>
               </p>
             </article>
           ))}

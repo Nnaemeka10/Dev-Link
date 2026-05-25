@@ -1,3 +1,6 @@
+import Image from "next/image";
+import Link from "next/link";
+
 const FOOTER_GROUPS = [
   ["Company", "About Us", "Careers", "Press Kit"],
   ["Support", "Contact Us", "Terms of Service", "Privacy Policy"],
@@ -6,10 +9,13 @@ const FOOTER_GROUPS = [
 
 export default function ExploreFooter() {
   return (
-    <footer className="mt-20 border-t border-[#E8DED2] pt-14 text-[#555B7F]">
+    <footer className="lg:mt-64 border-t border-[#E8DED2] pt-14 text-[#555B7F] bg-[#E8E4DC] px-5 pb-40">
       <div className="grid grid-cols-4 gap-12">
         <div>
-          <h3 className="text-base font-extrabold text-[#252423]">Eventvnv</h3>
+          <Link href="/" className="text-2xl flex font-semibold tracking-[-0.02em] text-text-primary items-end gap-1">
+            <Image src="/logo.svg" alt="EventVnv" width={30} height={30} />
+            <p className="font-semibold logo translate-y-1.5">EventVnV </p>
+          </Link>
           <p className="mt-5 text-sm leading-6">Nigeria&apos;s premier concierge for high-end event planning and venue curation.</p>
         </div>
         {FOOTER_GROUPS.map(([title, ...links]) => (

@@ -16,10 +16,7 @@ interface SignupResponse {
   user: AuthUser;
 }
 
-const INTENTS: Array<{ id: SignupIntent; label: string }> = [
-  { id: "booker", label: "Book Events" },
-  { id: "vendor", label: "Provide Services" },
-];
+
 
 export default function SignupPage() {
   const router = useRouter();
@@ -27,10 +24,10 @@ export default function SignupPage() {
   const returnTo = searchParams.get("returnTo");
   const setAuth = useAuthStore((state) => state.setAuth);
   const [error, setError] = useState<string | null>(null);
-  const { register, handleSubmit, setValue, watch, formState } = useForm<SignupFormValues>({
+  const { register, handleSubmit, formState } = useForm<SignupFormValues>({
     defaultValues: { email: "", fullName: "", intent: "booker", password: "" },
   });
-  const intent = watch("intent");
+ 
 
   const onSubmit = handleSubmit(async (values) => {
     setError(null);
@@ -57,26 +54,12 @@ export default function SignupPage() {
   return (
     <AuthShell variant="split">
       <section className="w-full">
-        <div className="mx-auto max-w-[42rem]">
-          <h1 className="text-4xl font-extrabold tracking-[-0.03em] md:text-5xl">Create your account</h1>
-          <p className="mt-3 text-lg text-[#555B7F]">Join our digital concierge for the Nigerian events industry.</p>
+        <div className="mx-auto max-w-2xl">
+          <h1 className="text-2xl font-extrabold tracking-[-0.03em] md:text-3xl lg:text-4xl">Create your account</h1>
+          <p className="mt-2 text-sm text-[#555B7F] md:mt-3 md:text-base">Join our digital concierge for the Nigerian events industry.</p>
 
-          <div className="mt-10 grid grid-cols-2 gap-4 rounded-[2rem]">
-            {INTENTS.map((option) => (
-              <button
-                key={option.id}
-                type="button"
-                onClick={() => setValue("intent", option.id)}
-                className={`rounded-full px-6 py-5 font-extrabold ${
-                  intent === option.id ? "bg-[#FFDFA7] text-[#252423]" : "bg-[#E0DDD6] text-[#252423]"
-                }`}
-              >
-                {option.label}
-              </button>
-            ))}
-          </div>
 
-          <form className="mt-10 space-y-7" onSubmit={onSubmit}>
+          <form className="mt-6 space-y-5 md:mt-8 md:space-y-6 lg:mt-10 lg:space-y-7" onSubmit={onSubmit}>
             <AuthInput
               label="Full Name"
               placeholder="Ebuka Obi-Uchendu"
@@ -105,27 +88,27 @@ export default function SignupPage() {
               })}
             />
 
-            {error ? <p className="text-sm font-semibold text-[#B9401D]">{error}</p> : null}
+            {error ? <p className="text-xs font-semibold text-[#B9401D] md:text-sm">{error}</p> : null}
 
             <button
               type="submit"
               disabled={formState.isSubmitting}
-              className="w-full rounded-full bg-[#B9401D] px-8 py-5 text-lg font-extrabold text-white shadow-[0_14px_28px_rgba(185,64,29,0.2)] disabled:opacity-60"
+              className="w-full rounded-full bg-[#B9401D] px-6 py-4 text-base font-extrabold text-white shadow-[0_14px_28px_rgba(185,64,29,0.2)] disabled:opacity-60 md:px-8 md:py-5 md:text-lg"
             >
               {formState.isSubmitting ? "Creating..." : "Create Account"}
             </button>
           </form>
 
-          <div className="my-10">
+          <div className="my-6 md:my-8 lg:my-10">
             <Divider label="Or sign up with" />
           </div>
 
-          <div className="grid gap-4 md:grid-cols-2">
-            <button type="button" className="rounded-full bg-[#F4F1EA] px-6 py-4 font-extrabold">Google</button>
-            <button type="button" className="rounded-full bg-[#F4F1EA] px-6 py-4 font-extrabold">Apple</button>
+          <div className="grid gap-3 md:gap-4 md:grid-cols-2">
+            <button type="button" className="rounded-full bg-[#F4F1EA] px-4 py-3 text-sm font-extrabold md:px-6 md:py-4 md:text-base">Google</button>
+            <button type="button" className="rounded-full bg-[#F4F1EA] px-4 py-3 text-sm font-extrabold md:px-6 md:py-4 md:text-base">Apple</button>
           </div>
 
-          <div className="mt-10 text-center">
+          <div className="mt-8 text-center md:mt-10">
             <p className="text-[#555B7F]">
               Already have an account?{" "}
               <Link href={withReturnTo("/login", returnTo)} className="font-extrabold text-[#B9401D]">

@@ -1,4 +1,5 @@
 import { Eye, ShieldCheck } from "lucide-react";
+import Link from "next/link";
 
 interface AuthInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   error?: string;
@@ -9,7 +10,16 @@ interface AuthInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
 export function AuthInput({ error, label, rightIcon, ...props }: AuthInputProps) {
   return (
     <label className="block">
-      {label ? <span className="text-xs font-extrabold uppercase tracking-[0.16em] text-[#555B7F]">{label}</span> : null}
+      {label ? <div className="mb-3 flex items-center justify-between">
+        <span className="text-xs font-extrabold uppercase tracking-[0.16em] text-[#555B7F]">{label}</span>
+        {rightIcon === "password" ? (
+          <Link href="/forgot-password" className="text-sm font-extrabold text-[#B9401D] text-right">
+            Forgot Password?
+          </Link>
+        ) : null}
+      </div> : null}
+      
+
       <span className="mt-3 flex h-14 items-center rounded-full bg-[#E0DDD6] px-5">
         <input
           {...props}

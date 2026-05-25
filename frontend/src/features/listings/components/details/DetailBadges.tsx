@@ -2,8 +2,8 @@ import { Check, Star } from "lucide-react";
 
 export function RatingBadge({ rating, reviewsCount }: { rating: string; reviewsCount: string }) {
   return (
-    <span className="inline-flex items-center gap-1 rounded-full bg-[#EEECE7] px-3 py-1.5 text-sm font-extrabold text-[#252423]">
-      <Star className="h-4 w-4 fill-[#9D6B00] text-[#9D6B00]" />
+    <span className="inline-flex w-fit items-center gap-1 rounded-full bg-[#EEECE7] lg:px-3 px-1.5 py-1.5 lg:text-sm text-micro font-extrabold text-[#252423]">
+      <Star className="lg:h-4 lg:w-4 w-2.5 h-2.5 fill-[#9D6B00] text-[#9D6B00]" />
       {rating}
       <span className="font-semibold text-[#6B6E91]">({reviewsCount})</span>
     </span>
@@ -12,8 +12,8 @@ export function RatingBadge({ rating, reviewsCount }: { rating: string; reviewsC
 
 export function VerifiedVenueBadge() {
   return (
-    <span className="inline-flex items-center gap-1 rounded-full bg-[#F4DFD2] px-3 py-1.5 text-xs font-extrabold text-[#B9401D]">
-      <Check className="h-3.5 w-3.5 rounded-full bg-[#B9401D] p-0.5 text-white" />
+    <span className="inline-flex items-center gap-1 rounded-full bg-[#F4DFD2] lg:px-3 py-1.5 px-1.5 lg:text-xs text-micro font-extrabold text-[#B9401D]">
+      <Check className="lg:h-3.5 lg:w-3.5 w-2.5 h-2.5 rounded-full bg-[#B9401D] p-0.5 text-white" />
       Verified
     </span>
   );

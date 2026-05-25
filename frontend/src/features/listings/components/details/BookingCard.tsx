@@ -1,24 +1,42 @@
 "use client";
 
 import { MessageSquare } from "lucide-react";
-import { BOOKING_GUESTS, BOOKING_TIMES } from "../../details.data";
+import { DateRangePicker } from "@/features/search/components/DateRange";
+import { DateRange } from "@/features/search/utils/searchSchema";
+import { Dropdown, DropdownOption } from "@/components/ui/Dropdown";
+
 
 interface BookingCardProps {
   booked: boolean;
-  date: string;
+  dateRange: DateRange | undefined;
   guests: string;
   time: string;
   onBook: () => void;
-  onDateChange: (value: string) => void;
+  onDateChange: (value: DateRange | undefined) => void;
   onGuestsChange: (value: string) => void;
   onTimeChange: (value: string) => void;
   price: string;
   variant?: "desktop" | "mobile";
 }
 
+const GUEST_OPTIONS: DropdownOption[] = [
+  { value: "1",   label: "1 guest"   },
+  { value: "2",   label: "2 guests"  },
+  { value: "10",  label: "10 guests" },
+  { value: "50",  label: "50 guests" },
+  { value: "200", label: "200 guests"},
+];
+ 
+const TIME_OPTIONS: DropdownOption[] = [
+  { value: "morning",   label: "Morning",   description: "8 AM – 12 PM"  },
+  { value: "afternoon", label: "Afternoon", description: "12 PM – 5 PM"  },
+  { value: "evening",   label: "Evening",   description: "5 PM – 10 PM"  },
+  { value: "fullday",   label: "Full Day",  description: "8 AM – 10 PM"  },
+];
+
 export default function BookingCard({
   booked,
-  date,
+  dateRange,
   guests,
   time,
   onBook,
@@ -29,56 +47,47 @@ export default function BookingCard({
   variant = "desktop",
 }: BookingCardProps) {
   const compact = variant === "mobile";
+  
 
   return (
     <aside
-      className={`rounded-[2rem] bg-white shadow-[0_24px_54px_rgba(34,27,18,0.1)] ${
+      className={`rounded-4xl bg-white shadow-[0_24px_54px_rgba(34,27,18,0.1)] h-fit ${
         compact ? "p-6" : "sticky top-8 p-8"
       }`}
     >
       <div className="flex items-end justify-between">
         <p className="text-3xl font-extrabold text-[#252423]">
           {price}
-          <span className="text-sm font-bold text-[#5E6588]">/event</span>
+          <span className="text-sm font-bold text-[#5E6588]">/day</span>
         </p>
-        <p className="text-xs font-extrabold text-[#252423]">★ 4.9</p>
+       
       </div>
 
       <div className="mt-7 overflow-hidden rounded-[1.35rem] border border-[#E8DDD2]">
-        <label className="block border-b border-[#E8DDD2] px-4 py-3">
-          <span className="text-[10px] font-extrabold uppercase text-[#9A9AAE]">Event Date</span>
-          <input
-            type="date"
-            value={date}
-            onChange={(event) => onDateChange(event.target.value)}
-            className="mt-1 w-full bg-transparent text-sm font-semibold text-[#6B5D55] focus:outline-none"
+        <div className="border-b border-[#E8DDD2] bg-white">
+          <DateRangePicker
+            value={dateRange}
+            onChange={onDateChange}
           />
-        </label>
+        </div>
         <div className="grid grid-cols-2">
-          <label className="block border-r border-[#E8DDD2] px-4 py-3">
-            <span className="text-[10px] font-extrabold uppercase text-[#9A9AAE]">Guests</span>
-            <select
-              value={guests}
-              onChange={(event) => onGuestsChange(event.target.value)}
-              className="mt-1 w-full bg-transparent text-sm font-semibold text-[#6B5D55] focus:outline-none"
-            >
-              {BOOKING_GUESTS.map((option) => (
-                <option key={option}>{option}</option>
-              ))}
-            </select>
-          </label>
-          <label className="block px-4 py-3">
-            <span className="text-[10px] font-extrabold uppercase text-[#9A9AAE]">Time</span>
-            <select
-              value={time}
-              onChange={(event) => onTimeChange(event.target.value)}
-              className="mt-1 w-full bg-transparent text-sm font-semibold text-[#6B5D55] focus:outline-none"
-            >
-              {BOOKING_TIMES.map((option) => (
-                <option key={option}>{option}</option>
-              ))}
-            </select>
-          </label>
+          <Dropdown
+            label="Guests"
+            variant="cell"
+            size="md"
+            options={GUEST_OPTIONS}
+            value={guests}
+            onChange={onGuestsChange}
+            borderRight
+          />
+          <Dropdown
+            label="Time"
+            variant="cell"
+            size="md"
+            options={TIME_OPTIONS}
+            value={time}
+            onChange={onTimeChange}
+          />
         </div>
       </div>
 
@@ -106,7 +115,7 @@ export default function BookingCard({
             <strong>{price}</strong>
           </div>
           <div className="flex justify-between">
-            <span className="font-semibold text-[#5E6588] underline">Service Charge (10%)</span>
+            <span className="font-semibold text-[#5E6588] underline">VAT (10%)</span>
             <strong>₦125,000</strong>
           </div>
           <div className="flex justify-between border-t border-[#EFE8DE] pt-4 text-base">

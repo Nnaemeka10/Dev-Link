@@ -12,6 +12,7 @@ export const GRAND_ATRIUM_DETAILS: GrandAtriumDetails = {
   name: "The Grand Atrium",
   location: "Victoria Island, Lagos",
   price: "₦1,250,000",
+  priceRaw: 1250000,
   rating: "4.9",
   reviewsCount: "128 reviews",
   badges: ["Flexible Pricing", "Catering Included"],
