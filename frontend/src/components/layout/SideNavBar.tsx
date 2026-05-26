@@ -11,29 +11,25 @@ const navLinks = [
     id: "explore",
     icon: Compass,
     label: "Explore",
-    href: "/listings",
-    active: true,
+    href: "/",
   },
   {
     id: "saved",
     icon: Heart,
     label: "Saved",
-    href: "#",
-    active: false,
+    href: "/listings/saved",
   },
   {
     id: "messages",
     icon: MessageCircleMore,
     label: "Messages",
-    href: "#",
-    active: false,
+    href: "/messages",
   },
   {
     id: "profile",
     icon: UserRound,
     label: "Profile",
     href: "/profile",
-    active: false,
   },
 ];
 
@@ -41,7 +37,7 @@ export default function SideNavBar() {
   const pathname = usePathname();
 
   return (
-    <aside className="w-[15%] h-screen flex flex-col border-r border-[#F1E5D5] bg-bg-primary overflow-y-auto fixed">
+    <aside className="w-[15%] h-screen flex-col border-r border-[#F1E5D5] bg-[#f6f3ec] overflow-y-auto fixed hidden xl:flex">
       <div className="flex h-32 items-center border-b border-[#F1E5D5] px-6 font-semibold tracking-[-0.02em] text-text-primary shrink-0">
         <Link href="/" className="text-2xl flex font-semibold tracking-[-0.02em] text-text-primary items-end gap-1">
             <Image src="/logo.svg" alt="EventVnv" width={30} height={30} />
@@ -52,7 +48,11 @@ export default function SideNavBar() {
       <div className="flex grow flex-col gap-2 py-8">
         {navLinks.map((link) => {
           const Icon = link.icon;
-          const isActive = link.active || pathname === link.href;
+          // Consider a link active if the current pathname matches its href exactly,
+          // or if it's the root path ("/") and we are on a listings path (but not '/listings/saved')
+          const isActive = 
+            pathname === link.href || 
+            (link.href === "/" && pathname.startsWith("/listings") && !pathname.startsWith("/listings/saved"));
 
           return (
             <Link

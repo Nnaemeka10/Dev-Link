@@ -8,7 +8,7 @@ import { useSearchForm } from "@/features/search/hooks/useSearchForm";
 import { buildListingsHref, normalizeListingSearchParams } from "@/features/listings/searchParams";
 import type { SearchFormData } from "@/features/search/utils/searchSchema";//
 
-import SideNavBar from "../components/SideNavBar";
+
 import {
   DESKTOP_EXPLORE_LISTINGS,
   INITIAL_DESKTOP_COMPARE_IDS,
@@ -18,11 +18,13 @@ import {
 import { DesktopCompareBar, MobileCompareBar } from "../components/explore/CompareBars";
 import { DesktopExploreCard, MobileExploreCard } from "../components/explore/ExploreListingCards";
 import { DesktopExploreHeader, DesktopResultsHeader } from "../components/explore/DesktopExploreHeader";
-import ExploreFooter from "../components/explore/ExploreFooter";
+
 import MobileBottomNav from "../components/explore/MobileBottomNav";
 import MobileExploreHeader, { MobileResultsHeader } from "../components/explore/MobileExploreHeader";
 import StaticMapPanel from "../components/explore/StaticMapPanel";
 import { toggleSelection } from "../utils/compareSelection";
+import HomeFooter from "@/components/layout/Footer";
+import SideNavBar from "@/components/layout/SideNavBar";
 
 function formatDateLabel(date: Date) {
   return date.toLocaleDateString("en-NG", {
@@ -150,7 +152,7 @@ export default function ExploreMarketplace() {
 
         <MobileCompareBar selectedListings={mobileSelectedListings} onClear={() => setMobileSelectedIds(new Set())} />
         <MobileBottomNav />
-        <ExploreFooter />
+        <HomeFooter />
       </section>
 
 
@@ -181,7 +183,7 @@ export default function ExploreMarketplace() {
           </div>
 
         <MobileBottomNav />
-        <ExploreFooter />
+        <HomeFooter />
       </section>
 
 
@@ -212,7 +214,7 @@ export default function ExploreMarketplace() {
                 </div>
               </div>
 
-              <ExploreFooter />
+              <HomeFooter />
             </div>
 
             <DesktopCompareBar selectedListings={desktopSelectedListings} onClear={() => setDesktopSelectedIds(new Set())} />

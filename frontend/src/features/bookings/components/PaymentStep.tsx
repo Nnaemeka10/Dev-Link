@@ -97,10 +97,11 @@ export default function PaymentStep({ form, onPay, onUpdate, variant = "desktop"
         <div className="mt-6">
           <PaymentOptions value={form.paymentMethod} onChange={(paymentMethod) => onUpdate({ paymentMethod })} />
         </div>
-        <div className="mt-8">
+        <div className="mt-8 mb-36">
           <CardFields form={form} onUpdate={onUpdate} />
         </div>
         <MobilePaymentDock summary={summary} onPay={onPay} />
+
       </section>
     );
   }

@@ -14,7 +14,7 @@ import ListingFeatures from "../components/details/ListingFeatures";
 import { DesktopPhotoGallery, MobileHeroPhoto, TabletPhotoGallery } from "../components/details/PhotoGallery";
 import ReviewsSection from "../components/details/ReviewsSection";
 import SimilarVenues from "../components/details/SimilarVenues";
-import SideNavBar from "../components/SideNavBar";
+import SideNavBar from "../../../components/layout/SideNavBar";
 import { DesktopExploreHeader } from "../components/explore/DesktopExploreHeader";
 import { useSearchForm } from "@/features/search";
 import { buildListingsHref } from "../searchParams";
@@ -23,6 +23,7 @@ import { SearchFormData } from "@/features/search/utils/searchSchema";
 import type { DateRange } from "@/features/search/utils/searchSchema";
 import HomeFooter from "@/components/layout/Footer";
 import { MobileBookingDock } from "../components/details/MobileBookingDock.tsx";
+import MobileDock from "@/components/layout/MobileDock";
 
 interface SearchProps {
   handleSearch: (data: SearchFormData) => void;
@@ -135,6 +136,7 @@ function MobileDetailsView({ booking }: { booking: ReturnType<typeof useBookingS
         onDateChange={booking.setDateRange}
         onBook={booking.bookNow}
       />
+      <MobileDock />
        <HomeFooter />
     </section>
   );
@@ -197,7 +199,7 @@ function TabletDetailsView({ booking, handleSearch, form, isPending }: DesktopDe
       <div className="mx-auto max-w-5xl px-8">
         <SimilarVenues venues={details.similarVenues} />
       </div>
-      <DetailsFooter />
+      <HomeFooter />
     </section>
   );
 }
@@ -262,7 +264,7 @@ function DesktopDetailsView({ booking, handleSearch, form, isPending }: DesktopD
                
       </div>
     </div>
-      <DetailsFooter />
+      <HomeFooter />
     </div>
       
     </section>

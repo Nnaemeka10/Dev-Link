@@ -6,6 +6,7 @@ import { BOOKING_FEES, BOOKING_TOTAL, BOOKING_VENUE } from "../booking.data";
 import type { BookingFormState } from "../booking.types";
 import { EstimateSummary, VenueSelectionCard } from "./BookingSummary";
 import { DateTimeSection } from "./DateTimeSection";
+import { useRouter } from "next/navigation";
 
 interface BookingDetailsStepProps {
   form: BookingFormState;
@@ -17,7 +18,9 @@ interface BookingDetailsStepProps {
 
 
 export default function BookingDetailsStep({ form, onContinue, onUpdate, variant = "desktop" }: BookingDetailsStepProps) {
+  const router = useRouter();
   if (variant === "mobile") {
+    
     return (
       <section className="px-6 pb-28">
         <article className="flex items-center gap-5 rounded-[2rem] bg-white p-5 shadow-[0_18px_40px_rgba(34,27,18,0.08)]">
@@ -66,7 +69,7 @@ export default function BookingDetailsStep({ form, onContinue, onUpdate, variant
           </p>
         </div>
 
-        <details className="mt-9 border-b border-[#E2DBD1] pb-5" open>
+        <details className="mt-9 mb-36 border-b border-[#E2DBD1] pb-5" open>
           <summary className="cursor-pointer text-base font-extrabold">Contract & Cancellation Policy</summary>
           <ul className="mt-5 list-disc space-y-3 pl-5 text-sm leading-6 text-[#555B7F]">
             <li>Free cancellation within 48 hours of booking.</li>
@@ -75,8 +78,8 @@ export default function BookingDetailsStep({ form, onContinue, onUpdate, variant
           </ul>
         </details>
 
-        <div className="fixed inset-x-0 bottom-0 z-40 flex items-center justify-between bg-bg-primary px-6 py-5 shadow-[0_-12px_32px_rgba(34,27,18,0.08)]">
-          <button type="button" className="font-extrabold text-[#555B7F]">‹ Previous</button>
+        <div className="fixed inset-x-0 bottom-20 z-40 flex items-center justify-between bg-bg-primary px-6 py-5 shadow-[0_-12px_32px_rgba(34,27,18,0.08)]">
+          <button type="button" onClick = {() => router.back()} className="font-extrabold text-[#555B7F]">‹ Previous</button>
           <button type="button" onClick={onContinue} className="rounded-full bg-[#B9401D] px-10 py-4 font-extrabold text-white">Continue →</button>
         </div>
       </section>

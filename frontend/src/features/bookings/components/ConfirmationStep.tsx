@@ -23,7 +23,7 @@ export default function ConfirmationStep({ variant = "desktop" }: { variant?: "d
           </div>
         </div>
 
-        <div className="mt-6 rounded-[2rem] bg-white p-6 text-left shadow-[0_16px_36px_rgba(34,27,18,0.08)]">
+        <div className="mt-6 rounded-[2rem] bg-white mb-36 p-6 text-left shadow-[0_16px_36px_rgba(34,27,18,0.08)]">
           <div className="flex items-center justify-between gap-4">
             <div>
               <h2 className="font-extrabold">Amina Okoro</h2>
@@ -36,7 +36,7 @@ export default function ConfirmationStep({ variant = "desktop" }: { variant?: "d
           </div>
         </div>
 
-        <div className="fixed inset-x-0 bottom-0 z-40 bg-white px-6 py-5 shadow-[0_-12px_32px_rgba(34,27,18,0.08)]">
+        <div className="fixed inset-x-0 bottom-20 z-40 bg-white px-6 py-5 shadow-[0_-12px_32px_rgba(34,27,18,0.08)]">
           <button type="button" className="w-full rounded-full bg-[#B9401D] px-8 py-4 font-extrabold text-white">View My Bookings →</button>
           <button type="button" className="mt-5 font-extrabold text-[#555B7F]">Chat with Vendor</button>
         </div>
