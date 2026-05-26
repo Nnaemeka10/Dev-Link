@@ -31,7 +31,7 @@ export default function RootLayout({
           <div className="relative min-h-screen">
             <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(201,153,58,0.08),transparent_40%),radial-gradient(circle_at_bottom_left,rgba(214,92,58,0.08),transparent_35%)]" />
             <div className="relative z-10 flex min-h-screen flex-col">
-              <Navbar />
+              {/* <Navbar /> */}
               {children}
             </div>
           </div>
