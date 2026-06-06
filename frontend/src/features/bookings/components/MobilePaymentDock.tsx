@@ -210,7 +210,7 @@ export function MobilePaymentDock({ summary, onPay }: MobilePaymentDockProps) {
   return (
     <>
       {/* ── Dock bar ─────────────────────────────────────────────────────── */}
-      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-[#EFE8DE] bg-bg-primary px-5 py-4 shadow-[0_-8px_32px_rgba(34,27,18,0.08)]">
+      <div className="fixed inset-x-0 bottom-20 z-40 border-t border-[#EFE8DE] bg-bg-primary px-5 py-4 shadow-[0_-8px_32px_rgba(34,27,18,0.08)]">
         <div className="flex items-center justify-between gap-4">
 
           {/* Venue + price — tappable trigger */}

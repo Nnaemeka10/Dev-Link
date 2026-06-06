@@ -4,55 +4,61 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import Image from "next/image";
 import Button from "@/components/ui/Button";
-import { Compass, Heart, MessageCircleMore, UserRound } from "lucide-react";
+import { List, CalendarCheck, MessageCircleMore, UserRound } from "lucide-react"; // Using similar icons but for Vendor context
 
-const navLinks = [
+const vendorNavLinks = [
   {
-    id: "explore",
-    icon: Compass,
-    label: "Explore",
-    href: "/listings",
-    active: true,
+    id: "today",
+    icon: CalendarCheck,
+    label: "Today",
+    href: "/vendor",
   },
   {
-    id: "saved",
-    icon: Heart,
-    label: "Saved",
-    href: "#",
-    active: false,
+    id: "mylistings",
+    icon: List,
+    label: "My Listings",
+    href: "/vendor/mylistings",
   },
   {
     id: "messages",
     icon: MessageCircleMore,
     label: "Messages",
-    href: "#",
-    active: false,
+    href: "/vendor/messages",
   },
   {
     id: "profile",
     icon: UserRound,
     label: "Profile",
-    href: "/profile",
-    active: false,
+    href: "/vendor/profile",
   },
 ];
 
-export default function SideNavBar() {
+export default function VendorSideNavBar() {
   const pathname = usePathname();
 
   return (
-    <aside className="w-[15%] h-screen flex flex-col border-r border-[#F1E5D5] bg-bg-primary overflow-y-auto fixed">
+    <aside className="w-[15%] h-screen flex-col border-r border-[#F1E5D5] bg-[#f6f3ec] overflow-y-auto fixed hidden xl:flex">
       <div className="flex h-32 items-center border-b border-[#F1E5D5] px-6 font-semibold tracking-[-0.02em] text-text-primary shrink-0">
         <Link href="/" className="text-2xl flex font-semibold tracking-[-0.02em] text-text-primary items-end gap-1">
             <Image src="/logo.svg" alt="EventVnv" width={30} height={30} />
-            <p className="font-semibold logo translate-y-1.5">EventVnV </p>
+            <p className="font-semibold logo translate-y-1.5">EventVnV Host</p>
         </Link>
       </div>
 
       <div className="flex grow flex-col gap-2 py-8">
-        {navLinks.map((link) => {
+        {vendorNavLinks.map((link) => {
           const Icon = link.icon;
-          const isActive = link.active || pathname === link.href;
+          
+          let isActive = false;
+          if (link.id === "today") {
+            // Today is strictly the /vendor root
+            isActive = pathname === "/vendor";
+          } else if (link.id === "mylistings") {
+            isActive = pathname.startsWith("/vendor/mylistings");
+          } else {
+            // For messages and profile
+            isActive = pathname.startsWith(link.href);
+          }
 
           return (
             <Link
@@ -71,13 +77,16 @@ export default function SideNavBar() {
         })}
       </div>
 
+      {/* Exiting Host mode */}
       <div className="mt-auto px-4 pb-8">
-        <Button
-          variant="primary"
-          className="w-full py-4 text-xs font-bold uppercase tracking-wider"
-        >
-          List your space
-        </Button>
+        <Link href="/">
+          <Button
+            variant="primary"
+            className="w-full py-4 text-xs font-bold uppercase tracking-wider"
+          >
+            Switch to Traveler
+          </Button>
+        </Link>
       </div>
     </aside>
   );

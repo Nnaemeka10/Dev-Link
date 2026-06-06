@@ -297,7 +297,7 @@ export function MobileBookingDock({
   return (
     <>
       {/* ── Dock bar (always visible) ─────────────────────────────────────── */}
-      <div className="fixed inset-x-0 bottom-0 z-40 rounded-t-[2rem] border-t border-[#EFE8DE] bg-white px-5 py-4 shadow-[0_-8px_32px_rgba(36,28,18,0.10)]">
+      <div className="fixed inset-x-0 bottom-20 z-40 rounded-t-[2rem] border-t border-[#EFE8DE] bg-white px-5 py-4 shadow-[0_-8px_32px_rgba(36,28,18,0.10)]">
         <div className="flex items-center justify-between gap-4">
 
           {/* Price + duration — tappable, opens price detail sheet */}

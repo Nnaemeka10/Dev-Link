@@ -17,10 +17,13 @@ export function MobileDetailsHeader() {
   const listing = formatSlug(id);
   return (
     <header className="sticky top-0 z-40 flex h-14 items-center justify-between bg-bg-primary px-5">
-      <button type="button" aria-label="Go back" className="text-[#B9401D]" onClick={() => router.back()}>
-        <ArrowLeft className="h-5 w-5" />
-      </button>
-      <h1 className="text-base font-extrabold text-[#252423]">{listing}</h1>
+      <div className=" flex gap-2">
+        <button type="button" aria-label="Go back" className="text-[#B9401D]" onClick={() => router.back()}>
+          <ArrowLeft className="h-5 w-5" />
+        </button>
+        
+        <h1 className="text-base font-extrabold text-[#252423]">{listing}</h1>
+      </div>
       <DetailsActions />
     </header>
   );
