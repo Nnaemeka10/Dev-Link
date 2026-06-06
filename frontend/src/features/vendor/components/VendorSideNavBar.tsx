@@ -23,13 +23,13 @@ const vendorNavLinks = [
     id: "messages",
     icon: MessageCircleMore,
     label: "Messages",
-    href: "/messages",
+    href: "/vendor/messages",
   },
   {
     id: "profile",
     icon: UserRound,
     label: "Profile",
-    href: "/profile",
+    href: "/vendor/profile",
   },
 ];
 
@@ -81,7 +81,7 @@ export default function VendorSideNavBar() {
       <div className="mt-auto px-4 pb-8">
         <Link href="/">
           <Button
-            variant="outline"
+            variant="primary"
             className="w-full py-4 text-xs font-bold uppercase tracking-wider"
           >
             Switch to Traveler
