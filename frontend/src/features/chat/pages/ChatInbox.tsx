@@ -2,7 +2,12 @@
 
 import MobileDock from "@/components/layout/MobileDock";
 import SideNavBar from "@/components/layout/SideNavBar";
+import VendorMobileDock from "@/components/layout/VendorMobileDock";
+import VendorSideNavBar from "@/components/layout/VendorSideNavBar";
+import { useTheparam } from "@/hooks/useTheparam";
+
 import { useState, useRef, useEffect } from "react";
+
 
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -28,6 +33,7 @@ export interface Conversation {
   unread: boolean;
   messages: ChatMessage[];
 }
+
 
 // ─── Mock Data (swap with real API call) ──────────────────────────────────────
 
@@ -134,6 +140,7 @@ const MOCK_CONVERSATIONS: Conversation[] = [
     ],
   },
 ];
+
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
@@ -612,6 +619,13 @@ function MobileMessagesView({ conversations }: { conversations: Conversation[] }
   const [activeId, setActiveId] = useState<string | null>(null);
   const activeConversation = conversations.find((c) => c.id === activeId) ?? null;
 
+  const path = useTheparam();
+  
+  const pathMapping = {
+    vendor: <VendorMobileDock />,
+    home: <MobileDock />
+  }
+
   return (
     <section className="flex flex-col md:hidden min-h-screen bg-white">
       {activeConversation ? (
@@ -634,7 +648,7 @@ function MobileMessagesView({ conversations }: { conversations: Conversation[] }
             />
           </div>
           <div className="pb-4">
-            <MobileDock />
+            {pathMapping[path]}
           </div>
         </>
       )}
@@ -647,6 +661,12 @@ function MobileMessagesView({ conversations }: { conversations: Conversation[] }
 function TabletMessagesView({ conversations }: { conversations: Conversation[] }) {
   const [activeId, setActiveId] = useState<string | null>(null);
   const activeConversation = conversations.find((c) => c.id === activeId) ?? null;
+  const path = useTheparam();
+  
+  const pathMapping = {
+    vendor: <VendorMobileDock />,
+    home: <MobileDock />
+  }
 
   return (
     <section className="hidden md:flex xl:hidden flex-col h-screen bg-white">
@@ -668,7 +688,7 @@ function TabletMessagesView({ conversations }: { conversations: Conversation[] }
           )}
         </main>
       </div>
-      <MobileDock />
+      {pathMapping[path]}
     </section>
   );
 }
@@ -678,10 +698,17 @@ function TabletMessagesView({ conversations }: { conversations: Conversation[] }
 function DesktopMessagesView({ conversations }: { conversations: Conversation[] }) {
   const [activeId, setActiveId] = useState<string | null>(null);
   const activeConversation = conversations.find((c) => c.id === activeId) ?? null;
+  const path = useTheparam();
+  
+  const pathMapping = {
+    vendor: <VendorSideNavBar />,
+    home: <SideNavBar />
+  }
 
   return (
     <section className="hidden xl:flex min-h-screen bg-[#f9f6ef]">
-      <SideNavBar />
+      {pathMapping[path]}
+      
       <div className="w-[85%] ml-[15%] flex h-screen">
         <div className="flex flex-1 overflow-hidden bg-white rounded-tl-2xl shadow-sm border border-gray-100">
           {/* Conversation list */}

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import Image from "next/image";
 import Button from "@/components/ui/Button";
 import { Compass, Heart, MessageCircleMore, UserRound } from "lucide-react";
@@ -35,6 +35,7 @@ const navLinks = [
 
 export default function SideNavBar() {
   const pathname = usePathname();
+  const router = useRouter();
 
   return (
     <aside className="w-[15%] h-screen flex-col border-r border-[#F1E5D5] bg-[#f6f3ec] overflow-y-auto fixed hidden xl:flex">
@@ -75,6 +76,7 @@ export default function SideNavBar() {
         <Button
           variant="primary"
           className="w-full py-4 text-xs font-bold uppercase tracking-wider"
+          onClick={() => router.push("/vendor/mylistings")}
         >
           List your space
         </Button>

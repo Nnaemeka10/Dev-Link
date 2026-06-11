@@ -2,6 +2,9 @@
 
 import MobileDock from "@/components/layout/MobileDock";
 import SideNavBar from "@/components/layout/SideNavBar";
+import VendorMobileDock from "@/components/layout/VendorMobileDock";
+import VendorSideNavBar from "@/components/layout/VendorSideNavBar";
+import { useTheparam } from "@/hooks/useTheparam";
 import { useRouter } from "next/navigation";
 import { useState, useRef, useEffect } from "react";
 
@@ -1070,6 +1073,12 @@ function ProfileContent() {
 
 function MobileProfileView() {
     const router = useRouter();
+    const path = useTheparam();
+      
+    const pathMapping = {
+      vendor: <VendorMobileDock />,
+      home: <MobileDock />
+    }
   return (
     <section className="flex flex-col md:hidden min-h-screen bg-[#f9f6ef] pb-32">
       <header className="sticky top-0 z-40 flex items-center justify-between px-5 py-4 bg-[#f9f6ef]/90 backdrop-blur-sm border-b border-stone-100">
@@ -1083,12 +1092,18 @@ function MobileProfileView() {
       <div className="px-4 pt-6 pb-10">
         <ProfileContent />
       </div>
-      <MobileDock />
+      {pathMapping[path]}
     </section>
   );
 }
 
 function TabletProfileView() {
+  const path = useTheparam();
+    
+  const pathMapping = {
+    vendor: <VendorMobileDock />,
+    home: <MobileDock />
+  }
   return (
     <section className="hidden md:flex xl:hidden flex-col min-h-screen bg-[#f9f6ef] pb-32">
       <header className="sticky top-0 z-40 flex items-center px-8 py-5 bg-[#f9f6ef]/90 backdrop-blur-sm border-b border-stone-100 gap-4">
@@ -1102,15 +1117,22 @@ function TabletProfileView() {
       <div className="px-10 lg:px-14 pt-8 pb-10">
         <ProfileContent />
       </div>
-      <MobileDock />
+      {pathMapping[path]}
     </section>
   );
 }
 
 function DesktopProfileView() {
+    const path = useTheparam();
+    const pathMapping = {
+          vendor: <VendorSideNavBar />,
+          home: <SideNavBar />
+        }
   return (
     <section className="hidden xl:flex min-h-screen bg-[#f9f6ef]">
-      <SideNavBar />
+      
+      {pathMapping[path]}
+
       <div className="w-[85%] ml-[15%]">
         <div className="px-4 pb-28 pt-8 md:px-10 lg:px-14 xl:px-16">
           <div className="mb-10">

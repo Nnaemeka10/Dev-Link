@@ -2,8 +2,8 @@
 
 import React from "react";
 import Link from "next/link";
-import VendorSideNavBar from "../components/VendorSideNavBar";
-import VendorMobileDock from "../components/VendorMobileDock";
+import VendorSideNavBar from "../../../components/layout/VendorSideNavBar";
+import VendorMobileDock from "../../../components/layout/VendorMobileDock";
 import { MOCK_VENDOR_LISTINGS } from "../vendor.data";
 import { Plus } from "lucide-react";
 

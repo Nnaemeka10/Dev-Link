@@ -1,8 +1,8 @@
 "use client";
 
 import React from "react";
-import VendorSideNavBar from "../components/VendorSideNavBar";
-import VendorMobileDock from "../components/VendorMobileDock";
+import VendorSideNavBar from "../../../components/layout/VendorSideNavBar";
+import VendorMobileDock from "../../../components/layout/VendorMobileDock";
 import { MOCK_VENDOR_DASHBOARD } from "../vendor.data";
 
 function formatNaira(amount: number) {
@@ -16,8 +16,8 @@ function TodayContent() {
     <div className="max-w-5xl mx-auto py-8">
       <div className="flex justify-between items-end mb-8">
         <div>
-          <h1 className="text-4xl font-extrabold text-[#1a1f3c] tracking-tight">Today</h1>
-          <p className="mt-2 text-sm text-[#1a1f3c]/60">Here is your daily snapshot</p>
+          <h1 className="text-4xl font-extrabold text-text-primary tracking-tight">Today</h1>
+          <p className="mt-2 text-sm text-text-primary/60">Here is your daily snapshot</p>
         </div>
       </div>
 
@@ -25,16 +25,16 @@ function TodayContent() {
         {/* Earnings Overview */}
         <section>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="p-6 rounded-3xl bg-white border border-[#1a1f3c]/10 shadow-[0_4px_12px_rgba(0,0,0,0.03)]">
-              <h3 className="text-sm font-semibold uppercase tracking-wider text-[#1a1f3c]/50 mb-2">Today's Earnings</h3>
+            <div className="p-6 rounded-3xl bg-white border border-text-primary/10 shadow-[0_4px_12px_rgba(0,0,0,0.03)]">
+              <h3 className="text-sm font-semibold uppercase tracking-wider text-text-primary/50 mb-2">Today&apos;s Earnings</h3>
               <p className="text-3xl font-bold">{formatNaira(earnings.today)}</p>
             </div>
-            <div className="p-6 rounded-3xl bg-white border border-[#1a1f3c]/10 shadow-[0_4px_12px_rgba(0,0,0,0.03)]">
-              <h3 className="text-sm font-semibold uppercase tracking-wider text-[#1a1f3c]/50 mb-2">30 Days Earnings</h3>
+            <div className="p-6 rounded-3xl bg-white border border-text-primary/10 shadow-[0_4px_12px_rgba(0,0,0,0.03)]">
+              <h3 className="text-sm font-semibold uppercase tracking-wider text-text-primary/50 mb-2">30 Days Earnings</h3>
               <p className="text-3xl font-bold">{formatNaira(earnings.thisMonth)}</p>
             </div>
-            <div className="p-6 rounded-3xl bg-white border border-[#1a1f3c]/10 shadow-[0_4px_12px_rgba(0,0,0,0.03)]">
-              <h3 className="text-sm font-semibold uppercase tracking-wider text-[#1a1f3c]/50 mb-2">Pending Clearance</h3>
+            <div className="p-6 rounded-3xl bg-white border border-text-primary/10 shadow-[0_4px_12px_rgba(0,0,0,0.03)]">
+              <h3 className="text-sm font-semibold uppercase tracking-wider text-text-primary/50 mb-2">Pending Clearance</h3>
               <p className="text-3xl font-bold">{formatNaira(earnings.pendingClearance)}</p>
             </div>
           </div>
@@ -44,18 +44,18 @@ function TodayContent() {
           {/* Pending Requests */}
           <section>
             <h2 className="text-xl font-bold mb-4">Pending Requests ({pendingRequests.length})</h2>
-            <div className="bg-white rounded-[2rem] border border-[#1a1f3c]/10 p-2 shadow-sm overflow-hidden flex flex-col gap-2">
+            <div className="bg-white rounded-4xl border border-text-primary/10 p-2 shadow-sm overflow-hidden flex flex-col gap-2">
               {pendingRequests.length > 0 ? (
                 pendingRequests.map((req) => (
-                  <div key={req.id} className="flex flex-col sm:flex-row justify-between items-start sm:items-center p-4 hover:bg-gray-50 rounded-[1.5rem] transition-colors border border-transparent hover:border-gray-100">
+                  <div key={req.id} className="flex flex-col sm:flex-row justify-between items-start sm:items-center p-4 hover:bg-gray-50 rounded-3xl transition-colors border border-transparent hover:border-gray-100">
                     <div>
                       <p className="font-bold text-lg">{req.guestName}</p>
                       <p className="text-sm text-gray-500 mb-1">{req.listingName}</p>
                       <p className="text-xs font-semibold uppercase tracking-wider text-orange-600">{req.date}</p>
                     </div>
                     <div className="mt-4 sm:mt-0 flex gap-2 w-full sm:w-auto">
-                      <button className="flex-1 sm:flex-none px-4 py-2 bg-gray-100 text-[#1a1f3c] border font-semibold rounded-full hover:bg-gray-200">Decline</button>
-                      <button className="flex-1 sm:flex-none px-6 py-2 bg-[#d65c3a] text-white font-bold rounded-full hover:brightness-95">Accept</button>
+                      <button className="flex-1 sm:flex-none px-4 py-2 bg-gray-100 text-text-primary border font-semibold rounded-full hover:bg-gray-200">Decline</button>
+                      <button className="flex-1 sm:flex-none px-6 py-2 bg-accent-primary text-white font-bold rounded-full hover:brightness-95">Accept</button>
                     </div>
                   </div>
                 ))
@@ -68,15 +68,15 @@ function TodayContent() {
           {/* Upcoming Bookings */}
           <section>
             <h2 className="text-xl font-bold mb-4">Upcoming Bookings</h2>
-            <div className="bg-white rounded-[2rem] border border-[#1a1f3c]/10 p-2 shadow-sm flex flex-col gap-2">
+            <div className="bg-white rounded-4xl border border-text-primary/10 p-2 shadow-sm flex flex-col gap-2">
               {upcomingBookings.length > 0 ? (
                 upcomingBookings.map((req) => (
-                  <div key={req.id} className="flex gap-4 items-center p-4 hover:bg-gray-50 rounded-[1.5rem] transition-colors">
+                  <div key={req.id} className="flex gap-4 items-center p-4 hover:bg-gray-50 rounded-3xl transition-colors">
                     <img src={req.guestAvatar} alt={req.guestName} className="w-12 h-12 rounded-full object-cover bg-gray-200" />
                     <div>
                       <p className="font-bold text-md">{req.guestName}</p>
                       <p className="text-xs text-gray-500">{req.listingName}</p>
-                      <p className="text-xs font-semibold text-[#1a1f3c] mt-1">{req.date}</p>
+                      <p className="text-xs font-semibold text-text-primary mt-1">{req.date}</p>
                     </div>
                   </div>
                 ))
@@ -93,7 +93,7 @@ function TodayContent() {
 
 function MobileTodayView() {
   return (
-    <section className="flex flex-col md:hidden min-h-screen bg-[#f9f6ef] pb-32">
+    <section className="flex flex-col md:hidden min-h-screen bg-bg-primary pb-32">
       <div className="px-4">
         <TodayContent />
       </div>
@@ -104,7 +104,7 @@ function MobileTodayView() {
 
 function DesktopTodayView() {
   return (
-    <section className="hidden xl:flex min-h-screen bg-[#f9f6ef]">
+    <section className="hidden xl:flex min-h-screen bg-bg-primary">
       <VendorSideNavBar />
       <div className="w-[85%] ml-[15%]">
         <div className="px-10 lg:px-16">
@@ -117,7 +117,7 @@ function DesktopTodayView() {
 
 function TabletTodayView() {
   return (
-    <section className="hidden md:flex xl:hidden flex-col min-h-screen bg-[#f9f6ef] pb-32">
+    <section className="hidden md:flex xl:hidden flex-col min-h-screen bg-bg-primary pb-32">
       <div className="px-10">
         <TodayContent />
       </div>
@@ -128,7 +128,7 @@ function TabletTodayView() {
 
 export default function TodayDashboard() {
   return (
-    <main className="text-[#1a1f3c]">
+    <main className="text-text-primary">
       <MobileTodayView />
       <TabletTodayView />
       <DesktopTodayView />
