@@ -1,9 +1,17 @@
+// export interface SignupBody {
+//     ifullname: string;
+//     iusername?: string;
+//     iemail: string;
+//     ipassword: string;
+//     irole: 'candidate' | 'employer';
+// }
 export interface SignupBody {
-    ifullname: string;
+    ifirstname: string;
+    ilastname: string;
     iusername?: string;
     iemail: string;
     ipassword: string;
-    irole: 'candidate' | 'employer';
+    idateOfBirth: string;
 }
 
 export interface LoginBody {

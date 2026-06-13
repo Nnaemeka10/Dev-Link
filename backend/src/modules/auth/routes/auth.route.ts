@@ -9,8 +9,8 @@ import {
     forgotPassword, 
     resetPassword 
 } from '../controllers/auth.controller.js';
-import { authenticateUser } from '../middleware/auth.middleware.js';
-import { arcjetProtection } from '../middleware/arcject.middleware.js';
+import { authenticateUser } from '../../../middleware/auth.middleware.js';
+import { arcjetProtection } from '../../../middleware/arcject.middleware.js';
 
 
 

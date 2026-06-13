@@ -4,7 +4,6 @@ import { ENV } from './env.js';
 export interface JwtPayload {
     userId: number;
     email: string;
-    role_id: number;
 }
 
 //generate JWT token

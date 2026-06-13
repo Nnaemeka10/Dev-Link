@@ -1,4 +1,4 @@
-import { getDB } from '../lib/db.js';
+import { getDB } from '../../../lib/db.js';
 import crypto from 'crypto';
 
 import { EmailVerification } from "../types/userVerification.js";

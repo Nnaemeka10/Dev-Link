@@ -1,27 +1,52 @@
 import { Request, Response } from 'express';
 import { UserModel } from '../models/User.js';
-import type { LoginBody, SignupBody, resetPasswordBody } from '../types/auth.d.ts';
-import { generateToken } from '../lib/utils.js';
+import type { LoginBody, SignupBody, resetPasswordBody } from '../types/auth.js';
+import { generateToken } from '../../../lib/utils.js';
 import { EmailVerificationModel } from '../models/userVerification.js';
 import { PasswordResetModel } from '../models/passwordReset.js';
-import { emailService } from '../emails/emailHandler.js';
+import { emailService } from '../../../emails/emailHandler.js';
+import { UserWithoutPassword } from '../types/user.js';
 
 
 //signup controller
 export const signup = async (_req: Request<{}, {}, SignupBody>, res: Response) => {
+    // const {ifullname, iusername, iemail, ipassword, irole} = _req.body;    
+    // const fullname = typeof ifullname === 'string' ? ifullname.trim() : '';
+    // const username = typeof iusername === 'string' ? iusername.trim() : '';
+    // const email = typeof iemail === 'string' ? iemail.trim().toLowerCase() : '';
+    // const password = typeof ipassword === 'string' ? ipassword : '';
+    // const role = typeof irole === 'string' ? irole : '';
 
-    const {ifullname, iusername, iemail, ipassword, irole} = _req.body;
-    const fullname = typeof ifullname === 'string' ? ifullname.trim() : '';
+    const {ifirstname, ilastname, iusername, iemail, ipassword, idateOfBirth} = _req.body;
+    const firstname = typeof ifirstname === 'string' ? ifirstname.trim() : '';
+    const lastName = typeof ilastname === 'string' ? ilastname.trim() : '';
     const username = typeof iusername === 'string' ? iusername.trim() : '';
     const email = typeof iemail === 'string' ? iemail.trim().toLowerCase() : '';
     const password = typeof ipassword === 'string' ? ipassword : '';
-    const role = typeof irole === 'string' ? irole : '';
+    const dateOfBirth = typeof idateOfBirth === 'string' ? idateOfBirth : '';
 
     //validation
 
     //field presence
-    if (!fullname || !email || !password || !role) {
-        res.status(400).json({ message: 'Full name, email, password, and role are required.' });
+    // if (!fullname || !email || !password || !role) {
+    //     res.status(400).json({ message: 'Full name, email, password, and role are required.' });
+    //     return;
+    // }
+
+    // //email format
+    // const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    // if (!emailRegex.test(email)) {
+    //     res.status(400).json({ message: 'Invalid email format.' });
+    //     return;
+    // }
+
+    // //password strength
+    // if (password.length < 6) {
+    //     res.status(400).json({ message: 'Password must be at least 6 characters long.' });
+    //     return;
+    // }
+    if (!firstname || !lastName || !email || !password || !dateOfBirth) {
+        res.status(400).json({ message: 'All fields are required.' });
         return;
     }
 
@@ -47,6 +72,7 @@ export const signup = async (_req: Request<{}, {}, SignupBody>, res: Response) =
             return;
         }
 
+            //will remove since username is optional and multiple users can have same username
         if (username) {
             const existingUserByUsername = await UserModel.findByUsername(username);
             if (existingUserByUsername) {
@@ -55,29 +81,42 @@ export const signup = async (_req: Request<{}, {}, SignupBody>, res: Response) =
             }
         }
 
-        //map role to role_id (1: candidate, 2: employer 3: admin)
-        const roleMap: Record<string, number> = {
-            candidate: 1,
-            employer: 2,
-            admin: 3,
-        };
+        // //map role to role_id (1: candidate, 2: employer 3: admin)
+        // const roleMap: Record<string, number> = {
+        //     candidate: 1,
+        //     employer: 2,
+        //     admin: 3,
+        // };
 
         //create user
+        // const newUser = await UserModel.create({
+        //     email,
+        //     username,
+        //     password,
+        //     full_name: fullname,
+        //     role_id:  1,
+        // });
         const newUser = await UserModel.create({
             email,
             username,
             password,
-            full_name: fullname,
-            role_id: roleMap[role] || 1,
+            first_name: firstname,
+            last_name: lastName,
+            date_of_birth: dateOfBirth,
         });
 
         
         if (newUser) {
             //generate token
+            // generateToken({
+            //     userId: user.id!,
+            //     email: user.email,
+            //     role_id: user.role_id,
+            // }, res
+            // );
             generateToken({
                 userId: newUser.id!,
                 email: newUser.email,
-                role_id: newUser.role_id,
             }, res);  
             
             //send verification email
@@ -90,7 +129,7 @@ export const signup = async (_req: Request<{}, {}, SignupBody>, res: Response) =
             }
 
             // remove password hash from response
-            const { password_hash, ...userWithoutPassword } = newUser as any;
+            const { password_hash, ...userWithoutPassword } = newUser;
 
             //send response
             res.status(201).json({
@@ -108,7 +147,7 @@ export const signup = async (_req: Request<{}, {}, SignupBody>, res: Response) =
         console.log("Error in signup controller:", error);
         // handle race condition for duplicate email/username
         // PostgreSQL duplicate key error handling
-    if (error?.code === '23505') {  // PostgreSQL unique violation code
+        if (error?.code === '23505') {  // PostgreSQL unique violation code
         // Check if it's an email constraint violation
         if (error?.constraint?.includes('email') || error?.detail?.includes('email')) {
             return res.status(409).json({ message: 'Email already exists' });
@@ -158,10 +197,15 @@ export const login = async (_req: Request<{}, {}, LoginBody>, res: Response) => 
         }
 
         //generate token and set cookie
+        // generateToken({
+        //     userId: user.id!,
+        //     email: user.email,
+        //     role_id: user.role_id,
+        // }, res
+        // );
         generateToken({
             userId: user.id!,
             email: user.email,
-            role_id: user.role_id,
         }, res
         );
        
