@@ -23,7 +23,7 @@ export const signup = async (_req: Request<{}, {}, SignupBody>, res: Response) =
     const username = typeof iusername === 'string' ? iusername.trim() : '';
     const email = typeof iemail === 'string' ? iemail.trim().toLowerCase() : '';
     const password = typeof ipassword === 'string' ? ipassword : '';
-    const dateOfBirth = typeof idateOfBirth === 'string' ? idateOfBirth : '';
+    const dateOfBirth = typeof idateOfBirth === 'string' ? new Date(idateOfBirth) : new Date();
 
     //validation
 
@@ -102,7 +102,7 @@ export const signup = async (_req: Request<{}, {}, SignupBody>, res: Response) =
             password,
             first_name: firstname,
             last_name: lastName,
-            date_of_birth: dateOfBirth,
+            date_of_birth: dateOfBirth.toISOString().split('T')[0], //store only date part
         });
 
         
@@ -176,7 +176,6 @@ export const login = async (_req: Request<{}, {}, LoginBody>, res: Response) => 
     }
 
     try{
-
         //find user by emaail
         const user = await UserModel.findByEmail(email);
         if(!user) {
@@ -346,14 +345,22 @@ export const verifyEmail = async (req: Request, res: Response) => {
         //update Users email verification code
         await UserModel.update(user.id!, {is_email_verified: true});
 
+        // //send welcome email asynchronously
+        //     emailService.sendWelcomeEmail(
+        //         user.email,
+        //         user.full_name || user.username || 'Esteemed User'
+        //     ).catch (error => {
+        //         console.error('Failed to send welcome email:', error);
+        //         //log but dont fail the signup
+        //     });
         //send welcome email asynchronously
-            emailService.sendWelcomeEmail(
-                user.email,
-                user.full_name || user.username || 'Esteemed User'
-            ).catch (error => {
-                console.error('Failed to send welcome email:', error);
-                //log but dont fail the signup
-            });
+        emailService.sendWelcomeEmail(
+            user.email,
+            user.username || user.first_name || 'Esteemed User'
+        ).catch (error => {
+            console.error('Failed to send welcome email:', error);
+            //log but dont fail the signup
+        });
 
         res.status(200).json ({
             message: 'Email verified successful',
@@ -441,7 +448,7 @@ export const resetPassword = async (req: Request<{}, {}, resetPasswordBody>, res
 
         return res.status(200).json({message: 'Password reset successfully'})
     } catch (error: any) {
-        console.error('Rest password error:, error');
-        res.status(500).json({ error: 'Failed to reset password'});
+        console.error('Reset password error:', error);
+        res.status(500).json({ error: 'Failed to reset password', details:error.message });
     }
 };

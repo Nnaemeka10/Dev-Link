@@ -3,6 +3,21 @@ import bcrypt from 'bcryptjs';
 import type { User, CreateUserInput, AllowedUpdates } from "../types/user.js";
 
 //note in this file that we are returning all the contents of the usertable so if new fileds are added ensure we are not returning sensitive information to the frontend. the hashed password is removed in the controller layer
+const userPublicFields = `
+  id,
+  email,
+  username,
+  headline,
+  first_name,
+  last_name,
+  date_of_birth,
+  phone,
+  is_email_verified,
+  is_active,
+  created_at,
+  updated_at
+`;
+
 export const UserModel = {
     // Create a new user
     async create(userData: CreateUserInput): Promise<User> {
@@ -48,6 +63,13 @@ export const UserModel = {
     },
 
     //find user by email
+    //  async findByEmail(email: string): Promise<User | null> {
+    //     const db = getDB();
+    //     const query = `SELECT * FROM users WHERE email = $1`;
+    //     const result = await db.query(query, [email]);
+
+    //     return result.rows[0] || null;
+    // },
     async findByEmail(email: string): Promise<User | null> {
         const db = getDB();
         const query = `SELECT * FROM users WHERE email = $1`;
@@ -57,9 +79,15 @@ export const UserModel = {
     },
 
     //find use by username
+    // async findByUsername(username: string): Promise<User | null> {
+    //     const db = getDB();
+    //     const query = `SELECT * FROM users WHERE username = $1`;
+    //     const result = await db.query(query, [username]);
+    //     return result.rows[0] || null;
+    // },
     async findByUsername(username: string): Promise<User | null> {
         const db = getDB();
-        const query = `SELECT * FROM users WHERE username = $1`;
+        const query = `SELECT ${userPublicFields} FROM users WHERE username = $1`;
         const result = await db.query(query, [username]);
         return result.rows[0] || null;
     },
@@ -67,7 +95,7 @@ export const UserModel = {
     //find user by id
     async findById(id: number): Promise<User | null> {
         const db = getDB();
-        const query = `SELECT * FROM users WHERE id = $1`;
+        const query = `SELECT ${userPublicFields} FROM users WHERE id = $1`;
         const result = await db.query(query, [id]);
         return result.rows[0] || null;
     },

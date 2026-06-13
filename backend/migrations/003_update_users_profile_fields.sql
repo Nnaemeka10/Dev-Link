@@ -1,0 +1,17 @@
+BEGIN;
+
+ALTER TABLE users
+    DROP CONSTRAINT IF EXISTS users_role_id_fkey;
+
+ALTER TABLE users
+    DROP COLUMN IF EXISTS role_id;
+
+ALTER TABLE users
+    DROP COLUMN IF EXISTS full_name;
+
+ALTER TABLE users
+    ADD COLUMN IF NOT EXISTS first_name TEXT,
+    ADD COLUMN IF NOT EXISTS last_name TEXT,
+    ADD COLUMN IF NOT EXISTS date_of_birth DATE;
+
+COMMIT;
