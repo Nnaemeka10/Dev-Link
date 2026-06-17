@@ -8,12 +8,33 @@ import authRoutes from './modules/auth/routes/auth.route.js';
 const app = express();
 
 //global middleware
+// app.use(
+//     cors({
+//         origin: ENV.CLIENT_URL,
+//         credentials: true,
+//     })
+// )
+
+const allowedOrigins = [
+  "http://localhost:3000",
+  ENV.CLIENT_URL,
+];
+
 app.use(
-    cors({
-        origin: ENV.CLIENT_URL,
-        credentials: true,
-    })
-)
+  cors({
+    origin: function (origin, callback) {
+      if (!origin) return callback(null, true); // mobile apps / postman
+
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+
+      return callback(new Error("Not allowed by CORS"));
+    },
+    credentials: true,
+  })
+);
+
 app.use(cookieParser());
 app.use(express.json()); 
 
