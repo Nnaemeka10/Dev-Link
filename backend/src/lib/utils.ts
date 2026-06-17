@@ -23,7 +23,7 @@ export const generateToken = (payLoad: JwtPayload, res: any) => {
     res.cookie('token', token, {
         maxAge: 7 * 24 * 60 * 60 * 1000, //7 days
         httpOnly: true, //accessible only by web server
-        sameSite: "lax", //CSRF protection
+        sameSite: "none", //CSRF protection
         secure: NODE_ENV === 'development' ? false : true, //cookie only sent over HTTPS in production
     });
 
