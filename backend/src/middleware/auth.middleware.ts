@@ -34,16 +34,16 @@ export const authenticateUser = (req: Request, res: Response, next: NextFunction
     }
 };
 
-//role based authorization middleware
-export const authorizeRoles = (...allowedRoles: number[]) => {
-    return (req: Request, res: Response, next: NextFunction) => {
-        if(!req.user) {
-            return res.status(401).json({ message: 'Authorization required, Please login' });
-        }
+// //role based authorization middleware
+// export const authorizeRoles = (...allowedRoles: number[]) => {
+//     return (req: Request, res: Response, next: NextFunction) => {
+//         if(!req.user) {
+//             return res.status(401).json({ message: 'Authorization required, Please login' });
+//         }
 
-        if (!allowedRoles.includes(req.user.role_id)) {
-            return res.status(403).json({ error: 'Access denied: You do not have permission to access this resource' });
-        }
-        next();
-    };
-};
+//         if (!allowedRoles.includes(req.user)) {
+//             return res.status(403).json({ error: 'Access denied: You do not have permission to access this resource' });
+//         }
+//         next();
+//     };
+// };
