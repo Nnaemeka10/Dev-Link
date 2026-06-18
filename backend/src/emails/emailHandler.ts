@@ -11,6 +11,7 @@ export const emailService = {
     async sendVerificationEmail(email: string, code: string) {
         try {
             const { subject, html } = getVerificationEmailTemplate(code, email);
+            console.log(sender.email, sender.name);
 
             const { data, error} = await resend.emails.send({
                 from: `${sender.name} <${sender.email}>`,

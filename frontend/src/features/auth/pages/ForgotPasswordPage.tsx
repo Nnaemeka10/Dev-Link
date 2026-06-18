@@ -7,6 +7,7 @@ import { apiFetch, ApiError } from "@/lib/api";
 import type { ResetPasswordFormValues } from "../auth.types";
 import { AuthInput } from "../components/AuthFields";
 import AuthShell from "../components/AuthShell";
+import { ArrowLeftIcon } from "lucide-react";
 
 export default function ForgotPasswordPage() {
   const [message, setMessage] = useState<string | null>(null);
@@ -58,14 +59,17 @@ export default function ForgotPasswordPage() {
             disabled={formState.isSubmitting}
             className="w-full rounded-full bg-[#B9401D] px-8 py-5 md:text-lg text-sm font-extrabold text-white shadow-[0_14px_28px_rgba(185,64,29,0.2)] disabled:opacity-60"
           >
-            {formState.isSubmitting ? "Sending..." : "Send Reset Link →"}
+            {formState.isSubmitting ? "Sending..." : "Get Token"}
           </button>
         </form>
 
-        <div className="mt-10 border-t border-[#EFE8DE] pt-8 text-center">
+        <div className="mt-10 border-t border-[#EFE8DE] pt-8 text-center flex items-center justify-center gap-1">
+          <ArrowLeftIcon/>
           <Link href="/login" className="font-semibold text-[#6B5F57]">
-            ← Back to Login
+              
+             Back to Login
           </Link>
+
         </div>
       </section>
     </AuthShell>
