@@ -225,19 +225,34 @@ export const login = async (_req: Request<{}, {}, LoginBody>, res: Response) => 
 }
 
 //logout controller
-export const logout = async (_req: Request, res: Response) => {
+// export const logout = async (_req: Request, res: Response) => {
 
+//     try {
+//         //clear the token cookei
+//         res.clearCookie('token', {
+//             httpOnly: true,
+//             secure: process.env.NODE_ENV === 'development' ? false : true,
+//         });
+
+//         res.status(200).json({ message: 'Logout successful' });
+//     } catch (error: any) {
+//         console.error('Logout error:', error);
+//         res.status(500).json({ error: 'Internal server error' });
+//     }
+// };
+export const logout = async (_req: Request, res: Response) => {
     try {
-        //clear the token cookei
         res.clearCookie('token', {
             httpOnly: true,
-            secure: process.env.NODE_ENV === 'development' ? false : true,
+            sameSite: "none",
+            secure: process.env.NODE_ENV !== 'development',
+            path: "/",
         });
 
-        res.status(200).json({ message: 'Logout successful' });
+        return res.status(200).json({ message: 'Logout successful' });
     } catch (error: any) {
         console.error('Logout error:', error);
-        res.status(500).json({ error: 'Internal server error' });
+        return res.status(500).json({ error: 'Internal server error' });
     }
 };
 

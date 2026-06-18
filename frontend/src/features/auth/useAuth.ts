@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiFetch } from "@/lib/api";
 import { useAuthStore } from "./auth.store";
 import type { AuthUser } from "@/types/auth";
@@ -12,6 +12,9 @@ interface MeResponse {
 
 export function useAuth() {
   const { isAuthenticated, user, loading, setAuth, clearAuth, setLoading } = useAuthStore();
+
+  const queryClient = useQueryClient();
+
 
   const meQuery = useQuery({
     queryKey: ["auth", "me"],
@@ -26,16 +29,15 @@ export function useAuth() {
       return;
     }
 
-    if (meQuery.isError) {
+    if (meQuery.isError || !meQuery.data?.user) {
       clearAuth();
       return;
     }
 
-    if (meQuery.data?.user) {
+   
       setAuth({ isAuthenticated: true, user: meQuery.data.user });
-    } else {
-      clearAuth();
-    }
+   
+
   }, [clearAuth, meQuery.data, meQuery.isError, meQuery.isPending, setAuth, setLoading]);
 
   return {
@@ -43,5 +45,7 @@ export function useAuth() {
     user,
     loading,
     refetchAuth: meQuery.refetch,
+    clearAuth,
+    queryClient,
   };
 }

@@ -25,6 +25,7 @@ export const generateToken = (payLoad: JwtPayload, res: any) => {
         httpOnly: true, //accessible only by web server
         sameSite: "none", //CSRF protection
         secure: NODE_ENV === 'development' ? false : true, //cookie only sent over HTTPS in production
+        path: '/', //cookie available in entire website
     });
 
     return token;

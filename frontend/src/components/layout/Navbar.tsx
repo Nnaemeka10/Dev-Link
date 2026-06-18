@@ -15,7 +15,7 @@ const links = [
 
 export default function Navbar() {
   const pathname = usePathname();
-  const { isAuthenticated, user, refetchAuth } = useAuth();
+  const { isAuthenticated, user, refetchAuth, clearAuth, queryClient } = useAuth();
 
   if (pathname?.startsWith("/listings") || pathname?.startsWith("/bookings")) {
     return null;
@@ -25,7 +25,9 @@ export default function Navbar() {
     try {
       await apiFetch("/api/auth/logout", { method: "POST", redirectOn401: false });
     } finally {
-      await refetchAuth();
+      clearAuth();
+      queryClient.removeQueries({ queryKey: ["auth", "me"] });
+      
     }
   };
 
