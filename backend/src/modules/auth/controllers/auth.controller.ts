@@ -253,11 +253,21 @@ export const getCurrentUser = async (_req: Request, res: Response) => {
             return res.status(404).json({ message: 'User not found' });
         }
 
-        // remove password hash from response
-        const { password_hash, ...userWithoutPassword } = user as any;
+       const userResponse = {
+            id: user.id,
+            email: user.email,
+            username: user.username,
+            headline: user.headline,
+            firstName: user.first_name,
+            lastName: user.last_name,
+            dateOfBirth: user.date_of_birth,
+            phone: user.phone,
+            isEmailVerified: user.is_email_verified,
+            isActive: user.is_active,
+            };
 
-        res.status(200).json({
-            user: userWithoutPassword,
+            return res.status(200).json({
+            user: userResponse,
         });
     } catch (error: any) {
         console.error('Get current user error:', error);
