@@ -1,4 +1,4 @@
-import { resend, sender } from "../lib/resend.js";
+import { resend, getSender } from "../lib/resend.js";
 
 import { 
     getVerificationEmailTemplate, 
@@ -11,7 +11,8 @@ export const emailService = {
     async sendVerificationEmail(email: string, code: string) {
         try {
             const { subject, html } = getVerificationEmailTemplate(code, email);
-            console.log(sender.email, sender.name);
+            const sender = getSender();
+            
 
             const { data, error} = await resend.emails.send({
                 from: `${sender.name} <${sender.email}>`,
@@ -36,6 +37,7 @@ export const emailService = {
     async sendWelcomeEmail(email: string, userName: string) {
         try {
             const { subject, html } = getWelcomeEmailTemplate(userName, email);
+            const sender = getSender();
 
             const { data, error} = await resend.emails.send({
                 from: `${sender.name} <${sender.email}>`,
@@ -63,6 +65,8 @@ export const emailService = {
             const resetUrl = `${process.env.CLIENT_URL || 'http://localhost:5173'}/reset-password?token=${resetToken}`;
             const { subject, html } = getPasswordResetEmailTemplate(resetUrl, email);
 
+            const sender = getSender();
+
             const { data, error} = await resend.emails.send({
                 from: `${sender.name} <${sender.email}>`,
                 to: [email],
@@ -88,6 +92,7 @@ export const emailService = {
     async sendPasswordResetSuccessEmail(email: string) {
         try {
             const { subject, html } = getPasswordResetSuccessTemplate(email);
+            const sender = getSender();
 
             const { data, error} = await resend.emails.send({
                 from: `${sender.name} <${sender.email}>`,
