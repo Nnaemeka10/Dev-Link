@@ -1,8 +1,14 @@
 export interface AuthUser {
   id: string;
   email: string;
-  fullName?: string;
-  isVerified?: boolean;
+  username?: string;
+  headline?: string;
+  firstName: string;
+  lastName: string;
+  dateOfBirth?: string;
+  phone?: string;
+  isEmailVerified: boolean;
+  isActive: boolean;
 }
 
 export interface AuthState {

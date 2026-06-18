@@ -13,7 +13,7 @@ const userPublicFields = `
   date_of_birth,
   phone,
   is_email_verified,
-  is_active,
+  is_active
 `;
 
 export const UserModel = {
