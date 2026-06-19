@@ -7,13 +7,16 @@ import { useForm } from "react-hook-form";
 import { apiFetch, ApiError } from "@/lib/api";
 import type { AuthUser } from "@/types/auth";
 import { useAuthStore } from "../auth.store";
-import type { SignupFormValues, SignupIntent } from "../auth.types";
+import type { SignupFormValues } from "../auth.types";
 import { getSafeReturnTo, withReturnTo } from "../auth.utils";
 import { AuthInput, Divider, SecurePill } from "../components/AuthFields";
 import AuthShell from "../components/AuthShell";
+import OtpVerifyModal from "../components/OtpVerifyModal";
 
 interface SignupResponse {
-  user: AuthUser;
+  // user: AuthUser;
+  message: string;
+  expiresAt: string;
 }
 
 
@@ -24,8 +27,12 @@ export default function SignupPage() {
   const returnTo = searchParams.get("returnTo");
   const setAuth = useAuthStore((state) => state.setAuth);
   const [error, setError] = useState<string | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [submittedEmail, setSubmittedEmail] = useState("");
+  const [expiresAt, setExpiresAt] = useState<string>("");
+
   const { register, handleSubmit, formState } = useForm<SignupFormValues>({
-    defaultValues: { email: "", fullName: "", intent: "booker", password: "" },
+    defaultValues: { email: "", firstName: "", lastName: "", username: "", dateOfBirth: "", password: "" },
   });
  
 
@@ -33,23 +40,34 @@ export default function SignupPage() {
     setError(null);
 
     try {
-      const signup = await apiFetch<SignupResponse>("/api/auth/signup", {
+      const response = await apiFetch<SignupResponse>("/api/auth/signup", {
         method: "POST",
         body: JSON.stringify({
-          ifullname: values.fullName,
+          ifirstname: values.firstName,
+          ilastname: values.lastName,
           iemail: values.email,
           ipassword: values.password,
-          irole: values.intent === "vendor" ? "employer" : "candidate",
+          idateOfBirth: values.dateOfBirth,
+          iusername: values.username,
         }),
         redirectOn401: false,
       });
 
-      setAuth({ isAuthenticated: true, user: signup.user });
-      router.replace(getSafeReturnTo(returnTo));
+      // setAuth({ isAuthenticated: true, user: signup.user });
+      // router.replace(getSafeReturnTo(returnTo));
+      setSubmittedEmail(values.email);
+      setExpiresAt(response.expiresAt);
+      setModalOpen(true);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Unable to create account.");
     }
   });
+
+  const handleVerified = (user: AuthUser) => {
+    setModalOpen(false);
+    setAuth({ isAuthenticated: true, user });
+    router.replace(getSafeReturnTo(returnTo));
+  };
 
   return (
     <AuthShell variant="split">
@@ -60,20 +78,46 @@ export default function SignupPage() {
 
 
           <form className="mt-6 space-y-5 md:mt-8 md:space-y-6 lg:mt-10 lg:space-y-7" onSubmit={onSubmit}>
-            <AuthInput
-              label="Full Name"
-              placeholder="Ebuka Obi-Uchendu"
-              autoComplete="name"
-              error={formState.errors.fullName?.message}
-              {...register("fullName", { required: "Full name is required" })}
-            />
-            <AuthInput
+
+             <AuthInput
               label="Email Address"
               type="email"
               placeholder="ebuka@example.com"
               autoComplete="email"
               error={formState.errors.email?.message}
               {...register("email", { required: "Email is required" })}
+            />
+
+            <AuthInput
+              label="First Name"
+              placeholder="Ebuka"
+              autoComplete="given-name"
+              error={formState.errors.firstName?.message}
+              {...register("firstName", { required: "First name is required" })}
+            />
+            <AuthInput
+              label="Last Name"
+              placeholder="Obi-Uchendu"
+              autoComplete="family-name"
+              error={formState.errors.lastName?.message}
+              {...register("lastName", { required: "Last name is required" })}
+            />
+            
+            <AuthInput
+              label="Username (optional)"
+              placeholder="ebuka123"
+              autoComplete="username"
+              error={formState.errors.username?.message}
+              {...register("username")}
+            />
+
+            <AuthInput
+              label="Date of Birth"
+              type="date"
+              placeholder="1990-01-01"
+              autoComplete="bday"
+              error={formState.errors.dateOfBirth?.message}
+              {...register("dateOfBirth", { required: "Date of birth is required" })}
             />
             <AuthInput
               label="Password"
@@ -121,6 +165,44 @@ export default function SignupPage() {
           </div>
         </div>
       </section>
+
+      <OtpVerifyModal
+             
+              open={modalOpen}
+              email={submittedEmail}
+              expiresAt={expiresAt}
+              onClose={() => setModalOpen(false)}
+              onVerify={async(code)=>{
+                const response = await apiFetch<{user:AuthUser}>(
+                  "/api/auth/verify-email",
+                  {
+                    method:"POST",
+                    body:JSON.stringify({
+                        email: submittedEmail,
+                        code
+                    }),
+                    redirectOn401:false
+                  }
+                );
+
+                handleVerified(response.user);
+              }}
+
+              onResend={async()=>{
+
+                return await apiFetch(
+                  "/api/auth/send-verification-email",
+                  {
+                    method:"POST",
+                    body:JSON.stringify({
+                        email:submittedEmail
+                    })
+                  }
+                );
+
+              }}
+
+      />
     </AuthShell>
   );
 }

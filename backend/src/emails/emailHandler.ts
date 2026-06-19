@@ -60,12 +60,13 @@ export const emailService = {
     },
 
 
-    async sendPasswordResetEmail(email: string, resetToken: string) {
+    async sendPasswordResetEmail(email: string, resetToken: string, resetLink: string) {
         try {
-            const resetUrl = `${process.env.CLIENT_URL || 'http://localhost:5173'}/reset-password?token=${resetToken}`;
-            const { subject, html } = getPasswordResetEmailTemplate(resetUrl, email);
+            const resetUrl = `${process.env.CLIENT_URL || 'http://localhost:5173'}/reset-password?token=${resetLink}`;
+            const { subject, html } = getPasswordResetEmailTemplate(resetUrl, email, resetToken);
 
             const sender = getSender();
+            
 
             const { data, error} = await resend.emails.send({
                 from: `${sender.name} <${sender.email}>`,
@@ -76,7 +77,7 @@ export const emailService = {
 
             if (error) {
                 console.error("Error sending password reset email:", error);
-                throw new Error("Failed to send password reset email");
+                throw new Error(`Failed to send password reset email`);
             }
 
             console.log("Password reset email sent successfully:", data);

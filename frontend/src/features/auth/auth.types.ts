@@ -8,11 +8,32 @@ export interface LoginFormValues {
 
 export interface SignupFormValues {
   email: string;
-  fullName: string;
-  intent: SignupIntent;
+  firstName: string;
+  lastName: string;
+  username?: string;
   password: string;
+  dateOfBirth: string;
 }
+
+
+// Add to auth.types.ts
 
 export interface ResetPasswordFormValues {
   email: string;
+}
+
+export interface VerifyResetOtpResponse {
+  message: string;
+  sessionToken: string;
+  sessionExpiresAt: string;
+}
+
+export interface ForgotPasswordResponse {
+  message: string;
+  expiresAt: string;
+}
+
+export interface SetNewPasswordFormValues {
+  inewPassword: string;
+  iconfirmPassword: string;
 }

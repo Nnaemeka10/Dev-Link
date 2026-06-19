@@ -1,21 +1,15 @@
 import { Request, Response } from 'express';
 import { UserModel } from '../models/User.js';
-import type { LoginBody, SignupBody, resetPasswordBody } from '../types/auth.js';
+import type { LoginBody, ResetPasswordBody, SignupBody } from '../types/auth.js';
 import { generateToken } from '../../../lib/utils.js';
 import { EmailVerificationModel } from '../models/userVerification.js';
 import { PasswordResetModel } from '../models/passwordReset.js';
 import { emailService } from '../../../emails/emailHandler.js';
-import { UserWithoutPassword } from '../types/user.js';
+import { User, UserWithoutPassword } from '../types/user.js';
 
 
 //signup controller
 export const signup = async (_req: Request<{}, {}, SignupBody>, res: Response) => {
-    // const {ifullname, iusername, iemail, ipassword, irole} = _req.body;    
-    // const fullname = typeof ifullname === 'string' ? ifullname.trim() : '';
-    // const username = typeof iusername === 'string' ? iusername.trim() : '';
-    // const email = typeof iemail === 'string' ? iemail.trim().toLowerCase() : '';
-    // const password = typeof ipassword === 'string' ? ipassword : '';
-    // const role = typeof irole === 'string' ? irole : '';
 
     const {ifirstname, ilastname, iusername, iemail, ipassword, idateOfBirth} = _req.body;
     const firstname = typeof ifirstname === 'string' ? ifirstname.trim() : '';
@@ -28,23 +22,6 @@ export const signup = async (_req: Request<{}, {}, SignupBody>, res: Response) =
     //validation
 
     //field presence
-    // if (!fullname || !email || !password || !role) {
-    //     res.status(400).json({ message: 'Full name, email, password, and role are required.' });
-    //     return;
-    // }
-
-    // //email format
-    // const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    // if (!emailRegex.test(email)) {
-    //     res.status(400).json({ message: 'Invalid email format.' });
-    //     return;
-    // }
-
-    // //password strength
-    // if (password.length < 6) {
-    //     res.status(400).json({ message: 'Password must be at least 6 characters long.' });
-    //     return;
-    // }
     if (!firstname || !lastName || !email || !password || !dateOfBirth) {
         res.status(400).json({ message: 'All fields are required.' });
         return;
@@ -68,34 +45,33 @@ export const signup = async (_req: Request<{}, {}, SignupBody>, res: Response) =
         //check if user with email or username already exists
         const existingUserByEmail = await UserModel.findByEmail(email);
         if (existingUserByEmail) {
-            res.status(409).json({ message: 'User with this email already exists.' });
-            return;
-        }
-
-            //will remove since username is optional and multiple users can have same username
-        if (username) {
-            const existingUserByUsername = await UserModel.findByUsername(username);
-            if (existingUserByUsername) {
-                res.status(409).json({ message: 'User with this username already exists.' });
+            if (existingUserByEmail.is_email_verified) {
+                res.status(409).json({ message: 'User with this email already exists.' });
+                return;
+            }
+            else {
+                // generateToken({
+                //     userId: existingUserByEmail.id!,
+                //     email: existingUserByEmail.email,
+                // }, res);  
+                //if user exists but email not verified, resend verification email
+                const verification = await EmailVerificationModel.create(existingUserByEmail.id!);
+                try {
+                    await emailService.sendVerificationEmail(existingUserByEmail.email, verification.code);
+                } catch (emailError) {
+                    console.error('Failed to send verification email:', emailError);
+                    // dont fail signup if email fails
+                }
+                res.status(201).json({ 
+                    message: 'User with this email already exists but is not verified, Verification email resent. Please verify your email to complete the signup process.',
+                    // requiresVerification: true,
+                    expiresAt: verification.expires_at, 
+                });
                 return;
             }
         }
 
-        // //map role to role_id (1: candidate, 2: employer 3: admin)
-        // const roleMap: Record<string, number> = {
-        //     candidate: 1,
-        //     employer: 2,
-        //     admin: 3,
-        // };
-
         //create user
-        // const newUser = await UserModel.create({
-        //     email,
-        //     username,
-        //     password,
-        //     full_name: fullname,
-        //     role_id:  1,
-        // });
         const newUser = await UserModel.create({
             email,
             username,
@@ -114,28 +90,32 @@ export const signup = async (_req: Request<{}, {}, SignupBody>, res: Response) =
             //     role_id: user.role_id,
             // }, res
             // );
-            generateToken({
-                userId: newUser.id!,
-                email: newUser.email,
-            }, res);  
+            // generateToken({
+            //     userId: newUser.id!,
+            //     email: newUser.email,
+            // }, res);  
             
+            const verification = await EmailVerificationModel.create(newUser.id!);
             //send verification email
             try {
-                const verification = await EmailVerificationModel.create(newUser.id!);
                 await emailService.sendVerificationEmail(newUser.email, verification.code);
             } catch (emailError) {
                 console.error('Failed to send verificaton email:', emailError);
                 //dont fail signup if eamil fails
             }
 
-            // remove password hash from response
-            const { password_hash, ...userWithoutPassword } = newUser;
+            // // remove password hash from response
+            // const { password_hash, ...userWithoutPassword } = newUser;
 
             //send response
+            // res.status(201).json({
+            //     message: 'User created successfully.',
+            //     user: userWithoutPassword,
+            // });
             res.status(201).json({
-                message: 'User created successfully.',
-                user: userWithoutPassword,
-            });
+                message: "A verification email has been sent to your email address. Please verify your email to complete the signup process.",
+                expiresAt: verification.expires_at,
+            })
 
             
 
@@ -195,6 +175,22 @@ export const login = async (_req: Request<{}, {}, LoginBody>, res: Response) => 
             return;
         }
 
+        if(!user.is_email_verified) {
+            //generate verification code
+            const verification = await EmailVerificationModel.create(user.id!);
+            try {
+                await emailService.sendVerificationEmail(user.email, verification.code);
+            } catch (emailError) {
+                console.error('Failed to send verification email:', emailError);
+            }
+            res.status(200).json({
+                message: "Your email is not verified. A new verification email has been sent.",
+                requiresVerification: true,
+                expiresAt: verification.expires_at,
+            });
+            return;
+        }
+
         //generate token and set cookie
         // generateToken({
         //     userId: user.id!,
@@ -244,7 +240,7 @@ export const logout = async (_req: Request, res: Response) => {
     try {
         res.clearCookie('token', {
             httpOnly: true,
-            sameSite: "none",
+            sameSite: process.env.NODE_ENV === 'development' ? "lax" : "none",
             secure: process.env.NODE_ENV !== 'development',
             path: "/",
         });
@@ -337,17 +333,19 @@ export const sendVerificationEmail = async (req: Request, res: Response) => {
 //verify email with code
 export const verifyEmail = async (req: Request, res: Response) => {
     try {
-        const { code } = req.body;
+        const { email: rawEmail, code: rawCode } = req.body;
+        const email = typeof rawEmail === 'string' ? rawEmail.trim().toLowerCase() : '';
+        const code = typeof rawCode === 'string' ? rawCode.trim() : '';
 
-        if(!req.user) {
-            return res.status(401).json({ error: 'Authorization required, Please login' });
+        if (!email || !code) {
+            return res.status(400).json({ error: 'Email and code are required' });
         }
 
-        if(!code) {
-            return res.status(400).json({ error: 'Verification code is required' });
+        if (!/^\d{6}$/.test(code)) {
+            return res.status(400).json({ error: 'Invalid code format' });
         }
 
-        const user = await UserModel.findById(req.user.userId);
+        const user = await UserModel.findByEmail(email);
         if(!user) {
             return res.status(404).json({ error: 'User not found' });
         }
@@ -370,6 +368,12 @@ export const verifyEmail = async (req: Request, res: Response) => {
         //update Users email verification code
         await UserModel.update(user.id!, {is_email_verified: true});
 
+        // //generate token and set cookie
+        generateToken({
+                userId: user.id!,
+                email: user.email,
+            }, res);  
+
         // //send welcome email asynchronously
         //     emailService.sendWelcomeEmail(
         //         user.email,
@@ -387,9 +391,11 @@ export const verifyEmail = async (req: Request, res: Response) => {
             //log but dont fail the signup
         });
 
+        const { password_hash, ...userWithoutPassword } = user as User;
+
         res.status(200).json ({
             message: 'Email verified successful',
-            user: {...user, is_email_verified: true}
+            user: {...userWithoutPassword, is_email_verified: true}
         });
     } catch(error: any) {
         console.error('Verify email error:', error);
@@ -398,82 +404,257 @@ export const verifyEmail = async (req: Request, res: Response) => {
 };
 
 //request Passwod reset
+// export const forgotPassword = async (req: Request<{}, {}, { email: string }>, res: Response) => {
+//     try {
+//         const { email } = req.body;
+
+//         if(!email) {
+//             return res.status(400).json({ error: 'Email is required' });
+//         }
+
+//         const user = await UserModel.findByEmail(email);
+
+//         //Always return success to prevent email enumeration
+//         if(!user) {
+//             res.status(200).json({
+//                 message: 'If an account exist with this email, you will receive a password reset link'
+//             });
+//             return;
+//         }
+
+//         // Create reset token
+//         const resetToken = await PasswordResetModel.create(user.id!);
+
+//         //send reset email
+//         await emailService.sendPasswordResetEmail(user.email, resetToken.token, resetToken.link);
+
+//         res.status(200).json({
+//             message: 'If an account exists with this email, you will receive a passwrod reset link'
+//         });
+//     } catch (error: any) {
+//         console.error('Forgot password error:', error);
+//         res.status(500).json({error: 'Failed to process password reset request'});
+//     }
+// };
+
+
+// //reset password wih token
+// export const resetPassword = async (req: Request<{}, {}, resetPasswordBody>, res: Response) => {
+//      const { token, inewPassword, iconfirmPassword} = req.body;
+//      const newPassword = typeof inewPassword === 'string' ? inewPassword : '';
+//      const confirmPassword = typeof iconfirmPassword === 'string' ? iconfirmPassword : '';
+    
+//      try {   
+//         if(!token || !newPassword || !confirmPassword) {
+//            return res.status(400).json({error: 'All fields are required'});
+//         }
+
+//         if(newPassword !== confirmPassword) {
+//             return res.status(400).json({error: 'Passwords do not match' });
+//         }
+
+//         if(newPassword.length < 6) {
+//             return res.status(400).json({ error: 'Password must be at least 6 characters' });
+//         }
+
+//         //find valid tokens
+//         const resetToken = await PasswordResetModel.findValidToken(token);
+
+//         if(!resetToken) {
+//             return res.status(400).json({ error: 'Invalid or expired reset token'});
+//         }
+
+//         //update password
+//         const user = await UserModel.updatePassword(resetToken.user_id, newPassword);
+
+//         if(!user) {
+//             return res.status(404).json({error: 'User not found'});
+//         }
+
+//         //mark token as used 
+//         await PasswordResetModel.markAsUsed(resetToken.id!);
+
+//         //send confirmation email
+//         await emailService.sendPasswordResetSuccessEmail(user.email);
+
+//         return res.status(200).json({message: 'Password reset successfully'})
+//     } catch (error: any) {
+//         console.error('Reset password error:', error);
+//         res.status(500).json({ error: 'Failed to reset password', details:error.message });
+//     }
+// };
+
+// --- Add these imports at the top of auth.controller.ts (merge with existing) ---
+// import { PasswordResetModel } from '../models/passwordReset.js';
+// import { UserModel } from '../models/User.js';
+// import { emailService } from '../../../emails/emailHandler.js';
+
+// ============================================================================
+// Request Passwod reset  (unchanged behaviour, included for context only)
+// ============================================================================
 export const forgotPassword = async (req: Request<{}, {}, { email: string }>, res: Response) => {
     try {
-        const { email } = req.body;
+        const { email: rawEmail } = req.body;
+        const email = typeof rawEmail === 'string' ? rawEmail.trim().toLowerCase() : '';
 
-        if(!email) {
+        if (!email) {
             return res.status(400).json({ error: 'Email is required' });
         }
 
         const user = await UserModel.findByEmail(email);
 
-        //Always return success to prevent email enumeration
-        if(!user) {
+        // Always return success to prevent email enumeration
+        if (!user) {
             res.status(200).json({
-                message: 'If an account exist with this email, you will receive a password reset link'
+                message: 'If an account exists with this email, you will receive a password reset code',
             });
             return;
         }
 
-        // Create reset token
+        // Create reset token (also rotates out any previous request for this user)
         const resetToken = await PasswordResetModel.create(user.id!);
+       
 
-        //send reset email
-        await emailService.sendPasswordResetEmail(user.email, resetToken.token);
+        // send reset email (contains both the 6-digit code and the fallback link)
+        await emailService.sendPasswordResetEmail(user.email, resetToken.token, resetToken.link);
 
         res.status(200).json({
-            message: 'If an account exists with this email, you will receive a passwrod reset link'
+            message: 'If an account exists with this email, you will receive a password reset code',
+            // expiresAt lets the frontend start an accurate countdown in the OTP modal
+            // even before the user has verified anything. Safe to expose: it's just a timestamp,
+            // not the user's existence or the code itself.
+            expiresAt: resetToken.expires_at,
         });
     } catch (error: any) {
         console.error('Forgot password error:', error);
-        res.status(500).json({error: 'Failed to process password reset request'});
+        res.status(500).json({ error: 'Failed to process password reset request' });
     }
 };
 
+// ============================================================================
+// Verify the 6-digit OTP from the email -> exchange for a short-lived session token
+// This is the endpoint the OTP modal calls. On success, the *session token*
+// (not the OTP) is what's allowed to actually set a new password — so the
+// OTP can't be replayed/reused against /reset-password directly, and a
+// brute-forced or shoulder-surfed code is useless without also controlling
+// the response of this exact request.
+// ============================================================================
+export const verifyResetOtp = async (req: Request<{}, {}, { email: string; code: string }>, res: Response) => {
+    try {
+        const { email: rawEmail, code: rawCode } = req.body;
+        const email = typeof rawEmail === 'string' ? rawEmail.trim().toLowerCase() : '';
+        const code = typeof rawCode === 'string' ? rawCode.trim() : '';
 
-//reset password wih token
-export const resetPassword = async (req: Request<{}, {}, resetPasswordBody>, res: Response) => {
-     const { token, inewPassword, iconfirmPassword} = req.body;
-     const newPassword = typeof inewPassword === 'string' ? inewPassword : '';
-     const confirmPassword = typeof iconfirmPassword === 'string' ? iconfirmPassword : '';
-    
-     try {   
-        if(!token || !newPassword || !confirmPassword) {
-           return res.status(400).json({error: 'All fields are required'});
+        if (!email || !code) {
+            return res.status(400).json({ error: 'Email and code are required' });
         }
 
-        if(newPassword !== confirmPassword) {
-            return res.status(400).json({error: 'Passwords do not match' });
+        if (!/^\d{6}$/.test(code)) {
+            return res.status(400).json({ error: 'Invalid code format' });
         }
 
-        if(newPassword.length < 6) {
+        const user = await UserModel.findByEmail(email);
+
+        // Generic error so we don't leak whether the email exists, separate from
+        // whether the code is wrong — both render the same to the client.
+        const genericError = { error: 'Invalid or expired code' };
+
+        if (!user) {
+            return res.status(400).json(genericError);
+        }
+
+        const resetRecord = await PasswordResetModel.findActiveByUserId(user.id!);
+
+        if (!resetRecord) {
+            return res.status(400).json(genericError);
+        }
+
+        if (PasswordResetModel.isLocked(resetRecord)) {
+            return res.status(429).json({
+                error: 'Too many attempts. Please request a new code.',
+                lockedUntil: resetRecord.locked_until,
+            });
+        }
+
+        if (resetRecord.token !== code) {
+            const { attempts, lockedUntil } = await PasswordResetModel.recordFailedAttempt(resetRecord.id);
+            const remaining = Math.max(PasswordResetModel.constants.MAX_ATTEMPTS - attempts, 0);
+
+            if (lockedUntil) {
+                return res.status(429).json({
+                    error: 'Too many attempts. Please request a new code.',
+                    lockedUntil,
+                });
+            }
+
+            return res.status(400).json({
+                error: 'Incorrect code',
+                attemptsRemaining: remaining,
+            });
+        }
+
+        // Code is correct -> issue a short-lived session token for the set-new-password step
+        const { sessionToken, sessionExpiresAt } = await PasswordResetModel.markVerifiedAndIssueSession(resetRecord.id);
+
+        return res.status(200).json({
+            message: 'Code verified',
+            sessionToken,
+            sessionExpiresAt,
+        });
+    } catch (error: any) {
+        console.error('Verify reset OTP error:', error);
+        res.status(500).json({ error: 'Failed to verify code' });
+    }
+};
+
+// ============================================================================
+// reset password with either:
+//   - sessionToken  (issued after OTP verification via the modal), or
+//   - token         (the long-lived hex link from the email, ?token=...)
+// ============================================================================
+export const resetPassword = async (req: Request<{}, {}, ResetPasswordBody>, res: Response) => {
+    const { token, sessionToken, inewPassword, iconfirmPassword } = req.body;
+    const newPassword = typeof inewPassword === 'string' ? inewPassword : '';
+    const confirmPassword = typeof iconfirmPassword === 'string' ? iconfirmPassword : '';
+
+    try {
+        if ((!token && !sessionToken) || !newPassword || !confirmPassword) {
+            return res.status(400).json({ error: 'All fields are required' });
+        }
+
+        if (newPassword !== confirmPassword) {
+            return res.status(400).json({ error: 'Passwords do not match' });
+        }
+
+        if (newPassword.length < 6) {
             return res.status(400).json({ error: 'Password must be at least 6 characters' });
         }
 
-        //find valid tokens
-        const resetToken = await PasswordResetModel.findValidToken(token);
+        // Resolve the reset record from whichever proof-of-identity was supplied
+        const resetToken = sessionToken
+            ? await PasswordResetModel.findBySessionToken(sessionToken)
+            : await PasswordResetModel.findValidToken(token!);
 
-        if(!resetToken) {
-            return res.status(400).json({ error: 'Invalid or expired reset token'});
+        if (!resetToken) {
+            return res.status(400).json({ error: 'Invalid or expired reset session. Please request a new code.' });
         }
 
-        //update password
+        // update password
         const user = await UserModel.updatePassword(resetToken.user_id, newPassword);
 
-        if(!user) {
-            return res.status(404).json({error: 'User not found'});
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
         }
 
-        //mark token as used 
+        // mark token as used (terminal — both the OTP and the email link are now dead)
         await PasswordResetModel.markAsUsed(resetToken.id!);
 
-        //send confirmation email
+        // send confirmation email
         await emailService.sendPasswordResetSuccessEmail(user.email);
 
-        return res.status(200).json({message: 'Password reset successfully'})
+        return res.status(200).json({ message: 'Password reset successfully' });
     } catch (error: any) {
         console.error('Reset password error:', error);
-        res.status(500).json({ error: 'Failed to reset password', details:error.message });
+        res.status(500).json({ error: 'Failed to reset password', details: error.message });
     }
 };

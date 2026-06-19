@@ -16,3 +16,7 @@ export const ENV = {
     EMAIL_FROM_NAME: process.env.EMAIL_FROM_NAME,
 }
 
+// Add this safety check to catch configuration errors instantly
+if (!ENV.RESEND_API_KEY) {
+    console.error("❌ CRITICAL: RESEND_API_KEY is missing from environment variables!");
+}

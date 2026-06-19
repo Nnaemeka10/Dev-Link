@@ -11,9 +11,16 @@ import type { LoginFormValues } from "../auth.types";
 import { getSafeReturnTo, withReturnTo } from "../auth.utils";
 import { AuthInput, Divider } from "../components/AuthFields";
 import AuthShell from "../components/AuthShell";
+import OtpVerifyModal from "../components/OtpVerifyModal";
 
 interface MeResponse {
   user: AuthUser;
+}
+
+
+interface LoginResponse {
+  requiresVerification?: boolean;
+  expiresAt: string;
 }
 
 export default function LoginPage() {
@@ -22,6 +29,9 @@ export default function LoginPage() {
   const returnTo = searchParams.get("returnTo");
   const setAuth = useAuthStore((state) => state.setAuth);
   const [error, setError] = useState<string | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [submittedEmail, setSubmittedEmail] = useState("");
+  const [expiresAt, setExpiresAt] = useState<string>("");
   const { register, handleSubmit, formState } = useForm<LoginFormValues>({
     defaultValues: { email: "", password: "" },
   });
@@ -30,16 +40,26 @@ export default function LoginPage() {
     setError(null);
 
     try {
-      await apiFetch("/api/auth/login", {
+      const response = await apiFetch<LoginResponse>("/api/auth/login", {
         method: "POST",
         body: JSON.stringify({ iemail: values.email, ipassword: values.password }),
         redirectOn401: false,
       });
 
+      if (response.requiresVerification) {
+        setSubmittedEmail(values.email);
+        setExpiresAt(response.expiresAt);
+        setModalOpen(true);
+        return;
+      }
+      
+
       const me = await apiFetch<MeResponse>("/api/auth/me", {
         method: "GET",
         redirectOn401: false,
       });
+
+
 
       setAuth({ isAuthenticated: true, user: me.user });
       router.replace(getSafeReturnTo(returnTo));
@@ -47,6 +67,12 @@ export default function LoginPage() {
       setError(err instanceof ApiError ? err.message : "Unable to sign in.");
     }
   });
+
+  const handleVerified = (user: AuthUser) => {
+    setModalOpen(false);
+    setAuth({ isAuthenticated: true, user });
+    router.replace(getSafeReturnTo(returnTo));
+  };
 
   return (
     <AuthShell>
@@ -102,6 +128,44 @@ export default function LoginPage() {
           </Link>
         </p>
       </section>
+
+       <OtpVerifyModal
+                   
+                    open={modalOpen}
+                    email={submittedEmail}
+                    expiresAt={expiresAt}
+                    onClose={() => setModalOpen(false)}
+                    onVerify={async(code)=>{
+                      const response = await apiFetch<{user:AuthUser}>(
+                        "/api/auth/verify-email",
+                        {
+                          method:"POST",
+                          body:JSON.stringify({
+                              email: submittedEmail,
+                              code
+                          }),
+                          redirectOn401:false
+                        }
+                      );
+      
+                      handleVerified(response.user);
+                    }}
+      
+                    onResend={async()=>{
+      
+                      return await apiFetch(
+                        "/api/auth/send-verification-email",
+                        {
+                          method:"POST",
+                          body:JSON.stringify({
+                              email:submittedEmail
+                          })
+                        }
+                      );
+      
+                    }}
+      
+            />
     </AuthShell>
   );
 }

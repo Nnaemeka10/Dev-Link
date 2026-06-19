@@ -8,13 +8,14 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080";
 
 export class ApiError extends Error {
   status: number;
-  payload?: ApiErrorPayload;
+  data?: ApiErrorPayload;
+  
 
-  constructor(message: string, status: number, payload?: ApiErrorPayload) {
+  constructor(message: string, status: number, data?: ApiErrorPayload) {
     super(message);
     this.name = "ApiError";
     this.status = status;
-    this.payload = payload;
+    this.data = data;
   }
 }
 
