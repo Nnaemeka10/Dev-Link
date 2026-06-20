@@ -11,8 +11,10 @@ interface ExploreCardProps {
 }
 
 export function MobileExploreCard({ listing, selected, onToggleCompare }: ExploreCardProps) {
+  const listingHref = `/listings/${listing.kind === "venue" ? "halls" : "services"}/${listing.id}`;
+
   return (
-    <Link href={`/listings/${listing.id}`} className="group">
+    <Link href={listingHref} className="group">
       <article className="overflow-hidden rounded-[2rem] bg-white shadow-[0_16px_30px_rgba(50,38,23,0.08)]">
         <div className="relative h-[20rem] overflow-hidden rounded-t-[2rem]">
           <Image src={listing.image} alt={listing.name} fill className="object-cover" sizes="(max-width: 1024px) 90vw" />
@@ -95,8 +97,10 @@ export function MobileExploreCard({ listing, selected, onToggleCompare }: Explor
 }
 
 export function DesktopExploreCard({ listing, selected, onToggleCompare }: ExploreCardProps) {
+  const listingHref = `/listings/${listing.kind === "venue" ? "halls" : "services"}/${listing.id}`;
+
   return (
-    <Link href={`/listings/${listing.id}`} className="group">
+    <Link href={listingHref} className="group">
       <article className="overflow-hidden rounded-[2rem] bg-white">
         <div className="relative h-[17.25rem] overflow-hidden">
           <Image src={listing.image} alt={listing.name} fill className="object-cover" sizes="25vw" />

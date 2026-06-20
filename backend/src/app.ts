@@ -3,6 +3,7 @@ import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import { ENV } from './lib/env.js';
 import authRoutes from './modules/auth/routes/auth.route.js';
+import listingsRoutes from './modules/listings/routes/listings.route.js';
 
 
 const app = express();
@@ -41,6 +42,7 @@ app.use(express.json());
 
 //routes
 app.use("/api/auth", authRoutes)
+app.use("/api/listings", listingsRoutes)
 
 //health check
 app.get('/api/health', (req, res) => {

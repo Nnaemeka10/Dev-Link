@@ -23,7 +23,7 @@ export default function ListingCard({ listing }: ListingCardProps) {
         <p className="text-sm text-text-primary">
           From <span className="font-semibold">NGN {listing.priceFrom.toLocaleString()}</span>
         </p>
-        <Link href={`/listings/${listing.id}`}>
+        <Link href={`/listings/${listing.category === "hall" ? "halls" : "services"}/${listing.id}`}>
           <Button variant="secondary">View details</Button>
         </Link>
       </div>

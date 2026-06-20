@@ -201,7 +201,7 @@ function SavedCard({ listing, index, onRemove }: CardProps) {
         <div className="absolute inset-x-0 bottom-0 hidden translate-y-full flex-col gap-0 bg-gradient-to-t from-black/65 via-black/30 to-transparent p-4 transition-transform duration-300 ease-out group-hover:translate-y-0 md:flex">
           <div className="flex items-center gap-2 pt-6">
             <Link
-              href={`/listing/${listing.id}`}
+              href={`/listings/${listing.category}/${listing.id}`}
               className="flex flex-1 items-center justify-center gap-1.5 rounded-full bg-white py-2.5 text-xs font-extrabold uppercase tracking-wide text-[#1a1f3c] transition-colors hover:bg-[#d65c3a] hover:text-white"
             >
               View Listing
@@ -221,7 +221,7 @@ function SavedCard({ listing, index, onRemove }: CardProps) {
         {/* ── Mobile always-visible bottom bar ─────────────────────────── */}
         <div className="absolute inset-x-0 bottom-0 flex items-center justify-between bg-gradient-to-t from-black/60 to-transparent p-3 md:hidden">
           <Link
-            href={`/listing/${listing.id}`}
+            href={`/listings/${listing.category}/${listing.id}`}
             className="flex items-center gap-1 rounded-full bg-white/90 px-4 py-2 text-xs font-extrabold text-[#1a1f3c] backdrop-blur-sm"
           >
             View
@@ -242,7 +242,7 @@ function SavedCard({ listing, index, onRemove }: CardProps) {
       <div className="mt-3 space-y-1 px-1">
         <div className="flex items-start justify-between gap-2">
           <Link
-            href={`/listing/${listing.id}`}
+            href={`/listings/${listing.category}/${listing.id}`}
             className="flex-1 text-base font-bold leading-snug text-[#1a1f3c] hover:text-[#d65c3a] transition-colors line-clamp-1"
           >
             {listing.name}

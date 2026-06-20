@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import type { Metadata } from "next";
-import ListingDetails from "@/features/listings/pages/ListingDetails";
+import HallDetails from "@/features/listings/pages/HallDetails";
 
 export const metadata: Metadata = {
   title: "Listings Details | Eventvnv",
@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 export default function ListingsDetailsRoute() {
   return (
     <Suspense fallback={<main className="min-h-screen bg-bg-primary" />}>
-      <ListingDetails />
+      <HallDetails />
     </Suspense>
   );
 }

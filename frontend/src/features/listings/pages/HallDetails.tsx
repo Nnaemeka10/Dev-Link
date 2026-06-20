@@ -271,7 +271,7 @@ function DesktopDetailsView({ booking, handleSearch, form, isPending }: DesktopD
   );
 }
 
-export default function ListingDetails() { 
+export default function HallDetails() { 
   const booking = useBookingState();
   const [isPending, startTransition] = useTransition(); //
   const form = useSearchForm();
