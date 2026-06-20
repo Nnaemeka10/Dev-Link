@@ -36,7 +36,7 @@ export function DesktopExploreHeader({ handleSearch, form, isPending, filter }: 
 
   return (
     <>
-      <header className="border-b border-[#EDE4D8] bg-bg-primary flex-shrink-0">
+      <header className="sticky top-0 z-30 border-b border-[#EDE4D8] bg-bg-primary/95 backdrop-blur flex-shrink-0">
         <div className="flex items-center gap-4 xl:gap-8 px-4 xl:px-8 py-4 xl:py-6 max-w-full">
           <DesktopSearchBar form={form} onSubmit={handleSearch} isPending={isPending} showShadow={true} />
 
