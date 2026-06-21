@@ -1,125 +1,138 @@
 "use client";
 
-import Image, { type StaticImageData } from "next/image";
+import Image from "next/image";
 import { MapPin, Star } from "lucide-react";
-import popularA from "@/assets/home/populareventsa.png";
-import popularB from "@/assets/home/populareventsb.png";
-import popularC from "@/assets/home/populareventsc.png";
-import popularD from "@/assets/home/populareventsd.png";
 import Link from "next/link";
+import { useHomeListings } from "../hooks/useHomeListings";
+import type { HomeListingCard } from "../types/listings.types";
 
-interface HallItem {
-  id: string;
-  name: string;
-  location: string;
-  rating: number;
-  pricePerDay: string;
-  image: StaticImageData;
-}
-
-interface PopularHallsResponse {
-  heading: string;
-  subheading: string;
-  ctaLabel: string;
-  ctaLink: string;
-  data: HallItem[];
-}
-
-const POPULAR_HALLS_RESPONSE: PopularHallsResponse = {
+const POPULAR_HALLS_CONTENT = {
   heading: "Popular Event Halls",
   subheading: "Experience Nigeria's most prestigious venues.",
   ctaLabel: "View all halls",
-  ctaLink: "halls",
-  data: [
-    {
-      id: "hall-1",
-      name: "Grand Ballroom, Oriental",
-      location: "Victoria Island, Lagos",
-      rating: 4.9,
-      pricePerDay: "₦1,200,000",
-      image: popularA,
-    },
-    {
-      id: "hall-2",
-      name: "The Glass House",
-      location: "Central Area, Abuja",
-      rating: 4.8,
-      pricePerDay: "₦850,000",
-      image: popularB,
-    },
-    {
-      id: "hall-3",
-      name: "Civic Center Pavilion",
-      location: "GRA, Port Harcourt",
-      rating: 4.7,
-      pricePerDay: "₦600,000",
-      image: popularC,
-    },
-    {
-      id: "hall-4",
-      name: "The Landmark Marquee",
-      location: "Oniru, Lagos",
-      rating: 4.9,
-      pricePerDay: "₦2,500,000",
-      image: popularD,
-    },
-  ],
+  ctaLink: "/listings?category=halls",
 };
 
+function formatNaira(value: number) {
+  return new Intl.NumberFormat("en-NG", {
+    style: "currency",
+    currency: "NGN",
+    maximumFractionDigits: 0,
+  }).format(value);
+}
+
+function ListingImage({ hall }: { hall: HomeListingCard }) {
+  const imageUrl = hall.primaryImage?.thumbnailUrl ?? hall.primaryImage?.url;
+
+  if (!imageUrl) {
+    return (
+      <div className="text-text-primary/45 flex h-62.5 w-full items-center justify-center bg-[#EFE7DE] text-sm font-semibold">
+        No image
+      </div>
+    );
+  }
+
+  return (
+    <Image
+      src={imageUrl}
+      alt={hall.title}
+      fill
+      className="object-cover"
+      sizes="(max-width: 768px) 270px, 25vw"
+    />
+  );
+}
+
+function PopularHallsSkeleton() {
+  return (
+    <>
+      {Array.from({ length: 4 }).map((_, index) => (
+        <div key={index} className="min-w-67.5 md:min-w-0">
+          <div className="bg-text-primary/8 h-62.5 animate-pulse rounded-2xl" />
+          <div className="bg-text-primary/8 mt-3 h-5 w-4/5 animate-pulse rounded" />
+          <div className="bg-text-primary/8 mt-2 h-4 w-1/2 animate-pulse rounded" />
+          <div className="bg-text-primary/8 mt-3 h-5 w-1/3 animate-pulse rounded" />
+        </div>
+      ))}
+    </>
+  );
+}
+
 export default function PopularHallsSection() {
+  const { data, isError, isPending } = useHomeListings();
+  const halls = data?.popularHalls ?? [];
+
   return (
     <section className="px-4 py-10 md:px-8 md:py-12">
       <div className="mx-auto max-w-7xl">
-        <div className="mb-6 flex items-start md:items-end justify-between md:mb-7">
+        <div className="mb-6 flex items-start justify-between md:mb-7 md:items-end">
           <div>
-            <h2 className="text-heading-m font-semibold leading-tight text-text-primary md:text-4xl">
-              {POPULAR_HALLS_RESPONSE.heading}
+            <h2 className="text-heading-m text-text-primary leading-tight font-semibold md:text-4xl">
+              {POPULAR_HALLS_CONTENT.heading}
             </h2>
-            <p className="mt-2 text-small text-text-primary/62 md:text-base">
-              {POPULAR_HALLS_RESPONSE.subheading}
+            <p className="text-small text-text-primary/62 mt-2 md:text-base">
+              {POPULAR_HALLS_CONTENT.subheading}
             </p>
           </div>
-          <button type="button" className="md:text-sm text-small font-semibold text-text-primary underline">
-            <Link href={`/${POPULAR_HALLS_RESPONSE.ctaLink}`} className=" md:block">
-              {POPULAR_HALLS_RESPONSE.ctaLabel}
-            </Link>
-
-          </button>
+          <Link
+            href={POPULAR_HALLS_CONTENT.ctaLink}
+            className="text-small text-text-primary font-semibold underline md:text-sm"
+          >
+            {POPULAR_HALLS_CONTENT.ctaLabel}
+          </Link>
         </div>
 
         <div className="no-scrollbar flex gap-4 overflow-x-auto pb-2 md:grid md:grid-cols-4 md:gap-4 md:overflow-visible">
-          {POPULAR_HALLS_RESPONSE.data.map((hall, index) => (
-            <article
-              key={hall.id}
-              className="min-w-67.5 md:min-w-0 motion-safe:animate-fade-up"
-              style={{ animationDelay: `${index * 50}ms` }}
-            >
-              <div className="relative overflow-hidden rounded-2xl">
-                <Image src={hall.image} alt={hall.name} className="h-62.5 w-full object-cover" />
-                <span className="absolute left-3 top-3 rounded-full bg-white px-3 py-1 text-[0.55rem] md:text-[0.625rem] font-semibold uppercase tracking-[0.08em] text-text-primary">
-                  Verified
-                </span>
-              </div>
+          {isPending && <PopularHallsSkeleton />}
 
-              <div className="mt-3 flex items-start justify-between gap-2">
-                <h3 className="text-lg font-semibold text-text-primary ">{hall.name}</h3>
-                <p className="inline-flex items-center gap-1 text-small font-semibold text-text-primary">
-                  <Star className="h-4 w-4 fill-current text-accent-secondary" />
-                  {hall.rating.toFixed(1)}
+          {isError && (
+            <p className="text-text-primary/65 col-span-full rounded-2xl bg-white p-6 text-sm font-medium shadow-sm">
+              Popular halls are unavailable right now.
+            </p>
+          )}
+
+          {!isPending && !isError && halls.length === 0 && (
+            <p className="text-text-primary/65 col-span-full rounded-2xl bg-white p-6 text-sm font-medium shadow-sm">
+              No popular halls available yet.
+            </p>
+          )}
+
+          {!isPending &&
+            !isError &&
+            halls.map((hall, index) => (
+              <article
+                key={hall.id}
+                className="motion-safe:animate-fade-up min-w-67.5 md:min-w-0"
+                style={{ animationDelay: `${index * 50}ms` }}
+              >
+                <div className="relative h-62.5 overflow-hidden rounded-2xl">
+                  <ListingImage hall={hall} />
+                  <span className="text-text-primary absolute top-3 left-3 rounded-full bg-white px-3 py-1 text-[0.55rem] font-semibold tracking-[0.08em] uppercase md:text-[0.625rem]">
+                    Verified
+                  </span>
+                </div>
+
+                <div className="mt-3 flex items-start justify-between gap-2">
+                  <h3 className="text-text-primary text-lg font-semibold">{hall.title}</h3>
+                  <p className="text-small text-text-primary inline-flex items-center gap-1 font-semibold">
+                    <Star className="text-accent-secondary h-4 w-4 fill-current" />
+                    {hall.rating.toFixed(1)}
+                  </p>
+                </div>
+
+                <p className="text-tiny text-text-primary/58 mt-1 inline-flex items-center gap-1">
+                  <MapPin className="h-4 w-4" />
+                  {hall.location}
                 </p>
-              </div>
 
-              <p className="mt-1 inline-flex items-center gap-1 text-tiny text-text-primary/58">
-                <MapPin className="h-4 w-4" />
-                {hall.location}
-              </p>
-
-              <p className="mt-2 text-base font-semibold text-text-primary">
-                {hall.pricePerDay}
-                <span className="ml-1 text-sm font-normal text-text-primary/60">/day</span>
-              </p>
-            </article>
-          ))}
+                <p className="text-text-primary mt-2 text-base font-semibold">
+                  {formatNaira(hall.priceFrom)}
+                  <span className="text-text-primary/60 ml-1 text-sm font-normal">
+                    /{hall.priceUnit}
+                  </span>
+                </p>
+              </article>
+            ))}
         </div>
       </div>
     </section>

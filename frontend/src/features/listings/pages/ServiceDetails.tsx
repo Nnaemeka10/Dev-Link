@@ -89,7 +89,7 @@ export default function ServiceDetails() {
         </div>
       </div>
       
-      <ReviewsSection metrics={[{label: "Value", value: "5.0"}, {label: "Communication", value: "4.9"}]} reviews={SERVICE_DETAILS.reviews} variant={variant === "mobile" ? "mobile" : "desktop"} />
+      <ReviewsSection metrics={[{label: "Value", value: "5.0"}, {label: "Vibes", value: "4.8"}, {label: "Quality", value: "4.7"}, {label: "Communication", value: "4.9"}]} reviews={SERVICE_DETAILS.reviews} variant={variant === "mobile" ? "mobile" : "desktop"} />
     </>
   );
 

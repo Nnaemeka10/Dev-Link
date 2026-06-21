@@ -1,59 +1,104 @@
-import type { Listing } from "@/features/listings/listings.types";
+import { apiFetch } from "@/lib/api";
+import type {
+  CursorPaginatedResponse,
+  HomeListingCard,
+  HomeListingsPayload,
+  HomeTrendingCard,
+  Listing,
+} from "../types/listings.types";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000";
+interface TrendingResponse {
+  data: HomeTrendingCard[];
+}
 
-const FALLBACK_LISTINGS: Listing[] = [
-  {
-    id: "hall-lagoon-view",
-    title: "Lagoon View Hall",
-    location: "Lekki, Lagos",
-    category: "hall",
-    description: "Premium waterfront event hall for weddings, conferences, and private dinners.",
-    priceFrom: 850000,
-  },
-  {
-    id: "service-elite-catering",
-    title: "Elite Catering Studio",
-    location: "Ikeja, Lagos",
-    category: "service",
-    description: "Full-service catering with custom menus, plated service, and event staffing.",
-    priceFrom: 320000,
-  },
-  {
-    id: "hall-maple-garden",
-    title: "Maple Garden Pavilion",
-    location: "Abuja",
-    category: "hall",
-    description: "Indoor-outdoor venue with garden aisle and premium bridal suite.",
-    priceFrom: 670000,
-  },
-];
+const HOME_LISTING_LIMIT = 4;
 
-async function safeJsonFetch<T>(path: string): Promise<T | null> {
-  try {
-    const response = await fetch(`${API_URL}${path}`, {
-      credentials: "include",
-      next: { revalidate: 300 },
-    });
+function toLegacyListing(listing: HomeListingCard): Listing {
+  return {
+    id: listing.id,
+    title: listing.title,
+    location: listing.location,
+    category: listing.category,
+    description: listing.headline ?? "",
+    priceFrom: listing.priceFrom,
+  };
+}
 
-    if (!response.ok) {
-      return null;
-    }
+function withLimit(path: string, limit = HOME_LISTING_LIMIT): string {
+  const search = new URLSearchParams({ limit: String(limit) });
+  return `${path}?${search.toString()}`;
+}
 
-    return (await response.json()) as T;
-  } catch {
-    return null;
-  }
+export const homeListingsQueryKey = ["home", "listings"] as const;
+
+export async function getPopularHalls(): Promise<HomeListingCard[]> {
+  const response = await apiFetch<CursorPaginatedResponse<HomeListingCard>>(
+    withLimit("/api/listings/popular-halls"),
+    { method: "GET", redirectOn401: false },
+  );
+
+  return response.data;
+}
+
+export async function getCuratedServices(): Promise<HomeListingCard[]> {
+  const response = await apiFetch<CursorPaginatedResponse<HomeListingCard>>(
+    withLimit("/api/listings/curated-services"),
+    { method: "GET", redirectOn401: false },
+  );
+
+  return response.data;
+}
+
+export async function getTrendingHalls(): Promise<HomeTrendingCard[]> {
+  const response = await apiFetch<TrendingResponse>("/api/listings/trending-halls", {
+    method: "GET",
+    redirectOn401: false,
+  });
+
+  return response.data;
+}
+
+export async function getTrendingServices(): Promise<HomeTrendingCard[]> {
+  const response = await apiFetch<TrendingResponse>("/api/listings/trending-services", {
+    method: "GET",
+    redirectOn401: false,
+  });
+
+  return response.data;
+}
+
+export async function getHomeListings(): Promise<HomeListingsPayload> {
+  const [popularHalls, curatedServices, trendingHalls, trendingServices] = await Promise.all([
+    getPopularHalls(),
+    getCuratedServices(),
+    getTrendingHalls(),
+    getTrendingServices(),
+  ]);
+
+  return {
+    popularHalls,
+    curatedServices,
+    trendingHalls,
+    trendingServices,
+  };
 }
 
 export async function getListings(): Promise<Listing[]> {
-  const data = await safeJsonFetch<Listing[]>("/api/listings");
-  return data?.length ? data : FALLBACK_LISTINGS;
+  const response = await apiFetch<CursorPaginatedResponse<HomeListingCard>>(
+    withLimit("/api/listings", HOME_LISTING_LIMIT),
+    { method: "GET", redirectOn401: false },
+  );
+
+  return response.data.map(toLegacyListing);
 }
 
 export async function getListingById(id: string): Promise<Listing | null> {
-  const data = await safeJsonFetch<Listing>(`/api/listings/${id}`);
-  return data ?? FALLBACK_LISTINGS.find((listing) => listing.id === id) ?? null;
+  const listing = await apiFetch<HomeListingCard>(`/api/listings/${id}`, {
+    method: "GET",
+    redirectOn401: false,
+  });
+
+  return toLegacyListing(listing);
 }
 
 export async function getListingIds(): Promise<string[]> {

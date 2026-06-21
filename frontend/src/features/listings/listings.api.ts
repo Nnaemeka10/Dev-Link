@@ -1,7 +1,7 @@
 import type { Listing } from "./listings.types";
 import type { ListingSearchCategory, ListingSearchParams } from "./searchParams";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000";
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080";
 
 const FALLBACK_LISTINGS: Listing[] = [
   {
