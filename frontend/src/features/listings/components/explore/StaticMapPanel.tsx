@@ -1,5 +1,18 @@
 import { Minus, Plus } from "lucide-react";
-import { MAP_PRICE_PINS } from "../../explore.data";
+export interface MapPricePin {
+  label: string;
+  top: string;
+  left: string;
+  active: boolean;
+}
+
+const MAP_PRICE_PINS: MapPricePin[] = [
+  { label: "₦1.2M", top: "15%", left: "78%", active: false },
+  { label: "₦450k", top: "20%", left: "42%", active: false },
+  { label: "₦280k", top: "36%", left: "28%", active: true },
+  { label: "₦600k", top: "58%", left: "60%", active: false },
+  { label: "₦350k", top: "72%", left: "35%", active: false },
+];
 
 export default function StaticMapPanel() {
   return (
