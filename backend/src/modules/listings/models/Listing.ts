@@ -100,6 +100,10 @@ function buildFilterParts(options: ListingPageOptions): QueryParts {
         clauses.push(`l.kind = ${addValue(values, filters.kind)}`);
     }
 
+    if (filters.excludeId) {
+        clauses.push(`l.id != ${addValue(values, filters.excludeId)}`);
+    }
+
     if (filters.location) {
         clauses.push(`CONCAT_WS(' ', l.address_line, l.city, l.state, l.country) ILIKE ${addValue(values, `%${filters.location}%`)}`);
     }
@@ -243,17 +247,104 @@ export const ListingModel = {
         return result.rows;
     },
 
-    async findById(id: string): Promise<ListingRow | null> {
+        async findById(id: string): Promise<ListingRow | null> {
         const db = getDB();
         const result = await db.query<ListingRow>(
             `
                 WITH listing_details AS (
-                    ${buildListingsSelect()}
-                    WHERE ${PUBLIC_LISTING_CLAUSES.join(' AND ')}
-                        AND l.id = $1
+                    SELECT 
+                        l.id, l.title, l.headline, l.kind, l.description,
+                        l.base_price, l.price_unit, l.address_line, l.city, l.state, l.country,
+                        l.latitude, l.longitude, l.average_rating, l.review_count, l.capacity,
+                        l.available_from, l.available_to, l.auto_approve, l.created_at,
+                        l.service_metadata,
+                        COALESCE(asset_data.assets, '[]'::json) AS assets,
+                        COALESCE(badge_data.badges, '[]'::json) AS badges,
+                        COALESCE(package_data.packages, '[]'::json) AS packages,
+                        COALESCE(feature_data.features, '[]'::json) AS features,
+                        COALESCE(review_data.reviews, '[]'::json) AS reviews,
+                        COALESCE(area_data.areas, '[]'::json) AS service_areas
+                    FROM listings l
+                    LEFT JOIN LATERAL (
+                        SELECT json_agg(
+                            json_build_object(
+                                'id', la.id, 'url', la.url, 'type', la.type,
+                                'isPrimary', la.is_primary, 'sortOrder', la.sort_order
+                            ) ORDER BY la.is_primary DESC, la.sort_order ASC, la.created_at ASC
+                        ) AS assets
+                        FROM listing_assets la WHERE la.listing_id = l.id
+                    ) asset_data ON TRUE
+                    LEFT JOIN LATERAL (
+                        SELECT json_agg(
+                            json_build_object('id', bd.id, 'name', bd.name, 'iconUrl', bd.icon_url)
+                            ORDER BY bd.name ASC
+                        ) AS badges
+                        FROM listing_badges lb
+                        JOIN badge_dictionary bd ON bd.id = lb.badge_id
+                        WHERE lb.listing_id = l.id
+                    ) badge_data ON TRUE
+                    LEFT JOIN LATERAL (
+                        SELECT json_agg(
+                            json_build_object(
+                                'id', sp.id,
+                                'name', sp.name,
+                                'price', sp.price,
+                                'description', sp.description,
+                                'isPopular', sp.is_popular,
+                                'sortOrder', sp.sort_order,
+                                'features', (
+                                    SELECT json_agg(
+                                        json_build_object(
+                                            'id', pf.id,
+                                            'text', pf.text,
+                                            'sortOrder', pf.sort_order
+                                        ) ORDER BY pf.sort_order ASC
+                                    )
+                                    FROM package_features pf WHERE pf.package_id = sp.id
+                                )
+                            )
+                            ORDER BY sp.sort_order ASC
+                        ) AS packages
+                        FROM service_packages sp WHERE sp.listing_id = l.id
+                    ) package_data ON TRUE
+                    LEFT JOIN LATERAL (
+                        SELECT json_agg(
+                            json_build_object(
+                                'id', lf.id,
+                                'icon', lf.icon,
+                                'label', lf.label,
+                                'value', lf.value
+                            ) ORDER BY lf.sort_order ASC
+                        ) AS features
+                        FROM listing_features lf WHERE lf.listing_id = l.id
+                    ) feature_data ON TRUE
+                    LEFT JOIN LATERAL (
+                        SELECT json_agg(
+                            json_build_object(
+                                'id', lr.id,
+                                'userId', lr.user_id,
+                                'rating', lr.rating,
+                                'body', lr.body,
+                                'createdAt', lr.created_at
+                            ) ORDER BY lr.created_at DESC
+                        ) AS reviews
+                        FROM listing_reviews lr WHERE lr.listing_id = l.id
+                    ) review_data ON TRUE
+                    LEFT JOIN LATERAL (
+                        SELECT json_agg(
+                            json_build_object(
+                                'city', lsa.city,
+                                'state', lsa.state,
+                                'country', lsa.country
+                            ) ORDER BY lsa.city ASC
+                        ) AS areas
+                        FROM listing_service_areas lsa WHERE lsa.listing_id = l.id
+                    ) area_data ON TRUE
+                    WHERE ${PUBLIC_LISTING_CLAUSES.join(' AND ')} AND l.id = $1
                 )
-                SELECT
+                SELECT 
                     ld.*,
+                    0 AS booking_count,
                     json_build_object(
                         'cleanliness', lrm.cleanliness,
                         'communication', lrm.communication,
@@ -288,3 +379,27 @@ export const ListingModel = {
         return result.rows;
     },
 };
+
+
+// models/Listing.js (or Package.js)
+
+/**
+ * FAANG Pattern: Explicit Service-Layer Sync
+ * We recalculate the listing's cached price whenever packages change.
+ * This keeps the DB "dumb" (no triggers) and logic in Node.js.
+ */
+async function recalculateListingPrice(listingId: string): Promise<void> {
+    const db = getDB();
+    await db.query(`
+        UPDATE listings
+        SET base_price = COALESCE(
+            (SELECT MIN(price) FROM service_packages WHERE listing_id = $1), 
+            0
+        )
+        WHERE id = $1;
+    `, [listingId]);
+}
+
+// You would call this in your Package creation/update/deletion endpoints:
+// await PackageModel.create(data);
+// await recalculateListingPrice(data.listing_id); 

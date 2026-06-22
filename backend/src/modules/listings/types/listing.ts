@@ -60,6 +60,12 @@ export interface ListingDetails extends ListingCard {
     availableTo: string | null;
     autoApprove: boolean;
     reviewMetrics: ListingReviewMetric[];
+    packages: ServicePackage[];      
+    requirements: string[];            
+    responseTime: string | null; 
+    features: any[];
+    reviews: any[];
+    serviceAreas: any[];
 }
 
 export interface ListingSearchQuery {
@@ -152,6 +158,11 @@ export type ListingRow = {
     badges: ListingBadge[] | null;
     assets: ListingAssetRow[] | null;
     review_metrics?: ListingReviewMetricsRow | null;
+    packages?: ServicePackage[] | null;         
+    service_metadata?: ServiceMetadata | null;
+    features?: any[] | null;
+    reviews?: any[] | null;
+    serviceAreas?: any[] | null;
 };
 
 export interface ListingFilters {
@@ -161,6 +172,7 @@ export interface ListingFilters {
     capacity?: number;
     dateFrom?: string;
     dateTo?: string;
+    excludeId?: string;
 }
 
 export interface ListingPageOptions {
@@ -192,4 +204,25 @@ export interface ListingCardSmall {
     priceUnit: string;
     primaryImage: ListingImage | null;
     rating: number;
+}
+
+export interface PackageFeature {
+    id: string;
+    text: string;
+    sortOrder: number;
+}
+
+export interface ServicePackage {
+    id: string;
+    name: string;
+    price: number;
+    description: string | null;
+    isPopular: boolean;
+    sortOrder: number;
+    features: PackageFeature[];
+}
+
+export interface ServiceMetadata {
+    requirements?: string[];
+    response_time?: string;
 }

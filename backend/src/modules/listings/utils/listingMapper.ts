@@ -5,6 +5,8 @@ import type {
     ListingImage,
     ListingReviewMetric,
     ListingRow,
+    ServiceMetadata,
+    ServicePackage,
     TrendingCard,
 } from '../types/listing.js';
 import {
@@ -86,6 +88,7 @@ function mapReviewMetrics(row: ListingRow): ListingReviewMetric[] {
 }
 
 export function mapListingDetails(row: ListingRow): ListingDetails {
+    const metadata = row.service_metadata as ServiceMetadata | null;
     return {
         ...mapListingCard(row),
         addressLine: row.address_line,
@@ -98,6 +101,12 @@ export function mapListingDetails(row: ListingRow): ListingDetails {
         availableTo: row.available_to,
         autoApprove: Boolean(row.auto_approve),
         reviewMetrics: mapReviewMetrics(row),
+        packages: (row.packages ?? []).map(mapPackage),
+        requirements: metadata?.requirements ?? [],
+        responseTime: metadata?.response_time ?? null,
+        features: (row.features ?? []) as any[], 
+        reviews: (row.reviews ?? []) as any[], 
+        serviceAreas: (row.serviceAreas ?? []) as any[] 
     };
 }
 
@@ -137,3 +146,19 @@ export function mapListingCardSmall (row: ListingRow) : ListingCardSmall {
         primaryImage,
     };
 } 
+
+function mapPackage(pkg: any): ServicePackage {
+    return {
+        id: pkg.id,
+        name: pkg.name,
+        price: toNumber(pkg.price),
+        description: pkg.description ?? '',
+        isPopular: Boolean(pkg.isPopular),
+        sortOrder: pkg.sortOrder,
+        features: (pkg.features ?? []).map((f: any) => ({
+            id: f.id,
+            text: f.text,
+            sortOrder: f.sortOrder,
+        })),
+    };
+}

@@ -142,3 +142,36 @@ export const getTrendingServices = async (_req: Request, res: Response) => {
     }
 };
 
+export const getSimilarListings = async (req: Request, res: Response) => {
+    try {
+        // Default to 3 items. The frontend can pass ?limit=6 if it wants more
+        const query = req.query as any;
+        const limit = parseLimit(req.query.limit, 3); 
+        
+
+        const rows = await ListingModel.findPage({
+            filters: {
+                // If kind is provided (e.g., 'hall'), filter by it. Otherwise get both.
+                kind: query.kind as ListingKind | undefined,
+                // Using the existing ILIKE location filter. Passing "Lagos" will match "Victoria Island, Lagos"
+                location: query.city || undefined,
+                // Critical: Exclude the listing the user is currently looking at
+                excludeId: query.id, 
+            },
+            limit,
+            cursor: null,
+            sort: 'rating',
+            sortDirection: 'desc',
+        });
+
+        // We reuse trimPaginationRows just in case they ask for more later
+        const visibleRows = trimPaginationRows(rows, limit);
+
+        // We reuse mapSmallRows because Similar Venues don't need rankScore or heavy data
+        res.status(200).json(mapSmallRows(visibleRows));
+    } catch (error: any) {
+        console.error('Get similar listings error:', error);
+        res.status(500).json({ message: 'Failed to fetch similar listings' });
+    }
+};
+
