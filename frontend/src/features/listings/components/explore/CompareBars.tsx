@@ -44,7 +44,14 @@ export function DesktopCompareBar({ selectedListings, onClear }: CompareBarProps
     <div className="fixed bottom-20 left-1/2 z-40 flex min-w-[42rem] -translate-x-1/2 items-center gap-6 rounded-full bg-[#1C1C18] px-8 py-4 text-white shadow-[0_18px_38px_rgba(0,0,0,0.28)]">
       <div className="flex items-center gap-2">
         {selectedListings.slice(0, 2).map((listing) => (
-          <Image key={listing.id} src={listing.image} alt={listing.name} className="h-8 w-8 rounded-full object-cover" />
+          <Image
+            key={listing.id}
+            src={listing.imageUrl ?? "../../../../assets/home/curatedeventsa.png"}
+            alt={listing.name}
+            width={32}
+            height={32}
+            className="h-8 w-8 rounded-full object-cover"
+            />
         ))}
         <button
           type="button"
