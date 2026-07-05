@@ -7,15 +7,6 @@ export interface Listing {
   priceFrom: number;
 }
 
-export interface Listing {
-  id: string;
-  title: string;
-  location: string;
-  category: "hall" | "service";
-  description: string;
-  priceFrom: number;
-}
-
 export interface ListingImage {
   id: string;
   url: string;
@@ -35,6 +26,19 @@ export interface HomeListingCard {
   rating: number;
   primaryImage: ListingImage | null;
   badges: string[]; // Added badges property to HomeListingCard
+}
+
+export interface SavedListingCard {
+  id: string;
+  title: string;
+  location: string;
+  category: "hall" | "service";
+  priceFrom: number;
+  priceUnit: string;
+  rating: number;
+  reviewCount: number;
+  primaryImage: ListingImage | null;
+  badges: string[]; // Added badges property to SavedListingCard
 }
 
 export interface HomeTrendingCard {

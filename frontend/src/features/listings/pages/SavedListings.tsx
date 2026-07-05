@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useTransition } from "react";
@@ -10,6 +11,9 @@ import {
 } from "lucide-react";
 import SideNavBar from "@/components/layout/SideNavBar";
 import MobileDock from "@/components/layout/MobileDock";
+
+import { useSavedListings, useRemoveSavedListing } from "@/features/listings/hooks/useSavedListings";
+import type { SavedListingCard } from "@/features/listings/listings.types";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -29,104 +33,6 @@ export interface SavedListing {
   tags?: string[];
 }
 
-// ─── Mock data — swap for your API / React Query call ────────────────────────
-// Shape mirrors: GET /api/saved?userId=...
-// Replace this block with: const { data } = useQuery({ queryKey: ['saved'], queryFn: fetchSaved })
-
-const MOCK_SAVED: SavedListing[] = [
-  {
-    id: "1",
-    category: "halls",
-    name: "The Grand Onyx Pavilion",
-    location: "Victoria Island",
-    city: "Lagos",
-    priceAmount: 2_500_000,
-    priceUnit: "/ day",
-    rating: 4.9,
-    reviewCount: 218,
-    imageUrl: "https://images.unsplash.com/photo-1519167758481-83f550bb49b3?w=800&q=80",
-    tags: ["Crystal Chandeliers", "Marble Floors"],
-  },
-  {
-    id: "2",
-    category: "halls",
-    name: "Civic Center Glass House",
-    location: "Ikoyi",
-    city: "Lagos",
-    priceAmount: 1_800_000,
-    priceUnit: "/ day",
-    rating: 4.8,
-    reviewCount: 144,
-    imageUrl: "https://images.unsplash.com/photo-1464366400600-7168b8af9bc3?w=800&q=80",
-    tags: ["Floor-to-Ceiling Windows", "Industrial"],
-  },
-  {
-    id: "3",
-    category: "halls",
-    name: "The Heritage Garden",
-    location: "Maitama",
-    city: "Abuja",
-    priceAmount: 950_000,
-    priceUnit: "/ day",
-    rating: 4.7,
-    reviewCount: 89,
-    imageUrl: "https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=800&q=80",
-    tags: ["Outdoor", "Garden"],
-  },
-  {
-    id: "4",
-    category: "halls",
-    name: "Legacy Manor Estate",
-    location: "GRA",
-    city: "Port Harcourt",
-    priceAmount: 1_200_000,
-    priceUnit: "/ day",
-    rating: 4.9,
-    reviewCount: 176,
-    imageUrl: "https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=800&q=80",
-    tags: ["Colonial", "Manicured Lawns"],
-  },
-  {
-    id: "5",
-    category: "halls",
-    name: "Skyline Terrace",
-    location: "Lekki Phase 1",
-    city: "Lagos",
-    priceAmount: 750_000,
-    priceUnit: "/ day",
-    rating: 4.6,
-    reviewCount: 63,
-    imageUrl: "https://images.unsplash.com/photo-1519225421980-715cb0215aed?w=800&q=80",
-    tags: ["Rooftop", "Cocktail Bar"],
-  },
-  {
-    id: "6",
-    category: "services",
-    name: "DJ Spinall",
-    location: "Lagos",
-    city: "NG",
-    priceAmount: 450_000,
-    priceUnit: "/ set",
-    rating: 5.0,
-    reviewCount: 312,
-    imageUrl: "https://images.unsplash.com/photo-1571266028243-e4733b0f0bb0?w=800&q=80",
-    tags: ["Premium Sound", "Contract Available"],
-  },
-  {
-    id: "7",
-    category: "services",
-    name: "Bloom Decor Studio",
-    location: "Lekki Phase 1",
-    city: "Lagos",
-    priceAmount: 320_000,
-    priceUnit: "/ event",
-    rating: 4.9,
-    reviewCount: 141,
-    imageUrl: "https://images.unsplash.com/photo-1561731216-c3a4d99437d5?w=800&q=80",
-    tags: ["Floral Design", "Setup Included"],
-  },
-];
-
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function formatNaira(n: number): string {
@@ -135,20 +41,23 @@ function formatNaira(n: number): string {
   return `₦${n}`;
 }
 
-// ─── Card stagger variants ────────────────────────────────────────────────────
-
-const cardVariants = {
-  hidden:  { opacity: 0, y: 22 },
-  visible: (i: number) => ({
-    opacity: 1,
-    y: 0,
-    transition: { 
-        delay: i * 0.07, 
-        duration: 0.4, 
-        ease: [0.16, 1, 0.3, 1] as const 
-    },
-  }),
-};
+// Adapter to map Backend ListingCard to Frontend SavedListing
+function mapToSavedListing(item: SavedListingCard): SavedListing {
+  const cityMatch = item.location.split(",")[0]?.trim() || "Nigeria";
+  return {
+    id: item.id,
+    category: item.category === "hall" ? "halls" : "services",
+    name: item.title,
+    location: cityMatch,
+    city: cityMatch,
+    priceAmount: item.priceFrom,
+    priceUnit: item.priceUnit,
+    rating: item.rating,
+    reviewCount: item.reviewCount,
+    imageUrl: item.primaryImage?.url || "https://images.unsplash.com/photo-1519167758481-83f550bb49b3?w=800&q=80",
+    tags: item.badges,
+  };
+}
 
 // ─── Listing card ─────────────────────────────────────────────────────────────
 
@@ -163,21 +72,25 @@ function SavedCard({ listing, index, onRemove }: CardProps) {
 
   function handleRemove() {
     setRemoving(true);
-    // Small delay so the animation plays before the item leaves the list
     setTimeout(() => onRemove(listing.id), 320);
   }
 
   return (
     <motion.article
       custom={index}
-      variants={cardVariants}
+      variants={{
+        hidden: { opacity: 0, y: 22 },
+        visible: (i: number) => ({
+          opacity: 1, y: 0,
+          transition: { delay: i * 0.07, duration: 0.4, ease: [0.16, 1, 0.3, 1] as const },
+        }),
+      }}
       initial="hidden"
       animate={removing ? { opacity: 0, scale: 0.94, y: 8 } : "visible"}
       transition={removing ? { duration: 0.3, ease: "easeIn" } : undefined}
       layout
       className="group relative flex flex-col"
     >
-      {/* ── Image container ─────────────────────────────────────────────── */}
       <div className="relative aspect-[4/5] w-full overflow-hidden rounded-3xl bg-[#ebe8e1]">
         <Image
           src={listing.imageUrl}
@@ -187,7 +100,6 @@ function SavedCard({ listing, index, onRemove }: CardProps) {
           className="object-cover transition-transform duration-500 ease-out group-hover:scale-105"
         />
 
-        {/* ── Always-visible heart (desktop + mobile) ───────────────────── */}
         <button
           type="button"
           onClick={handleRemove}
@@ -197,7 +109,6 @@ function SavedCard({ listing, index, onRemove }: CardProps) {
           <Heart className="h-4 w-4 fill-[#d65c3a] text-[#d65c3a]" />
         </button>
 
-        {/* ── Desktop hover overlay ─────────────────────────────────────── */}
         <div className="absolute inset-x-0 bottom-0 hidden translate-y-full flex-col gap-0 bg-gradient-to-t from-black/65 via-black/30 to-transparent p-4 transition-transform duration-300 ease-out group-hover:translate-y-0 md:flex">
           <div className="flex items-center gap-2 pt-6">
             <Link
@@ -218,7 +129,6 @@ function SavedCard({ listing, index, onRemove }: CardProps) {
           </div>
         </div>
 
-        {/* ── Mobile always-visible bottom bar ─────────────────────────── */}
         <div className="absolute inset-x-0 bottom-0 flex items-center justify-between bg-gradient-to-t from-black/60 to-transparent p-3 md:hidden">
           <Link
             href={`/listings/${listing.category}/${listing.id}`}
@@ -238,7 +148,6 @@ function SavedCard({ listing, index, onRemove }: CardProps) {
         </div>
       </div>
 
-      {/* ── Card info ────────────────────────────────────────────────────── */}
       <div className="mt-3 space-y-1 px-1">
         <div className="flex items-start justify-between gap-2">
           <Link
@@ -255,7 +164,7 @@ function SavedCard({ listing, index, onRemove }: CardProps) {
 
         <p className="flex items-center gap-1 text-sm text-[#1a1f3c]/55">
           <MapPin className="h-3 w-3 shrink-0" />
-          {listing.location}, {listing.city}
+          {listing.location}
         </p>
 
         <p className="pt-1 text-sm font-bold text-[#1a1f3c]">
@@ -289,7 +198,7 @@ function EmptyState({ category }: { category: SavedCategory }) {
         Tap the heart on any listing to save it here for later.
       </p>
       <Link
-        href="/explore"
+        href="/"
         className="mt-6 rounded-full bg-[#d65c3a] px-6 py-3 text-sm font-extrabold text-white transition hover:brightness-95"
       >
         Explore {category === "halls" ? "venues" : "services"}
@@ -298,10 +207,7 @@ function EmptyState({ category }: { category: SavedCategory }) {
   );
 }
 
-// ─── Page ─────────────────────────────────────────────────────────────────────
-
-
-
+// ─── Content ──────────────────────────────────────────────────────────────────
 
 interface SavedContentProps {
   category: SavedCategory;
@@ -312,17 +218,11 @@ interface SavedContentProps {
   serviceCount: number;
   handleRemove: (id: string) => void;
   startTransition: (cb: () => void) => void;
+  isLoading: boolean;
 }
 
 function SavedContent({
-  category,
-  setCategory,
-  saved,
-  filtered,
-  hallCount,
-  serviceCount,
-  handleRemove,
-  startTransition,
+  category, setCategory, saved, filtered, hallCount, serviceCount, handleRemove, startTransition, isLoading
 }: SavedContentProps) {
   return (
     <>
@@ -335,7 +235,7 @@ function SavedContent({
             Saved Listings
           </h1>
           <p className="mt-2 text-sm text-[#1a1f3c]/50">
-            {saved.length} {saved.length === 1 ? "listing" : "listings"} saved
+            {!isLoading && `${saved.length} ${saved.length === 1 ? "listing" : "listings"} saved`}
           </p>
         </div>
 
@@ -360,9 +260,7 @@ function SavedContent({
               onClick={() => startTransition(() => setCategory(cat))}
               className={[
                 "relative px-5 py-3 text-sm font-semibold transition-colors",
-                isActive
-                  ? "text-[#1a1f3c]"
-                  : "text-[#1a1f3c]/45 hover:text-[#1a1f3c]/70",
+                isActive ? "text-[#1a1f3c]" : "text-[#1a1f3c]/45 hover:text-[#1a1f3c]/70",
               ].join(" ")}
             >
               {cat === "halls" ? "Event Halls" : "Services"}
@@ -370,9 +268,7 @@ function SavedContent({
                 <span
                   className={[
                     "ml-2 inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full px-1.5 text-[10px] font-extrabold",
-                    isActive
-                      ? "bg-[#d65c3a] text-white"
-                      : "bg-[#1a1f3c]/8 text-[#1a1f3c]/50",
+                    isActive ? "bg-[#d65c3a] text-white" : "bg-[#1a1f3c]/8 text-[#1a1f3c]/50",
                   ].join(" ")}
                 >
                   {count}
@@ -391,7 +287,13 @@ function SavedContent({
       </div>
 
       <AnimatePresence mode="wait">
-        {filtered.length === 0 ? (
+        {isLoading ? (
+          <div className="grid grid-cols-1 gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
+            {[...Array(3)].map((_, i) => (
+              <div key={i} className="aspect-[4/5] w-full animate-pulse rounded-3xl bg-[#e6e3dc]" />
+            ))}
+          </div>
+        ) : filtered.length === 0 ? (
           <EmptyState key={`empty-${category}`} category={category} />
         ) : (
           <motion.div
@@ -413,21 +315,6 @@ function SavedContent({
           </motion.div>
         )}
       </AnimatePresence>
-
-      {filtered.length > 0 && (
-        <div className="mt-20 flex flex-col items-center gap-3">
-          <button
-            type="button"
-            className="group flex h-12 w-12 items-center justify-center rounded-full border border-[#1a1f3c]/15 bg-white shadow-sm transition-all hover:border-[#d65c3a] hover:bg-[#d65c3a] hover:shadow-md"
-            onClick={() => {}}
-          >
-            <ArrowRight className="h-4 w-4 rotate-90 text-[#1a1f3c]/50 transition-colors group-hover:text-white" />
-          </button>
-          <span className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-[#1a1f3c]/40">
-            Load More
-          </span>
-        </div>
-      )}
     </>
   );
 }
@@ -469,14 +356,19 @@ function DesktopSavedView(props: SavedContentProps) {
 
 export default function SavedPage() {
   const [category, setCategory] = useState<SavedCategory>("halls");
-  const [saved, setSaved] = useState<SavedListing[]>(MOCK_SAVED);
   const [, startTransition] = useTransition();
+  
+  const { data: apiData = [], isLoading } = useSavedListings();
+  const removeMutation = useRemoveSavedListing();
+
+  // Map backend payload to frontend UI shape
+  const saved = apiData.map(mapToSavedListing);
 
   const filtered = saved.filter((l) => l.category === category);
 
   function handleRemove(id: string) {
     startTransition(() => {
-      setSaved((prev) => prev.filter((l) => l.id !== id));
+      removeMutation.mutate(id);
     });
   }
 
@@ -492,6 +384,7 @@ export default function SavedPage() {
     serviceCount,
     handleRemove,
     startTransition,
+    isLoading,
   };
 
   return (

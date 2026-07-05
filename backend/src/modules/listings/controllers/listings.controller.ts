@@ -175,3 +175,64 @@ export const getSimilarListings = async (req: Request, res: Response) => {
     }
 };
 
+export const getSavedListings = async (req: Request, res: Response) => {
+    try {
+        
+        if (!req.user?.userId) {
+            res.status(401).json({ message: 'Authentication required' });
+            return;
+        }
+
+        const rows = await ListingModel.findSavedByUserId(req.user.userId);
+        
+        // Reuse your existing mapper to get full ListingCard objects
+        const savedListings = rows.map(mapListingCard);
+
+        res.status(200).json(savedListings);
+    } catch (error: any) {
+        console.error('Get saved listings error:', error);
+        res.status(500).json({ message: 'Failed to fetch saved listings' });
+    }
+};
+
+export const addSavedListing = async (req: Request, res: Response) => {
+    try {
+        if (!req.user?.userId) {
+            res.status(401).json({ message: 'Authentication required' });
+            return;
+        }
+
+        const listingId = req.params.id;
+        if (!listingId) {
+            res.status(400).json({ message: 'Listing ID is required' });
+            return;
+        }
+
+        await ListingModel.saveListing(req.user.userId, listingId);
+        res.status(201).json({ message: 'Listing saved successfully' });
+    } catch (error: any) {
+        console.error('Add saved listing error:', error);
+        res.status(500).json({ message: 'Failed to save listing' });
+    }
+};
+
+export const removeSavedListing = async (req: Request, res: Response) => {
+    try {
+        if (!req.user?.userId) {
+            res.status(401).json({ message: 'Authentication required' });
+            return;
+        }
+
+        const listingId = req.params.id;
+        if (!listingId) {
+            res.status(400).json({ message: 'Listing ID is required' });
+            return;
+        }
+
+        await ListingModel.unsaveListing(req.user.userId, listingId);
+        res.status(200).json({ message: 'Listing removed successfully' });
+    } catch (error: any) {
+        console.error('Remove saved listing error:', error);
+        res.status(500).json({ message: 'Failed to remove saved listing' });
+    }
+};

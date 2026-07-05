@@ -378,7 +378,39 @@ export const ListingModel = {
 
         return result.rows;
     },
+
+    // backend: models/Listing.js (or .ts)
+    async findSavedByUserId(userId: string | number): Promise<ListingRow[]> {
+        const db = getDB();
+        const query = `
+            ${buildListingsSelect()}
+            INNER JOIN saved_listings sl ON sl.listing_id = l.id
+            WHERE ${PUBLIC_LISTING_CLAUSES.join(' AND ')}
+            AND sl.user_id = $1
+            ORDER BY sl.created_at DESC
+        `;
+        const result = await db.query<ListingRow>(query, [userId]);
+        return result.rows;
+    },
+
+    async saveListing(userId: number, listingId: string): Promise<void> {
+        const db = getDB();
+        await db.query(
+            `INSERT INTO saved_listings (user_id, listing_id) VALUES ($1, $2) ON CONFLICT DO NOTHING`,
+            [userId, listingId]
+        );
+    },
+
+    async unsaveListing(userId: number, listingId: string): Promise<void> {
+        const db = getDB();
+        await db.query(
+            `DELETE FROM saved_listings WHERE user_id = $1 AND listing_id = $2`,
+            [userId, listingId]
+        );
+    },
 };
+
+
 
 
 // models/Listing.js (or Package.js)

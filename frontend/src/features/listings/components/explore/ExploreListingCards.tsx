@@ -167,6 +167,12 @@ import Link from "next/link";
 import { Check, Heart, MapPin, Star } from "lucide-react";
 import type { ExploreListing } from "../../explore.types";
 import VerifiedBadge from "./VerifiedBadge";
+import { useRemoveSavedListing, useSavedListings, useSaveListing } from "../../hooks/useSavedListings";
+import { useRouter } from "next/navigation";
+interface ApiError {
+  status?: number;
+  message?: string;
+}
 
 // Added this formatter
 function formatNaira(value: number) {
@@ -204,6 +210,60 @@ function ListingImage({ src, alt, sizes }: { src: string | null; alt: string; si
   );
 }
 
+// Reusable Save Button Component
+function SaveButton({ listingId, listingName, className }: { listingId: string; listingName: string; className?: string }) {
+  const router = useRouter();
+  const { data: savedListings, isError: isUnauthenticated } = useSavedListings();
+  const saveMutation = useSaveListing();
+  const removeMutation = useRemoveSavedListing();
+
+  // Check if the current listing is in the user's saved list
+  const isSaved = savedListings?.some((l) => l.id === listingId) ?? false;
+
+  const handleSaveClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+    // Prevent clicking the button from triggering the Link navigation
+    e.preventDefault();
+    e.stopPropagation();
+
+    // If the hook threw a 401 error, the user is not logged in
+    if (isUnauthenticated) {
+      router.push("/login");
+      return;
+    }
+
+    // If logged in, call the appropriate mutation
+    if (isSaved) {
+      removeMutation.mutate(listingId, {
+        onError: (error: ApiError) => {
+          if (error?.status === 401) router.push("/login");
+        }
+      });
+    } else {
+      saveMutation.mutate(listingId, {
+        onError: (error: ApiError) => {
+          if (error?.status === 401) router.push("/login");
+        }
+      });
+    }
+  };
+
+  const isMutating = saveMutation.isPending || removeMutation.isPending;
+
+  return (
+    <button
+      type="button"
+      className={className}
+      aria-label={`Save ${listingName}`}
+      onClick={handleSaveClick}
+      disabled={isMutating}
+    >
+      <Heart 
+        className={`h-5 w-5 transition-colors ${isSaved ? "fill-red-500 text-red-500" : "text-[#262624]"}`} 
+      />
+    </button>
+  );
+}
+
 export function MobileExploreCard({ listing, selected, onToggleCompare }: ExploreCardProps) {
   const listingHref = `/listings/${listing.kind === "venue" ? "halls" : "services"}/${listing.id}`;
 
@@ -215,14 +275,11 @@ export function MobileExploreCard({ listing, selected, onToggleCompare }: Explor
           
           {listing.verified && <div className="absolute left-5 top-4"><VerifiedBadge /></div>}
           
-          <button
-            type="button"
-            className="absolute right-4 top-4 inline-flex h-9 w-9 items-center justify-center rounded-full bg-white/90 text-[#5D567B]"
-            aria-label={`Save ${listing.name}`}
-            onClick={(e) => e.preventDefault()}
-          >
-            <Heart className="h-5 w-5" />
-          </button>
+          <SaveButton
+            listingId={listing.id}
+            listingName={listing.name}
+            className="absolute right-4 top-4 inline-flex h-9 w-9 items-center justify-center rounded-full bg-white/90 text-[#5D567B] disabled:opacity-50"
+          />      
         </div>
 
         <div className="px-6 py-5">
@@ -282,6 +339,7 @@ export function MobileExploreCard({ listing, selected, onToggleCompare }: Explor
 }
 
 export function DesktopExploreCard({ listing, selected, onToggleCompare }: ExploreCardProps) {
+
   const listingHref = `/listings/${listing.kind === "venue" ? "halls" : "services"}/${listing.id}`;
 
   return (
@@ -289,14 +347,11 @@ export function DesktopExploreCard({ listing, selected, onToggleCompare }: Explo
       <article className="overflow-hidden rounded-[2rem] bg-white">
         <div className="relative h-[17.25rem] overflow-hidden">
           <ListingImage src={listing.imageUrl} alt={listing.name} sizes="25vw" />
-          <button
-            type="button"
-            className="absolute right-4 top-4 inline-flex h-8 w-8 items-center justify-center rounded-full bg-white/55 text-[#262624] backdrop-blur"
-            aria-label={`Save ${listing.name}`}
-            onClick={(e) => e.preventDefault()}
-          >
-            <Heart className="h-5 w-5" />
-          </button>
+           <SaveButton 
+            listingId={listing.id} 
+            listingName={listing.name} 
+            className="absolute right-4 top-4 inline-flex h-8 w-8 items-center justify-center rounded-full bg-white/55 text-[#262624] backdrop-blur disabled:opacity-50"
+          />
           {listing.verified && <div className="absolute bottom-4 left-5"><VerifiedBadge /></div>}
         </div>
 
