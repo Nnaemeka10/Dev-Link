@@ -1,5 +1,16 @@
 import "dotenv/config";
 
+function required(name: string): string {
+    const value = process.env[name];
+
+    if (!value) {
+        throw new Error(`Missing required environment variable: ${name}`);
+    }
+
+    return value;
+}
+
+
 export const ENV = {
     PORT: process.env.PORT,
     POSTGRES_URI: process.env.POSTGRES_URI,
@@ -14,6 +25,7 @@ export const ENV = {
     RESEND_API_KEY: process.env.RESEND_API_KEY,
     EMAIL_FROM: process.env.EMAIL_FROM,
     EMAIL_FROM_NAME: process.env.EMAIL_FROM_NAME,
+    PAYSTACK_SECRET_KEY: required('PAYSTACK_SECRET_KEY'),
 }
 
 // Add this safety check to catch configuration errors instantly

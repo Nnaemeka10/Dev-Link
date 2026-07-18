@@ -4,17 +4,12 @@ import cookieParser from 'cookie-parser';
 import { ENV } from './lib/env.js';
 import authRoutes from './modules/auth/routes/auth.route.js';
 import listingsRoutes from './modules/listings/routes/listings.route.js';
-
+import bookingRoutes from './modules/bookings/routes/booking.route.js';
+import paymentRoutes from './modules/payments/routes/payment.route.js';
 
 const app = express();
 
 //global middleware
-// app.use(
-//     cors({
-//         origin: ENV.CLIENT_URL,
-//         credentials: true,
-//     })
-// )
 
 const allowedOrigins = [
   "http://localhost:3000",
@@ -37,12 +32,20 @@ app.use(
 );
 
 app.use(cookieParser());
-app.use(express.json()); 
+app.use(express.json({
+  verify: (req: any, res, buf) => {
+    if (req.originalUrl === '/api/payments/webhook') {
+      req.rawBody = buf.toString();
+    }
+  }
+}));
 
 
 //routes
 app.use("/api/auth", authRoutes)
 app.use("/api/listings", listingsRoutes)
+app.use("/api/bookings", bookingRoutes)
+app.use("/api/payments", paymentRoutes)
 
 //health check
 app.get('/api/health', (req, res) => {

@@ -1,10 +1,15 @@
 "use client";
 
 import Image from "next/image";
-import { CalendarDays, Check, FileText, Mail, MapPin, MessageSquare, Phone, UsersRound } from "lucide-react";
-import { BOOKING_GALLERY_IMAGE, BOOKING_VENUE, HOST_CONTACT } from "../booking.data";
+import { Building, CalendarDays, Check, FileText, Mail, MapPin, MessageSquare, Phone, UsersRound } from "lucide-react";
+// import { BOOKING_GALLERY_IMAGE, BOOKING_VENUE, HOST_CONTACT } from "../booking.data";
+import { ListingDetailsResponse } from "@/features/listings/details.types";
 
-export default function ConfirmationStep({ variant = "desktop" }: { variant?: "desktop" | "mobile" }) {
+export default function ConfirmationStep({listing, variant = "desktop" }: { listing: ListingDetailsResponse; variant?: "desktop" | "mobile" }) {
+  const gallery = listing.images.map((img) => img.url);
+  const venueImage = listing.primaryImage?.url || gallery[0] || "/images/placeholder.jpg";
+
+
   if (variant === "mobile") {
     return (
       <section className="px-6 pb-28 text-center">
@@ -17,13 +22,14 @@ export default function ConfirmationStep({ variant = "desktop" }: { variant?: "d
         <div className="mt-10 rounded-[2rem] bg-[#F4F1EA] p-6 text-left">
           <p className="text-xs font-extrabold uppercase tracking-[0.14em] text-[#555B7F]">Event Summary</p>
           <div className="mt-6 space-y-6">
-            <SummaryRow icon={MapPin} label="Venue" value={`${BOOKING_VENUE.name}, Victoria Island`} />
+            <SummaryRow icon={Building} label="Venue" value={`${listing.title}`} />
             <SummaryRow icon={CalendarDays} label="Date & Time" value="December 15, 2024 · 4:00 PM" />
             <SummaryRow icon={UsersRound} label="Guests" value="Up to 250 Attendees" />
+            <SummaryRow icon={MapPin} label="Location" value={listing.location} />
           </div>
         </div>
 
-        <div className="mt-6 rounded-[2rem] bg-white mb-36 p-6 text-left shadow-[0_16px_36px_rgba(34,27,18,0.08)]">
+        {/* <div className="mt-6 rounded-[2rem] bg-white mb-36 p-6 text-left shadow-[0_16px_36px_rgba(34,27,18,0.08)]">
           <div className="flex items-center justify-between gap-4">
             <div>
               <h2 className="font-extrabold">Amina Okoro</h2>
@@ -34,7 +40,7 @@ export default function ConfirmationStep({ variant = "desktop" }: { variant?: "d
               Chat
             </button>
           </div>
-        </div>
+        </div> */}
 
         <div className="fixed inset-x-0 bottom-20 z-40 bg-white px-6 py-5 shadow-[0_-12px_32px_rgba(34,27,18,0.08)]">
           <button type="button" className="w-full rounded-full bg-[#B9401D] px-8 py-4 font-extrabold text-white">View My Bookings →</button>
@@ -52,7 +58,7 @@ export default function ConfirmationStep({ variant = "desktop" }: { variant?: "d
         </div>
         <h1 className="mt-8 text-5xl font-extrabold">Booking Confirmed!</h1>
         <p className="mx-auto mt-5 max-w-2xl text-xl leading-8 text-[#555B7F]">
-          Your reservation at The Grand Atrium has been secured. An editorial confirmation has been sent to your email.
+          Your reservation at {listing.title} has been secured. A confirmation has been sent to your email.
         </p>
       </div>
 
@@ -63,9 +69,9 @@ export default function ConfirmationStep({ variant = "desktop" }: { variant?: "d
             <div className="flex items-start justify-between">
               <div>
                 <p className="text-xs font-extrabold uppercase tracking-[0.14em] text-[#555B7F]">Venue</p>
-                <h3 className="mt-2 text-xl font-extrabold">{BOOKING_VENUE.name}</h3>
+                <h3 className="mt-2 text-xl font-extrabold">{listing.title}</h3>
               </div>
-              <Image src={BOOKING_VENUE.image} alt={BOOKING_VENUE.name} className="h-24 w-24 rounded-[1.4rem] object-cover" />
+              <Image src={venueImage} alt={listing.title} height={96} width={96} className="h-24 w-24 rounded-[1.4rem] object-cover" />
             </div>
             <div className="mt-10 grid gap-8 md:grid-cols-2">
               <SummaryText label="Date" value="Saturday, Dec 14, 2024" />
@@ -76,17 +82,18 @@ export default function ConfirmationStep({ variant = "desktop" }: { variant?: "d
           </div>
         </article>
 
-        <aside className="rounded-[2rem] bg-[#E8E4DC] p-10">
+        <aside className="rounded-4xl bg-[#E8E4DC] p-10">
           <h2 className="text-xl font-medium">Vendor Contact</h2>
-          <div className="mt-8 flex items-center gap-4">
+           <p className="mt-8 text-sm text-[#6B5F57]">You can message the vendor directly regarding your event specifics.</p>
+          {/* <div className="mt-8 flex items-center gap-4">
             <span className="inline-flex h-16 w-16 items-center justify-center rounded-full bg-white text-2xl">A</span>
             <div>
               <h3 className="font-extrabold">{HOST_CONTACT.name}</h3>
               <p className="text-sm text-[#555B7F]">{HOST_CONTACT.role}</p>
             </div>
-          </div>
-          <p className="mt-8 flex items-center gap-3 text-sm text-[#6B5F57]"><Mail className="h-4 w-4 text-[#B9401D]" /> {HOST_CONTACT.email}</p>
-          <p className="mt-5 flex items-center gap-3 text-sm text-[#6B5F57]"><Phone className="h-4 w-4 text-[#B9401D]" /> {HOST_CONTACT.phone}</p>
+          </div> */}
+          {/* <p className="mt-8 flex items-center gap-3 text-sm text-[#6B5F57]"><Mail className="h-4 w-4 text-[#B9401D]" /> {HOST_CONTACT.email}</p>
+          <p className="mt-5 flex items-center gap-3 text-sm text-[#6B5F57]"><Phone className="h-4 w-4 text-[#B9401D]" /> {HOST_CONTACT.phone}</p> */}
           <button type="button" className="mt-9 inline-flex w-full items-center justify-center gap-2 rounded-full bg-white px-6 py-4 font-extrabold text-[#B9401D]">
             <MessageSquare className="h-4 w-4" />
             Chat with Vendor
@@ -94,7 +101,7 @@ export default function ConfirmationStep({ variant = "desktop" }: { variant?: "d
         </aside>
       </div>
 
-      <div className="mt-8 grid gap-8 lg:grid-cols-[minmax(0,1fr)_23rem]">
+      {/* <div className="mt-8 grid gap-8 lg:grid-cols-[minmax(0,1fr)_23rem]">
         <article className="rounded-[2rem] border border-[#EAD0C6] bg-[#FFF4EE] p-10">
           <div className="flex items-start gap-5">
             <FileText className="h-6 w-6 text-[#B9401D]" />
@@ -106,7 +113,7 @@ export default function ConfirmationStep({ variant = "desktop" }: { variant?: "d
           </div>
         </article>
         <Image src={BOOKING_GALLERY_IMAGE} alt="Venue map preview" className="h-48 w-full rounded-[2rem] object-cover opacity-70" />
-      </div>
+      </div> */}
     </section>
   );
 }

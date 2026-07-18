@@ -3,7 +3,8 @@
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { BOOKING_STORAGE_KEY, DEFAULT_BOOKING_FORM } from "../booking.data";
-import type { BookingFormState } from "../booking.types";
+import type { BookingFormState, BookingSummaryData } from "../booking.types";
+import { useListingDetails } from "@/features/listings/hooks/useListingDetails";
 
 function clampStep(step: number, maxStep: number) {
   if (Number.isNaN(step)) return 1;
@@ -36,12 +37,18 @@ function readStoredForm(): BookingFormState {
   }
 }
 
-export function useBookingWizard(maxStep: number) {
+export function useBookingWizard(maxStep: number, listingId: string) {
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
   const step = clampStep(Number(searchParams.get("step") ?? "1"), maxStep);
+
   const [form, setForm] = useState<BookingFormState>(() => readStoredForm());
+  const [paymentData, setPaymentData] = useState<BookingSummaryData | null>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
+
+  // Fetch REAL listing data based on URL param
+  const { data: listing, isLoading: isListingLoading } = useListingDetails(listingId);
 
   useEffect(() => {
     // Provision for production inventory locking:
@@ -64,6 +71,12 @@ export function useBookingWizard(maxStep: number) {
       updateForm(patch: Partial<BookingFormState>) {
         setForm((current) => ({ ...current, ...patch }));
       },
+      setPaymentData(data: BookingSummaryData | null) {
+        setPaymentData(data);
+      },
+      setIsProcessing(processing: boolean) {
+        setIsProcessing(processing);
+      }
     }),
     [maxStep, pathname, router]
   );
@@ -72,5 +85,9 @@ export function useBookingWizard(maxStep: number) {
     ...actions,
     form,
     step,
+    listing,
+    isListingLoading,
+    paymentData,
+    isProcessing
   };
 }

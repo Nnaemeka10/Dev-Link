@@ -194,13 +194,13 @@
     No native button chrome; we paint our own focus ring.
   ────────────────────────────────────────────────────────────────────────────── */
 
-  .date-picker-trigger-row {
+  /* .date-picker-trigger-row {
     display: flex;
     align-items: center;
     width: 100%;
     border-left: 1px solid rgba(26, 31, 60, 0.1);
     transition: background 0.15s ease;
-  }
+  } */
 
   .date-picker-trigger-row--open {
     background: rgba(26, 31, 60, 0.03);

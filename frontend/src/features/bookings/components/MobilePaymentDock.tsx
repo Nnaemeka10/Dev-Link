@@ -32,6 +32,7 @@ interface BookingSummary {
 interface MobilePaymentDockProps {
   summary: BookingSummary;
   onPay: () => void;
+  isProcessing: boolean;
 }
 
 // ─── Sheet variants ───────────────────────────────────────────────────────────
@@ -202,7 +203,7 @@ function SummarySheet({
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
-export function MobilePaymentDock({ summary, onPay }: MobilePaymentDockProps) {
+export function MobilePaymentDock({ summary, onPay, isProcessing }: MobilePaymentDockProps) {
   const [open, setOpen] = useState(false);
 
   const portalTarget = typeof document !== "undefined" ? document.body : null;
@@ -238,9 +239,10 @@ export function MobilePaymentDock({ summary, onPay }: MobilePaymentDockProps) {
           <button
             type="button"
             onClick={onPay}
-            className="shrink-0 rounded-full bg-[#B9401D] px-8 py-4 text-sm font-extrabold text-white shadow-sm transition hover:brightness-95 active:scale-[0.98]"
+             disabled={isProcessing}
+            className="shrink-0 rounded-full bg-[#B9401D] px-8 py-4 text-sm font-extrabold text-white shadow-sm transition hover:brightness-95 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Pay Now →
+            {isProcessing ? "Processing..." : "Pay Now →"}
           </button>
         </div>
       </div>

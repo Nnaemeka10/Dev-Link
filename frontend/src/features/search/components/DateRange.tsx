@@ -28,11 +28,12 @@ interface DateRangePickerProps {
   error?: string;
   variant?: "default" | "ghost";
   triggerClassName?: string;
+  issearch?: boolean;
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export function DateRangePicker({ value, onChange, error, variant = "default", triggerClassName }: DateRangePickerProps) {
+export function DateRangePicker({ value, onChange, error, variant = "default", triggerClassName, issearch = true}: DateRangePickerProps) {
   const [open, setOpen] = useState(false);
   const [popoverTop, setPopoverTop] = useState<number | null>(null);
   const [draftRange, setDraftRange] = useState<DayPickerRange | undefined>(value);
@@ -142,7 +143,7 @@ export function DateRangePicker({ value, onChange, error, variant = "default", t
   // ─── Render ──────────────────────────────────────────────────────────────────
 
   return (
-    <div ref={containerRef} className={variant === "ghost" ? "flex flex-1" : "date-picker-shell md:px-4 xl:px-5"}>
+    <div ref={containerRef} className={variant === "ghost" ? "flex flex-1" : issearch ? "date-picker-shell md:px-4 xl:px-5" : "date-picker-shell" }>
       {variant === "ghost" ? (
         <button
           type="button"
@@ -154,7 +155,7 @@ export function DateRangePicker({ value, onChange, error, variant = "default", t
           {label || "Select date"}
         </button>
       ) : (
-      <div className={`date-picker-trigger-row ${open ? "date-picker-trigger-row--open" : ""}`}>
+      <div className={`flex items-center w-full border-[rgba(26,31,60,0.1)] transition-[background,0.15s,ease] ${open ? "date-picker-trigger-row--open" : ""} ${issearch ? "border-l" : "border-l-0"}`}>
         {/* ── Trigger ────────────────────────────────────────────────────────── */}
         <button
           type="button"

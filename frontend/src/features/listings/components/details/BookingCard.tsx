@@ -68,6 +68,7 @@ export default function BookingCard({
           <DateRangePicker
             value={dateRange}
             onChange={onDateChange}
+            issearch={false}
           />
         </div>
         <div className="grid grid-cols-2">

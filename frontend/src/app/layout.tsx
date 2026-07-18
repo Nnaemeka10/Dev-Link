@@ -27,6 +27,7 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${inter.variable} ${manrope.variable} h-full antialiased`}>
       <body className="min-h-full bg-bg-primary text-text-primary">
+        
         <Providers>
           <div className="relative min-h-screen">
             <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(201,153,58,0.08),transparent_40%),radial-gradient(circle_at_bottom_left,rgba(214,92,58,0.08),transparent_35%)]" />

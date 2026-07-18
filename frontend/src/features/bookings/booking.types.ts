@@ -4,21 +4,23 @@ import type { StaticImageData } from "next/image";
 export type BookingPaymentMethod = "card" | "transfer" | "crypto";
 
 export interface BookingFormState {
-  cardCvv: string;
-  cardExpiry: string;
-  cardName: string;
-  cardNumber: string;
   contactEmail: string;
   contactName: string;
   dateRange: DateRange | undefined;
   endTime: string;
   guestNames: string[];
   guests: number;
-  paymentMethod: BookingPaymentMethod;
   preferences: string;
   startTime: string;
   termsAccepted: boolean;
-  date: string; // --- DEPRECATED, use dateRange instead ---
+}
+
+export interface BookingSummaryData {
+  bookingId: string;
+  accessCode: string;
+  reference: string;
+  amount: number; // From backend
+  currency: string;
 }
 
 export interface BookingVenue {
