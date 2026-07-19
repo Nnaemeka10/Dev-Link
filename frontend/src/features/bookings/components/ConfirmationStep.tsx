@@ -1,13 +1,29 @@
 "use client";
 
 import Image from "next/image";
-import { Building, CalendarDays, Check, FileText, Mail, MapPin, MessageSquare, UsersRound } from "lucide-react";
+import { Building, CalendarDays, Check, FileText, Mail, MapPin, MessageSquare, Phone, UsersRound } from "lucide-react";
 
-import { ListingDetailsResponse } from "@/features/listings/details.types";
+import type { useBookingWizard } from "../hooks/useBookingWizard";
 
-export default function ConfirmationStep({listing, variant = "desktop" }: { listing: ListingDetailsResponse; variant?: "desktop" | "mobile" }) {
-  const gallery = listing.images.map((img) => img.url);
-  const venueImage = listing.primaryImage?.url || gallery[0] || "/images/placeholder.jpg";
+interface ConfirmationStepProps {
+  wizard: ReturnType<typeof useBookingWizard>;
+  variant?: "desktop" | "mobile";
+}
+
+export default function ConfirmationStep({wizard, variant = "desktop" }: ConfirmationStepProps) {
+  const booking = wizard.bookingDetails;
+
+  if (wizard.isBookingLoading || !booking) {
+    return <div className="min-h-screen flex items-center justify-center">Loading confirmation...</div>;
+  }
+
+  const vendorName = `${booking.vendor_first_name || ''} ${booking.vendor_last_name || ''}`.trim() || "Vendor";
+  const eventDate = new Date(booking.start_date).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+  const eventTime = `${booking.start_time || '00:00'} — ${booking.end_time || '00:00'}`;
+  const totalAmount = parseFloat(booking.total_amount.toString()).toLocaleString();  
+
+  // const gallery = listing.images.map((img) => img.url);
+  // const venueImage = listing.primaryImage?.url || gallery[0] || "/images/placeholder.jpg";
 
 
   if (variant === "mobile") {
@@ -22,10 +38,10 @@ export default function ConfirmationStep({listing, variant = "desktop" }: { list
         <div className="mt-10 mb-32 rounded-4xl bg-[#F4F1EA] p-6 text-left">
           <p className="text-xs font-extrabold uppercase tracking-[0.14em] text-[#555B7F]">Event Summary</p>
           <div className="mt-6 space-y-6">
-            <SummaryRow icon={Building} label="Venue" value={`${listing.title}`} />
-            <SummaryRow icon={CalendarDays} label="Date & Time" value="December 15, 2024 · 4:00 PM" />
+            <SummaryRow icon={Building} label="Venue" value={`${booking.listing_title}`} />
+            <SummaryRow icon={CalendarDays} label="Date & Time" value={booking.booking_reference} />
             <SummaryRow icon={UsersRound} label="Guests" value="Up to 250 Attendees" />
-            <SummaryRow icon={MapPin} label="Location" value={listing.location} />
+            <SummaryRow icon={MapPin} label="Location" value={booking.listing_location} />
           </div>
         </div>
 
@@ -46,7 +62,7 @@ export default function ConfirmationStep({listing, variant = "desktop" }: { list
         </div>
         <h1 className="mt-8 text-5xl font-extrabold">Booking Confirmed!</h1>
         <p className="mx-auto mt-5 max-w-2xl text-xl leading-8 text-[#555B7F]">
-          Your reservation at {listing.title} has been secured. A confirmation has been sent to your email.
+          Your reservation at {booking.listing_title} has been secured. A confirmation has been sent to your email.
         </p>
       </div>
 
@@ -57,15 +73,16 @@ export default function ConfirmationStep({listing, variant = "desktop" }: { list
             <div className="flex items-start justify-between">
               <div>
                 <p className="text-xs font-extrabold uppercase tracking-[0.14em] text-[#555B7F]">Venue</p>
-                <h3 className="mt-2 text-xl font-extrabold">{listing.title}</h3>
+                <h3 className="mt-2 text-xl font-extrabold">{booking.listing_title}</h3>
               </div>
-              <Image src={venueImage} alt={listing.title} height={96} width={96} className="h-24 w-24 rounded-[1.4rem] object-cover" />
+              <Image src={booking.listing_image || "images/placeholder.jpg"} alt={booking.listing_title} height={96} width={96} className="h-24 w-24 rounded-[1.4rem] object-cover" />
             </div>
             <div className="mt-10 grid gap-8 md:grid-cols-2">
-              <SummaryText label="Date" value="Saturday, Dec 14, 2024" />
-              <SummaryText label="Time" value="06:00 PM — 11:00 PM" />
+              <SummaryText label="Date" value={eventDate} />
+              <SummaryText label="Time" value={eventTime} />
               <SummaryText label="Guests" value="250 Attendees" />
-              <SummaryText label="Status" value="Secured" badge />
+              <SummaryText label="Total Paid" value={`₦${totalAmount}`} />
+              <SummaryText label="Status" value={booking.status} badge />
             </div>
           </div>
         </article>
@@ -74,16 +91,16 @@ export default function ConfirmationStep({listing, variant = "desktop" }: { list
           <h2 className="text-xl font-medium">Vendor Contact</h2>
            <p className="mt-8 text-sm text-[#6B5F57]">You can message the vendor directly regarding your event specifics.</p>
 
-          {/* Should includ vendor name and contact here later */}
-          {/* <div className="mt-8 flex items-center gap-4">
-            <span className="inline-flex h-16 w-16 items-center justify-center rounded-full bg-white text-2xl">A</span>
+         
+          <div className="mt-8 flex items-center gap-4">
+            <span className="inline-flex h-16 w-16 items-center justify-center rounded-full bg-white text-2xl">{vendorName.charAt(0)}</span>
             <div>
-              <h3 className="font-extrabold">HOST_CONTACT.name</h3>
-              <p className="text-sm text-[#555B7F]">HOST_CONTACT.role</p>
+              <h3 className="font-extrabold">{vendorName}</h3>
+              <p className="text-sm text-[#555B7F]">Event Manager</p>
             </div>
-          </div> */}
-          {/* <p className="mt-8 flex items-center gap-3 text-sm text-[#6B5F57]"><Mail className="h-4 w-4 text-[#B9401D]" /> {HOST_CONTACT.email}</p>
-          <p className="mt-5 flex items-center gap-3 text-sm text-[#6B5F57]"><Phone className="h-4 w-4 text-[#B9401D]" /> {HOST_CONTACT.phone}</p> */}
+          </div> 
+          {booking.vendor_email && <p className="mt-8 flex items-center gap-3 text-sm text-[#6B5F57]"><Mail className="h-4 w-4 text-[#B9401D]" /> {booking.vendor_email}</p>}
+          {booking.vendor_phone && <p className="mt-5 flex items-center gap-3 text-sm text-[#6B5F57]"><Phone className="h-4 w-4 text-[#B9401D]" /> {booking.vendor_phone}</p>}
 
           
           <button type="button" className="mt-9 inline-flex w-full items-center justify-center gap-2 rounded-full bg-white px-6 py-4 font-extrabold text-[#B9401D]">

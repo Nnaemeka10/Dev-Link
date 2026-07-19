@@ -36,3 +36,23 @@ export interface BookingFee {
   label: string;
   value: string;
 }
+
+export interface BookingDetailsResponse {
+    id: string;
+    listing_id: string;
+    start_date: string;
+    end_date: string;
+    start_time: string | null;
+    end_time: string | null;
+    status: string;
+    total_amount: number;
+    currency: string;
+    booking_reference: string;
+    listing_title: string;
+    listing_image: string | null;
+    listing_location: string;
+    vendor_first_name: string | null;
+    vendor_last_name: string | null;
+    vendor_phone: string | null;
+    vendor_email: string | null;
+}

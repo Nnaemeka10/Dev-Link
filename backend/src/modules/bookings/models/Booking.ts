@@ -1,5 +1,5 @@
 import { getDB } from '../../../lib/db.js';
-import type { BookingRow, CreateBookingInput } from '../types/booking.js';
+import type { BookingDetailsResponse, BookingRow, CreateBookingInput } from '../types/booking.js';
 
 function generateBookingReference(): string {
     return `EVV-${Date.now()}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
@@ -124,10 +124,36 @@ export const BookingModel = {
         return result.rows[0] ?? null;
     },
 
-    async findById(id: string): Promise<BookingRow | null> {
+    async findById(id: string): Promise<BookingDetailsResponse | null> {
         const db = getDB();
-        const result = await db.query<BookingRow>(`SELECT * FROM bookings WHERE id = $1`, [id]);
-        return result.rows[0] ?? null;
+        const result = await db.query<BookingDetailsResponse>(
+            `SELECT 
+                b.*, 
+                l.title as listing_title, 
+                l.city as listing_city,
+                l.state as listing_state,
+                (
+                    SELECT la.url FROM listing_assets la 
+                    WHERE la.listing_id = l.id AND la.is_primary = true 
+                    LIMIT 1
+                ) as listing_image,
+                u.first_name as vendor_first_name, 
+                u.last_name as vendor_last_name, 
+                u.phone as vendor_phone,
+                u.email as vendor_email
+             FROM bookings b
+             JOIN listings l ON b.listing_id = l.id
+             JOIN users u ON l.vendor_id = u.id
+             WHERE b.id = $1`,
+            [id]
+        );
+        
+        if (result.rows.length === 0) return null;
+        
+        // Combine city and state for location
+        const row = result.rows[0] as any;
+        row.listing_location = [row.listing_city, row.listing_state].filter(Boolean).join(', ');
+        return row;
     },
 
     async updatePaymentReference(bookingId: string, reference: string): Promise<void> {
@@ -204,6 +230,37 @@ export const BookingModel = {
         //make this do a refund later
     },
 
+    async getQuote(listingId: string, startDate: string, endDate: string): Promise<{ days: number; subtotal: number; vat: number; total: number; currency: string }> {
+        const db = getDB();
+        
+        // 1. Fetch listing base price
+        const listingRes = await db.query(
+            `SELECT base_price FROM listings WHERE id = $1 AND status = 'published'`,
+            [listingId]
+        );
+        
+        if (listingRes.rows.length === 0) {
+            throw new Error('Listing not found');
+        }
+
+        const basePrice = parseFloat(listingRes.rows[0].base_price);
+        const cleanStart = startDate.split('T')[0];
+        const cleanEnd = endDate.split('T')[0];
+
+        // 2. Inclusive day calculation (Friday to Sunday = 3 days)
+        const startMs = new Date(cleanStart).getTime();
+        const endMs = new Date(cleanEnd).getTime();
+        const days = Math.max(1, Math.round((endMs - startMs) / 86400000) + 1);
+        
+        // 3. Calculate securely on backend
+        const subtotal = basePrice * days;
+        const vat = Math.round((subtotal * 0.075) * 100) / 100; // 7.5% VAT
+        const total = Math.round((subtotal + vat) * 100) / 100;
+
+        return { days, subtotal, vat, total, currency: 'NGN' };
+    },
+
+    
     // Utility to expire stale bookings (Call this via a cron job every 5 mins)
     async expireStaleBookings(): Promise<void> {
         const db = getDB();

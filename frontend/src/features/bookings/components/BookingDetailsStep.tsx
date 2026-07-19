@@ -2,12 +2,12 @@
 
 import Image from "next/image";
 import { ChevronDown, MapPin } from "lucide-react";
-// import { BOOKING_FEES, BOOKING_TOTAL, BOOKING_VENUE } from "../booking.data";
 import type { BookingFormState } from "../booking.types";
 // import { EstimateSummary, VenueSelectionCard } from "./BookingSummary";
 import { DateTimeSection } from "./DateTimeSection";
 import { useRouter } from "next/navigation";
 import { ListingDetailsResponse } from "@/features/listings/details.types";
+import { usePricingQuote } from "../hooks/usePricingQuote";
 
 interface BookingDetailsStepProps {
   form: BookingFormState;
@@ -17,9 +17,6 @@ interface BookingDetailsStepProps {
   variant?: "desktop" | "mobile";
 }
 
-function roundTwoDecimals(num: number): number {
-  return Math.round((num + Number.EPSILON) * 100) / 100;
-}
 
 export default function BookingDetailsStep({ form, listing, onContinue, onUpdate, variant = "desktop" }: BookingDetailsStepProps) {
   const router = useRouter();
@@ -27,24 +24,16 @@ export default function BookingDetailsStep({ form, listing, onContinue, onUpdate
   const gallery = listing.images.map((img) => img.url);
   const venueImage = listing.primaryImage?.url || gallery[0] || "/images/placeholder.jpg";
 
-  // Inclusive day calculation
-  const days = form.dateRange?.from && form.dateRange?.to 
-    ? Math.max(1, Math.round(Math.abs(form.dateRange.to.getTime() - form.dateRange.from.getTime()) / 86400000) + 1)
-    : 0; // 0 means no dates selected yet
+  const { data: quote, isLoading: isQuoteLoading } = usePricingQuote(listing.id, form.dateRange);
 
-  const subtotal = listing.priceFrom * days;
-  const vat = roundTwoDecimals(subtotal * 0.075); // 7.5% VAT
-  const totalEstimate = roundTwoDecimals(subtotal + vat);
-
-  const daysText = days > 0 ? `${days} ${days === 1 ? 'day' : 'days'}` : '0 days';
-
-
+  const hasDates = !!(form.dateRange?.from && form.dateRange?.to);
+  
   
   if (variant === "mobile") {
     
     return (
       <section className="px-6 pb-28">
-        <article className="flex items-center gap-5 rounded-[2rem] bg-white p-5 shadow-[0_18px_40px_rgba(34,27,18,0.08)]">
+        <article className="flex items-center gap-5 rounded-4xl bg-white p-5 shadow-[0_18px_40px_rgba(34,27,18,0.08)]">
           <Image src={venueImage} alt={listing.title} width={96} height={96} className="h-24 w-24 rounded-[1.4rem] object-cover" />
           <div>
             <h2 className="text-lg font-extrabold">{listing.title}</h2>
@@ -69,25 +58,42 @@ export default function BookingDetailsStep({ form, listing, onContinue, onUpdate
         />
        
 
-        <div className="mt-9 rounded-[2rem] bg-[#F4F1EA] p-6">
+        <div className="mt-9 rounded-4xl bg-[#F4F1EA] p-6">
           <h2 className="text-2xl font-medium text-[#252423]">Estimated Cost</h2>
-          <div className="mt-7 space-y-4 border-b border-[#E8DED2] pb-6">
-            <div className="flex justify-between gap-8 text-base">
-              <span className="text-[#6B5F57]">Venue hire ({daysText})</span>
-              <strong>₦{subtotal.toLocaleString()}</strong>
+          {hasDates ? (
+            <>
+              <div className="mt-7 space-y-4 border-b border-[#E8DED2] pb-6">
+                {isQuoteLoading ? (
+                  <div className="animate-pulse space-y-4">
+                    <div className="h-4 w-3/4 rounded bg-gray-300"></div>
+                    <div className="h-4 w-1/2 rounded bg-gray-300"></div>
+                  </div>
+                ) : quote ? (
+                  <>
+                    <div className="flex justify-between gap-8 text-base">
+                      <span className="text-[#6B5F57]">Venue hire ({quote.days} {quote.days === 1 ? 'day' : 'days'})</span>
+                      <strong>₦{quote.subtotal.toLocaleString()}</strong>
+                    </div>
+                    <div className="flex justify-between gap-8 text-base text-[#555B7F]">
+                      <span>VAT (7.5%)</span>
+                      <span>₦{quote.vat.toLocaleString()}</span>
+                    </div>
+                  </>
+                ) : null}
+              </div>
+              <div className="mt-6 flex items-end justify-between">
+                <div>
+                  <p className="font-extrabold text-[#252423]">Total Estimate</p>
+                  <p className="text-[11px] font-extrabold uppercase tracking-[0.16em] text-[#7B7E9B]">Final amount calculated at checkout</p>
+                </div>
+                {quote && <strong className="text-3xl font-extrabold text-[#B9401D]">₦{quote.total.toLocaleString()}</strong>}
+              </div>
+            </>
+          ) : (
+            <div className="mt-7 py-10 text-center text-[#555B7F]">
+              <p className="font-semibold">Select dates to calculate price</p>
             </div>
-            <div className="flex justify-between gap-8 text-base text-[#555B7F]">
-              <span>VAT (7.5%)</span>
-              <span>₦{vat.toLocaleString()}</span>
-            </div>
-          </div>
-          <div className="mt-6 flex items-end justify-between">
-            <div>
-              <p className="font-extrabold text-[#252423]">Total Estimate</p>
-              <p className="text-[11px] font-extrabold uppercase tracking-[0.16em] text-[#7B7E9B]">Final amount calculated at checkout</p>
-            </div>
-            <strong className="text-3xl font-extrabold text-[#B9401D]">₦{totalEstimate.toLocaleString()}</strong>
-          </div>
+          )}
         </div>
 
         <div className="fixed inset-x-0 bottom-20 z-40 flex items-center justify-between bg-bg-primary px-6 py-5 shadow-[0_-12px_32px_rgba(34,27,18,0.08)]">
@@ -126,24 +132,41 @@ export default function BookingDetailsStep({ form, listing, onContinue, onUpdate
         />
 
         <aside className="rounded-[2.2rem] h-fit bg-white p-8 shadow-[0_24px_54px_rgba(34,27,18,0.08)]">
-        <h2 className="text-2xl font-medium text-[#252423]">Estimated Cost</h2>
-        <div className="mt-7 space-y-4 border-b border-[#E8DED2] pb-6">
-          <div className="flex justify-between gap-8 text-base">
-            <span className="text-[#6B5F57]">Venue hire ({daysText})</span>
-            <strong>₦{subtotal.toLocaleString()}</strong>
-          </div>
-          <div className="flex justify-between gap-8 text-base text-[#555B7F]">
-            <span>VAT (7.5%)</span>
-            <span>₦{vat.toLocaleString()}</span>
-          </div>
-        </div>
-        <div className="mt-6 flex items-end justify-between">
-          <div>
-            <p className="font-extrabold text-[#252423]">Total Estimate</p>
-            <p className="text-[11px] font-extrabold uppercase tracking-[0.16em] text-[#7B7E9B]">Final amount calculated at checkout</p>
-          </div>
-          <strong className="text-3xl font-extrabold text-[#B9401D]">₦{totalEstimate.toLocaleString()}</strong>
-        </div>
+          <h2 className="text-2xl font-medium text-[#252423]">Estimated Cost</h2>
+          {hasDates ? (
+            <>
+              <div className="mt-7 space-y-4 border-b border-[#E8DED2] pb-6">
+                {isQuoteLoading ? (
+                  <div className="animate-pulse space-y-4">
+                    <div className="h-4 w-3/4 rounded bg-gray-300"></div>
+                    <div className="h-4 w-1/2 rounded bg-gray-300"></div>
+                  </div>
+                ) : quote ? (
+                  <>
+                    <div className="flex justify-between gap-8 text-base">
+                      <span className="text-[#6B5F57]">Venue hire ({quote.days} {quote.days === 1 ? 'day' : 'days'})</span>
+                      <strong>₦{quote.subtotal.toLocaleString()}</strong>
+                    </div>
+                    <div className="flex justify-between gap-8 text-base text-[#555B7F]">
+                      <span>VAT (7.5%)</span>
+                      <span>₦{quote.vat.toLocaleString()}</span>
+                    </div>
+                  </>
+                ) : null}
+              </div>
+              <div className="mt-6 flex items-end justify-between">
+                <div>
+                  <p className="font-extrabold text-[#252423]">Total Estimate</p>
+                  <p className="text-[11px] font-extrabold uppercase tracking-[0.16em] text-[#7B7E9B]">Final amount calculated at checkout</p>
+                </div>
+                {quote && <strong className="text-3xl font-extrabold text-[#B9401D]">₦{quote.total.toLocaleString()}</strong>}
+              </div>
+            </>
+          ) : (
+            <div className="mt-7 py-10 text-center text-[#555B7F]">
+              <p className="font-semibold">Select dates to calculate price</p>
+            </div>
+          )}
         <button type="button" onClick={onContinue} className="mt-8 w-full rounded-full bg-[#B9401D] px-8 py-5 text-lg font-extrabold text-white shadow-[0_16px_26px_rgba(185,64,29,0.2)]">
           Proceed to Payment
         </button>

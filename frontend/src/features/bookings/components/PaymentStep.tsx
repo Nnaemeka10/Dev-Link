@@ -8,9 +8,9 @@ import { MobilePaymentDock } from "./MobilePaymentDock";
 import { ListingDetailsResponse } from "@/features/listings/details.types";
 import { useBookingWizard } from "../hooks/useBookingWizard";
 import { apiFetch, ApiError } from "@/lib/api";
+import { usePricingQuote } from "../hooks/usePricingQuote";
 
 
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { useEffect } from "react";
@@ -24,15 +24,14 @@ interface PaymentStepProps {
   variant?: "desktop" | "mobile";
 }
 
-function roundTwoDecimals(num: number): number {
-  return Math.round((num + Number.EPSILON) * 100) / 100;
-}
 
 export default function PaymentStep({ form, listing, wizard, variant = "desktop" }: PaymentStepProps) {
 
   useEffect(() => {
     void getPaystack();
   }, []);
+
+  
 
   // const router = useRouter();
  
@@ -123,12 +122,8 @@ export default function PaymentStep({ form, listing, wizard, variant = "desktop"
     }
   };
 
-  const estimatedAmount = wizard.paymentData?.amount || listing.priceFrom;
 
-  // backend amount is the absolute truth here
-  const backendAmount = wizard.paymentData?.amount || 0; 
-  const subtotal = roundTwoDecimals(backendAmount / 1.075);
-  const vat = roundTwoDecimals(backendAmount - subtotal);
+  const { data: quote } = usePricingQuote(listing.id, form.dateRange);
 
   // Unified summary object for both Mobile and Desktop
   const paymentSummary = {
@@ -139,27 +134,15 @@ export default function PaymentStep({ form, listing, wizard, variant = "desktop"
     eventDate: form.dateRange?.from?.toLocaleDateString() || "Invalid Date",
     guests: `${form.guests} Attendees`,
     verified: listing.autoApprove,
-    fees: [
-      { label: "Venue hire (Backend Calculated)", value: `₦${subtotal.toLocaleString()}` },
-      { label: "VAT (7.5%)", value: `₦${vat.toLocaleString()}` }
-    ],
-    total: `₦${backendAmount.toLocaleString()}`,
+    fees: quote ? [
+      { label: `Venue hire (${quote.days} ${quote.days === 1 ? 'day' : 'days'})`, value: `₦${quote.subtotal.toLocaleString()}` },
+      { label: "VAT (7.5%)", value: `₦${quote.vat.toLocaleString()}` }
+    ] : [],
+    total: quote ? `₦${quote.total.toLocaleString()}` : "Calculating...",
     totalNote: "Includes all taxes and fees",
   };
 
   
-
-  const summary = {
-    venueName: listing.title,
-    venueLocation: listing.location,
-    venueImage: listing.primaryImage?.url || "/placeholder.jpg",
-    eventName: "Event Booking", // Or derive from form
-    eventDate: form.dateRange?.from?.toLocaleDateString() || "Invalid Date",
-    guests: `${form.guests} Attendees`,
-    verified: listing.autoApprove,
-    amount: wizard.paymentData?.amount || listing.priceFrom, 
-    totalNote: "Final amount calculated server-side",
-  };
 
   if (variant === "mobile") {
     return (
@@ -198,7 +181,7 @@ export default function PaymentStep({ form, listing, wizard, variant = "desktop"
           </div>
         )}
         
-        <div className="mt-9 rounded-[2rem] bg-[#F4F1EA] p-8">
+        <div className="mt-9 rounded-4xl bg-[#F4F1EA] p-8">
           <div className="flex items-center gap-4">
             <LockKeyhole className="h-6 w-6 text-[#B9401D]" />
             <div>

@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { BOOKING_STORAGE_KEY, DEFAULT_BOOKING_FORM } from "../booking.data";
 import type { BookingFormState, BookingSummaryData } from "../booking.types";
 import { useListingDetails } from "@/features/listings/hooks/useListingDetails";
+import { useBookingDetails } from "./useBookingDetails";
 
 function clampStep(step: number, maxStep: number) {
   if (Number.isNaN(step)) return 1;
@@ -47,8 +48,11 @@ export function useBookingWizard(maxStep: number, listingId: string) {
   const [paymentData, setPaymentData] = useState<BookingSummaryData | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
 
-  // Fetch REAL listing data based on URL param
+  // Fetch listing data for step 1 and 2 based on URL param
   const { data: listing, isLoading: isListingLoading } = useListingDetails(listingId);
+
+  // Fetch Booking Data for Step 3 (Confirmation)
+  const { data: bookingDetails, isLoading: isBookingLoading } = useBookingDetails(paymentData?.bookingId || null);
 
   useEffect(() => {
     // Provision for production inventory locking:
@@ -87,6 +91,8 @@ export function useBookingWizard(maxStep: number, listingId: string) {
     step,
     listing,
     isListingLoading,
+    bookingDetails,
+    isBookingLoading,
     paymentData,
     isProcessing
   };

@@ -33,3 +33,13 @@ export interface BookingResponse {
     currency: string;
     status: string;
 }
+
+export interface BookingDetailsResponse extends BookingRow {
+    listing_title: string;
+    listing_image: string | null;
+    listing_location: string;
+    vendor_first_name: string | null;
+    vendor_last_name: string | null;
+    vendor_phone: string | null;
+    vendor_email: string | null;
+}

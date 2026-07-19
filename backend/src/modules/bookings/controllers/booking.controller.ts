@@ -77,3 +77,20 @@ export const getBookingDetails = async (req: Request, res: Response) => {
         res.status(500).json({ message: 'Failed to fetch booking' });
     }
 };
+
+export const getBookingQuote = async (req: Request, res: Response) => {
+    try {
+        const { listingId, startDate, endDate } = req.body;
+
+        if (!listingId || !startDate || !endDate) {
+            res.status(400).json({ message: 'Listing ID, start date, and end date are required' });
+            return;
+        }
+
+        const quote = await BookingModel.getQuote(listingId, startDate, endDate);
+        res.status(200).json(quote);
+    } catch (error: any) {
+        console.error('Get quote error:', error);
+        res.status(500).json({ message: error.message || 'Failed to get quote' });
+    }
+};

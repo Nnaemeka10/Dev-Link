@@ -56,7 +56,7 @@ export default function BookingDetails() {
         {activeStep === 2 && (
           <PaymentStep form={wizard.form} listing={wizard.listing} wizard={wizard} variant="mobile" />
         )}
-        {activeStep === 3 && <ConfirmationStep listing={wizard.listing} variant="mobile" />}
+        {activeStep === 3 && <ConfirmationStep wizard={wizard} variant="mobile" />}
         <MobileDock />
       </main>
     );
@@ -87,7 +87,7 @@ export default function BookingDetails() {
           {/* {activeStep === 3 && (
             <ReviewStep form={wizard.form} onConfirm={handleConfirmation} />
           )} */}
-          {activeStep === 3 && <ConfirmationStep listing={wizard.listing} />}
+          {activeStep === 3 && <ConfirmationStep wizard={wizard} />}
           <BookingFooter />
         </div>
       
@@ -118,7 +118,7 @@ export default function BookingDetails() {
       {/* {activeStep === 3 && (
         <ReviewStep form={wizard.form} onConfirm={handleConfirmation} />
       ) : null} */}
-      {activeStep === 3 && <ConfirmationStep listing={wizard.listing} />}
+      {activeStep === 3 && <ConfirmationStep wizard={wizard} />}
       <BookingFooter />
     </main>
   );
