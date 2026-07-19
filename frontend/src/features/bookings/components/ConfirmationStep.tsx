@@ -1,8 +1,8 @@
 "use client";
 
 import Image from "next/image";
-import { Building, CalendarDays, Check, FileText, Mail, MapPin, MessageSquare, Phone, UsersRound } from "lucide-react";
-// import { BOOKING_GALLERY_IMAGE, BOOKING_VENUE, HOST_CONTACT } from "../booking.data";
+import { Building, CalendarDays, Check, FileText, Mail, MapPin, MessageSquare, UsersRound } from "lucide-react";
+
 import { ListingDetailsResponse } from "@/features/listings/details.types";
 
 export default function ConfirmationStep({listing, variant = "desktop" }: { listing: ListingDetailsResponse; variant?: "desktop" | "mobile" }) {
@@ -19,7 +19,7 @@ export default function ConfirmationStep({listing, variant = "desktop" }: { list
         <h1 className="mt-8 text-3xl font-extrabold">Booking Confirmed!</h1>
         <p className="mt-3 text-lg text-[#555B7F]">Your event reservation is now secured.</p>
 
-        <div className="mt-10 rounded-[2rem] bg-[#F4F1EA] p-6 text-left">
+        <div className="mt-10 mb-32 rounded-4xl bg-[#F4F1EA] p-6 text-left">
           <p className="text-xs font-extrabold uppercase tracking-[0.14em] text-[#555B7F]">Event Summary</p>
           <div className="mt-6 space-y-6">
             <SummaryRow icon={Building} label="Venue" value={`${listing.title}`} />
@@ -29,22 +29,10 @@ export default function ConfirmationStep({listing, variant = "desktop" }: { list
           </div>
         </div>
 
-        {/* <div className="mt-6 rounded-[2rem] bg-white mb-36 p-6 text-left shadow-[0_16px_36px_rgba(34,27,18,0.08)]">
-          <div className="flex items-center justify-between gap-4">
-            <div>
-              <h2 className="font-extrabold">Amina Okoro</h2>
-              <p className="text-sm text-[#555B7F]">Venue Manager</p>
-            </div>
-            <button type="button" className="inline-flex items-center gap-2 rounded-full bg-[#FFC65C] px-5 py-3 font-extrabold text-[#6F4A00]">
-              <MessageSquare className="h-4 w-4" />
-              Chat
-            </button>
-          </div>
-        </div> */}
 
         <div className="fixed inset-x-0 bottom-20 z-40 bg-white px-6 py-5 shadow-[0_-12px_32px_rgba(34,27,18,0.08)]">
-          <button type="button" className="w-full rounded-full bg-[#B9401D] px-8 py-4 font-extrabold text-white">View My Bookings →</button>
-          <button type="button" className="mt-5 font-extrabold text-[#555B7F]">Chat with Vendor</button>
+          <button type="button" className="w-full rounded-full bg-[#B9401D] px-8 py-4 font-extrabold text-white flex items-center justify-center gap-2"><FileText /> View My Bookings</button>
+          <button type="button" className="w-full mt-5 font-extrabold text-[#555B7F] flex items-center justify-center gap-2"><Mail /> Chat with Vendor</button>
         </div>
       </section>
     );
@@ -63,7 +51,7 @@ export default function ConfirmationStep({listing, variant = "desktop" }: { list
       </div>
 
       <div className="mt-16 grid gap-8 lg:grid-cols-[minmax(0,1fr)_23rem]">
-        <article className="rounded-[2rem] bg-white p-10 shadow-[0_20px_44px_rgba(34,27,18,0.07)]">
+        <article className="rounded-4xl bg-white p-10 shadow-[0_20px_44px_rgba(34,27,18,0.07)]">
           <h2 className="text-2xl font-extrabold">Booking Details</h2>
           <div className="mt-6 border-t border-[#E8DED2] pt-8">
             <div className="flex items-start justify-between">
@@ -85,15 +73,19 @@ export default function ConfirmationStep({listing, variant = "desktop" }: { list
         <aside className="rounded-4xl bg-[#E8E4DC] p-10">
           <h2 className="text-xl font-medium">Vendor Contact</h2>
            <p className="mt-8 text-sm text-[#6B5F57]">You can message the vendor directly regarding your event specifics.</p>
+
+          {/* Should includ vendor name and contact here later */}
           {/* <div className="mt-8 flex items-center gap-4">
             <span className="inline-flex h-16 w-16 items-center justify-center rounded-full bg-white text-2xl">A</span>
             <div>
-              <h3 className="font-extrabold">{HOST_CONTACT.name}</h3>
-              <p className="text-sm text-[#555B7F]">{HOST_CONTACT.role}</p>
+              <h3 className="font-extrabold">HOST_CONTACT.name</h3>
+              <p className="text-sm text-[#555B7F]">HOST_CONTACT.role</p>
             </div>
           </div> */}
           {/* <p className="mt-8 flex items-center gap-3 text-sm text-[#6B5F57]"><Mail className="h-4 w-4 text-[#B9401D]" /> {HOST_CONTACT.email}</p>
           <p className="mt-5 flex items-center gap-3 text-sm text-[#6B5F57]"><Phone className="h-4 w-4 text-[#B9401D]" /> {HOST_CONTACT.phone}</p> */}
+
+          
           <button type="button" className="mt-9 inline-flex w-full items-center justify-center gap-2 rounded-full bg-white px-6 py-4 font-extrabold text-[#B9401D]">
             <MessageSquare className="h-4 w-4" />
             Chat with Vendor
@@ -101,6 +93,7 @@ export default function ConfirmationStep({listing, variant = "desktop" }: { list
         </aside>
       </div>
 
+      {/* include this service contact later */}
       {/* <div className="mt-8 grid gap-8 lg:grid-cols-[minmax(0,1fr)_23rem]">
         <article className="rounded-[2rem] border border-[#EAD0C6] bg-[#FFF4EE] p-10">
           <div className="flex items-start gap-5">

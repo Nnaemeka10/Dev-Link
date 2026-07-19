@@ -47,6 +47,7 @@ interface DateTimeSectionProps {
   startTime: string;
   endTime: string;
   guests: number;
+  unavailableDates?: string[];
   onDateRangeChange: (range: DateRange | undefined) => void;
   onStartTimeChange: (time: string) => void;
   onEndTimeChange: (time: string) => void;
@@ -82,6 +83,7 @@ export function DateTimeSection({
   onStartTimeChange,
   onEndTimeChange,
   onGuestsChange,
+  unavailableDates = [],
 }: DateTimeSectionProps) {
   return (
     <div className="rounded-[2rem] bg-[#F4F1EA] p-6 md:p-8">
@@ -99,6 +101,7 @@ export function DateTimeSection({
             <DateRangePicker
               value={dateRange}
               onChange={onDateRangeChange}
+              unavailableDates={unavailableDates}
               variant="ghost"
               triggerClassName="flex-1 bg-transparent text-sm font-semibold text-[#252423] focus:outline-none text-left"
             />

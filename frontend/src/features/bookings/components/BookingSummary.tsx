@@ -1,15 +1,24 @@
-import Image from "next/image";
+import Image, { StaticImageData } from "next/image";
 import { MapPin, ShieldCheck } from "lucide-react";
 // import { BOOKING_FEES, BOOKING_TOTAL, BOOKING_VENUE, PAYMENT_FEES, PAYMENT_TOTAL } from "../booking.data";
 
 interface SummaryData {
   venueName: string;
-  venueLocation: string;
-  venueImage: string;
-  eventDate: string;
-  guests: string;
-  amount: number;
-  totalNote?: string;
+  venueLocation: string;   // e.g. "Victoria Island, Lagos"
+  venueImage: string | StaticImageData;      // image src
+  eventName: string;       // e.g. "Corporate Dinner"
+  eventDate: string;       // e.g. "December 24, 2024"
+  guests: string;          // e.g. "350 Attendees"
+  verified: boolean;
+  fees: Fee[];
+  total: string;           // formatted e.g. "₦495,000"
+  totalNote?: string;      // e.g. "Includes all taxes and marketplace fees"
+}
+
+interface Fee {
+  label: string;
+  value: string;
+  sublabel?: string; // e.g. "underline" fees like "Venue hire × 2 days"
 }
 
 // export function EstimateSummary({ onContinue }: { onContinue: () => void }) {
@@ -51,6 +60,7 @@ export function PaymentSummary({ summary, onPay, isProcessing }: { summary: Summ
           <p className="flex items-center gap-1 text-sm"><MapPin className="h-4 w-4" /> {summary.venueLocation}</p>
         </div>
       </div>
+      
       <div className="p-8">
         <div className="grid lg:grid-cols-2 grid-cols-1 gap-8 border-b border-[#E8DED2] pb-7">
           <div>
@@ -63,23 +73,26 @@ export function PaymentSummary({ summary, onPay, isProcessing }: { summary: Summ
           </div>
         </div>
 
-
-        {/* <div className="mt-7 space-y-5">
-          {PAYMENT_FEES.map((fee) => (
-            <div key={fee.label} className="flex justify-between">
-              <span className="text-[#555B7F]">{fee.label}</span>
-              <strong>{fee.value}</strong>
+        <div className="mt-7 space-y-4">
+          {summary.fees.map((fee) => (
+            <div key={fee.label} className="flex items-start justify-between gap-4 text-sm">
+              <span className={`text-[#555B7F] ${fee.sublabel ? "underline underline-offset-2" : ""}`}>
+                {fee.label}
+              </span>
+              <strong className="shrink-0 text-[#252423]">{fee.value}</strong>
             </div>
           ))}
-        </div> */}
+        </div>
+
         <div className="mt-8 rounded-3xl bg-[#E8E4DC] p-6">
           <div className="flex items-end justify-between">
             <p className="text-xs font-extrabold uppercase tracking-[0.14em] text-[#555B7F]">Total Amount</p>
-            <strong className="text-3xl font-extrabold text-[#B9401D]">₦{summary.amount.toLocaleString()}</strong>
+            <strong className="text-3xl font-extrabold text-[#B9401D]">{summary.total}</strong>
           </div>
           {summary.totalNote && <p className="mt-2 text-right text-[11px] text-[#9A756C]">{summary.totalNote}</p>}
         </div>
-         <button 
+        
+        <button 
           type="button" 
           onClick={onPay} 
           disabled={isProcessing}
@@ -87,6 +100,7 @@ export function PaymentSummary({ summary, onPay, isProcessing }: { summary: Summ
         >
           {isProcessing ? "Processing..." : "Pay Securely Now →"}
         </button>
+        
         <p className="mt-4 flex items-center justify-center gap-2 text-xs text-[#555B7F]">
           <ShieldCheck className="h-3 w-3" /> Powered by Paystack
         </p>

@@ -68,6 +68,7 @@ export interface ListingDetailsResponse {
     description: string;
     location: string;
     priceFrom: number;
+    unavailableDates: string[]; 
     priceUnit: string;
     rating: number;
     reviewCount: number;

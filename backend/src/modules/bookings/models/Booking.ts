@@ -77,11 +77,15 @@ export const BookingModel = {
         }
 
         const listing = listingRes.rows[0];
+
+        const basePrice = parseFloat(listing.base_price);
+        // Inclusive day calculation (Friday to Sunday = 3 days)
+        const startMs = new Date(cleanStart).getTime();
+        const endMs = new Date(cleanEnd).getTime();
+        const days = Math.max(1, Math.round((endMs - startMs) / 86400000) + 1);
         
         // 2. Calculate Amount (Backend is source of truth)
-        // For this implementation, we use the base_price. 
-        // If you have multi-day logic, you would calculate it here.
-        const totalAmount = parseFloat(listing.base_price);
+        const totalAmount = basePrice * days;
         const currency = 'NGN'; // Hardcoded for Paystack NGN flow, or use listing.currency
 
         const bookingReference = generateBookingReference();

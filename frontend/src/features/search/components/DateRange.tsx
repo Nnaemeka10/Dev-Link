@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState, type MouseEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent } from "react";
 import { createPortal } from "react-dom";
 import { DayPicker, type DateRange as DayPickerRange } from "react-day-picker";
 import { motion, AnimatePresence } from "framer-motion";
@@ -29,11 +29,12 @@ interface DateRangePickerProps {
   variant?: "default" | "ghost";
   triggerClassName?: string;
   issearch?: boolean;
+  unavailableDates?: string[];
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export function DateRangePicker({ value, onChange, error, variant = "default", triggerClassName, issearch = true}: DateRangePickerProps) {
+export function DateRangePicker({ value, onChange, error, variant = "default", triggerClassName, issearch = true, unavailableDates = [] }: DateRangePickerProps) {
   const [open, setOpen] = useState(false);
   const [popoverTop, setPopoverTop] = useState<number | null>(null);
   const [draftRange, setDraftRange] = useState<DayPickerRange | undefined>(value);
@@ -41,6 +42,8 @@ export function DateRangePicker({ value, onChange, error, variant = "default", t
   const popoverRef = useRef<HTMLDivElement>(null);
   const portalTarget = typeof document !== "undefined" ? document.body : null;
   const isMobile = useMediaQuery("(max-width: 720px)");
+
+  
 
   function openPicker() {
     setDraftRange(value ? { from: value.from, to: value.to } : undefined);
@@ -139,6 +142,11 @@ export function DateRangePicker({ value, onChange, error, variant = "default", t
 
   const label = formatTriggerLabel(value);
   const today = new Date(new Date().toDateString());
+
+  // Convert strings to Date objects for the calendar
+  const blockedDates = useMemo(() => 
+    unavailableDates.map(d => new Date(d + "T00:00:00")), 
+  [unavailableDates]);
 
   // ─── Render ──────────────────────────────────────────────────────────────────
 
@@ -245,7 +253,10 @@ export function DateRangePicker({ value, onChange, error, variant = "default", t
                       selected={draftRange}
                       onSelect={handleSelect}
                       numberOfMonths={isMobile ? 1 : 2}
-                      disabled={{ before: today }}
+                      disabled={[
+                        { before: today }, 
+                        ...blockedDates
+                      ]}
                       showOutsideDays={false}
                       classNames={{
                         root: "rdp-root",

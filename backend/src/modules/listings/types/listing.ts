@@ -39,6 +39,7 @@ export interface ListingCard {
     kind: ListingKind;
     description: string;
     priceFrom: number;
+    unavailableDates: string[];
     priceUnit: string;
     rating: number;
     reviewCount: number;
@@ -108,6 +109,7 @@ export interface ListingCursorPayload {
     priceFrom?: number;
     createdAt?: string;
     rankScore?: number;
+    unavailableDates: string[];
     id: string;
 }
 
@@ -150,6 +152,7 @@ export type ListingRow = {
     average_rating: string | number | null;
     review_count: number | null;
     capacity: number | null;
+    unavailableDates: string[];
     available_from: string | null;
     available_to: string | null;
     auto_approve: boolean | null;
@@ -189,6 +192,7 @@ export interface TrendingCard {
     headline: string | null;
     kind: ListingKind;
     priceFrom: number;
+    unavailableDates: string[];
     priceUnit: string;
     primaryImage: ListingImage | null;
     rankScore: number;
@@ -201,6 +205,7 @@ export interface ListingCardSmall {
     location: string;
     category: ListingKind;
     priceFrom: number;
+    unavailableDates: string[];
     priceUnit: string;
     primaryImage: ListingImage | null;
     rating: number;
@@ -216,6 +221,7 @@ export interface ServicePackage {
     id: string;
     name: string;
     price: number;
+    unavailableDates: string[];
     description: string | null;
     isPopular: boolean;
     sortOrder: number;

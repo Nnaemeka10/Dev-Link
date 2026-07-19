@@ -9,10 +9,9 @@ import { ListingDetailsResponse } from "@/features/listings/details.types";
 import { useBookingWizard } from "../hooks/useBookingWizard";
 import { apiFetch, ApiError } from "@/lib/api";
 
-import Paystack from '@paystack/inline-js';
 
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 
 import { useEffect } from "react";
 import { getPaystack } from "@/lib/paystack";
@@ -23,6 +22,10 @@ interface PaymentStepProps {
   listing: ListingDetailsResponse; 
   wizard: ReturnType<typeof useBookingWizard>;
   variant?: "desktop" | "mobile";
+}
+
+function roundTwoDecimals(num: number): number {
+  return Math.round((num + Number.EPSILON) * 100) / 100;
 }
 
 export default function PaymentStep({ form, listing, wizard, variant = "desktop" }: PaymentStepProps) {
@@ -122,23 +125,29 @@ export default function PaymentStep({ form, listing, wizard, variant = "desktop"
 
   const estimatedAmount = wizard.paymentData?.amount || listing.priceFrom;
 
-  const mobiledocksummary = {
+  // backend amount is the absolute truth here
+  const backendAmount = wizard.paymentData?.amount || 0; 
+  const subtotal = roundTwoDecimals(backendAmount / 1.075);
+  const vat = roundTwoDecimals(backendAmount - subtotal);
+
+  // Unified summary object for both Mobile and Desktop
+  const paymentSummary = {
     venueName: listing.title,
     venueLocation: listing.location,
     venueImage: listing.primaryImage?.url || "/placeholder.jpg",
-    eventName: "Event Booking", // Or derive from form
+    eventName: "Event Booking",
     eventDate: form.dateRange?.from?.toLocaleDateString() || "Invalid Date",
     guests: `${form.guests} Attendees`,
     verified: listing.autoApprove,
     fees: [
-    { 
-      label: "Venue hire", 
-      value: `₦${estimatedAmount.toLocaleString()}` 
-    }
-  ],
-  total: `₦${estimatedAmount.toLocaleString()}`,
-    totalNote: "Final amount calculated server-side",
+      { label: "Venue hire (Backend Calculated)", value: `₦${subtotal.toLocaleString()}` },
+      { label: "VAT (7.5%)", value: `₦${vat.toLocaleString()}` }
+    ],
+    total: `₦${backendAmount.toLocaleString()}`,
+    totalNote: "Includes all taxes and fees",
   };
+
+  
 
   const summary = {
     venueName: listing.title,
@@ -169,7 +178,7 @@ export default function PaymentStep({ form, listing, wizard, variant = "desktop"
           256-bit SSL Encrypted Secure Checkout
         </div>
 
-        <MobilePaymentDock summary={mobiledocksummary} onPay={handlePay} isProcessing={wizard.isProcessing} />
+        <MobilePaymentDock summary={paymentSummary} onPay={handlePay} isProcessing={wizard.isProcessing} />
       </section>
     );
   }
@@ -200,7 +209,7 @@ export default function PaymentStep({ form, listing, wizard, variant = "desktop"
         </div>
       </div>
       
-      <PaymentSummary summary={summary} onPay={handlePay} isProcessing={wizard.isProcessing} />
+      <PaymentSummary summary={paymentSummary} onPay={handlePay} isProcessing={wizard.isProcessing} />
     </section>
   );
 }

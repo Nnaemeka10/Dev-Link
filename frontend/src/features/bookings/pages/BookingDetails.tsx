@@ -8,7 +8,7 @@ import { DesktopBookingHeader, MobileBookingHeader } from "../components/Booking
 import BookingStepper from "../components/BookingStepper";
 import ConfirmationStep from "../components/ConfirmationStep";
 import PaymentStep from "../components/PaymentStep";
-import ReviewStep from "../components/ReviewStep";
+// import ReviewStep from "../components/ReviewStep";
 import { useBookingWizard } from "../hooks/useBookingWizard";
 import MobileDock from "@/components/layout/MobileDock";
 

@@ -17,19 +17,26 @@ interface BookingDetailsStepProps {
   variant?: "desktop" | "mobile";
 }
 
-
+function roundTwoDecimals(num: number): number {
+  return Math.round((num + Number.EPSILON) * 100) / 100;
+}
 
 export default function BookingDetailsStep({ form, listing, onContinue, onUpdate, variant = "desktop" }: BookingDetailsStepProps) {
   const router = useRouter();
+
   const gallery = listing.images.map((img) => img.url);
   const venueImage = listing.primaryImage?.url || gallery[0] || "/images/placeholder.jpg";
 
-
-  // Calculate rough estimate for UI preview only (Backend does final math)
+  // Inclusive day calculation
   const days = form.dateRange?.from && form.dateRange?.to 
-    ? Math.max(1, Math.round(Math.abs(form.dateRange.to.getTime() - form.dateRange.from.getTime()) / 86400000))
-    : 1;
-  const estimate = listing.priceFrom * days;
+    ? Math.max(1, Math.round(Math.abs(form.dateRange.to.getTime() - form.dateRange.from.getTime()) / 86400000) + 1)
+    : 0; // 0 means no dates selected yet
+
+  const subtotal = listing.priceFrom * days;
+  const vat = roundTwoDecimals(subtotal * 0.075); // 7.5% VAT
+  const totalEstimate = roundTwoDecimals(subtotal + vat);
+
+  const daysText = days > 0 ? `${days} ${days === 1 ? 'day' : 'days'}` : '0 days';
 
 
   
@@ -58,15 +65,20 @@ export default function BookingDetailsStep({ form, listing, onContinue, onUpdate
           onStartTimeChange = { (time) => onUpdate({ startTime: time }) } 
           onEndTimeChange = { (time) => onUpdate({ endTime: time }) } 
           onGuestsChange = { (guests) => onUpdate({ guests }) } 
+          unavailableDates={listing.unavailableDates}
         />
        
 
-         <div className="mt-9 rounded-[2rem] bg-[#F4F1EA] p-6">
+        <div className="mt-9 rounded-[2rem] bg-[#F4F1EA] p-6">
           <h2 className="text-2xl font-medium text-[#252423]">Estimated Cost</h2>
-          <div className="mt-7 space-y-5 border-b border-[#E8DED2] pb-6">
+          <div className="mt-7 space-y-4 border-b border-[#E8DED2] pb-6">
             <div className="flex justify-between gap-8 text-base">
-              <span className="text-[#6B5F57]">Venue hire ({days} {days === 1 ? 'day' : 'days'})</span>
-              <strong>₦{estimate.toLocaleString()}</strong>
+              <span className="text-[#6B5F57]">Venue hire ({daysText})</span>
+              <strong>₦{subtotal.toLocaleString()}</strong>
+            </div>
+            <div className="flex justify-between gap-8 text-base text-[#555B7F]">
+              <span>VAT (7.5%)</span>
+              <span>₦{vat.toLocaleString()}</span>
             </div>
           </div>
           <div className="mt-6 flex items-end justify-between">
@@ -74,7 +86,7 @@ export default function BookingDetailsStep({ form, listing, onContinue, onUpdate
               <p className="font-extrabold text-[#252423]">Total Estimate</p>
               <p className="text-[11px] font-extrabold uppercase tracking-[0.16em] text-[#7B7E9B]">Final amount calculated at checkout</p>
             </div>
-            <strong className="text-3xl font-extrabold text-[#B9401D]">₦{estimate.toLocaleString()}</strong>
+            <strong className="text-3xl font-extrabold text-[#B9401D]">₦{totalEstimate.toLocaleString()}</strong>
           </div>
         </div>
 
@@ -110,14 +122,19 @@ export default function BookingDetailsStep({ form, listing, onContinue, onUpdate
           onStartTimeChange = { (time) => onUpdate({ startTime: time }) } 
           onEndTimeChange = { (time) => onUpdate({ endTime: time }) } 
           onGuestsChange = { (guests) => onUpdate({ guests }) } 
+          unavailableDates={listing.unavailableDates}
         />
 
         <aside className="rounded-[2.2rem] h-fit bg-white p-8 shadow-[0_24px_54px_rgba(34,27,18,0.08)]">
         <h2 className="text-2xl font-medium text-[#252423]">Estimated Cost</h2>
-        <div className="mt-7 space-y-5 border-b border-[#E8DED2] pb-6">
+        <div className="mt-7 space-y-4 border-b border-[#E8DED2] pb-6">
           <div className="flex justify-between gap-8 text-base">
-            <span className="text-[#6B5F57]">Venue hire ({days} {days === 1 ? 'day' : 'days'})</span>
-            <strong>₦{estimate.toLocaleString()}</strong>
+            <span className="text-[#6B5F57]">Venue hire ({daysText})</span>
+            <strong>₦{subtotal.toLocaleString()}</strong>
+          </div>
+          <div className="flex justify-between gap-8 text-base text-[#555B7F]">
+            <span>VAT (7.5%)</span>
+            <span>₦{vat.toLocaleString()}</span>
           </div>
         </div>
         <div className="mt-6 flex items-end justify-between">
@@ -125,7 +142,7 @@ export default function BookingDetailsStep({ form, listing, onContinue, onUpdate
             <p className="font-extrabold text-[#252423]">Total Estimate</p>
             <p className="text-[11px] font-extrabold uppercase tracking-[0.16em] text-[#7B7E9B]">Final amount calculated at checkout</p>
           </div>
-          <strong className="text-3xl font-extrabold text-[#B9401D]">₦{estimate.toLocaleString()}</strong>
+          <strong className="text-3xl font-extrabold text-[#B9401D]">₦{totalEstimate.toLocaleString()}</strong>
         </div>
         <button type="button" onClick={onContinue} className="mt-8 w-full rounded-full bg-[#B9401D] px-8 py-5 text-lg font-extrabold text-white shadow-[0_16px_26px_rgba(185,64,29,0.2)]">
           Proceed to Payment

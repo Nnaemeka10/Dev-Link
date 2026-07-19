@@ -263,8 +263,10 @@ export const ListingModel = {
                         COALESCE(package_data.packages, '[]'::json) AS packages,
                         COALESCE(feature_data.features, '[]'::json) AS features,
                         COALESCE(review_data.reviews, '[]'::json) AS reviews,
-                        COALESCE(area_data.areas, '[]'::json) AS service_areas
+                        COALESCE(area_data.areas, '[]'::json) AS service_areas,
+                        COALESCE(unavail_data.unavailable_dates, '[]'::json) AS unavailable_dates
                     FROM listings l
+                    
                     LEFT JOIN LATERAL (
                         SELECT json_agg(
                             json_build_object(
@@ -274,6 +276,7 @@ export const ListingModel = {
                         ) AS assets
                         FROM listing_assets la WHERE la.listing_id = l.id
                     ) asset_data ON TRUE
+
                     LEFT JOIN LATERAL (
                         SELECT json_agg(
                             json_build_object('id', bd.id, 'name', bd.name, 'iconUrl', bd.icon_url)
@@ -283,6 +286,7 @@ export const ListingModel = {
                         JOIN badge_dictionary bd ON bd.id = lb.badge_id
                         WHERE lb.listing_id = l.id
                     ) badge_data ON TRUE
+
                     LEFT JOIN LATERAL (
                         SELECT json_agg(
                             json_build_object(
@@ -307,6 +311,7 @@ export const ListingModel = {
                         ) AS packages
                         FROM service_packages sp WHERE sp.listing_id = l.id
                     ) package_data ON TRUE
+
                     LEFT JOIN LATERAL (
                         SELECT json_agg(
                             json_build_object(
@@ -318,6 +323,7 @@ export const ListingModel = {
                         ) AS features
                         FROM listing_features lf WHERE lf.listing_id = l.id
                     ) feature_data ON TRUE
+
                     LEFT JOIN LATERAL (
                         SELECT json_agg(
                             json_build_object(
@@ -330,6 +336,7 @@ export const ListingModel = {
                         ) AS reviews
                         FROM listing_reviews lr WHERE lr.listing_id = l.id
                     ) review_data ON TRUE
+
                     LEFT JOIN LATERAL (
                         SELECT json_agg(
                             json_build_object(
@@ -340,6 +347,16 @@ export const ListingModel = {
                         ) AS areas
                         FROM listing_service_areas lsa WHERE lsa.listing_id = l.id
                     ) area_data ON TRUE
+
+                    LEFT JOIN LATERAL (
+                        SELECT json_agg(to_char(d, 'YYYY-MM-DD')) AS unavailable_dates
+                        FROM (
+                            SELECT generate_series(lud.start_date, lud.end_date, '1 day'::interval)::date AS d
+                            FROM listing_unavailable_dates lud
+                            WHERE lud.listing_id = l.id
+                        ) dates
+                    ) unavail_data ON TRUE
+
                     WHERE ${PUBLIC_LISTING_CLAUSES.join(' AND ')} AND l.id = $1
                 )
                 SELECT 
@@ -379,7 +396,7 @@ export const ListingModel = {
         return result.rows;
     },
 
-    // backend: models/Listing.js (or .ts)
+    
     async findSavedByUserId(userId: string | number): Promise<ListingRow[]> {
         const db = getDB();
         const query = `
@@ -413,7 +430,7 @@ export const ListingModel = {
 
 
 
-// models/Listing.js (or Package.js)
+
 
 /**
  * FAANG Pattern: Explicit Service-Layer Sync

@@ -30,7 +30,7 @@ export default function MobileDock() {
 
   return (
     <div className="fixed inset-x-0 bottom-0 z-30  md:hidden">
-      <div className="mx-auto grid max-w-md grid-cols-4 gap-2 rounded-t-[1.75rem] border border-[#F1E5D5] bg-white/96 p-2 shadow-[0_18px_34px_rgba(26,31,60,0.08)] backdrop-blur">
+      <div className="mx-auto grid grid-cols-4 gap-2 rounded-t-[1.75rem] border border-[#F1E5D5] bg-white/96 p-2 shadow-[0_18px_34px_rgba(26,31,60,0.08)] backdrop-blur">
         {MOBILE_DOCK_ITEMS.map((item) => {
           const Icon = dockIcon(item.icon);
           const isActive = 
