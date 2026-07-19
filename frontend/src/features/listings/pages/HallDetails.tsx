@@ -309,6 +309,7 @@
 import { MapPin, MessageSquare } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
+import { usePricingQuote } from "@/features/bookings/hooks/usePricingQuote";
 
 import BookingCard from "../components/details/BookingCard";
 import { DetailsActions, MobileDetailsHeader } from "../components/details/DetailsHeader";
@@ -374,6 +375,8 @@ function useBookingState() {
   };
 }
 
+
+
 function AboutCopy({ description, compact = false }: { description: string; compact?: boolean }) {
   return (
     <section className={compact ? "mt-6" : "py-9"}>
@@ -389,6 +392,8 @@ function AboutCopy({ description, compact = false }: { description: string; comp
     </section>
   );
 }
+
+
 
 function MobileDetailsView({ booking, listing, similarVenues }: { booking: ReturnType<typeof useBookingState>; listing: ListingDetailsResponse; similarVenues: ListingCardSmall[] | undefined }) {
   const gallery = listing.images.map((img) => img.url);
@@ -585,6 +590,7 @@ export default function HallDetails() {
     excludeId: id 
   });
 
+  
   const handleSearch = (data: SearchFormData) => {
     startTransition(() => {
       router.push(

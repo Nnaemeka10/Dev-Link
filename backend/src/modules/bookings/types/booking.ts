@@ -42,4 +42,6 @@ export interface BookingDetailsResponse extends BookingRow {
     vendor_last_name: string | null;
     vendor_phone: string | null;
     vendor_email: string | null;
+    auto_approve: boolean;
 }
+

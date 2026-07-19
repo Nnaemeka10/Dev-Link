@@ -71,16 +71,7 @@ export default function BookingCard({
             issearch={false}
           />
         </div>
-        <div className="grid grid-cols-2">
-          <Dropdown
-            label="Guests"
-            variant="cell"
-            size="md"
-            options={GUEST_OPTIONS}
-            value={guests}
-            onChange={onGuestsChange}
-            borderRight
-          />
+        <div className="grid grid-cols-1">
           <Dropdown
             label="Time"
             variant="cell"

@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { Building, CalendarDays, Check, FileText, Mail, MapPin, MessageSquare, Phone, UsersRound } from "lucide-react";
+import { Building, CalendarDays, Check, Clock, FileText, Mail, MapPin, MessageSquare, Phone } from "lucide-react";
 
 import type { useBookingWizard } from "../hooks/useBookingWizard";
 
@@ -17,10 +17,11 @@ export default function ConfirmationStep({wizard, variant = "desktop" }: Confirm
     return <div className="min-h-screen flex items-center justify-center">Loading confirmation...</div>;
   }
 
-  const vendorName = `${booking.vendor_first_name || ''} ${booking.vendor_last_name || ''}`.trim() || "Vendor";
+  const vendorName = `${booking.vendor_first_name || ''} ${booking.vendor_last_name || ''}`.trim() || booking.vendor_email || "Vendor";
   const eventDate = new Date(booking.start_date).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
   const eventTime = `${booking.start_time || '00:00'} — ${booking.end_time || '00:00'}`;
   const totalAmount = parseFloat(booking.total_amount.toString()).toLocaleString();  
+  const bookingStatus = booking.status === 'confirmed' ? 'Confirmed' : 'Pending Approval';
 
   // const gallery = listing.images.map((img) => img.url);
   // const venueImage = listing.primaryImage?.url || gallery[0] || "/images/placeholder.jpg";
@@ -39,9 +40,10 @@ export default function ConfirmationStep({wizard, variant = "desktop" }: Confirm
           <p className="text-xs font-extrabold uppercase tracking-[0.14em] text-[#555B7F]">Event Summary</p>
           <div className="mt-6 space-y-6">
             <SummaryRow icon={Building} label="Venue" value={`${booking.listing_title}`} />
-            <SummaryRow icon={CalendarDays} label="Date & Time" value={booking.booking_reference} />
-            <SummaryRow icon={UsersRound} label="Guests" value="Up to 250 Attendees" />
             <SummaryRow icon={MapPin} label="Location" value={booking.listing_location} />
+            <SummaryRow icon={CalendarDays} label="Date & Time" value={booking.booking_reference} />
+            <SummaryRow icon={Clock} label="Check-in" value="Ensure to check into the venue on time" />
+            
           </div>
         </div>
 
@@ -74,15 +76,21 @@ export default function ConfirmationStep({wizard, variant = "desktop" }: Confirm
               <div>
                 <p className="text-xs font-extrabold uppercase tracking-[0.14em] text-[#555B7F]">Venue</p>
                 <h3 className="mt-2 text-xl font-extrabold">{booking.listing_title}</h3>
+                <p className="mt-1 flex items-center gap-1 text-sm font-semibold text-[#555B7F]">
+                  <MapPin className="h-4 w-4" /> {booking.listing_location}
+                </p>
               </div>
               <Image src={booking.listing_image || "images/placeholder.jpg"} alt={booking.listing_title} height={96} width={96} className="h-24 w-24 rounded-[1.4rem] object-cover" />
             </div>
             <div className="mt-10 grid gap-8 md:grid-cols-2">
               <SummaryText label="Date" value={eventDate} />
               <SummaryText label="Time" value={eventTime} />
-              <SummaryText label="Guests" value="250 Attendees" />
               <SummaryText label="Total Paid" value={`₦${totalAmount}`} />
-              <SummaryText label="Status" value={booking.status} badge />
+              <SummaryText label="Status" value={bookingStatus} badge />
+            </div>
+            <div className="mt-8 flex items-center gap-3 rounded-2xl bg-[#FFF4EE] p-4 text-sm text-[#B9401D]">
+              <Clock className="h-5 w-5 shrink-0" />
+              <p className="font-semibold">Ensure to check into the venue on time.</p>
             </div>
           </div>
         </article>
@@ -93,7 +101,7 @@ export default function ConfirmationStep({wizard, variant = "desktop" }: Confirm
 
          
           <div className="mt-8 flex items-center gap-4">
-            <span className="inline-flex h-16 w-16 items-center justify-center rounded-full bg-white text-2xl">{vendorName.charAt(0)}</span>
+            <span className="inline-flex h-16 w-16 items-center justify-center rounded-full bg-white text-2xl">{vendorName.charAt(0).toUpperCase()}</span>
             <div>
               <h3 className="font-extrabold">{vendorName}</h3>
               <p className="text-sm text-[#555B7F]">Event Manager</p>

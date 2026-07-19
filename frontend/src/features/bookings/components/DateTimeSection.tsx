@@ -159,25 +159,6 @@ export function DateTimeSection({
           </div>
         </div>
 
-        {/* ── Guest Count — full width ────────────────────────────────────── */}
-        <div>
-          <FieldLabel>Guest Count</FieldLabel>
-          <FieldPill>
-            <UsersRound className="h-4 w-4 shrink-0 text-[#B9401D]" aria-hidden="true" />
-            <input
-              type="number"
-              min={1}
-              max={500}
-              value={guests}
-              onChange={(e) =>
-                onGuestsChange(Math.max(1, Math.min(500, Number(e.target.value))))
-              }
-              aria-label="Guest count"
-              className="flex-1 bg-transparent text-sm font-semibold text-[#252423] focus:outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-            />
-          </FieldPill>
-        </div>
-
       </div>
     </div>
   );

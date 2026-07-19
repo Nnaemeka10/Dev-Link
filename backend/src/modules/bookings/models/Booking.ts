@@ -40,15 +40,6 @@ export const BookingModel = {
             `;
             
             const params: any[] = [listingId, endDate, startDate];
-            
-            // Exclude the current user's own pending booking so they don't block themselves
-            if (userId) {
-                const userQuery = query.replace('WHERE listing_id', 'WHERE user_id <> $4 AND listing_id');
-                params.push(userId);
-                const result = await client.query(userQuery, params);
-                client.release();
-                return result.rows.length === 0;
-            }
 
             const result = await client.query(query, params);
             client.release();
@@ -132,6 +123,7 @@ export const BookingModel = {
                 l.title as listing_title, 
                 l.city as listing_city,
                 l.state as listing_state,
+                l.auto_approve,
                 (
                     SELECT la.url FROM listing_assets la 
                     WHERE la.listing_id = l.id AND la.is_primary = true 
@@ -192,13 +184,17 @@ export const BookingModel = {
                 return booking;
             }
 
+            const listingRes = await client.query('SELECT auto_approve FROM listings WHERE id = $1', [booking.listing_id]);
+            const isAutoApproved = listingRes.rows[0]?.auto_approve ?? false;
+            const finalStatus = isAutoApproved ? 'confirmed' : 'pending'; // 'pending' means awaiting vendor approval
+
             // Update booking to paid
             const updated = await client.query<BookingRow>(
                 `UPDATE bookings 
-                 SET status = 'paid', payment_status = 'success', paid_at = NOW() 
-                 WHERE payment_reference = $1 
+                 SET status = $1, payment_status = 'success', paid_at = NOW() 
+                 WHERE payment_reference = $2 
                  RETURNING *`,
-                [paymentReference]
+                [finalStatus, paymentReference]
             );
 
             // Optional: Add to listing_unavailability to block dates
@@ -260,7 +256,7 @@ export const BookingModel = {
         return { days, subtotal, vat, total, currency: 'NGN' };
     },
 
-    
+
     // Utility to expire stale bookings (Call this via a cron job every 5 mins)
     async expireStaleBookings(): Promise<void> {
         const db = getDB();

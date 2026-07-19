@@ -48,11 +48,13 @@ export function useBookingWizard(maxStep: number, listingId: string) {
   const [paymentData, setPaymentData] = useState<BookingSummaryData | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
 
+  // Check URL for bookingId
+  const bookingIdFromUrl = searchParams.get("bookingId");
   // Fetch listing data for step 1 and 2 based on URL param
   const { data: listing, isLoading: isListingLoading } = useListingDetails(listingId);
 
   // Fetch Booking Data for Step 3 (Confirmation)
-  const { data: bookingDetails, isLoading: isBookingLoading } = useBookingDetails(paymentData?.bookingId || null);
+  const { data: bookingDetails, isLoading: isBookingLoading } = useBookingDetails(paymentData?.bookingId || bookingIdFromUrl || null);
 
   useEffect(() => {
     // Provision for production inventory locking:

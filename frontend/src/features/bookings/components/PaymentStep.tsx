@@ -15,6 +15,7 @@ import { useState } from "react";
 
 import { useEffect } from "react";
 import { getPaystack } from "@/lib/paystack";
+import { useRouter } from "next/navigation";
 
 
 interface PaymentStepProps {
@@ -33,7 +34,7 @@ export default function PaymentStep({ form, listing, wizard, variant = "desktop"
 
   
 
-  // const router = useRouter();
+  const router = useRouter();
  
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -92,7 +93,7 @@ export default function PaymentStep({ form, listing, wizard, variant = "desktop"
 
             // 5. Clear Draft and Move to Confirmation Step
             wizard.clearDraft();
-            wizard.goToStep(3); // Go to confirmation
+            router.push(`/bookings/${listing.id}?step=3&bookingId=${bookingRes.bookingId}`); //booking id to url so it survives refresh
           } catch (verifyError) {
             console.error("Payment verification failed:", verifyError);
             setErrorMessage("Payment was made but verification failed. Please contact support with reference: " + initRes.reference);
