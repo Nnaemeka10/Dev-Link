@@ -46,12 +46,10 @@ interface DateTimeSectionProps {
   dateRange: DateRange | undefined;
   startTime: string;
   endTime: string;
-  guests: number;
-  unavailableDates?: string[];
+  unavailableDates?: { from: string; to: string }[];
   onDateRangeChange: (range: DateRange | undefined) => void;
   onStartTimeChange: (time: string) => void;
   onEndTimeChange: (time: string) => void;
-  onGuestsChange: (guests: number) => void;
 }
 
 // ─── Field wrapper — matches the pill shape in the screenshot ─────────────────
@@ -78,11 +76,9 @@ export function DateTimeSection({
   dateRange,
   startTime,
   endTime,
-  guests,
   onDateRangeChange,
   onStartTimeChange,
   onEndTimeChange,
-  onGuestsChange,
   unavailableDates = [],
 }: DateTimeSectionProps) {
   return (

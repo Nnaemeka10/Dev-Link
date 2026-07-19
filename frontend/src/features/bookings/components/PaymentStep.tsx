@@ -59,7 +59,6 @@ export default function PaymentStep({ form, listing, wizard, variant = "desktop"
           endDate: form.dateRange.to.toISOString(),
           startTime: form.startTime,
           endTime: form.endTime,
-          guests: form.guests,
           preferences: form.preferences,
         }),
         redirectOn401: true, // Redirect to login if user is not authenticated
@@ -133,7 +132,7 @@ export default function PaymentStep({ form, listing, wizard, variant = "desktop"
     venueImage: listing.primaryImage?.url || "/placeholder.jpg",
     eventName: "Event Booking",
     eventDate: form.dateRange?.from?.toLocaleDateString() || "Invalid Date",
-    guests: `${form.guests} Attendees`,
+    guests: `Up to ${listing.capacity} Guests`,
     verified: listing.autoApprove,
     fees: quote ? [
       { label: `Venue hire (${quote.days} ${quote.days === 1 ? 'day' : 'days'})`, value: `₦${quote.subtotal.toLocaleString()}` },

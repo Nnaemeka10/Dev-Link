@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { Building, CalendarDays, Check, Clock, FileText, Mail, MapPin, MessageSquare, Phone } from "lucide-react";
+import { Building, CalendarDays, Check, Clock, FileText, Mail, MapPin, MessageSquare, Phone, UsersRound } from "lucide-react";
 
 import type { useBookingWizard } from "../hooks/useBookingWizard";
 
@@ -18,8 +18,15 @@ export default function ConfirmationStep({wizard, variant = "desktop" }: Confirm
   }
 
   const vendorName = `${booking.vendor_first_name || ''} ${booking.vendor_last_name || ''}`.trim() || booking.vendor_email || "Vendor";
-  const eventDate = new Date(booking.start_date).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-  const eventTime = `${booking.start_time || '00:00'} — ${booking.end_time || '00:00'}`;
+
+  const parseDateSafe = (dateStr: string) => {
+    if (!dateStr) return new Date();
+    const [y, m, d] = dateStr.split('T')[0].split('-').map(Number);
+    return new Date(y, m - 1, d);
+  };
+
+  const eventDate = parseDateSafe(booking.start_date).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+  const eventTime = `${booking.start_time || '00:00'} - ${booking.end_time || '00:00'}`;
   const totalAmount = parseFloat(booking.total_amount.toString()).toLocaleString();  
   const bookingStatus = booking.status === 'confirmed' ? 'Confirmed' : 'Pending Approval';
 
@@ -41,7 +48,8 @@ export default function ConfirmationStep({wizard, variant = "desktop" }: Confirm
           <div className="mt-6 space-y-6">
             <SummaryRow icon={Building} label="Venue" value={`${booking.listing_title}`} />
             <SummaryRow icon={MapPin} label="Location" value={booking.listing_location} />
-            <SummaryRow icon={CalendarDays} label="Date & Time" value={booking.booking_reference} />
+             <SummaryRow icon={CalendarDays} label="Date & Time" value={`${eventDate} · ${eventTime}`} />
+            <SummaryRow icon={UsersRound} label="Capacity" value={`Up to ${booking.listing_capacity || 'N/A'} Guests`} />
             <SummaryRow icon={Clock} label="Check-in" value="Ensure to check into the venue on time" />
             
           </div>
@@ -85,6 +93,7 @@ export default function ConfirmationStep({wizard, variant = "desktop" }: Confirm
             <div className="mt-10 grid gap-8 md:grid-cols-2">
               <SummaryText label="Date" value={eventDate} />
               <SummaryText label="Time" value={eventTime} />
+              <SummaryText label="Capacity" value={`Up to ${booking.listing_capacity || 'N/A'} Guests`} />
               <SummaryText label="Total Paid" value={`₦${totalAmount}`} />
               <SummaryText label="Status" value={bookingStatus} badge />
             </div>

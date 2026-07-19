@@ -68,13 +68,14 @@ export interface ListingDetailsResponse {
     description: string;
     location: string;
     priceFrom: number;
-    unavailableDates: string[]; 
+    unavailableDates: { from: string; to: string }[]; 
     priceUnit: string;
     rating: number;
     reviewCount: number;
     primaryImage: ListingImage | null;
     images: ListingImage[];
     badges: ListingBadge[];
+
     
     addressLine: string | null;
     city: string | null;

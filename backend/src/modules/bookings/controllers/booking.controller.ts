@@ -11,7 +11,7 @@ export const createBooking = async (req: Request, res: Response) => {
 
         const { listingId, startDate, endDate, startTime, endTime, guests, preferences } = req.body as CreateBookingInput;
 
-        if (!listingId || !startDate || !endDate || !startTime || !endTime || !guests) {
+        if (!listingId || !startDate || !endDate || !startTime || !endTime) {
             res.status(400).json({ message: 'Missing required booking fields' });
             return;
         }

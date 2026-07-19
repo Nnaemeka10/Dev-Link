@@ -38,6 +38,7 @@ export interface BookingDetailsResponse extends BookingRow {
     listing_title: string;
     listing_image: string | null;
     listing_location: string;
+    listing_capacity: string;
     vendor_first_name: string | null;
     vendor_last_name: string | null;
     vendor_phone: string | null;

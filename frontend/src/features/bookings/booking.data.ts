@@ -8,8 +8,6 @@ export const DEFAULT_BOOKING_FORM: BookingFormState = {
   contactName: "",
   dateRange: undefined,
   endTime: "23:00",
-  guestNames: [],
-  guests: 50,
   preferences: "",
   startTime: "16:00",
   termsAccepted: false,

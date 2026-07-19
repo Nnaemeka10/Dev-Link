@@ -14,6 +14,7 @@ export function useBookingDetails(bookingId: string | null) {
       return data;
     },
     enabled: !!bookingId,
-    staleTime: 1000 * 60 * 5,
+    staleTime: 0,
+    refetchOnMount: true,
   });
 }

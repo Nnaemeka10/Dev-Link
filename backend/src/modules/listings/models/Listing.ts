@@ -266,7 +266,7 @@ export const ListingModel = {
                         COALESCE(area_data.areas, '[]'::json) AS service_areas,
                         COALESCE(unavail_data.unavailable_dates, '[]'::json) AS unavailable_dates
                     FROM listings l
-                    
+
                     LEFT JOIN LATERAL (
                         SELECT json_agg(
                             json_build_object(
@@ -347,7 +347,7 @@ export const ListingModel = {
                         ) AS areas
                         FROM listing_service_areas lsa WHERE lsa.listing_id = l.id
                     ) area_data ON TRUE
-
+                    
                     LEFT JOIN LATERAL (
                         SELECT json_agg(to_char(d, 'YYYY-MM-DD')) AS unavailable_dates
                         FROM (

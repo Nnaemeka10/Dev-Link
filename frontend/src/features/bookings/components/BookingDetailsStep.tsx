@@ -49,12 +49,10 @@ export default function BookingDetailsStep({ form, listing, onContinue, onUpdate
           dateRange = {form.dateRange} 
           startTime = {form.startTime} 
           endTime = {form.endTime} 
-          guests = {form.guests} 
           onDateRangeChange = { (dateRange) => onUpdate({ dateRange }) } 
           onStartTimeChange = { (time) => onUpdate({ startTime: time }) } 
           onEndTimeChange = { (time) => onUpdate({ endTime: time }) } 
-          onGuestsChange = { (guests) => onUpdate({ guests }) } 
-          unavailableDates={listing.unavailableDates}
+          unavailableDates={listing.unavailableDates || []}
         />
        
 
@@ -123,11 +121,9 @@ export default function BookingDetailsStep({ form, listing, onContinue, onUpdate
           dateRange = {form.dateRange} 
           startTime = {form.startTime} 
           endTime = {form.endTime} 
-          guests = {form.guests} 
           onDateRangeChange = { (dateRange) => onUpdate({ dateRange }) } 
           onStartTimeChange = { (time) => onUpdate({ startTime: time }) } 
           onEndTimeChange = { (time) => onUpdate({ endTime: time }) } 
-          onGuestsChange = { (guests) => onUpdate({ guests }) } 
           unavailableDates={listing.unavailableDates}
         />
 

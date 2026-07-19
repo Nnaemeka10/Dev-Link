@@ -8,8 +8,6 @@ export interface BookingFormState {
   contactName: string;
   dateRange: DateRange | undefined;
   endTime: string;
-  guestNames: string[];
-  guests: number;
   preferences: string;
   startTime: string;
   termsAccepted: boolean;
@@ -51,8 +49,10 @@ export interface BookingDetailsResponse {
     listing_title: string;
     listing_image: string | null;
     listing_location: string;
+    listing_capacity: number | null;
     vendor_first_name: string | null;
     vendor_last_name: string | null;
     vendor_phone: string | null;
     vendor_email: string | null;
+    auto_approve: boolean;
 }

@@ -123,6 +123,7 @@ export const BookingModel = {
                 l.title as listing_title, 
                 l.city as listing_city,
                 l.state as listing_state,
+                l.capacity as listing_capacity,
                 l.auto_approve,
                 (
                     SELECT la.url FROM listing_assets la 

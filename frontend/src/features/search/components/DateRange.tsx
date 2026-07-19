@@ -29,7 +29,7 @@ interface DateRangePickerProps {
   variant?: "default" | "ghost";
   triggerClassName?: string;
   issearch?: boolean;
-  unavailableDates?: string[];
+  unavailableDates?: { from: string; to: string }[];
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -144,9 +144,18 @@ export function DateRangePicker({ value, onChange, error, variant = "default", t
   const today = new Date(new Date().toDateString());
 
   // Convert strings to Date objects for the calendar
-  const blockedDates = useMemo(() => 
-    unavailableDates.map(d => new Date(d + "T00:00:00")), 
-  [unavailableDates]);
+  // const blockedDates = useMemo(() => 
+  //   unavailableDates.map(d => new Date(d + "T00:00:00")), 
+  // [unavailableDates]);
+
+  const blockedRanges = useMemo(() => 
+  unavailableDates.map(d => {
+    // Parse as local date to prevent timezone shifts back a day
+    const from = new Date(d.from + "T00:00:00");
+    const to = new Date(d.to + "T00:00:00");
+    return { from, to };
+  }), 
+[unavailableDates]);
 
   // ─── Render ──────────────────────────────────────────────────────────────────
 
@@ -255,7 +264,7 @@ export function DateRangePicker({ value, onChange, error, variant = "default", t
                       numberOfMonths={isMobile ? 1 : 2}
                       disabled={[
                         { before: today }, 
-                        ...blockedDates
+                        ...blockedRanges
                       ]}
                       showOutsideDays={false}
                       classNames={{
