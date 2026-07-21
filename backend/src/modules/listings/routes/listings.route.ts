@@ -4,6 +4,7 @@ import { arcjetProtection } from "../../../middleware/arcject.middleware.js";
 import {
     addSavedListing,
     getCuratedServices,
+    getListingAvailability,
     getListingDetails,
     getListings,
     getPopularHalls,
@@ -33,6 +34,7 @@ router.delete("/saved/:id", authenticateUser, removeSavedListing);
 
 //parameterized routes
 router.get("/:id", getListingDetails);
+router.get("/:id/availability", getListingAvailability);
 
 
 

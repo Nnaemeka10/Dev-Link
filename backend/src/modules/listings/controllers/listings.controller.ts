@@ -236,3 +236,20 @@ export const removeSavedListing = async (req: Request, res: Response) => {
         res.status(500).json({ message: 'Failed to remove saved listing' });
     }
 };
+
+// controllers/listings.controller.ts
+export const getListingAvailability = async (req: Request<{ id: string }>, res: Response) => {
+    const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!UUID_RE.test(req.params.id)) {
+        res.status(400).json({ message: 'Invalid listing id' });
+        return;
+    }
+
+    try {
+        const dates = await ListingModel.findUnavailableDates(req.params.id);
+        res.status(200).json({ unavailableDates: dates });
+    } catch (error: any) {
+        console.error('Get listing availability error:', error);
+        res.status(500).json({ message: 'Failed to fetch availability' });
+    }
+};

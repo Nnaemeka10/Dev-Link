@@ -496,6 +496,7 @@ function TabletDetailsView({ booking, handleSearch, form, isPending, listing, si
           guests={booking.guests}
           time={booking.time}
           onBook={booking.bookNow}
+          listingId={listing.id}
           onDateChange={booking.setDateRange}
           onGuestsChange={booking.setGuests}
           onTimeChange={booking.setTime}
@@ -563,6 +564,7 @@ function DesktopDetailsView({ booking, handleSearch, form, isPending, listing, s
                 onGuestsChange={booking.setGuests}
                 onTimeChange={booking.setTime}
                 price={`₦${listing.priceFrom.toLocaleString()}`}
+                listingId={listing.id}
               />
             </div>
 

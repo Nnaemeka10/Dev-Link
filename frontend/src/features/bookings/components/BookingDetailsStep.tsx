@@ -53,6 +53,7 @@ export default function BookingDetailsStep({ form, listing, onContinue, onUpdate
           onStartTimeChange = { (time) => onUpdate({ startTime: time }) } 
           onEndTimeChange = { (time) => onUpdate({ endTime: time }) } 
           unavailableDates={listing.unavailableDates || []}
+          listingId={listing.id}
         />
        
 
@@ -125,6 +126,7 @@ export default function BookingDetailsStep({ form, listing, onContinue, onUpdate
           onStartTimeChange = { (time) => onUpdate({ startTime: time }) } 
           onEndTimeChange = { (time) => onUpdate({ endTime: time }) } 
           unavailableDates={listing.unavailableDates}
+          listingId={listing.id}
         />
 
         <aside className="rounded-[2.2rem] h-fit bg-white p-8 shadow-[0_24px_54px_rgba(34,27,18,0.08)]">

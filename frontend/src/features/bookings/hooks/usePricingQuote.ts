@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { apiFetch } from "@/lib/api";
 import type { DateRange } from "@/features/search/utils/searchSchema";
+import { toLocalDateString } from "@/lib/dates";
 
 interface QuoteResponse {
   days: number;
@@ -20,8 +21,8 @@ export function usePricingQuote(listingId: string, dateRange: DateRange | undefi
         method: "POST",
         body: JSON.stringify({
           listingId,
-          startDate: dateRange.from.toISOString(),
-          endDate: dateRange.to.toISOString(),
+          startDate: toLocalDateString(dateRange.from),
+          endDate: toLocalDateString(dateRange.to),
         }),
         redirectOn401: false,
       });

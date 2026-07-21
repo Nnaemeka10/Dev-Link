@@ -39,7 +39,6 @@ export interface ListingCard {
     kind: ListingKind;
     description: string;
     priceFrom: number;
-    unavailableDates: string[];
     priceUnit: string;
     rating: number;
     reviewCount: number;
@@ -67,6 +66,7 @@ export interface ListingDetails extends ListingCard {
     features: any[];
     reviews: any[];
     serviceAreas: any[];
+    unavailableDates: { from: string; to: string }[];   // add this — was missing entirely
 }
 
 export interface ListingSearchQuery {
@@ -109,7 +109,6 @@ export interface ListingCursorPayload {
     priceFrom?: number;
     createdAt?: string;
     rankScore?: number;
-    unavailableDates: string[];
     id: string;
 }
 
@@ -152,7 +151,7 @@ export type ListingRow = {
     average_rating: string | number | null;
     review_count: number | null;
     capacity: number | null;
-    unavailableDates: string[];
+    unavailable_dates?: { from: string; to: string }[] | null;   // was `unavailableDates: string[]`
     available_from: string | null;
     available_to: string | null;
     auto_approve: boolean | null;
@@ -165,7 +164,7 @@ export type ListingRow = {
     service_metadata?: ServiceMetadata | null;
     features?: any[] | null;
     reviews?: any[] | null;
-    serviceAreas?: any[] | null;
+    service_areas?: any[] | null;   // was `serviceAreas`
 };
 
 export interface ListingFilters {
@@ -192,7 +191,6 @@ export interface TrendingCard {
     headline: string | null;
     kind: ListingKind;
     priceFrom: number;
-    unavailableDates: string[];
     priceUnit: string;
     primaryImage: ListingImage | null;
     rankScore: number;
@@ -205,7 +203,6 @@ export interface ListingCardSmall {
     location: string;
     category: ListingKind;
     priceFrom: number;
-    unavailableDates: string[];
     priceUnit: string;
     primaryImage: ListingImage | null;
     rating: number;
@@ -221,7 +218,6 @@ export interface ServicePackage {
     id: string;
     name: string;
     price: number;
-    unavailableDates: string[];
     description: string | null;
     isPopular: boolean;
     sortOrder: number;

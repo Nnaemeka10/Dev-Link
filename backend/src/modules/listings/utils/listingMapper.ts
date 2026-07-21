@@ -106,7 +106,8 @@ export function mapListingDetails(row: ListingRow): ListingDetails {
         responseTime: metadata?.response_time ?? null,
         features: (row.features ?? []) as any[], 
         reviews: (row.reviews ?? []) as any[], 
-        serviceAreas: (row.serviceAreas ?? []) as any[] 
+        serviceAreas: (row.service_areas ?? []) as any[],       // was row.serviceAreas
+        unavailableDates: (row.unavailable_dates ?? []) as { from: string; to: string }[],   
     };
 }
 

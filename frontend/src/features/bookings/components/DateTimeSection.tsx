@@ -50,6 +50,7 @@ interface DateTimeSectionProps {
   onDateRangeChange: (range: DateRange | undefined) => void;
   onStartTimeChange: (time: string) => void;
   onEndTimeChange: (time: string) => void;
+  listingId: string;
 }
 
 // ─── Field wrapper — matches the pill shape in the screenshot ─────────────────
@@ -80,6 +81,7 @@ export function DateTimeSection({
   onStartTimeChange,
   onEndTimeChange,
   unavailableDates = [],
+  listingId,
 }: DateTimeSectionProps) {
   return (
     <div className="rounded-[2rem] bg-[#F4F1EA] p-6 md:p-8">
@@ -100,6 +102,7 @@ export function DateTimeSection({
               unavailableDates={unavailableDates}
               variant="ghost"
               triggerClassName="flex-1 bg-transparent text-sm font-semibold text-[#252423] focus:outline-none text-left"
+              listingId = {listingId}
             />
           </FieldPill>
         </div>

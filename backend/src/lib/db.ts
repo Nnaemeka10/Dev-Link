@@ -1,7 +1,9 @@
-import { Pool } from 'pg';
+import { Pool, types } from 'pg';
 import { ENV } from './env.js';
 import fs from 'fs';
 import path from 'path';
+
+types.setTypeParser(1082, (val) => val);
 
 let pool: Pool | null = null;
 

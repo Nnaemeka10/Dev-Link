@@ -157,7 +157,7 @@ export const BookingModel = {
         );
     },
  
-    // Idempotent: Safe to call multiple times
+    // Idempotent and Safe to call multiple times
     async markAsPaid(paymentReference: string): Promise<BookingRow | null> {
         const db = getDB();
         
@@ -198,7 +198,7 @@ export const BookingModel = {
                 [finalStatus, paymentReference]
             );
 
-            // Optional: Add to listing_unavailability to block dates
+            // Add to listing_unavailability to block dates
             await client.query(
                 `INSERT INTO listing_unavailable_dates (listing_id, start_date, end_date, reason) 
                  VALUES ($1, $2, $3, 'booked') 

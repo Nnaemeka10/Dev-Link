@@ -16,6 +16,7 @@ interface BookingCardProps {
   onGuestsChange: (value: string) => void;
   onTimeChange: (value: string) => void;
   price: string;
+  listingId: string;
   variant?: "desktop" | "mobile";
 }
 
@@ -37,14 +38,13 @@ const TIME_OPTIONS: DropdownOption[] = [
 export default function BookingCard({
   booked,
   dateRange,
-  guests,
   time,
   onBook,
   onDateChange,
-  onGuestsChange,
   onTimeChange,
   price,
   variant = "desktop",
+  listingId,
 }: BookingCardProps) {
   const compact = variant === "mobile";
   
@@ -69,6 +69,7 @@ export default function BookingCard({
             value={dateRange}
             onChange={onDateChange}
             issearch={false}
+            listingId = {listingId}
           />
         </div>
         <div className="grid grid-cols-1">

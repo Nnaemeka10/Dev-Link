@@ -53,8 +53,9 @@ export function useBookingWizard(maxStep: number, listingId: string) {
   // Fetch listing data for step 1 and 2 based on URL param
   const { data: listing, isLoading: isListingLoading } = useListingDetails(listingId);
 
-  // Fetch Booking Data for Step 3 (Confirmation)
-  const { data: bookingDetails, isLoading: isBookingLoading } = useBookingDetails(paymentData?.bookingId || bookingIdFromUrl || null);
+  const { data: bookingDetails, isLoading: isBookingLoading } = useBookingDetails(
+    step === 3 ? (paymentData?.bookingId || bookingIdFromUrl || null) : null
+  );
 
   useEffect(() => {
     // Provision for production inventory locking:

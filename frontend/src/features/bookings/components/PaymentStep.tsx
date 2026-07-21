@@ -16,7 +16,8 @@ import { useState } from "react";
 import { useEffect } from "react";
 import { getPaystack } from "@/lib/paystack";
 import { useRouter } from "next/navigation";
-
+import { useQueryClient } from "@tanstack/react-query";
+import { toLocalDateString } from "@/lib/dates";
 
 interface PaymentStepProps {
   form: BookingFormState;
@@ -32,7 +33,7 @@ export default function PaymentStep({ form, listing, wizard, variant = "desktop"
     void getPaystack();
   }, []);
 
-  
+  const queryClient = useQueryClient();
 
   const router = useRouter();
  
@@ -55,8 +56,8 @@ export default function PaymentStep({ form, listing, wizard, variant = "desktop"
         method: "POST",
         body: JSON.stringify({
           listingId: listing.id,
-          startDate: form.dateRange.from.toISOString(),
-          endDate: form.dateRange.to.toISOString(),
+          startDate: toLocalDateString(form.dateRange.from),
+          endDate: toLocalDateString(form.dateRange.to),
           startTime: form.startTime,
           endTime: form.endTime,
           preferences: form.preferences,
@@ -89,6 +90,9 @@ export default function PaymentStep({ form, listing, wizard, variant = "desktop"
               method: "GET", 
               redirectOn401: true 
             });
+
+            await queryClient.invalidateQueries({ queryKey: ["booking-details", bookingRes.bookingId] });
+            await queryClient.invalidateQueries({ queryKey: ["listing", "details", listing.id] });
 
             // 5. Clear Draft and Move to Confirmation Step
             wizard.clearDraft();

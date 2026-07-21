@@ -425,6 +425,22 @@ export const ListingModel = {
             [userId, listingId]
         );
     },
+
+    // models/Listing.ts
+    async findUnavailableDates(listingId: string): Promise<{ from: string; to: string }[]> {
+        const db = getDB();
+        const result = await db.query<{ from: string; to: string }>(
+            `SELECT
+                to_char(lud.start_date, 'YYYY-MM-DD') AS from,
+                to_char(lud.end_date, 'YYYY-MM-DD') AS to
+            FROM listing_unavailable_dates lud
+            WHERE lud.listing_id = $1
+            AND lud.end_date >= CURRENT_DATE
+            ORDER BY lud.start_date ASC`,
+            [listingId]
+        );
+        return result.rows;
+    }
 };
 
 

@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { CalendarDays, ChevronLeft, ChevronRight, X } from "lucide-react";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import type { DateRange } from "@/features/search";
+import { useListingAvailability } from "@/features/listings/hooks/useListingsAvailability";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -30,11 +31,12 @@ interface DateRangePickerProps {
   triggerClassName?: string;
   issearch?: boolean;
   unavailableDates?: { from: string; to: string }[];
+  listingId?: string;
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export function DateRangePicker({ value, onChange, error, variant = "default", triggerClassName, issearch = true, unavailableDates = [] }: DateRangePickerProps) {
+export function DateRangePicker({ value, onChange, error, variant = "default", triggerClassName, issearch = true, unavailableDates = [], listingId }: DateRangePickerProps) {
   const [open, setOpen] = useState(false);
   const [popoverTop, setPopoverTop] = useState<number | null>(null);
   const [draftRange, setDraftRange] = useState<DayPickerRange | undefined>(value);
@@ -143,19 +145,17 @@ export function DateRangePicker({ value, onChange, error, variant = "default", t
   const label = formatTriggerLabel(value);
   const today = new Date(new Date().toDateString());
 
-  // Convert strings to Date objects for the calendar
-  // const blockedDates = useMemo(() => 
-  //   unavailableDates.map(d => new Date(d + "T00:00:00")), 
-  // [unavailableDates]);
+  
 
-  const blockedRanges = useMemo(() => 
-  unavailableDates.map(d => {
-    // Parse as local date to prevent timezone shifts back a day
-    const from = new Date(d.from + "T00:00:00");
-    const to = new Date(d.to + "T00:00:00");
-    return { from, to };
-  }), 
-[unavailableDates]);
+  const { data: liveUnavailableDates, isFetching: isLoadingAvailability } =
+  useListingAvailability(listingId, open)
+
+  const blockedRanges = useMemo(() =>
+    (liveUnavailableDates ?? unavailableDates).map(d => ({
+      from: new Date(d.from + "T00:00:00"),
+      to: new Date(d.to + "T00:00:00"),
+    })),
+  [liveUnavailableDates, unavailableDates]);
 
   // ─── Render ──────────────────────────────────────────────────────────────────
 
