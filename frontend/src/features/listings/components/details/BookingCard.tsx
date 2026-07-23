@@ -4,6 +4,8 @@ import { MessageSquare } from "lucide-react";
 import { DateRangePicker } from "@/features/search/components/DateRange";
 import { DateRange } from "@/features/search/utils/searchSchema";
 import { Dropdown, DropdownOption } from "@/components/ui/Dropdown";
+import { createConversation } from "@/features/chat/chat.api";
+import { useRouter } from "next/navigation";
 
 
 interface BookingCardProps {
@@ -47,6 +49,17 @@ export default function BookingCard({
   listingId,
 }: BookingCardProps) {
   const compact = variant === "mobile";
+
+  const router = useRouter();
+
+const handleChatWithVendor = async () => {
+  try {
+    const res = await createConversation(listingId);
+    router.push(`/messages?conversationId=${res.id}`);
+  } catch (error) {
+    console.error("Failed to start chat", error);
+  }
+};
   
 
   return (
@@ -93,6 +106,7 @@ export default function BookingCard({
       </button>
       <button
         type="button"
+        onClick={handleChatWithVendor}
         className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#E8E4DC] px-6 py-4 text-sm font-extrabold text-[#252423]"
       >
         <MessageSquare className="h-4 w-4" />

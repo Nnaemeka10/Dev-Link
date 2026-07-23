@@ -333,6 +333,7 @@ import { useListingDetails } from "../hooks/useListingDetails";
 import { useSimilarListings } from "../hooks/useSimilarListings";
 import type { ListingDetailsResponse, ListingCardSmall } from "../details.types";
 
+
 interface SearchProps {
   handleSearch: (data: SearchFormData) => void;
   form: ReturnType<typeof useSearchForm>;

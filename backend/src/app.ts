@@ -6,6 +6,7 @@ import authRoutes from './modules/auth/routes/auth.route.js';
 import listingsRoutes from './modules/listings/routes/listings.route.js';
 import bookingRoutes from './modules/bookings/routes/booking.route.js';
 import paymentRoutes from './modules/payments/routes/payment.route.js';
+import chatRoutes from './modules/chat/routes/chat.route.js';
 
 const app = express();
 
@@ -46,6 +47,7 @@ app.use("/api/auth", authRoutes)
 app.use("/api/listings", listingsRoutes)
 app.use("/api/bookings", bookingRoutes)
 app.use("/api/payments", paymentRoutes)
+app.use("/api/chat", chatRoutes) 
 
 //health check
 app.get('/api/health', (req, res) => {

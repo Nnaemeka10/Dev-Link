@@ -1,50 +1,58 @@
-import React, { useState } from "react";
-import { Paperclip, Send } from "lucide-react";
+"use client";
+
+import { useState, useRef } from "react";
 
 interface ChatInputProps {
-  onSendMessage: (content: string, files?: File[]) => void;
+  onSendMessage: (content: string, files?: File[]) => Promise<string | undefined>;
+  onTyping: (isTyping: boolean) => void;
   isSending?: boolean;
 }
 
-export function ChatInput({ onSendMessage, isSending }: ChatInputProps) {
-  const [content, setContent] = useState("");
+export function ChatInput({ onSendMessage, onTyping, isSending }: ChatInputProps) {
+  const [text, setText] = useState("");
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!content.trim() || isSending) return;
-    
-    onSendMessage(content.trim());
-    setContent("");
+  const handleTyping = (val: string) => {
+    setText(val);
+    if (val.length > 0) {
+      onTyping(true);
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+      typingTimeoutRef.current = setTimeout(() => onTyping(false), 2000);
+    } else {
+      onTyping(false);
+    }
+  };
+
+  const handleSend = async () => {
+    const trimmed = text.trim();
+    if (!trimmed || isSending) return;
+    setText("");
+    onTyping(false);
+    await onSendMessage(trimmed);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
+    }
   };
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="flex items-center gap-2 border-t bg-white p-4"
-    >
-      <button
-        type="button"
-        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-gray-400 hover:bg-gray-100 hover:text-gray-600"
-      >
-        <Paperclip className="h-5 w-5" />
-      </button>
-
-      <input
-        type="text"
-        value={content}
-        onChange={(e) => setContent(e.target.value)}
-        placeholder="Type a message..."
-        className="flex-1 rounded-full border-gray-300 bg-gray-100 px-4 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-        disabled={isSending}
-      />
-
-      <button
-        type="submit"
-        disabled={!content.trim() || isSending}
-        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#d65c3a] text-white disabled:bg-gray-300"
-      >
-        <Send className="h-4 w-4" />
-      </button>
-    </form>
+    <div className="px-4 py-3.5 bg-white border-t border-gray-100 flex-shrink-0">
+      <div className="flex items-center gap-2 bg-gray-100 rounded-2xl px-3 py-2">
+        <button className="w-8 h-8 flex-shrink-0 flex items-center justify-center rounded-full text-gray-400 hover:text-gray-600 hover:bg-gray-200 transition-colors">
+          {/* Paperclip Icon */}
+        </button>
+        <input
+          type="text" value={text} onChange={(e) => handleTyping(e.target.value)} onKeyDown={handleKeyDown}
+          placeholder="Message..." disabled={isSending}
+          className="flex-1 bg-transparent border-0 focus:outline-none text-sm text-gray-800 placeholder:text-gray-400 py-1"
+        />
+        <button onClick={handleSend} disabled={!text.trim() || isSending} className="w-8 h-8 flex-shrink-0 flex items-center justify-center rounded-full bg-orange-500 text-white hover:bg-orange-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors" aria-label="Send message">
+          {/* Send Icon */}
+        </button>
+      </div>
+    </div>
   );
 }

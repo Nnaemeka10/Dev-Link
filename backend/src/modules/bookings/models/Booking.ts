@@ -207,6 +207,21 @@ export const BookingModel = {
             );
 
             await client.query('COMMIT');
+            // Fetch details needed for the system message
+            const bookingDetails = await db.query(
+                `SELECT b.id, b.user_id, l.vendor_id, l.title as listing_title,
+                (SELECT la.url FROM listing_assets la WHERE la.listing_id = l.id AND la.is_primary = true LIMIT 1) as listing_image
+                FROM bookings b JOIN listings l ON b.listing_id = l.id WHERE b.id = $1`,
+                [updated.rows[0].id]
+            );
+
+            if (bookingDetails.rows.length > 0) {
+                const d = bookingDetails.rows[0];
+                // Dynamically import ChatModel to avoid circular dependency issues
+                const { ChatModel } = await import('../../chat/models/Chat.js');
+                await ChatModel.createBookingSystemMessage(d.id, d.user_id, d.vendor_id, d.listing_image, d.listing_title);
+            }
+
             return updated.rows[0];
         } catch (error) {
             await client.query('ROLLBACK');

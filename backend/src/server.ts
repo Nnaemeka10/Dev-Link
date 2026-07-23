@@ -5,9 +5,6 @@
 // import { ENV } from './lib/env.js';
 // import { connectDB } from './lib/db.js';
 
-import app from "./app.js";
-import { connectDB } from "./lib/db.js";
-import { ENV } from "./lib/env.js";
 
 // import authRoutes from './routes/auth.route.js';
 // import { fileURLToPath } from "url";
@@ -18,8 +15,6 @@ import { ENV } from "./lib/env.js";
 // const __filename = fileURLToPath(import.meta.url);
 // const __dirname = path.dirname(__filename);
 // const app = express(); 
-const PORT = ENV.PORT || 8080;
-
 
 // //middlewares
 // app.use(express.json()); //to be able to read json data from client
@@ -48,17 +43,45 @@ const PORT = ENV.PORT || 8080;
 //     connectDB();
 // });
 
+// import app from "./app.js";
+// import { connectDB } from "./lib/db.js";
+// import { ENV } from "./lib/env.js";
+// const PORT = ENV.PORT || 8080;
+
+
+import http from "http";
+import app from "./app.js";
+import { connectDB } from "./lib/db.js";
+import { ENV } from "./lib/env.js";
+import { initializeSocketIO } from "./lib/socket.js";
+import { startPostgresListener } from "./lib/listenBridge.js";
+
+const PORT = ENV.PORT || 8080;
 
 async function letsgo() {
-  try{
+  try {
+    // 1. Connect to Database and run migrations
     await connectDB();
 
-    app.listen(PORT, () => {
-      console.log(`Server is running on port ${PORT}`);
+    // 2. Create HTTP server from Express app
+    const httpServer = http.createServer(app);
+
+    // 3. Initialize Socket.IO and attach to HTTP server
+    initializeSocketIO(httpServer);
+
+    // 4. Start Postgres LISTEN/NOTIFY bridge
+    await startPostgresListener();
+
+    // 5. Start listening for requests
+    httpServer.listen(PORT, () => {
+      console.log(` Server is running on port ${PORT}`);
+      console.log(` Socket.IO is ready for connections.`);
     });
+
   } catch (error) {
     console.error("Failed to start server:", error);
     process.exit(1); // Exit the process with an error code
   }
 }
+
 letsgo();

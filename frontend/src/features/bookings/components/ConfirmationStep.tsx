@@ -2,6 +2,8 @@
 
 import Image from "next/image";
 import { Building, CalendarDays, Check, Clock, FileText, Mail, MapPin, MessageSquare, Phone, UsersRound } from "lucide-react";
+import { createConversation } from "@/features/chat/chat.api";
+import { useRouter } from "next/navigation";
 
 import type { useBookingWizard } from "../hooks/useBookingWizard";
 
@@ -12,6 +14,21 @@ interface ConfirmationStepProps {
 
 export default function ConfirmationStep({wizard, variant = "desktop" }: ConfirmationStepProps) {
   const booking = wizard.bookingDetails;
+
+  const router = useRouter();
+
+  const handleChatWithVendor = async () => {
+  if (!booking) return;
+  try {
+    // The booking conversation was already created by the backend during markAsPaid.
+    // We just need to find it. We can use the createConversation endpoint 
+    // which is idempotent, but we need to pass the bookingId.
+    // For simplicity, we'll just push them to the chat inbox, and the conversation will be at the top.
+    router.push(`/chat`);
+  } catch (error) {
+    console.error("Failed to open chat", error);
+  }
+};
 
   if (wizard.isBookingLoading || !booking) {
     return <div className="min-h-screen flex items-center justify-center">Loading confirmation...</div>;
@@ -58,7 +75,9 @@ export default function ConfirmationStep({wizard, variant = "desktop" }: Confirm
 
         <div className="fixed inset-x-0 bottom-20 z-40 bg-white px-6 py-5 shadow-[0_-12px_32px_rgba(34,27,18,0.08)]">
           <button type="button" className="w-full rounded-full bg-[#B9401D] px-8 py-4 font-extrabold text-white flex items-center justify-center gap-2"><FileText /> View My Bookings</button>
-          <button type="button" className="w-full mt-5 font-extrabold text-[#555B7F] flex items-center justify-center gap-2"><Mail /> Chat with Vendor</button>
+          <button type="button" className="w-full mt-5 font-extrabold text-[#555B7F] flex items-center justify-center gap-2" onClick={handleChatWithVendor}>
+            <Mail /> Chat with Vendor
+          </button>
         </div>
       </section>
     );
