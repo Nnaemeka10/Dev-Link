@@ -6,6 +6,7 @@ import { MessageBubble } from "./MessageBubble";
 import { ChatInput } from "./ChatInput";
 import { EmptyState } from "./EmptyState";
 import type { ChatMessage, ChatThread } from "../chat.types";
+import { getConversationName } from "../utils";
 
 interface ChatWindowProps {
   conversation: ChatThread | null;
@@ -20,6 +21,9 @@ interface ChatWindowProps {
 
 export function ChatWindow({ conversation, messages, currentUserId, isTyping, isSending, onSendMessage, onTyping, onBack }: ChatWindowProps) {
   const bottomRef = useRef<HTMLDivElement>(null);
+
+  const displayName = getConversationName(conversation);
+
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -37,9 +41,9 @@ export function ChatWindow({ conversation, messages, currentUserId, isTyping, is
               {/* Back Arrow Icon */}
             </button>
           )}
-          <Avatar name={conversation.name} avatarUrl={conversation.avatarUrl} isOnline={conversation.isOnline} size="sm" />
+          <Avatar name={displayName} avatarUrl={conversation.avatarUrl} isOnline={conversation.isOnline} size="sm" />
           <div>
-            <p className="text-sm font-semibold text-gray-900 leading-tight">{conversation.name || "Direct Chat"}</p>
+            <p className="text-sm font-semibold text-gray-900 leading-tight">{displayName}</p>
             <p className={`text-xs leading-tight ${conversation.isOnline ? "text-green-600" : "text-gray-400"}`}>
               {conversation.isOnline ? "Active now" : "Offline"}
             </p>

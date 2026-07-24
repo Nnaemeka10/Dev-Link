@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { fetchConversations, fetchMessages, uploadAttachment } from "../chat.api";
 import { useChatSocket } from "./useChatWebsocket";
 import { useCallback, useState } from "react";
-import type { ChatMessage } from "../chat.types";
+import type { ChatMessage, ChatAttachment } from "../chat.types";
 
 export function useChat(userId: number | undefined) {
   const queryClient = useQueryClient();
@@ -24,7 +24,7 @@ export function useChat(userId: number | undefined) {
   });
 
   // 3. Socket.IO Integration (Handles real-time updates & cache invalidation)
-  useChatSocket({
+  const {emitSendMessage, emitTyping} = useChatSocket({
     userId,
     activeThreadId,
     onMessageReceived: (conversationId, message) => {
@@ -98,15 +98,93 @@ export function useChat(userId: number | undefined) {
     }
   });
 
-  const handleSendMessage = useCallback(async (content: string, files?: File[]) => {
-    if (!activeThreadId || !userId) return;
-    const clientId = crypto.randomUUID(); // Idempotency key
-    await sendMessage({ conversationId: activeThreadId, content, clientId, files });
+  // const handleSendMessage = useCallback(async (content: string, files?: File[]) => {
+  //   if (!activeThreadId || !userId) return;
+  //   const clientId = crypto.randomUUID(); // Idempotency key
+  //   await sendMessage({ conversationId: activeThreadId, content, clientId, files });
     
-    // The actual socket.emit("message:send") is triggered in the component to handle the ack
-    // For simplicity in this hook, we return the clientId so the component can use it
-    return clientId;
-  }, [activeThreadId, userId, sendMessage]);
+  //   // The actual socket.emit("message:send") is triggered in the component to handle the ack
+  //   // For simplicity in this hook, we return the clientId so the component can use it
+  //   return clientId;
+  // }, [activeThreadId, userId, sendMessage]);
+
+  const handleSendMessage = useCallback(
+    async (content: string, files?: File[]) => {
+      if (!activeThreadId || !userId) return;
+
+      const clientId = crypto.randomUUID();
+
+      let attachments = [] ;
+      if (files?.length) {
+        attachments = await Promise.all(files.map((file) => uploadAttachment(file)));
+      }
+
+      const optimisticMessage: ChatMessage = {
+        id: Date.now(),
+        conversation_id: activeThreadId,
+        sender_id: userId,
+        conversation_seq: Date.now(),
+        client_id: clientId,
+        type: "text",
+        body: content,
+        created_at: new Date().toISOString(),
+        status: "sending",
+        attachments,
+      };
+
+      queryClient.setQueryData<ChatMessage[]>(
+        ["chat", "messages", activeThreadId],
+        (old = []) => [...old, optimisticMessage]
+      );
+
+      emitSendMessage(
+        {
+          conversationId: activeThreadId,
+          clientId,
+          type: "text",
+          body: content,
+          attachments,
+        },
+        (serverMessage, error) => {
+          if (error || !serverMessage) {
+            queryClient.setQueryData<ChatMessage[]>(
+              ["chat", "messages", activeThreadId],
+              (old = []) =>
+                old.map((msg) =>
+                  msg.client_id === clientId
+                    ? { ...msg, status: "failed" }
+                    : msg
+                )
+            );
+            return;
+          }
+
+          queryClient.setQueryData<ChatMessage[]>(
+            ["chat", "messages", activeThreadId],
+            (old = []) =>
+              old.map((msg) =>
+                msg.client_id === clientId
+                  ? { ...serverMessage, status: "sent" }
+                  : msg
+              )
+          );
+
+          queryClient.invalidateQueries({ queryKey: ["chat", "conversations"] });
+        }
+      );
+
+      return clientId;
+    },
+    [activeThreadId, userId, queryClient, emitSendMessage]
+  );
+
+  const handleTyping = useCallback(
+  (isTyping: boolean) => {
+    if (!activeThreadId) return;
+    emitTyping(activeThreadId, isTyping);
+  },
+  [activeThreadId, emitTyping]
+);
 
   return {
     conversations,
@@ -117,6 +195,9 @@ export function useChat(userId: number | undefined) {
     isSending,
     setActiveThreadId,
     handleSendMessage,
+    handleTyping,
     typingStatus: activeThreadId ? typingUsers[activeThreadId] : false,
   };
+
+  
 }

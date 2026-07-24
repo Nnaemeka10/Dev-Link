@@ -5,9 +5,8 @@ import UserProfilePage from "@/features/profile/pages/UserProfilePage";
 
 export default function ProfileRoute() {
   return (
-    // <AuthGuard>
+    <AuthGuard>
       <UserProfilePage />
-    // </AuthGuard>
+    </AuthGuard>
   );
 }
-

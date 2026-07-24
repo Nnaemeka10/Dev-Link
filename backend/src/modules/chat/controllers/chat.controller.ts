@@ -8,6 +8,7 @@ export const getConversations = async (req: Request, res: Response) => {
   try {
     if (!req.user?.userId) return res.status(401).json({ message: 'Unauthorized' });
     
+    await ChatModel.findOrCreateSupportConversation(req.user.userId);
     const conversations = await ChatModel.getUserConversations(req.user.userId);
     res.status(200).json(conversations);
   } catch (error: any) {
@@ -40,6 +41,39 @@ export const getMessages = async (req: Request, res: Response) => {
   } catch (error: any) {
     console.error('Get messages error:', error);
     res.status(500).json({ message: 'Failed to fetch messages' });
+  }
+};
+
+export const getMessageById = async (req: Request, res: Response) => {
+  try {
+    if (!req.user?.userId) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    const { id: conversationId, messageId } = req.params;
+
+    const isParticipant = await ChatModel.isParticipant(
+      conversationId,
+      req.user.userId
+    );
+
+    if (!isParticipant) {
+      return res.status(403).json({ message: "Forbidden: You are not in this conversation." });
+    }
+
+    const message = await ChatModel.getMessageById(
+      conversationId,
+      Number(messageId)
+    );
+
+    if (!message) {
+      return res.status(404).json({ message: "Message not found" });
+    }
+
+    res.status(200).json(message);
+  } catch (error) {
+    console.error("Get message by id error:", error);
+    res.status(500).json({ message: "Failed to fetch message" });
   }
 };
 

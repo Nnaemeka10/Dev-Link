@@ -7,6 +7,7 @@ import listingsRoutes from './modules/listings/routes/listings.route.js';
 import bookingRoutes from './modules/bookings/routes/booking.route.js';
 import paymentRoutes from './modules/payments/routes/payment.route.js';
 import chatRoutes from './modules/chat/routes/chat.route.js';
+import profileRoutes from './modules/profile/routes/profile.routes.js';
 
 const app = express();
 
@@ -48,6 +49,7 @@ app.use("/api/listings", listingsRoutes)
 app.use("/api/bookings", bookingRoutes)
 app.use("/api/payments", paymentRoutes)
 app.use("/api/chat", chatRoutes) 
+app.use("/api/profile", profileRoutes);
 
 //health check
 app.get('/api/health', (req, res) => {

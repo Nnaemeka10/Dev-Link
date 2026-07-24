@@ -775,7 +775,7 @@ export default function MessagesPage() {
   
   const { 
     conversations, activeThreadId, activeMessages, isLoadingThreads, isLoadingMessages, 
-    isSending, handleSendMessage, typingStatus, setActiveThreadId 
+    isSending, handleSendMessage, handleTyping, typingStatus, setActiveThreadId 
   } = useChat(userId);
 
   useEffect(() => {
@@ -801,8 +801,7 @@ export default function MessagesPage() {
     const found = conversations.find((c) => c.id === activeThreadId);
     if (found) return found;
 
-    if (activeThreadId && !isLoadingThreads) {
-      // Return a minimal stub to satisfy ChatWindow props while the real list loads
+    if (activeThreadId && isLoadingThreads) {
       return {
         id: activeThreadId,
         type: "direct" as const,
@@ -811,15 +810,16 @@ export default function MessagesPage() {
         last_read_message_id: 0,
         delivered_message_id: 0,
         updated_at: new Date().toISOString(),
+        name: "Loading..."
       } satisfies ChatThread;
     }
 
     return null;
   }, [conversations, activeThreadId, isLoadingThreads]);
 
-  const onTyping = useCallback((isTyping: boolean) => {
-    // Typing logic is handled inside useChat, but we can expose emit here if needed
-  }, []);
+  // const onTyping = useCallback((isTyping: boolean) => {
+  //   // Typing logic is handled inside useChat, but we can expose emit here if needed
+  // }, []);
 
   return (
     <>
@@ -834,7 +834,7 @@ export default function MessagesPage() {
               isTyping={typingStatus}
               isSending={isSending}
               onSendMessage={handleSendMessage}
-              onTyping={onTyping}
+              onTyping={handleTyping}
               onBack={() => setActiveThreadId(null)} 
             />
           </div>
@@ -862,7 +862,7 @@ export default function MessagesPage() {
               isTyping={typingStatus}
               isSending={isSending}
               onSendMessage={handleSendMessage}
-              onTyping={onTyping}
+              onTyping={handleTyping}
             />
           </main>
         </div>
@@ -885,7 +885,7 @@ export default function MessagesPage() {
                 isTyping={typingStatus}
                 isSending={isSending}
                 onSendMessage={handleSendMessage}
-                onTyping={onTyping}
+                onTyping={handleTyping}
               />
             </main>
           </div>

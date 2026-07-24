@@ -102,7 +102,8 @@ export function useChatSocket({ userId, activeThreadId, onMessageReceived, onTyp
     payload: { 
       conversationId: string; 
       body: string; 
-      client_id: string; 
+      clientId: string; 
+      type: "text" | "image" | "file";
       attachments?: ChatAttachment[] 
     }, 
     callback: (message: ChatMessage | null, error?: string) => void

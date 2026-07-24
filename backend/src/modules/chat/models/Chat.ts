@@ -36,6 +36,7 @@ export const ChatModel = {
        FROM conversations c
        JOIN conversation_participants cp ON cp.conversation_id = c.id
        LEFT JOIN conversation_context ctx ON ctx.conversation_id = c.id
+       LEFT JOIN listings l ON l.id = ctx.listing_id
        LEFT JOIN conversation_participants cp_other ON cp_other.conversation_id = c.id AND cp_other.user_id != $1
        LEFT JOIN users u_other ON u_other.id = cp_other.user_id
        WHERE cp.user_id = $1 AND cp.left_at IS NULL
@@ -162,6 +163,37 @@ export const ChatModel = {
     return res.rows;
   },
 
+  async getMessageById(conversationId: string, messageId: number): Promise<Message | null> {
+    const db = getDB();
+
+    const res = await db.query(
+      `SELECT m.*,
+        COALESCE(
+          json_agg(
+            json_build_object(
+              'id', a.id,
+              'url', a.url,
+              'mime_type', a.mime_type,
+              'size', a.size,
+              'width', a.width,
+              'height', a.height,
+              'duration', a.duration
+            )
+          ) FILTER (WHERE a.id IS NOT NULL),
+          '[]'
+        ) as attachments
+      FROM messages m
+      LEFT JOIN message_attachments a ON a.message_id = m.id
+      WHERE m.conversation_id = $1
+        AND m.id = $2
+        AND m.deleted_at IS NULL
+      GROUP BY m.id`,
+      [conversationId, messageId]
+    );
+
+    return res.rows[0] || null;
+  },
+
   // Insert a message with idempotency and sequence generation
   async createMessage(
     conversationId: string, 
@@ -232,6 +264,61 @@ export const ChatModel = {
       return fullMsg.rows[0] || null;
     } catch (error) {
       await client.query('ROLLBACK');
+      throw error;
+    } finally {
+      client.release();
+    }
+  },
+
+  async findOrCreateSupportConversation(userId: number): Promise<string> {
+    const db = getDB();
+    const client = await db.connect();
+
+    try {
+      await client.query("BEGIN");
+
+      const existing = await client.query(
+        `SELECT c.id
+        FROM conversations c
+        JOIN conversation_context ctx ON ctx.conversation_id = c.id
+        JOIN conversation_participants cp ON cp.conversation_id = c.id
+        WHERE c.type = 'support'
+          AND ctx.type = 'support'
+          AND cp.user_id = $1
+          AND cp.left_at IS NULL
+        LIMIT 1`,
+        [userId]
+      );
+
+      if (existing.rows.length) {
+        await client.query("COMMIT");
+        return existing.rows[0].id;
+      }
+
+      const convRes = await client.query(
+        `INSERT INTO conversations (type, last_message_at)
+        VALUES ('support', NOW())
+        RETURNING id`
+      );
+
+      const conversationId = convRes.rows[0].id;
+
+      await client.query(
+        `INSERT INTO conversation_context (conversation_id, type)
+        VALUES ($1, 'support')`,
+        [conversationId]
+      );
+
+      await client.query(
+        `INSERT INTO conversation_participants (conversation_id, user_id, role)
+        VALUES ($1, $2, 'guest')`,
+        [conversationId, userId]
+      );
+
+      await client.query("COMMIT");
+      return conversationId;
+    } catch (error) {
+      await client.query("ROLLBACK");
       throw error;
     } finally {
       client.release();

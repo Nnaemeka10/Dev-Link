@@ -6,6 +6,7 @@ export interface BookingRow {
     end_date: string;
     status: 'pending' | 'confirmed' | 'declined' | 'cancelled' | 'completed' | 'paid' | 'failed' | 'expired';
     total_amount: number;
+    guests: number;
     created_at: string;
     booking_reference: string;
     start_time: string | null;
@@ -45,4 +46,3 @@ export interface BookingDetailsResponse extends BookingRow {
     vendor_email: string | null;
     auto_approve: boolean;
 }
-

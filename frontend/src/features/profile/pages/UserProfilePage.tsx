@@ -4,129 +4,22 @@ import MobileDock from "@/components/layout/MobileDock";
 import SideNavBar from "@/components/layout/SideNavBar";
 import VendorMobileDock from "@/components/layout/VendorMobileDock";
 import VendorSideNavBar from "@/components/layout/VendorSideNavBar";
+import { apiFetch } from "@/lib/api";
+import { useAuthStore } from "@/features/auth/auth.store";
+import { useProfile } from "@/features/profile/hooks/useProfile";
+import type {
+  Booking,
+  BookingStatus,
+  NotificationSettings,
+  PaymentMethod,
+  UserProfile,
+} from "@/features/profile/profile.types";
 import { useTheparam } from "@/hooks/useTheparam";
 import { useRouter } from "next/navigation";
+import type React from "react";
 import { useState, useRef, useEffect } from "react";
 
-// ─── Types ────────────────────────────────────────────────────────────────────
-
-interface UserProfile {
-  fullName: string;
-  email: string;
-  phone: string;
-  location: string;
-  avatarUrl: string;
-  memberSince: string;
-}
-
-interface PaymentMethod {
-  id: string;
-  type: "card" | "bank";
-  label: string;
-  last4: string;
-  expiry?: string;
-  isDefault: boolean;
-}
-
-export type BookingStatus = "pending" | "confirmed" | "past" | "cancelled";
-
-export interface Booking {
-  id: string;
-  eventTitle: string;
-  vendorName: string;
-  eventDate: string;
-  bookedOn: string;
-  status: BookingStatus;
-  amount: number;
-  imageUrl: string;
-  location: string;
-  ticketCount: number;
-}
-
-// ─── Mock Data ────────────────────────────────────────────────────────────────
-
-const MOCK_PROFILE: UserProfile = {
-  fullName: "Adesua Etomi-Wellington",
-  email: "adesua.w@editorial.ng",
-  phone: "+234 809 123 4567",
-  location: "Victoria Island, Lagos",
-  avatarUrl:
-    "https://lh3.googleusercontent.com/aida-public/AB6AXuBuXx8PVDDTuQbrthUMNllJ-kQ4qjEWSzOzQUc04PzzLmcPz7A6Vn6LxeFBKcqSbprmwZx0e-yKNNOVZ3g3_s1QI2ATO-AHTbNGfAXUgthbDVZpIM2e5V-Op6CENF8fBXh89SvCuDtLASUq9aZv79BkAB1oaNNbHanEmyJ84V6CCdfdeAs4CjFDmXgweyBrwPpmPzscW3HZUOLjWdGucwk4HnoUulS_bzB7QdQ7EZkujX6J9br9BT3UMEl2oSFgvrhMB-6_XSXsbJ0",
-  memberSince: "March 2022",
-};
-
-const MOCK_PAYMENTS: PaymentMethod[] = [
-  {
-    id: "pm_1",
-    type: "card",
-    label: "Visa",
-    last4: "4242",
-    expiry: "12/25",
-    isDefault: true,
-  },
-  {
-    id: "pm_2",
-    type: "bank",
-    label: "Zenith Bank PLC",
-    last4: "8901",
-    isDefault: false,
-  },
-];
-
-const MOCK_BOOKINGS: Booking[] = [
-  {
-    id: "b1",
-    eventTitle: "Lagos Fashion Week — Gala Night",
-    vendorName: "LFW Productions",
-    eventDate: "August 14, 2025",
-    bookedOn: "July 2, 2025",
-    status: "pending",
-    amount: 45000,
-    imageUrl:
-      "https://images.unsplash.com/photo-1558769132-cb1aea458c5e?w=400&q=80",
-    location: "Eko Hotel & Suites, VI",
-    ticketCount: 2,
-  },
-  {
-    id: "b2",
-    eventTitle: "Afrobeats Summit 2025",
-    vendorName: "SoundCity Live",
-    eventDate: "July 28, 2025",
-    bookedOn: "June 15, 2025",
-    status: "pending",
-    amount: 18500,
-    imageUrl:
-      "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=400&q=80",
-    location: "Muri Okunola Park, VI",
-    ticketCount: 1,
-  },
-  {
-    id: "b3",
-    eventTitle: "The Art Collective — Vernissage",
-    vendorName: "Terra Kulture",
-    eventDate: "May 10, 2025",
-    bookedOn: "April 20, 2025",
-    status: "past",
-    amount: 12000,
-    imageUrl:
-      "https://images.unsplash.com/photo-1541367777708-7905fe3296c0?w=400&q=80",
-    location: "Terra Kulture Arena, VI",
-    ticketCount: 2,
-  },
-  {
-    id: "b4",
-    eventTitle: "Nollywood Film Premiere: Breath",
-    vendorName: "Filmhouse Cinemas",
-    eventDate: "March 22, 2025",
-    bookedOn: "March 1, 2025",
-    status: "past",
-    amount: 9500,
-    imageUrl:
-      "https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=400&q=80",
-    location: "Filmhouse IMAX, Lekki",
-    ticketCount: 3,
-  },
-];
+type ProfileState = ReturnType<typeof useProfile>;
 
 // ─── Icons (inline SVG helpers) ───────────────────────────────────────────────
 
@@ -189,21 +82,31 @@ function PreferenceRow({
   );
 }
 
-function Toggle() {
-  const [on, setOn] = useState(true);
+function Toggle({
+  checked,
+  disabled,
+  onToggle,
+}: {
+  checked: boolean;
+  disabled?: boolean;
+  onToggle: () => void;
+}) {
   return (
     <button
+      type="button"
+      disabled={disabled}
+      aria-pressed={checked}
       onClick={(e) => {
         e.stopPropagation();
-        setOn(!on);
+        onToggle();
       }}
-      className={`w-11 h-6 rounded-full relative transition-colors duration-200 ${
-        on ? "bg-[#D65C3A]" : "bg-stone-200"
+      className={`w-11 h-6 rounded-full relative transition-colors duration-200 disabled:opacity-60 ${
+        checked ? "bg-[#D65C3A]" : "bg-stone-200"
       }`}
     >
       <div
         className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow-sm transition-all duration-200 ${
-          on ? "right-1" : "left-1"
+          checked ? "right-1" : "left-1"
         }`}
       />
     </button>
@@ -218,12 +121,14 @@ function InlineEditField({
   type = "text",
   icon,
   onChange,
+  disabled,
 }: {
   label: string;
   value: string;
   type?: string;
   icon?: React.ReactNode;
-  onChange: (v: string) => void;
+  onChange: (v: string) => Promise<void> | void;
+  disabled?: boolean;
 }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(value);
@@ -238,8 +143,13 @@ function InlineEditField({
     setDraft(value);
   }, [value]);
 
-  const commit = () => {
-    onChange(draft);
+  const commit = async () => {
+    if (draft === value) {
+      setEditing(false);
+      return;
+    }
+
+    await onChange(draft);
     setEditing(false);
   };
 
@@ -277,9 +187,10 @@ function InlineEditField({
           </div>
           <button
             onClick={commit}
+            disabled={disabled}
             className="shrink-0 px-3 py-3 bg-[#D65C3A] text-white rounded-xl text-xs font-bold hover:bg-[#c24e2f] transition-colors"
           >
-            Save
+            {disabled ? "Saving" : "Save"}
           </button>
           <button
             onClick={cancel}
@@ -290,7 +201,9 @@ function InlineEditField({
         </div>
       ) : (
         <div
-          onClick={() => setEditing(true)}
+          onClick={() => {
+            if (!disabled) setEditing(true);
+          }}
           className="flex items-center justify-between px-4 py-3 bg-stone-50 rounded-xl cursor-text border border-transparent hover:border-stone-200 hover:bg-white transition-all group"
         >
           <div className="flex items-center gap-3">
@@ -315,13 +228,15 @@ function PaymentDrawer({
   onSetDefault,
   onRemove,
   onAdd,
+  isUpdating,
 }: {
   open: boolean;
   onClose: () => void;
   payments: PaymentMethod[];
-  onSetDefault: (id: string) => void;
-  onRemove: (id: string) => void;
+  onSetDefault: (id: string) => Promise<void> | void;
+  onRemove: (id: string) => Promise<void> | void;
   onAdd: () => void;
+  isUpdating?: boolean;
 }) {
   useEffect(() => {
     document.body.style.overflow = open ? "hidden" : "";
@@ -358,7 +273,11 @@ function PaymentDrawer({
           </div>
           {/* List */}
           <div className="px-6 py-4 space-y-3 max-h-[55vh] overflow-y-auto">
-            {payments.map((pm) => (
+            {payments.length === 0 ? (
+              <div className="py-8 text-center text-sm font-medium text-stone-400">
+                No reusable payment methods yet.
+              </div>
+            ) : payments.map((pm) => (
               <div
                 key={pm.id}
                 className="flex items-center justify-between p-4 rounded-2xl border border-stone-100 bg-stone-50 hover:border-stone-200 transition-all"
@@ -408,6 +327,7 @@ function PaymentDrawer({
                   ) : (
                     <button
                       onClick={() => onSetDefault(pm.id)}
+                      disabled={isUpdating}
                       className="text-[10px] text-stone-400 font-semibold hover:text-[#D65C3A] transition-colors"
                     >
                       Set default
@@ -416,6 +336,7 @@ function PaymentDrawer({
                   {!pm.isDefault && (
                     <button
                       onClick={() => onRemove(pm.id)}
+                      disabled={isUpdating}
                       className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-red-50 text-stone-300 hover:text-red-400 transition-all"
                     >
                       <svg
@@ -629,25 +550,82 @@ function BookingsSection({ bookings }: { bookings: Booking[] }) {
 
 // ─── Main Profile Content (shared across all breakpoints) ─────────────────────
 
-function ProfileContent() {
-  const [profile, setProfile] = useState<UserProfile>(MOCK_PROFILE);
-  const [payments, setPayments] = useState<PaymentMethod[]>(MOCK_PAYMENTS);
+function ProfileContent({
+  profileState,
+}: {
+  profileState: ProfileState;
+}) {
+  const router = useRouter();
+  const clearAuth = useAuthStore((state) => state.clearAuth);
   const [paymentDrawerOpen, setPaymentDrawerOpen] = useState(false);
-  const [bookings] = useState<Booking[]>(MOCK_BOOKINGS);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [showDeactivateConfirm, setShowDeactivateConfirm] = useState(false);
+  const [actionError, setActionError] = useState<string | null>(null);
 
-  const updateField = (field: keyof UserProfile) => (value: string) =>
-    setProfile((prev) => ({ ...prev, [field]: value }));
+  const {
+    profile,
+    bookings,
+    payments,
+    notifications,
+    isProfileLoading,
+    isBookingsLoading,
+    isPaymentsLoading,
+    updateField,
+    isUpdatingField,
+    uploadAvatar,
+    isUploadingAvatar,
+    setDefaultPayment,
+    removePayment,
+    isUpdatingPayment,
+    toggleNotification,
+    isUpdatingNotifications,
+    deactivateAccount,
+    isDeactivating,
+  } = profileState;
 
-  const handleSetDefault = (id: string) =>
-    setPayments((prev) =>
-      prev.map((pm) => ({ ...pm, isDefault: pm.id === id }))
-    );
+  const handleSetDefault = async (id: string) => {
+    setActionError(null);
+    await setDefaultPayment(id);
+  };
 
-  const handleRemove = (id: string) =>
-    setPayments((prev) => prev.filter((pm) => pm.id !== id));
+  const handleRemove = async (id: string) => {
+    setActionError(null);
+    await removePayment(id);
+  };
+
+  const handleUpdateField = (field: "fullName" | "email" | "phone" | "location") =>
+    async (value: string) => {
+      setActionError(null);
+      try {
+        await updateField(field, value);
+      } catch (error) {
+        setActionError(error instanceof Error ? error.message : "Profile update failed");
+        throw error;
+      }
+    };
+
+  const handleLogout = async () => {
+    await apiFetch("/api/auth/logout", { method: "POST", redirectOn401: false });
+    clearAuth();
+    router.push("/login");
+  };
+
+  const handleDeactivate = async () => {
+    await deactivateAccount();
+    clearAuth();
+    router.push("/login");
+  };
 
   const defaultCard = payments.find((p) => p.isDefault);
+
+  if (isProfileLoading || !profile) {
+    return (
+      <div className="max-w-2xl xl:max-w-3xl space-y-4 pb-20">
+        <div className="h-28 rounded-3xl bg-white/70 animate-pulse" />
+        <div className="h-64 rounded-3xl bg-white/70 animate-pulse" />
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-2xl xl:max-w-3xl space-y-10 pb-20">
@@ -661,7 +639,25 @@ function ProfileContent() {
               className="w-full h-full object-cover"
             />
           </div>
-          <button className="absolute bottom-0 right-0 w-7 h-7 bg-[#D65C3A] rounded-full flex items-center justify-center shadow-md hover:bg-[#c24e2f] transition-colors">
+          <label className="absolute bottom-0 right-0 w-7 h-7 bg-[#D65C3A] rounded-full flex items-center justify-center shadow-md hover:bg-[#c24e2f] transition-colors cursor-pointer">
+            <input
+              type="file"
+              accept="image/*"
+              className="sr-only"
+              disabled={isUploadingAvatar}
+              onChange={async (event) => {
+                const file = event.target.files?.[0];
+                if (!file) return;
+                setActionError(null);
+                try {
+                  await uploadAvatar(file);
+                } catch (error) {
+                  setActionError(error instanceof Error ? error.message : "Avatar upload failed");
+                } finally {
+                  event.target.value = "";
+                }
+              }}
+            />
             <svg
               className="w-3.5 h-3.5 text-white"
               fill="none"
@@ -675,7 +671,7 @@ function ProfileContent() {
                 d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
               />
             </svg>
-          </button>
+          </label>
         </div>
         <div>
           <h2 className="text-2xl md:text-3xl font-extrabold text-stone-900 tracking-tight leading-tight">
@@ -702,19 +698,22 @@ function ProfileContent() {
             <InlineEditField
               label="Full Name"
               value={profile.fullName}
-              onChange={updateField("fullName")}
+              onChange={handleUpdateField("fullName")}
+              disabled={isUpdatingField}
             />
             <InlineEditField
               label="Email Address"
               value={profile.email}
               type="email"
-              onChange={updateField("email")}
+              onChange={handleUpdateField("email")}
+              disabled={isUpdatingField}
             />
             <InlineEditField
               label="Phone Number"
               value={profile.phone}
               type="tel"
-              onChange={updateField("phone")}
+              onChange={handleUpdateField("phone")}
+              disabled={isUpdatingField}
             />
             <InlineEditField
               label="Primary Location"
@@ -725,9 +724,11 @@ function ProfileContent() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                 </svg>
               }
-              onChange={updateField("location")}
+              onChange={handleUpdateField("location")}
+              disabled={isUpdatingField}
             />
           </div>
+          {actionError && <p className="text-xs font-semibold text-red-500">{actionError}</p>}
         </div>
       </section>
 
@@ -769,7 +770,9 @@ function ProfileContent() {
                     : "No payment method"}
                 </p>
                 <p className="text-xs text-stone-400">
-                  {payments.length} method{payments.length !== 1 ? "s" : ""} saved — tap to manage
+                  {isPaymentsLoading
+                    ? "Loading saved methods"
+                    : `${payments.length} method${payments.length !== 1 ? "s" : ""} saved - tap to manage`}
                 </p>
               </div>
             </div>
@@ -796,7 +799,14 @@ function ProfileContent() {
           title="Bookings"
         />
         <div className="bg-white rounded-3xl p-6 shadow-sm border border-stone-100">
-          <BookingsSection bookings={bookings} />
+          {isBookingsLoading ? (
+            <div className="space-y-3">
+              <div className="h-24 rounded-2xl bg-stone-50 animate-pulse" />
+              <div className="h-24 rounded-2xl bg-stone-50 animate-pulse" />
+            </div>
+          ) : (
+            <BookingsSection bookings={bookings} />
+          )}
         </div>
       </section>
 
@@ -818,8 +828,62 @@ function ProfileContent() {
               </svg>
             }
             label="Push Notifications"
-            sublabel="Email and push alerts"
-            right={<Toggle />}
+            sublabel="Mobile and browser alerts"
+            right={
+              <Toggle
+                checked={notifications.pushNotifications}
+                disabled={isUpdatingNotifications}
+                onToggle={() => toggleNotification("pushNotifications")}
+              />
+            }
+          />
+          <PreferenceRow
+            icon={
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8m-18 8h18a2 2 0 002-2V8a2 2 0 00-2-2H3a2 2 0 00-2 2v6a2 2 0 002 2z" />
+              </svg>
+            }
+            label="Booking Updates"
+            sublabel="Status changes and booking messages"
+            right={
+              <Toggle
+                checked={notifications.bookingUpdates}
+                disabled={isUpdatingNotifications}
+                onToggle={() => toggleNotification("bookingUpdates")}
+              />
+            }
+          />
+          <PreferenceRow
+            icon={
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8V6m0 10v2" />
+              </svg>
+            }
+            label="Promotions"
+            sublabel="Offers and platform announcements"
+            right={
+              <Toggle
+                checked={notifications.emailPromotions}
+                disabled={isUpdatingNotifications}
+                onToggle={() => toggleNotification("emailPromotions")}
+              />
+            }
+          />
+          <PreferenceRow
+            icon={
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M21 12c0 4.418-4.03 8-9 8a9.77 9.77 0 01-4-.8L3 20l1.8-3.6A7.06 7.06 0 013 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+              </svg>
+            }
+            label="SMS Alerts"
+            sublabel="Text messages for urgent updates"
+            right={
+              <Toggle
+                checked={notifications.smsAlerts}
+                disabled={isUpdatingNotifications}
+                onToggle={() => toggleNotification("smsAlerts")}
+              />
+            }
           />
           <PreferenceRow
             icon={
@@ -1012,8 +1076,12 @@ function ProfileContent() {
             Once you deactivate your account, all your data will be permanently
             removed. This cannot be undone.
           </p>
-          <button className="px-5 py-2.5 border border-red-200 text-red-400 rounded-full text-xs font-bold hover:bg-red-100 hover:text-red-500 transition-all">
-            Deactivate Account
+          <button
+            onClick={() => setShowDeactivateConfirm(true)}
+            disabled={isDeactivating}
+            className="px-5 py-2.5 border border-red-200 text-red-400 rounded-full text-xs font-bold hover:bg-red-100 hover:text-red-500 transition-all disabled:opacity-60"
+          >
+            {isDeactivating ? "Deactivating" : "Deactivate Account"}
           </button>
         </div>
       </section>
@@ -1023,12 +1091,24 @@ function ProfileContent() {
         open={paymentDrawerOpen}
         onClose={() => setPaymentDrawerOpen(false)}
         payments={payments}
-        onSetDefault={handleSetDefault}
-        onRemove={handleRemove}
-        onAdd={() => {
-          // TODO: navigate to add payment method flow
-          alert("Wire this to your payment provider onboarding flow.");
+        onSetDefault={async (id) => {
+          try {
+            await handleSetDefault(id);
+          } catch (error) {
+            setActionError(error instanceof Error ? error.message : "Payment update failed");
+          }
         }}
+        onRemove={async (id) => {
+          try {
+            await handleRemove(id);
+          } catch (error) {
+            setActionError(error instanceof Error ? error.message : "Payment update failed");
+          }
+        }}
+        onAdd={() => {
+          router.push("/bookings");
+        }}
+        isUpdating={isUpdatingPayment}
       />
 
       {/* ── Logout Confirmation Modal ─────────────────────────────────── */}
@@ -1053,12 +1133,46 @@ function ProfileContent() {
                 </button>
                 <button
                   onClick={() => {
-                    setShowLogoutConfirm(false);
-                    // TODO: call your signOut() here, e.g. signOut({ callbackUrl: "/" })
+                    void handleLogout();
                   }}
                   className="flex-1 py-3 rounded-2xl bg-[#D65C3A] text-white text-sm font-bold hover:bg-[#c24e2f] transition-colors"
                 >
                   Log out
+                </button>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* ── Deactivate Confirmation Modal ─────────────────────────────── */}
+      {showDeactivateConfirm && (
+        <>
+          <div
+            className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50"
+            onClick={() => setShowDeactivateConfirm(false)}
+          />
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-6 pointer-events-none">
+            <div className="pointer-events-auto bg-white rounded-3xl p-7 w-full max-w-sm shadow-2xl">
+              <h3 className="text-lg font-bold text-stone-900 mb-2">Deactivate account?</h3>
+              <p className="text-sm text-stone-400 mb-6">
+                Your account will be disabled and you will be signed out.
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowDeactivateConfirm(false)}
+                  className="flex-1 py-3 rounded-2xl bg-stone-100 text-stone-600 text-sm font-bold hover:bg-stone-200 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => {
+                    void handleDeactivate();
+                  }}
+                  disabled={isDeactivating}
+                  className="flex-1 py-3 rounded-2xl bg-red-500 text-white text-sm font-bold hover:bg-red-600 transition-colors disabled:opacity-60"
+                >
+                  Deactivate
                 </button>
               </div>
             </div>
@@ -1071,7 +1185,7 @@ function ProfileContent() {
 
 
 
-function MobileProfileView() {
+function MobileProfileView({ profileState }: { profileState: ProfileState }) {
     const router = useRouter();
     const path = useTheparam();
       
@@ -1090,14 +1204,15 @@ function MobileProfileView() {
         <div className="w-9" />
       </header>
       <div className="px-4 pt-6 pb-10">
-        <ProfileContent />
+        <ProfileContent profileState={profileState} />
       </div>
       {pathMapping[path]}
     </section>
   );
 }
 
-function TabletProfileView() {
+function TabletProfileView({ profileState }: { profileState: ProfileState }) {
+  const router = useRouter();
   const path = useTheparam();
     
   const pathMapping = {
@@ -1107,7 +1222,7 @@ function TabletProfileView() {
   return (
     <section className="hidden md:flex xl:hidden flex-col min-h-screen bg-[#f9f6ef] pb-32">
       <header className="sticky top-0 z-40 flex items-center px-8 py-5 bg-[#f9f6ef]/90 backdrop-blur-sm border-b border-stone-100 gap-4">
-        <button className="w-9 h-9 flex items-center justify-center rounded-full bg-white border border-stone-100 shadow-sm">
+        <button onClick={() => router.back()} className="w-9 h-9 flex items-center justify-center rounded-full bg-white border border-stone-100 shadow-sm">
           <BackArrow />
         </button>
         <h1 className="text-xl font-extrabold text-stone-900 tracking-tight">
@@ -1115,14 +1230,14 @@ function TabletProfileView() {
         </h1>
       </header>
       <div className="px-10 lg:px-14 pt-8 pb-10">
-        <ProfileContent />
+        <ProfileContent profileState={profileState} />
       </div>
       {pathMapping[path]}
     </section>
   );
 }
 
-function DesktopProfileView() {
+function DesktopProfileView({ profileState }: { profileState: ProfileState }) {
     const path = useTheparam();
     const pathMapping = {
           vendor: <VendorSideNavBar />,
@@ -1143,7 +1258,7 @@ function DesktopProfileView() {
               Manage your account, bookings and preferences.
             </p>
           </div>
-          <ProfileContent />
+          <ProfileContent profileState={profileState} />
         </div>
       </div>
     </section>
@@ -1153,11 +1268,13 @@ function DesktopProfileView() {
 // ─── Page Export ──────────────────────────────────────────────────────────────
 
 export default function ProfilePage() {
+  const profileState = useProfile();
+
   return (
     <>
-      <MobileProfileView />
-      <TabletProfileView />
-      <DesktopProfileView />
+      <MobileProfileView profileState={profileState} />
+      <TabletProfileView profileState={profileState} />
+      <DesktopProfileView profileState={profileState} />
     </>
   );
 }
