@@ -136,13 +136,13 @@
 //   );
 // }
 
-import { vendorDashboardData } from "./data";
-import VendorHeader from "./components/VendorHeader";
-import DashboardHeading from "./components/DashboardHeading";
-import FinancialSummaryCards from "./components/FinancialSummaryCards";
-import RevenueTrendChart from "./components/RevenueTrendChart";
-import TransactionHistory from "./components/TransactionHistory";
-import BookingsTable from "./components/BookingsTable";
+import { vendorDashboardData } from "../data";
+import VendorHeader from "../components/VendorHeader";
+import DashboardHeading from "../components/DashboardHeading";
+import FinancialSummaryCards from "../components/FinancialSummaryCards";
+import RevenueTrendChart from "../components/RevenueTrendChart";
+import TransactionHistory from "../components/TransactionHistory";
+import BookingsTable from "../components/BookingsTable";
 
 // TODO(meks): swap for your DesktopSidebar / MobileDock imports, e.g.
 // import DesktopSidebar from "@/components/navigation/DesktopSidebar";
