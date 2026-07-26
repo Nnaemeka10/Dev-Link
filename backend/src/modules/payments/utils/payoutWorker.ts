@@ -21,7 +21,8 @@ export async function processAutomatedEscrowPayouts() {
         (b.total_amount - b.platform_fee) AS host_payout_amount,
         v.id AS vendor_id, v.paystack_recipient_code
       FROM bookings b
-      JOIN vendors v ON b.vendor_id = v.id
+      JOIN listings l ON b.listing_id = l.id
+      JOIN vendors v ON v.user_id = l.vendor_id
       WHERE b.status = 'funds_held'
         AND b.payout_hold = FALSE
         AND b.dispute_window_closes_at <= NOW()
@@ -53,6 +54,7 @@ export async function processAutomatedEscrowPayouts() {
     for (const payout of due) {
       await dispatchSinglePayout(payout);
     }
+    console.log(`Processed ${due.length} automated escrow payouts.`);
   } catch (error) {
     await client.query('ROLLBACK');
     console.error('Payout worker batch failed:', error);
@@ -85,6 +87,8 @@ async function dispatchSinglePayout(payout: any) {
       `UPDATE payout_attempts SET status = 'dispatched', paystack_transfer_code = $2, updated_at = NOW() WHERE id = $1`,
       [attempt.id, response.data.transfer_code]
     );
+
+    console.log(`Dispatched payout for booking ${payout.booking_id} to Paystack. Transfer code: ${response.data.transfer_code}`);
 
   } catch (error: any) {
     // FIX Issue #1: Ambiguous failure handling

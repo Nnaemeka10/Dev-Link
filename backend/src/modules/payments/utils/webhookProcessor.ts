@@ -5,7 +5,7 @@ import { getDB } from '../../../lib/db.js';
 import { WebhookModel } from '../models/WebhookModel.js';
 import { LedgerModel } from '../models/LedgerModel.js';
 import { randomUUID } from 'crypto';
-import { runReconciliation, applyConfirmedPayout } from './reconciliation.js'
+import { applyConfirmedPayout } from './reconciliation.js'
 
 /**
  * Polls for unprocessed webhooks and applies them transactionally.
@@ -39,6 +39,7 @@ export async function processWebhookEvents() {
         [event.id]
       );
       await client.query('COMMIT');
+      console.log(`Processed webhook ${event.id} of type ${event.event_type}`);
     } catch (error: any) {
       await client.query('ROLLBACK');
       console.error(`Failed to process webhook ${event.id}:`, error);
@@ -63,17 +64,21 @@ async function handleChargeSuccess(client: any, payload: any) {
 
   // 1. Find the booking associated with this DVA
   const { rows } = await client.query(
-    `SELECT id, total_amount, platform_fee, status, vendor_id FROM bookings WHERE dva_account_number = $1 FOR UPDATE`,
-    [dvaAccountNumber]
+    `SELECT id, total_amount, platform_fee, status, vendor_id 
+     FROM bookings 
+     WHERE payment_reference = $1 OR dva_account_number = $2  
+     FOR UPDATE`,
+    [reference, dvaAccountNumber || null]
   );
 
   if (rows.length === 0) {
-    throw new Error(`Orphaned inflow: No booking found for DVA ${dvaAccountNumber}`);
+    throw new Error(`Orphaned inflow: No booking found for reference ${reference} or DVA ${dvaAccountNumber}`);
   }
 
   const booking = rows[0];
-  if (booking.status !== 'pending_payment') {
-    // Idempotent no-op if already processed or not in funding state
+
+  // Idempotency check: Only process if pending
+  if (booking.status !== 'pending' && booking.status !== 'pending_payment') {
     return; 
   }
 
@@ -120,9 +125,24 @@ async function handleChargeSuccess(client: any, payload: any) {
         paystackReference: reference,
       }
     ]);
+
+    // 5. Create the system chat message now that funds are secured
+    const bookingDetails = await client.query(
+      `SELECT b.id, b.user_id, l.vendor_id, l.title as listing_title,
+       (SELECT la.url FROM listing_assets la WHERE la.listing_id = l.id AND la.is_primary = true LIMIT 1) as listing_image
+       FROM bookings b JOIN listings l ON b.listing_id = l.id WHERE b.id = $1`,
+      [booking.id]
+    );
+
+    if (bookingDetails.rows.length > 0) {
+      const d = bookingDetails.rows[0];
+      const { ChatModel } = await import('../../chat/models/Chat.js');
+      await ChatModel.createBookingSystemMessage(d.id, d.user_id, d.vendor_id, d.listing_image, d.listing_title);
+    }
   }
 }
 
+//Handles a successful vendor payout (Transfer).
 async function handleTransferSuccess(client: any, payload: any, eventId: any) {
   const { reference, transfer_code } = payload.data;
   

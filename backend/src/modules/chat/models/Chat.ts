@@ -1,5 +1,29 @@
 import { getDB } from '../../../lib/db.js';
 import type { Message, MessageAttachment } from '../types/chat.js';
+import crypto from 'crypto'
+
+const SYSTEM_NAMESPACE = '5935b5ee-7c80-4e4f-9140-5da756a08111';
+
+function uuidV5(namespace: string, name: string): string {
+  // Concatenate namespace bytes (as hex string → buffer)
+  const nsBytes = Buffer.from(namespace.replace(/-/g, ''), 'hex');
+  const nameBytes = Buffer.from(name, 'utf8');
+  const hash = crypto.createHash('sha1')
+    .update(Buffer.concat([nsBytes, nameBytes]))
+    .digest();
+
+  // Set version bits (5) and variant bits (10xx)
+  hash[6] = (hash[6] & 0x0f) | 0x50;   // version 5
+  hash[8] = (hash[8] & 0x3f) | 0x80;   // variant 10xx
+
+  // Format as standard UUID
+  const hex = hash.toString('hex', 0, 16);
+  return `${hex.slice(0,8)}-${hex.slice(8,12)}-${hex.slice(12,16)}-${hex.slice(16,20)}-${hex.slice(20,32)}`;
+}
+
+function generateSystemMessageIdempotencyKey(bookingId: string): string {
+  return uuidV5(SYSTEM_NAMESPACE, `system-booking-${bookingId}`);
+}
 
 export const ChatModel = {
   // Validate if a user is part of a conversation
@@ -110,11 +134,12 @@ export const ChatModel = {
     
     const body = `Booking Confirmed! Your reservation for ${listingTitle} is secured. You can now coordinate details with the vendor.`;
     
+    const idempotencyKey = generateSystemMessageIdempotencyKey(bookingId)
     // Use createMessage with type 'system' and an attachment
     await this.createMessage(
       conversationId,
       userId, // Sender is the system (acting as user)
-      `system-${bookingId}-${Date.now()}`, // Unique idempotency key
+      idempotencyKey, // Unique idempotency key
       'system',
       body,
       listingImage ? [{ url: listingImage, mime_type: 'image/jpeg', size: 0, width: 400, height: 300 }] : []

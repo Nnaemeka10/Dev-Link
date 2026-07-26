@@ -75,7 +75,7 @@ export default function ConfirmationStep({wizard, variant = "desktop" }: Confirm
 
         <div className="fixed inset-x-0 bottom-20 z-40 bg-white px-6 py-5 shadow-[0_-12px_32px_rgba(34,27,18,0.08)]">
           <button type="button" className="w-full rounded-full bg-[#B9401D] px-8 py-4 font-extrabold text-white flex items-center justify-center gap-2"><FileText /> View My Bookings</button>
-          <button type="button" className="w-full mt-5 font-extrabold text-[#555B7F] flex items-center justify-center gap-2" onClick={handleChatWithVendor}>
+          <button type="button" className="w-full mt-5 font-extrabold text-[#555B7F] flex items-center justify-center gap-2" onClick={() => handleChatWithVendor()}>
             <Mail /> Chat with Vendor
           </button>
         </div>
@@ -139,7 +139,7 @@ export default function ConfirmationStep({wizard, variant = "desktop" }: Confirm
           {booking.vendor_phone && <p className="mt-5 flex items-center gap-3 text-sm text-[#6B5F57]"><Phone className="h-4 w-4 text-[#B9401D]" /> {booking.vendor_phone}</p>}
 
           
-          <button type="button" className="mt-9 inline-flex w-full items-center justify-center gap-2 rounded-full bg-white px-6 py-4 font-extrabold text-[#B9401D]">
+          <button type="button" className="mt-9 inline-flex w-full items-center justify-center gap-2 rounded-full bg-white px-6 py-4 font-extrabold text-[#B9401D]" onClick={() => handleChatWithVendor()}>
             <MessageSquare className="h-4 w-4" />
             Chat with Vendor
           </button>

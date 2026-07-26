@@ -37,6 +37,59 @@ export const initializePayment = async (req: Request, res: Response) => {
             return;
         }
 
+        // Check if a payment reference already exists
+        // let paymentReference = booking.payment_reference;
+        // if(paymentReference) {
+        //     if(booking.payment_status === 'pending') {
+        //         // Call Paystack Verify API
+        //         const paystackRes = await verifyPaystackTransaction(paymentReference);
+
+        //         if(paystackRes.data.status === 'success') {
+        //             // If the payment is not successful, we can allow re-initialization
+        //             return res.status(400).json({ message: 'Payment already processed - paystack' });
+        //         } 
+        //         else {
+        //              return paymentReference
+        //         }
+        //     } else if (booking.payment_status === 'failed') {
+        //         // Failed payment – generate a new reference so Paystack doesn't reject it
+        //         paymentReference = `PSK-${booking.booking_reference}-${Date.now()}`;
+        //         await BookingModel.updatePaymentReference(booking.id, paymentReference);
+        //     } else {
+        //         // Already paid or other unexpected state
+        //         return res.status(400).json({ message: 'Payment already processed' });
+        //     }
+        // } else {
+        //      // Generate unique payment reference
+        //     paymentReference = `PSK-${booking.booking_reference}`;
+
+        //     // Update booking with payment reference
+        //     await BookingModel.updatePaymentReference(booking.id, paymentReference);
+        // }
+       
+        let paymentReference = booking.payment_reference;
+
+        if (paymentReference){
+           if (booking.payment_status === 'success') {
+                return res.status(400).json({ message: 'Payment already processed' });
+            }
+            if (booking.payment_status === 'pending') {
+                //do nothing, / Reuse existing reference – Paystack will return the existing access_code
+        // (no DB update needed, we'll just use it below)
+            } else if (booking.payment_status === 'failed') {
+                // Failed payment – generate a new reference so Paystack doesn't reject it
+                paymentReference = `PSK-${booking.booking_reference}-${Date.now()}`;
+                await BookingModel.updatePaymentReference(booking.id, paymentReference);
+            } else {
+                return res.status(400).json({ message: 'Payment already processed' });
+            }
+        } else {
+             // First attempt – generate and save a new reference
+            paymentReference = `PSK-${booking.booking_reference}`;
+            await BookingModel.updatePaymentReference(booking.id, paymentReference);
+        }
+
+
         // Fetch user email for Paystack
         const db = getDB();
         const userRes = await db.query('SELECT email FROM users WHERE id = $1', [req.user.userId]);
@@ -45,12 +98,6 @@ export const initializePayment = async (req: Request, res: Response) => {
             return;
         }
         const userEmail = userRes.rows[0].email;
-
-        // Generate unique payment reference
-        const paymentReference = `PSK-${booking.booking_reference}`;
-
-        // Update booking with payment reference
-        await BookingModel.updatePaymentReference(booking.id, paymentReference);
 
         // Call Paystack
         const paystackRes = await initializePaystackTransaction(

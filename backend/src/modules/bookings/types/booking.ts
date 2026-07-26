@@ -24,7 +24,7 @@ export interface CreateBookingInput {
     endDate: string;   // ISO string
     startTime: string; // "16:00"
     endTime: string;   // "23:00"
-    guests: number;
+    // guests: number;
     preferences?: string;
 }
 

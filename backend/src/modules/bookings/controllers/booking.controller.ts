@@ -11,7 +11,7 @@ export const createBooking = async (req: Request, res: Response) => {
             return;
         }
 
-        const { listingId, startDate, endDate, startTime, endTime, guests, preferences } = req.body as CreateBookingInput;
+        const { listingId, startDate, endDate, startTime, endTime, preferences } = req.body as CreateBookingInput;
 
         if (!listingId || !startDate || !endDate || !startTime || !endTime) {
             res.status(400).json({ message: 'Missing required booking fields' });
@@ -38,30 +38,33 @@ export const createBooking = async (req: Request, res: Response) => {
 
         // 3. Create Booking (Price calculated securely in model)
         const booking = await BookingModel.createBooking(req.user.userId, {
-            listingId, startDate, endDate, startTime, endTime, guests, preferences
+            listingId, startDate, endDate, startTime, endTime, preferences
         });
 
+        //add  this when i add dva 
          //INTEGRATION HOOK: Provision DVA for this specific booking
         // We do this asynchronously so the user gets their booking confirmation instantly.
         const uid = req.user.userId;
-        setImmediate(async () => {
-            try {
-            const db = getDB();
-            const userRes = await db.query('SELECT email, paystack_customer_code FROM users WHERE id = $1', [uid]);
-            if (userRes.rows[0].paystack_customer_code) {
-                await provisionDvaForBooking(booking.id, uid, userRes.rows[0].email);
-            }
-            } catch (dvaError) {
-            console.error(`Failed to provision DVA for booking ${booking.id}:`, dvaError);
-            // Admin can manually trigger or user can use fallback payment link
-            }
-        });
+        // setImmediate(async () => {
+        //     try {
+        //     const db = getDB();
+        //     const userRes = await db.query('SELECT email, paystack_customer_code FROM users WHERE id = $1', [uid]);
+        //     if (userRes.rows[0].paystack_customer_code) {
+        //         await provisionDvaForBooking(booking.id, uid, userRes.rows[0].email);
+        //     }
+        //     } catch (dvaError) {
+        //     console.error(`Failed to provision DVA for booking ${booking.id}:`, dvaError);
+        //     // Admin can manually trigger or user can use fallback payment link
+        //     }
+        // });
 
         res.status(201).json({
             bookingId: booking.id,
             amount: parseFloat(booking.total_amount.toString()),
             currency: booking.currency,
             status: booking.status
+            // dvaAccountNumber: dvaDetails?.accountNumber || null,
+            // dvaBankName: dvaDetails?.bankSlug || null
         });
 
     } catch (error: any) {

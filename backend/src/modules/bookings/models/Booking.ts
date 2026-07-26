@@ -54,8 +54,8 @@ export const BookingModel = {
 
     async createBooking(userId: number, input: CreateBookingInput): Promise<BookingRow> {
         const db = getDB();
-        const { listingId, startDate, endDate, startTime, endTime, guests } = input;
-        const guestCount = Number.isFinite(Number(guests)) ? Math.max(1, Math.floor(Number(guests))) : 1;
+        const { listingId, startDate, endDate, startTime, endTime } = input;
+        // const guestCount = Number.isFinite(Number(guests)) ? Math.max(1, Math.floor(Number(guests))) : 1;
         const cleanStart = startDate.split('T')[0];
         const cleanEnd = endDate.split('T')[0];
 
@@ -105,9 +105,9 @@ export const BookingModel = {
         const result = await db.query<BookingRow>(
             `INSERT INTO bookings (
                 listing_id, user_id, start_date, end_date, status, total_amount, 
-                booking_reference, start_time, end_time, expires_at, currency, guests, platform_fee, dispute_window_closes_at
+                booking_reference, start_time, end_time, expires_at, currency, platform_fee, dispute_window_closes_at
             ) 
-            VALUES ($1, $2, $3, $4, 'pending', $5, $6, $7, $8, $9, $10, $11, $12, $13) 
+            VALUES ($1, $2, $3, $4, 'pending', $5, $6, $7, $8, $9, $10, $11, $12) 
             RETURNING *`,
             [
                 listingId, 
@@ -119,9 +119,9 @@ export const BookingModel = {
                 startTime,
                 endTime,
                 expiresAt, //remove this later and use paymentDeadline instead
-                paymentDeadline,
+                // paymentDeadline,
                 currency,
-                guestCount,
+                // guestCount,
                 platformFee,
                 disputeWindowClosesAt
             ]

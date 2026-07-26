@@ -15,22 +15,22 @@ ALTER TABLE bookings
 
 -- Extend booking_status enum to include escrow lifecycle states
 DO $$ BEGIN
-    ALTER TYPE booking_status ADD VALUE IF EXISTS 'funds_held';
+    ALTER TYPE booking_status ADD VALUE IF NOT EXISTS 'funds_held';
 EXCEPTION WHEN duplicate_object THEN NULL;
 END $$;
 
 DO $$ BEGIN
-    ALTER TYPE booking_status ADD VALUE IF EXISTS 'processing_payout';
+    ALTER TYPE booking_status ADD VALUE IF NOT EXISTS 'processing_payout';
 EXCEPTION WHEN duplicate_object THEN NULL;
 END $$;
 
 DO $$ BEGIN
-    ALTER TYPE booking_status ADD VALUE IF EXISTS 'payout_released';
+    ALTER TYPE booking_status ADD VALUE IF NOT EXISTS 'payout_released';
 EXCEPTION WHEN duplicate_object THEN NULL;
 END $$;
 
 DO $$ BEGIN
-    ALTER TYPE booking_status ADD VALUE IF EXISTS 'refunded';
+    ALTER TYPE booking_status ADD VALUE IF NOT EXISTS 'refunded';
 EXCEPTION WHEN duplicate_object THEN NULL;
 END $$;
 
@@ -51,7 +51,7 @@ CREATE TABLE IF NOT EXISTS vendors (
 -- 3. Ledger Accounts (Chart of Accounts)
 CREATE TABLE IF NOT EXISTS ledger_accounts (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    account_type TEXT NOT NULL CHECK (account_type IN ('escrow_holding', 'platform_revenue', 'vendor_payable', 'refund_reserve')),
+    account_type TEXT NOT NULL CHECK (account_type IN ('escrow_holding', 'platform_revenue', 'vendor_payable', 'refund_reserve', 'paystack_wallet')),
     booking_id UUID REFERENCES bookings(id) ON DELETE CASCADE,
     vendor_id UUID REFERENCES vendors(id) ON DELETE CASCADE,
     created_at TIMESTAMPTZ DEFAULT NOW(),
@@ -130,5 +130,3 @@ CREATE TABLE IF NOT EXISTS disputes (
 );
 
 CREATE INDEX IF NOT EXISTS idx_disputes_booking ON disputes(booking_id);
-
-ALTER TYPE ledger_account_type ADD VALUE IF NOT EXISTS 'paystack_wallet';

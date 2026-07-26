@@ -10,8 +10,10 @@ export async function runReconciliation() {
 
   // 1. FIX Issue #1: Sweep for stuck 'created' attempts (crash before dispatch)
   const stuckCreated = await db.query(`
-    SELECT pa.*, b.vendor_id FROM payout_attempts pa
+    SELECT pa.*, l.vendor_id 
+    FROM payout_attempts pa
     JOIN bookings b ON pa.booking_id = b.id
+    JOIN listings l ON b.listing_id = l.id
     WHERE pa.status = 'created' AND pa.created_at < NOW() - INTERVAL '5 minutes'
   `);
 
@@ -70,7 +72,11 @@ export async function applyConfirmedPayout(attempt: any, existingClient?: any) {
 
     // Lock the booking
     const bookingRes = await client.query(
-      `SELECT total_amount, platform_fee, vendor_id FROM bookings WHERE id = $1 FOR UPDATE`,
+      `SELECT b.total_amount, b.platform_fee, l.vendor_id 
+      FROM bookings b
+      JOIN listings l ON b.listing_id = l.id
+      WHERE b.id = $1 
+      FOR UPDATE of b`,
       [attempt.booking_id]
     );
     const booking = bookingRes.rows[0];
@@ -105,6 +111,8 @@ export async function applyConfirmedPayout(attempt: any, existingClient?: any) {
     await client.query(`UPDATE bookings SET status = 'payout_released', updated_at = NOW() WHERE id = $1`, [attempt.booking_id]);
 
     if (!existingClient) await client.query('COMMIT');
+
+    console.log(`Payout confirmed for booking ${attempt.booking_id}. Ledger entries posted.`);
     
   } catch (error) {
     if (!existingClient) await client.query('ROLLBACK');
