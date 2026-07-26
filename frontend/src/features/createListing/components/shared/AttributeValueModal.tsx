@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Modal from "./Modal";
 import type { AttributeValueKind } from "../../types/listing";
 
@@ -37,9 +37,9 @@ export default function AttributeValueModal({
 }: AttributeValueModalProps) {
   const [value, setValue] = useState(initialValue);
 
-  useEffect(() => {
-    if (isOpen) setValue(initialValue);
-  }, [isOpen, initialValue]);
+
+
+  if (!isOpen) return null;
 
   const handleSave = () => {
     if (!value.trim()) return;

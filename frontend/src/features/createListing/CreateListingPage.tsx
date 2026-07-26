@@ -10,7 +10,7 @@ import GalleryStep from "./components/GalleryStep";
 import PricingStep from "./components/PricingStep";
 import ReviewStep from "./components/ReviewStep";
 
-const VENDOR_LISTINGS_PATH = "/vendor/listings";
+const VENDOR_LISTINGS_PATH = "/vendor/mylistings";
 
 export default function CreateListingPage() {
   const router = useRouter();

@@ -53,7 +53,7 @@ interface DateTimeSectionProps {
   listingId: string;
 }
 
-// ─── Field wrapper — matches the pill shape in the screenshot ─────────────────
+// Field wrapper
 
 function FieldPill({ children }: { children: React.ReactNode }) {
   return (
@@ -107,7 +107,7 @@ export function DateTimeSection({
           </FieldPill>
         </div>
 
-        {/* ── Start Time + End Time — side by side ────────────────────────── */}
+        {/*Start Time + End Time — side by side*/}
         {/*
           We use the feature-agnostic Dropdown in a custom pill wrapper
           rather than the "cell" variant so we can match the pill shape.

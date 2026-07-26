@@ -9,7 +9,7 @@ import { z } from "zod";
 
 export const categoryStepSchema = z.object({
   category: z.enum(["hall", "service"], {
-    errorMap: () => ({ message: "Select a category to continue" }),
+    message: "Select a category to continue",
   }),
 });
 
@@ -24,7 +24,7 @@ const serviceLocationSchema = z
     businessAddress: z.string().trim().min(5, "Enter a business address"),
     coverageMode: z.enum(["statewide", "lga"]),
     coverageStateIds: z.array(z.string()).min(1, "Select at least one area you cover"),
-    deselectedLgaIdsByState: z.record(z.array(z.string())),
+    deselectedLgaIdsByState: z.record(z.string(), z.array(z.string())),
   })
   .refine(
     (loc) => {

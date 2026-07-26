@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Modal from "./shared/Modal";
 import SelectableChip from "./shared/SelectableChip";
 import type { PricingPackage, PricingPackagePerk } from "../types/listing";
@@ -15,8 +15,13 @@ interface PackageBuilderModalProps {
   onSave: (pkg: PricingPackage) => void;
 }
 
+// function makePerkId() {
+//   return `perk_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+// }
 function makePerkId() {
-  return `perk_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+  return typeof crypto !== "undefined" && crypto.randomUUID
+    ? crypto.randomUUID()
+    : `perk_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
 }
 
 export default function PackageBuilderModal({
@@ -26,31 +31,15 @@ export default function PackageBuilderModal({
   editingPackage,
   onSave,
 }: PackageBuilderModalProps) {
-  const [name, setName] = useState("");
-  const [price, setPrice] = useState("");
-  const [description, setDescription] = useState("");
-  const [perks, setPerks] = useState<PricingPackagePerk[]>([]);
+  const [name, setName] = useState(editingPackage?.name ?? "");
+  const [price, setPrice] = useState(editingPackage?.price != null ? String(editingPackage.price) : "");
+  const [description, setDescription] = useState(editingPackage?.description ?? "");
+  const [perks, setPerks] = useState<PricingPackagePerk[]>(editingPackage?.perks ?? []);
   const [customPerk, setCustomPerk] = useState("");
 
   const nameTemplates = serviceTypeId ? (PACKAGE_NAME_PRESETS[serviceTypeId] ?? []) : [];
   const perkTemplates = serviceTypeId ? (PACKAGE_PERK_PRESETS[serviceTypeId] ?? []) : [];
   const fullTemplates = serviceTypeId ? (PACKAGE_TEMPLATES[serviceTypeId] ?? []) : [];
-
-  useEffect(() => {
-    if (!isOpen) return;
-    if (editingPackage) {
-      setName(editingPackage.name);
-      setPrice(String(editingPackage.price));
-      setDescription(editingPackage.description);
-      setPerks(editingPackage.perks);
-    } else {
-      setName("");
-      setPrice("");
-      setDescription("");
-      setPerks([]);
-    }
-    setCustomPerk("");
-  }, [isOpen, editingPackage]);
 
   const applyTemplate = (templateName: string) => {
     const template = fullTemplates.find((t) => t.name === templateName);
@@ -100,16 +89,16 @@ export default function PackageBuilderModal({
       title={editingPackage ? "Edit Package" : "Add a Package"}
       description="Start from a template or build one from scratch."
       maxWidthClassName="max-w-xl"
-      footer={
-        <button
-          type="button"
-          onClick={handleSave}
-          disabled={!canSave}
-          className="w-full rounded-full bg-accent-primary py-3.5 text-sm font-bold text-white shadow-card transition-transform hover:scale-[1.01] active:scale-95 disabled:opacity-40"
-        >
-          {editingPackage ? "Save Changes" : "Add Package"}
-        </button>
-      }
+      // footer = {
+      //   <button
+      //     type="button"
+      //     onClick={handleSave}
+      //     disabled={!canSave}
+      //     className="w-full rounded-full bg-accent-primary py-3.5 text-sm font-bold text-white shadow-card transition-transform hover:scale-[1.01] active:scale-95 disabled:opacity-40"
+      //   >
+      //     {editingPackage ? "Save Changes" : "Add Package"}
+      //   </button>
+      // }
     >
       <div className="space-y-6">
         {fullTemplates.length > 0 && !editingPackage && (
@@ -208,6 +197,15 @@ export default function PackageBuilderModal({
           )}
         </div>
       </div>
+
+       <button
+          type="button"
+          onClick={handleSave}
+          disabled={!canSave}
+          className="w-full rounded-full bg-accent-primary py-3.5 text-sm font-bold text-white shadow-card transition-transform hover:scale-[1.01] active:scale-95 disabled:opacity-40"
+        >
+          {editingPackage ? "Save Changes" : "Add Package"}
+        </button>
     </Modal>
   );
 }

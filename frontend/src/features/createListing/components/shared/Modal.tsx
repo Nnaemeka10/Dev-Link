@@ -22,9 +22,9 @@ export default function Modal({
   footer,
   maxWidthClassName = "max-w-lg",
 }: ModalProps) {
-  const [mounted, setMounted] = useState(false);
+  const [mounted] = useState(() => typeof document !== "undefined");
 
-  useEffect(() => setMounted(true), []);
+  // useEffect(() => setMounted(true), []);
 
   useEffect(() => {
     if (!isOpen) return;

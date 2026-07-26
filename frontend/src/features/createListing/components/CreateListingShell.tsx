@@ -5,10 +5,9 @@ import type { ListingCategory, StepNumber } from "../types/listing";
 import CreateListingHeader from "./shared/CreateListingHeader";
 import CreateListingStepNav from "./shared/CreateListingStepNav";
 import CreateListingFooter from "./CreateListingFooter";
+import VendorMobileDock  from "@/components/layout/VendorMobileDock";
+import VendorDesktopSidebar from "@/components/layout/VendorSideNavBar";
 
-// TODO(meks): swap for your DesktopSidebar / MobileDock imports, e.g.
-// import DesktopSidebar from "@/components/navigation/DesktopSidebar";
-// import MobileDock from "@/components/navigation/MobileDock";
 
 interface CreateListingShellProps {
   currentStep: StepNumber;
@@ -39,7 +38,7 @@ export default function CreateListingShell({
     <div className="min-h-screen bg-bg-primary">
       {/* App-wide desktop sidebar slot — xl and up, same pattern as the vendor dashboard */}
       <aside className="fixed inset-y-0 left-0 z-50 hidden w-64 xl:block">
-        {/* <DesktopSidebar /> */}
+        <VendorDesktopSidebar />
       </aside>
 
       <div className="xl:pl-64">
@@ -62,6 +61,7 @@ export default function CreateListingShell({
       {/* App-wide mobile/tablet dock slot */}
       <div className="fixed inset-x-0 bottom-0 z-40 xl:hidden">
         {/* <MobileDock /> */}
+        <VendorMobileDock />
       </div>
     </div>
   );
