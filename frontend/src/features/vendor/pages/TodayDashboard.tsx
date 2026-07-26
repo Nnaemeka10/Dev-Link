@@ -1,8 +1,7 @@
 // "use client";
 
 // import React from "react";
-// import VendorSideNavBar from "../../../components/layout/VendorSideNavBar";
-// import VendorMobileDock from "../../../components/layout/VendorMobileDock";
+
 // import { MOCK_VENDOR_DASHBOARD } from "../vendor.data";
 
 // function formatNaira(amount: number) {
@@ -143,10 +142,9 @@ import FinancialSummaryCards from "../components/FinancialSummaryCards";
 import RevenueTrendChart from "../components/RevenueTrendChart";
 import TransactionHistory from "../components/TransactionHistory";
 import BookingsTable from "../components/BookingsTable";
+import VendorSideNavBar from "../../../components/layout/VendorSideNavBar";
+import VendorMobileDock from "../../../components/layout/VendorMobileDock";
 
-// TODO(meks): swap for your DesktopSidebar / MobileDock imports, e.g.
-// import DesktopSidebar from "@/components/navigation/DesktopSidebar";
-// import MobileDock from "@/components/navigation/MobileDock";
 
 export default function VendorDashboardPage() {
   const {
@@ -166,7 +164,7 @@ export default function VendorDashboardPage() {
           up. Swap this block for <DesktopSidebar /> — width should stay
           in sync with the `xl:pl-64` on the content wrapper below. */}
       <aside className="fixed inset-y-0 left-0 z-50 hidden w-64 xl:block">
-        {/* <DesktopSidebar /> */}
+         <VendorSideNavBar /> 
       </aside>
 
       <div className="xl:pl-64">
@@ -195,7 +193,7 @@ export default function VendorDashboardPage() {
           <MobileDock />. Fixed to the viewport bottom; the `pb-28` on
           <main> above keeps content clear of it on small screens. */}
       <div className="fixed inset-x-0 bottom-0 z-50 xl:hidden">
-        {/* <MobileDock /> */}
+        <VendorMobileDock /> 
       </div>
     </div>
   );
