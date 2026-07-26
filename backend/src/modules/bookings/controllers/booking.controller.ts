@@ -1,6 +1,8 @@
 import { Request, Response } from 'express';
 import { BookingModel } from '../models/Booking.js';
 import type { CreateBookingInput } from '../types/booking.js';
+import { getDB } from '../../../lib/db.js';
+import { provisionDvaForBooking } from '../../payments/controllers/payment.controller.js';
 
 export const createBooking = async (req: Request, res: Response) => {
     try {
@@ -37,6 +39,22 @@ export const createBooking = async (req: Request, res: Response) => {
         // 3. Create Booking (Price calculated securely in model)
         const booking = await BookingModel.createBooking(req.user.userId, {
             listingId, startDate, endDate, startTime, endTime, guests, preferences
+        });
+
+         //INTEGRATION HOOK: Provision DVA for this specific booking
+        // We do this asynchronously so the user gets their booking confirmation instantly.
+        const uid = req.user.userId;
+        setImmediate(async () => {
+            try {
+            const db = getDB();
+            const userRes = await db.query('SELECT email, paystack_customer_code FROM users WHERE id = $1', [uid]);
+            if (userRes.rows[0].paystack_customer_code) {
+                await provisionDvaForBooking(booking.id, uid, userRes.rows[0].email);
+            }
+            } catch (dvaError) {
+            console.error(`Failed to provision DVA for booking ${booking.id}:`, dvaError);
+            // Admin can manually trigger or user can use fallback payment link
+            }
         });
 
         res.status(201).json({

@@ -1,6 +1,7 @@
 import { getDB } from '../../../lib/db.js';
 import type { BookingDetailsResponse, BookingRow, CreateBookingInput } from '../types/booking.js';
 
+
 function generateBookingReference(): string {
     return `EVV-${Date.now()}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
 }
@@ -77,20 +78,36 @@ export const BookingModel = {
         const days = Math.max(1, Math.round((endMs - startMs) / 86400000) + 1);
         
         // 2. Calculate Amount (Backend is source of truth)
-        const totalAmount = basePrice * days;
+        const subtotal = basePrice * days;
+        const vat = Math.round((subtotal * 0.075) * 100) / 100; // 7.5% VAT
+        const totalAmount = Math.round((subtotal + vat) * 100) / 100;
+
+         // Platform fee is 17.5% of total fee paid (base price + vat)
+        const platformFee = Math.round((totalAmount * 0.175) * 100) / 100; 
+
         const currency = 'NGN'; // Hardcoded for Paystack NGN flow, or use listing.currency
 
         const bookingReference = generateBookingReference();
-        // Set expires_at to 15 minutes from now
-        const expiresAt = new Date(Date.now() + 15 * 60 * 1000).toISOString();
 
-        // 3. Create the booking record
+
+        // // Set expires_at to 15 minutes from now
+        // const expiresAt = new Date(Date.now() + 15 * 60 * 1000).toISOString();
+
+
+        // 3. Calculate Escrow Deadlines
+        // Payment deadline: 30 minutes from now
+        const paymentDeadline = new Date(Date.now() + 30 * 60 * 1000).toISOString();
+        const expiresAt = paymentDeadline; // remove this later and use paymentDeadline instead
+        // Dispute window: 24 hours after the event ends
+        const disputeWindowClosesAt = new Date(new Date(cleanEnd).getTime() + 24 * 60 * 60 * 1000).toISOString();
+
+        // 4. Create the booking record
         const result = await db.query<BookingRow>(
             `INSERT INTO bookings (
                 listing_id, user_id, start_date, end_date, status, total_amount, 
-                booking_reference, start_time, end_time, expires_at, currency, guests
+                booking_reference, start_time, end_time, expires_at, currency, guests, platform_fee, dispute_window_closes_at
             ) 
-            VALUES ($1, $2, $3, $4, 'pending', $5, $6, $7, $8, $9, $10, $11) 
+            VALUES ($1, $2, $3, $4, 'pending', $5, $6, $7, $8, $9, $10, $11, $12, $13) 
             RETURNING *`,
             [
                 listingId, 
@@ -101,9 +118,12 @@ export const BookingModel = {
                 bookingReference,
                 startTime,
                 endTime,
-                expiresAt,
+                expiresAt, //remove this later and use paymentDeadline instead
+                paymentDeadline,
                 currency,
-                guestCount
+                guestCount,
+                platformFee,
+                disputeWindowClosesAt
             ]
         );
 

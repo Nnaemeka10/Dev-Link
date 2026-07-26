@@ -27,6 +27,7 @@ export const ENV = {
     EMAIL_FROM_NAME: process.env.EMAIL_FROM_NAME,
     PAYSTACK_SECRET_KEY: required('PAYSTACK_SECRET_KEY'),
     REDIS_URL: process.env.REDIS_URL,
+    PGCRYPTO_KEY: required('PGCRYPTO_KEY'),
 }
 
 // Add this safety check to catch configuration errors instantly

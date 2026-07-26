@@ -2,8 +2,9 @@ import { Request, Response } from 'express';
 import crypto from 'crypto';
 import { BookingModel } from '../../bookings/models/Booking.js';
 import { getDB } from '../../../lib/db.js';
-import { initializePaystackTransaction, verifyPaystackTransaction } from '../utils/paystack.js';
+import { createDedicatedVirtualAccount, initializePaystackTransaction, verifyPaystackTransaction } from '../utils/paystack.js';
 import { ENV } from '../../../lib/env.js';
+import { WebhookModel } from '../models/WebhookModel.js';
 
 export const initializePayment = async (req: Request, res: Response) => {
     try {
@@ -122,53 +123,154 @@ export const verifyPayment = async (req: Request, res: Response) => {
     }
 };
 
-export const paystackWebhook = async (req: Request, res: Response) => {
-    try {
-        // Verify Paystack Webhook Signature using the raw body
-        const secret = ENV.PAYSTACK_SECRET_KEY;
+// export const paystackWebhook = async (req: Request, res: Response) => {
+//     try {
+//         // Verify Paystack Webhook Signature using the raw body
+//         const secret = ENV.PAYSTACK_SECRET_KEY;
 
-        //use req.rawBody captured in app.ts for signature verification
-        const rawBody = (req as any).rawBody || JSON.stringify(req.body);
-        const hash = crypto.createHmac('sha512', secret).update(rawBody).digest('hex');
+//         //use req.rawBody captured in app.ts for signature verification
+//         const rawBody = (req as any).rawBody || JSON.stringify(req.body);
+//         const hash = crypto.createHmac('sha512', secret).update(rawBody).digest('hex');
 
-        if (hash !== req.headers['x-paystack-signature']) {
-            res.status(401).send('Invalid signature');
-            return;
-        }
+//         if (hash !== req.headers['x-paystack-signature']) {
+//             res.status(401).send('Invalid signature');
+//             return;
+//         }
 
-        const event = req.body;
+//         const event = req.body;
 
-        // Only process successful charge events
-        if (event.event === 'charge.success') {
-            const reference = event.data.reference;
-            const expectedAmount = event.data.amount; // In kobo
+//         // Only process successful charge events
+//         if (event.event === 'charge.success') {
+//             const reference = event.data.reference;
+//             const expectedAmount = event.data.amount; // In kobo
 
-            // Double verify via API to prevent spoofing (Webhook payload is NOT proof of payment)
-            const verifyRes = await verifyPaystackTransaction(reference);
+//             // Double verify via API to prevent spoofing (Webhook payload is NOT proof of payment)
+//             const verifyRes = await verifyPaystackTransaction(reference);
             
-            if (verifyRes.data.status === 'success') {
-                // Idempotent update
-                const booking = await BookingModel.markAsPaid(reference);
+//             if (verifyRes.data.status === 'success') {
+//                 // Idempotent update
+//                 const booking = await BookingModel.markAsPaid(reference);
                 
-                if (booking) {
-                    // Security check: Ensure the amount paid matches the booking amount
-                    const expectedKobo = Math.round(parseFloat(booking.total_amount.toString()) * 100);
-                    if (verifyRes.data.amount === expectedKobo) {
-                        console.log(`✅ Booking ${booking.id} successfully paid via webhook.`);
-                        // TODO: Send confirmation email, notify vendor, etc.
-                    } else {
-                        console.error(`⚠️ Amount mismatch for booking ${booking.id}. Expected: ${expectedKobo}, Got: ${verifyRes.data.amount}`);
-                        await BookingModel.markAsFailed(reference);
-                    }
-                }
-            }
-        }
+//                 if (booking) {
+//                     // Security check: Ensure the amount paid matches the booking amount
+//                     const expectedKobo = Math.round(parseFloat(booking.total_amount.toString()) * 100);
+//                     if (verifyRes.data.amount === expectedKobo) {
+//                         console.log(`✅ Booking ${booking.id} successfully paid via webhook.`);
+//                         // TODO: Send confirmation email, notify vendor, etc.
+//                     } else {
+//                         console.error(`⚠️ Amount mismatch for booking ${booking.id}. Expected: ${expectedKobo}, Got: ${verifyRes.data.amount}`);
+//                         await BookingModel.markAsFailed(reference);
+//                     }
+//                 }
+//             }
+//         }
 
-        // Always return 200 to Paystack immediately to acknowledge receipt
-        res.status(200).send('Webhook received');
+//         // Always return 200 to Paystack immediately to acknowledge receipt
+//         res.status(200).send('Webhook received');
 
-    } catch (error: any) {
-        console.error('Webhook error:', error);
-        res.status(500).send('Webhook processing failed');
+//     } catch (error: any) {
+//         console.error('Webhook error:', error);
+//         res.status(500).send('Webhook processing failed');
+//     }
+// };
+
+/**
+ * INGESTOR: The only endpoint Paystack talks to directly.
+ * Verifies signature, durably stores the raw payload, and returns 200 instantly.
+ * Business logic is handled asynchronously by the webhookProcessor.
+ */
+export const paystackWebhookIngestor = async (req: Request, res: Response) => {
+  const secret = ENV.PAYSTACK_SECRET_KEY;
+  const rawBody = (req as any).rawBody || JSON.stringify(req.body);
+  const hash = crypto.createHmac('sha512', secret).update(rawBody).digest('hex');
+
+  // 1. Verify signature securely
+  if (hash !== req.headers['x-paystack-signature']) {
+    return res.status(401).send('Invalid signature');
+  }
+
+  const payload = req.body;
+  const eventType = payload.event;
+  const paystackEventId = payload.data?.id ?? payload.data?.reference;
+
+  // 2. Durably persist the event
+  const inserted = await WebhookModel.insertEvent(eventType, paystackEventId, payload);
+  
+  if (!inserted) {
+    // Duplicate webhook received, safe to ack
+    return res.status(200).send('Duplicate event ignored');
+  }
+
+  // 3. Acknowledge receipt immediately so Paystack doesn't retry
+  return res.status(200).send('Webhook received');
+};
+
+/**
+ * TRANSFER APPROVAL: Security-critical endpoint for automated payouts.
+ * Paystack calls this before executing a transfer. We verify that we actually
+ * initiated the payout attempt in our database.
+ */
+export const paystackTransferApproval = async (req: Request, res: Response) => {
+  const { reference, amount, recipient_code } = req.body;
+  const db = getDB();
+
+  try {
+    const { rows } = await db.query(
+      `SELECT * FROM payout_attempts WHERE dispatch_reference = $1 AND status = 'created'`,
+      [reference]
+    );
+
+    const attempt = rows[0];
+    
+    // Authenticate the transfer intent against our records
+    const authentic = attempt &&
+      attempt.amount_kobo === amount &&
+      attempt.recipient_code === recipient_code;
+
+    if (authentic) {
+      // Mark as awaiting webhook since Paystack accepted our intent
+      await db.query(
+        `UPDATE payout_attempts SET status = 'awaiting_webhook', updated_at = NOW() WHERE id = $1`,
+        [attempt.id]
+      );
+      return res.status(200).json({ status: 'success' });
+    } else {
+      console.error(`TRANSFER APPROVAL FAILED: Ref ${reference}. Intent not found or mismatch.`);
+      return res.status(400).json({ status: 'failed' });
     }
+  } catch (error) {
+    console.error('Transfer approval error:', error);
+    return res.status(500).json({ status: 'error' });
+  }
+};
+
+/**
+ * PROVISION DVA: Creates a Dedicated Virtual Account for a booking.
+ * Called internally right after a booking is created.
+ */
+export const provisionDvaForBooking = async (bookingId: string, userId: number, userEmail: string) => {
+  const db = getDB();
+  
+  // 1. Fetch or create Paystack Customer Code for the user
+  let userRes = await db.query('SELECT paystack_customer_code FROM users WHERE id = $1', [userId]);
+  let customerCode = userRes.rows[0].paystack_customer_code;
+
+  if (!customerCode) {
+    // Note: In a real production app, you'd call Paystack's /customer endpoint here.
+    // For brevity, we assume the user creation flow handles this or we mock it.
+    throw new Error('User missing paystack_customer_code. Please create customer first.');
+  }
+
+  // 2. Call Paystack to assign a DVA
+  const dvaRes = await createDedicatedVirtualAccount(userEmail, customerCode);
+  const accountNumber = dvaRes.data.account_number;
+  const bankSlug = dvaRes.data.bank.slug;
+
+  // 3. Update the booking with DVA details
+  await db.query(
+    `UPDATE bookings SET dva_account_number = $2, dva_bank_slug = $3 WHERE id = $1`,
+    [bookingId, accountNumber, bankSlug]
+  );
+
+  return { accountNumber, bankSlug };
 };
