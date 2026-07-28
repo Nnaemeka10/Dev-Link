@@ -31,7 +31,9 @@ function MyListingsContent() {
           </p>
         </div>
 
-        <button className="flex items-center justify-center gap-2 bg-accent-primary text-white px-6 py-3.5 rounded-full font-headline font-bold text-sm tracking-wide shadow-lg shadow-accent-glow hover:opacity-90 transition-all active:scale-95 btn-hover-lift">
+        <button
+          onClick={() => router.push("/vendor/create-listing")} 
+          className="flex items-center justify-center gap-2 bg-accent-primary text-white px-6 py-3.5 rounded-full font-headline font-bold text-sm tracking-wide shadow-lg shadow-accent-glow hover:opacity-90 transition-all active:scale-95 btn-hover-lift">
           <Plus className="w-5 h-5" />
           Create New Listing
         </button>
@@ -69,7 +71,9 @@ function MyListingsContent() {
           <p className="text-text-muted mb-6 max-w-sm text-sm">
             You haven&apos;t listed any venues or services yet. Create your first listing to start getting bookings.
           </p>
-          <button className="flex items-center justify-center gap-2 bg-accent-primary text-white px-6 py-3 rounded-full font-bold shadow-lg shadow-accent-glow hover:opacity-90 transition-all text-sm btn-hover-lift">
+          <button
+            onClick={() => router.push("/vendor/create-listing")}  
+            className="flex items-center justify-center gap-2 bg-accent-primary text-white px-6 py-3 rounded-full font-bold shadow-lg shadow-accent-glow hover:opacity-90 transition-all text-sm btn-hover-lift">
             <Plus className="w-5 h-5" />
             Create Your First Listing
           </button>

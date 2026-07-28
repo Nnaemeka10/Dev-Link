@@ -1,4 +1,5 @@
-// import { vendorDashboardData } from "../data";
+"use client";
+
 import { useState } from "react";
 import VendorHeader from "../components/VendorHeader";
 import DashboardHeading from "../components/DashboardHeading";

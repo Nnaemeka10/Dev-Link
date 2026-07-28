@@ -11,6 +11,7 @@ import PricingStep from "./components/PricingStep";
 import ReviewStep from "./components/ReviewStep";
 import { useEffect, useState } from "react";
 import { createDraft, autosaveDraft, publishListing } from "./api/listingDraft.api";
+import Modal from "./components/shared/Modal";
 
 const VENDOR_LISTINGS_PATH = "/vendor/mylistings";
 
@@ -26,14 +27,24 @@ export default function CreateListingPage() {
   const prevStep = useListingStore((s) => s.prevStep);
   const resetForm = useListingStore((s) => s.resetForm);
 
-   const [isSaving, setIsSaving] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [showBankDetailsModal, setShowBankDetailsModal] = useState(false);
 
    //Create draft immediately on mount if no listingId exists
    useEffect(() => {
     if (!listingId && category) {
-      createDraft(category).then((res) => {
-        setListingId(res.id);
-      }).catch(console.error);
+      createDraft(category)
+        .then((res) => {
+          setListingId(res.id);
+        })
+        .catch((error) => {
+          console.error("Failed to create draft listing", error);
+
+          if (error?.message && error.message.includes("Vendor bank details required")) {
+            setShowBankDetailsModal(true);
+          }
+          // show toast for other errors later
+        });
     }
   }, [listingId, category, setListingId]);
 
@@ -120,6 +131,34 @@ export default function CreateListingPage() {
       {currentStep === 4 && <GalleryStep />}
       {currentStep === 5 && <PricingStep />}
       {currentStep === 6 && <ReviewStep />}
+
+      {/* Bank Details Required Modal */}
+      {showBankDetailsModal && (
+        <Modal
+          isOpen={showBankDetailsModal}
+          onClose={() => setShowBankDetailsModal(false)}
+          title="Bank Details Required"
+          description="You need to add your bank account details before you can create a listing. This is where your payouts will be sent."
+          maxWidthClassName="max-w-md"
+          footer={
+            <button
+              type="button"
+              onClick={() => {
+                setShowBankDetailsModal(false);
+                router.push("/profile");
+              }}
+              className="w-full rounded-full bg-accent-primary py-3.5 text-sm font-bold text-white shadow-card transition-transform hover:scale-[1.01] active:scale-95"
+            >
+              Add Bank Details
+            </button>
+          }
+        >
+          <p className="text-sm text-text-primary/70">
+            Go to your profile to securely add your bank account information. Once
+            saved, you can return here and continue creating your listing.
+          </p>
+        </Modal>
+      )}
     </CreateListingShell>
   );
 }

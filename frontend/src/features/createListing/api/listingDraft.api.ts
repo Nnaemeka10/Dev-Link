@@ -4,7 +4,7 @@ import type { ListingFormState } from "../types/listing";
 
 
 export async function createDraft(kind: "hall" | "service"): Promise<{ id: string }> {
-  return apiFetch<{ id: string }>("/api/listings", {
+  return apiFetch<{ id: string }>("/api/vendor/listings", {
     method: "POST",
     body: JSON.stringify({ kind }),
   });
@@ -21,7 +21,7 @@ export async function autosaveDraft(listingId: string, payload: ListingFormState
     })),
   };
 
-  await apiFetch(`/api/listings/${listingId}/draft`, {
+  await apiFetch(`/api/vendor/listings/${listingId}/draft`, {
     method: "PATCH",
     body: JSON.stringify({ ...payload, pricing: pricingPayload }),
   });
@@ -37,7 +37,7 @@ export async function publishListing(listingId: string, payload: ListingFormStat
     })),
   };
 
-  await apiFetch(`/api/listings/${listingId}/publish`, {
+  await apiFetch(`/api/vendor/listings/${listingId}/publish`, {
     method: "POST",
     body: JSON.stringify({ draft_payload: { ...payload, pricing: pricingPayload } }),
   });
@@ -50,7 +50,7 @@ export async function signCloudinaryUpload(listingId: string): Promise<{
   apiKey: string;
   cloudName: string;
 }> {
-  return apiFetch("/api/uploads/cloudinary/sign", {
+  return apiFetch("/api/vendor/uploads/cloudinary/sign", {
     method: "POST",
     body: JSON.stringify({ listingId }),
   });
