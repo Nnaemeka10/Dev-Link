@@ -280,11 +280,14 @@ import HomeFooter from "@/components/layout/Footer";
 
 import { useParams } from "next/navigation";
 import { useListingDetails } from "../hooks/useListingDetails";
+import { useRouter } from "next/navigation";
+import { BOOKING_STORAGE_KEY } from "@/features/bookings/booking.data";
 
 export default function ServiceDetails() {
   const form = useSearchForm();
   const params = useParams();
   const id = params.id as string;
+  const router = useRouter();
 
   const { data: listing, isLoading, isError } = useListingDetails(id);
   
@@ -334,6 +337,23 @@ export default function ServiceDetails() {
     joined: "2023", 
     totalEvents: 50, 
     responseTime: listing.responseTime || "1 hour"
+  };
+
+  const handleRequestToBook = () => {
+    if (!selectedPackage) {
+      alert("Please select a package to continue.");
+      return;
+    }
+
+    // Save the selected package to local storage so the booking wizard picks it up
+    const bookingPayload = { packageId: selectedPackage };
+    try {
+      localStorage.setItem(BOOKING_STORAGE_KEY, JSON.stringify(bookingPayload));
+    } catch (error) {
+      console.error("Failed to save booking draft:", error);
+    }
+
+    router.push(`/bookings/${id}?step=1`);
   };
 
   const renderServiceInfo = (variant: "mobile" | "tablet" | "desktop") => (
@@ -442,7 +462,9 @@ export default function ServiceDetails() {
         ))}
       </div>
 
-      <button className="w-full rounded-full bg-[#B9401D] px-6 py-4 text-sm font-extrabold text-white transition hover:brightness-95">
+      <button
+        onClick={handleRequestToBook} 
+        className="w-full rounded-full bg-[#B9401D] px-6 py-4 text-sm font-extrabold text-white transition hover:brightness-95">
         Request to Book
       </button>
       <button className="mt-4 flex w-full items-center justify-center gap-2 rounded-full bg-[#E8E4DC] px-6 py-4 text-sm font-extrabold text-[#252423]">
@@ -525,7 +547,9 @@ export default function ServiceDetails() {
               <p className="text-[1.3rem] font-extrabold text-[#252423]">{getPackage()?.price}</p>
               <p className="text-xs font-extrabold underline text-[#5E6588]">{getPackage()?.name}</p>
             </div>
-            <button className="rounded-full bg-[#B9401D] px-8 py-3.5 text-[0.95rem] font-extrabold text-white">
+            <button 
+            onClick={handleRequestToBook}
+            className="rounded-full bg-[#B9401D] px-8 py-3.5 text-[0.95rem] font-extrabold text-white">
               Request to Book
             </button>
           </div>

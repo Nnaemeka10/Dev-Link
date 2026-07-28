@@ -12,6 +12,7 @@ const userPublicFields = `
   last_name,
   date_of_birth,
   phone,
+  avatar_url,
   is_email_verified,
   is_active
 `;
@@ -36,15 +37,7 @@ export const UserModel = {
             VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
             RETURNING id, email, username, first_name, last_name, date_of_birth, headline, phone, is_email_verified, is_active, created_at, updated_at
         `;
-        // const values = [
-        //     userData.role_id,
-        //     userData.email,
-        //     userData.username || null,
-        //     password_hash,
-        //     userData.full_name || null,
-        //     userData.headline || null,
-        //     userData.phone || null,
-        // ];
+       
          const values = [
             userData.email,
             userData.username || null,
@@ -60,14 +53,7 @@ export const UserModel = {
         return result.rows[0];
     },
 
-    //find user by email
-    //  async findByEmail(email: string): Promise<User | null> {
-    //     const db = getDB();
-    //     const query = `SELECT * FROM users WHERE email = $1`;
-    //     const result = await db.query(query, [email]);
-
-    //     return result.rows[0] || null;
-    // },
+  
     async findByEmail(email: string): Promise<User | null> {
         const db = getDB();
         const query = `SELECT * FROM users WHERE email = $1`;
@@ -160,6 +146,7 @@ export const UserModel = {
             headline: "headline",
             phone: "phone",
             username: "username",
+            avatar_url: "avatar_url",
             is_email_verified: "is_email_verified",
             is_active: "is_active"
         } as const;

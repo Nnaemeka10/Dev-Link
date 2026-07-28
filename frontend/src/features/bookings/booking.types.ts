@@ -11,6 +11,7 @@ export interface BookingFormState {
   preferences: string;
   startTime: string;
   termsAccepted: boolean;
+  packageId?: string;
 }
 
 export interface BookingSummaryData {

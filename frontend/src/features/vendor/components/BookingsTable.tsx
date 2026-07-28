@@ -8,6 +8,8 @@ interface BookingsTableProps {
   activeFilterKey?: BookingFilterTab["key"];
   bookings: BookingRecord[];
   pagination: PaginationState;
+  onFilterChange?: (key: BookingFilterTab["key"]) => void;
+  onPageChange?: (page: number) => void;
 }
 
 function formatDateRange(dateRange: BookingRecord["dateRange"]) {
@@ -20,8 +22,12 @@ export default function BookingsTable({
   activeFilterKey = "all",
   bookings,
   pagination,
+  onFilterChange,
+  onPageChange,
 }: BookingsTableProps) {
-  const rangeStart = (pagination.currentPage - 1) * pagination.itemsPerPage + 1;
+  // const rangeStart = (pagination.currentPage - 1) * pagination.itemsPerPage + 1;
+  // const rangeEnd = Math.min(pagination.currentPage * pagination.itemsPerPage, pagination.totalItems);
+  const rangeStart = pagination.totalItems === 0 ? 0 : (pagination.currentPage - 1) * pagination.itemsPerPage + 1;
   const rangeEnd = Math.min(pagination.currentPage * pagination.itemsPerPage, pagination.totalItems);
 
   return (
@@ -35,6 +41,7 @@ export default function BookingsTable({
               <button
                 key={tab.key}
                 type="button"
+                onClick={() => onFilterChange?.(tab.key)}
                 className={`rounded-full px-4 py-2 text-sm font-bold transition-all duration-300 xs:px-5 ${
                   isActive
                     ? "bg-white text-accent-primary shadow-card"
@@ -99,168 +106,180 @@ export default function BookingsTable({
             </tr>
           </thead>
           <tbody className="divide-y divide-black/5">
-            {bookings.map((booking, index) => {
-              const isCancelled = booking.status === "cancelled";
-              return (
-                <tr
-                  key={booking.id}
-                  className="group transition-all duration-300 hover:-translate-y-0.5 hover:bg-bg-tertiary/50 hover:shadow-card"
-                  style={{ animationDelay: `${index * 60}ms` }}
-                >
-                  <td className="px-8 py-6">
-                    <div className="flex items-center gap-3">
-                      <div className="relative h-10 w-10 overflow-hidden rounded-full border border-black/10 transition-transform duration-500 group-hover:scale-110">
-                        <Image
-                          src={booking.clientAvatarUrl}
-                          alt={booking.clientName}
-                          fill
-                          sizes="40px"
-                          className="object-cover"
-                        />
-                      </div>
-                      <div>
-                        <p className="font-bold text-text-primary transition-colors group-hover:text-accent-primary">
-                          {booking.clientName}
-                        </p>
-                        <p className="text-xs text-text-primary/45">{booking.bookingRef}</p>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-6">
-                    <span className="text-sm font-medium text-text-primary">{booking.eventType}</span>
-                  </td>
-                  <td className="px-6 py-6">
-                    <div className={`text-sm ${isCancelled ? "opacity-60" : ""}`}>
-                      <p className={`font-semibold text-text-primary ${isCancelled ? "line-through" : ""}`}>
-                        {formatDateRange(booking.dateRange)}
-                      </p>
-                      <p className="text-xs text-text-primary/45">{booking.time}</p>
-                    </div>
-                  </td>
-                  <td className={`px-6 py-6 ${isCancelled ? "opacity-60" : ""}`}>
-                    <div className="text-sm">
-                      <p className="font-medium text-text-primary">{booking.listing.name}</p>
-                      <p className="text-xs font-bold text-accent-primary">{booking.listing.label}</p>
-                    </div>
-                  </td>
-                  <td className={`px-6 py-6 ${isCancelled ? "opacity-60" : ""}`}>
-                    <p className="font-bold text-text-primary">{formatCurrency(booking.totalPrice)}</p>
-                  </td>
-                  <td className="px-6 py-6">
-                    <BookingStatusPill status={booking.status} />
-                  </td>
-                  <td className="px-8 py-6 text-right">
-                    <div className="flex items-center justify-end gap-2">
-                      <button
-                        type="button"
-                        title="Chat with client"
-                        className="rounded-full p-2 text-text-primary/50 transition-all duration-300 hover:scale-110 hover:bg-bg-tertiary hover:text-accent-primary"
-                      >
-                        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                          <path
-                            d="M4 5.5C4 4.67157 4.67157 4 5.5 4H18.5C19.3284 4 20 4.67157 20 5.5V15.5C20 16.3284 19.3284 17 18.5 17H8L4 20.5V5.5Z"
-                            stroke="currentColor"
-                            strokeWidth="1.6"
-                            strokeLinejoin="round"
+          {bookings.length === 0 ? (
+              <tr>
+                <td colSpan={7} className="px-8 py-12 text-center text-sm text-text-primary/50">
+                  No bookings found in this category.
+                </td>
+              </tr>
+            ) : (
+              bookings.map((booking, index) => {
+                const isCancelled = booking.status === "cancelled";
+                return (
+                  <tr
+                    key={booking.id}
+                    className="group transition-all duration-300 hover:-translate-y-0.5 hover:bg-bg-tertiary/50 hover:shadow-card"
+                    style={{ animationDelay: `${index * 60}ms` }}
+                  >
+                    <td className="px-8 py-6">
+                      <div className="flex items-center gap-3">
+                        <div className="relative h-10 w-10 overflow-hidden rounded-full border border-black/10 transition-transform duration-500 group-hover:scale-110">
+                          <Image
+                            src={booking.clientAvatarUrl}
+                            alt={booking.clientName}
+                            fill
+                            sizes="40px"
+                            className="object-cover"
                           />
-                        </svg>
-                      </button>
-                      <button
-                        type="button"
-                        className="rounded-full bg-bg-tertiary px-4 py-2 text-xs font-bold text-text-primary shadow-card transition-all duration-300 hover:scale-105 hover:bg-accent-primary hover:text-white active:scale-95"
-                      >
-                        View Details
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              );
-            })}
+                        </div>
+                        <div>
+                          <p className="font-bold text-text-primary transition-colors group-hover:text-accent-primary">
+                            {booking.clientName}
+                          </p>
+                          <p className="text-xs text-text-primary/45">{booking.bookingRef}</p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-6">
+                      <span className="text-sm font-medium text-text-primary">{booking.eventType}</span>
+                    </td>
+                    <td className="px-6 py-6">
+                      <div className={`text-sm ${isCancelled ? "opacity-60" : ""}`}>
+                        <p className={`font-semibold text-text-primary ${isCancelled ? "line-through" : ""}`}>
+                          {formatDateRange(booking.dateRange)}
+                        </p>
+                        <p className="text-xs text-text-primary/45">{booking.time}</p>
+                      </div>
+                    </td>
+                    <td className={`px-6 py-6 ${isCancelled ? "opacity-60" : ""}`}>
+                      <div className="text-sm">
+                        <p className="font-medium text-text-primary">{booking.listing.name}</p>
+                        <p className="text-xs font-bold text-accent-primary">{booking.listing.label}</p>
+                      </div>
+                    </td>
+                    <td className={`px-6 py-6 ${isCancelled ? "opacity-60" : ""}`}>
+                      <p className="font-bold text-text-primary">{formatCurrency(booking.totalPrice)}</p>
+                    </td>
+                    <td className="px-6 py-6">
+                      <BookingStatusPill status={booking.status} />
+                    </td>
+                    <td className="px-8 py-6 text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        <button
+                          type="button"
+                          title="Chat with client"
+                          className="rounded-full p-2 text-text-primary/50 transition-all duration-300 hover:scale-110 hover:bg-bg-tertiary hover:text-accent-primary"
+                        >
+                          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                            <path
+                              d="M4 5.5C4 4.67157 4.67157 4 5.5 4H18.5C19.3284 4 20 4.67157 20 5.5V15.5C20 16.3284 19.3284 17 18.5 17H8L4 20.5V5.5Z"
+                              stroke="currentColor"
+                              strokeWidth="1.6"
+                              strokeLinejoin="round"
+                            />
+                          </svg>
+                        </button>
+                        <button
+                          type="button"
+                          className="rounded-full bg-bg-tertiary px-4 py-2 text-xs font-bold text-text-primary shadow-card transition-all duration-300 hover:scale-105 hover:bg-accent-primary hover:text-white active:scale-95"
+                        >
+                          View Details
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })
+            )}
           </tbody>
         </table>
       </div>
 
       {/* Mobile card list */}
       <ul className="divide-y divide-black/5 md:hidden">
-        {bookings.map((booking) => {
-          const isCancelled = booking.status === "cancelled";
-          return (
-            <li key={booking.id} className="p-5 xs:p-6">
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex items-center gap-3">
-                  <div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-full border border-black/10">
-                    <Image
-                      src={booking.clientAvatarUrl}
-                      alt={booking.clientName}
-                      fill
-                      sizes="44px"
-                      className="object-cover"
-                    />
+        {bookings.length === 0 ? (
+          <li className="p-8 text-center text-sm text-text-primary/50">No bookings found.</li>
+        ) : (
+          bookings.map((booking) => {
+            const isCancelled = booking.status === "cancelled";
+            return (
+              <li key={booking.id} className="p-5 xs:p-6">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-full border border-black/10">
+                      <Image
+                        src={booking.clientAvatarUrl}
+                        alt={booking.clientName}
+                        fill
+                        sizes="44px"
+                        className="object-cover"
+                      />
+                    </div>
+                    <div>
+                      <p className="font-bold text-text-primary">{booking.clientName}</p>
+                      <p className="text-xs text-text-primary/45">{booking.bookingRef}</p>
+                    </div>
+                  </div>
+                  <BookingStatusPill status={booking.status} />
+                </div>
+
+                <div className={`mt-4 grid grid-cols-2 gap-3 text-sm ${isCancelled ? "opacity-60" : ""}`}>
+                  <div>
+                    <p className="text-[11px] font-bold uppercase tracking-wider text-text-primary/40">
+                      Event
+                    </p>
+                    <p className="mt-0.5 font-medium text-text-primary">{booking.eventType}</p>
                   </div>
                   <div>
-                    <p className="font-bold text-text-primary">{booking.clientName}</p>
-                    <p className="text-xs text-text-primary/45">{booking.bookingRef}</p>
+                    <p className="text-[11px] font-bold uppercase tracking-wider text-text-primary/40">
+                      Total
+                    </p>
+                    <p className="mt-0.5 font-bold text-text-primary">{formatCurrency(booking.totalPrice)}</p>
+                  </div>
+                  <div>
+                    <p className="text-[11px] font-bold uppercase tracking-wider text-text-primary/40">
+                      Date &amp; Time
+                    </p>
+                    <p className={`mt-0.5 font-medium text-text-primary ${isCancelled ? "line-through" : ""}`}>
+                      {formatDateRange(booking.dateRange)}
+                    </p>
+                    <p className="text-xs text-text-primary/45">{booking.time}</p>
+                  </div>
+                  <div>
+                    <p className="text-[11px] font-bold uppercase tracking-wider text-text-primary/40">
+                      Venue / Service
+                    </p>
+                    <p className="mt-0.5 font-medium text-text-primary">{booking.listing.name}</p>
+                    <p className="text-xs font-bold text-accent-primary">{booking.listing.label}</p>
                   </div>
                 </div>
-                <BookingStatusPill status={booking.status} />
-              </div>
 
-              <div className={`mt-4 grid grid-cols-2 gap-3 text-sm ${isCancelled ? "opacity-60" : ""}`}>
-                <div>
-                  <p className="text-[11px] font-bold uppercase tracking-wider text-text-primary/40">
-                    Event
-                  </p>
-                  <p className="mt-0.5 font-medium text-text-primary">{booking.eventType}</p>
+                <div className="mt-4 flex items-center gap-2">
+                  <button
+                    type="button"
+                    className="flex flex-1 items-center justify-center gap-2 rounded-full bg-bg-tertiary px-4 py-2.5 text-xs font-bold text-text-primary active:scale-95"
+                  >
+                    View Details
+                  </button>
+                  <button
+                    type="button"
+                    title="Chat with client"
+                    className="rounded-full border border-black/10 p-2.5 text-text-primary/50 active:scale-90"
+                  >
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                      <path
+                        d="M4 5.5C4 4.67157 4.67157 4 5.5 4H18.5C19.3284 4 20 4.67157 20 5.5V15.5C20 16.3284 19.3284 17 18.5 17H8L4 20.5V5.5Z"
+                        stroke="currentColor"
+                        strokeWidth="1.6"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  </button>
                 </div>
-                <div>
-                  <p className="text-[11px] font-bold uppercase tracking-wider text-text-primary/40">
-                    Total
-                  </p>
-                  <p className="mt-0.5 font-bold text-text-primary">{formatCurrency(booking.totalPrice)}</p>
-                </div>
-                <div>
-                  <p className="text-[11px] font-bold uppercase tracking-wider text-text-primary/40">
-                    Date &amp; Time
-                  </p>
-                  <p className={`mt-0.5 font-medium text-text-primary ${isCancelled ? "line-through" : ""}`}>
-                    {formatDateRange(booking.dateRange)}
-                  </p>
-                  <p className="text-xs text-text-primary/45">{booking.time}</p>
-                </div>
-                <div>
-                  <p className="text-[11px] font-bold uppercase tracking-wider text-text-primary/40">
-                    Venue / Service
-                  </p>
-                  <p className="mt-0.5 font-medium text-text-primary">{booking.listing.name}</p>
-                  <p className="text-xs font-bold text-accent-primary">{booking.listing.label}</p>
-                </div>
-              </div>
-
-              <div className="mt-4 flex items-center gap-2">
-                <button
-                  type="button"
-                  className="flex flex-1 items-center justify-center gap-2 rounded-full bg-bg-tertiary px-4 py-2.5 text-xs font-bold text-text-primary active:scale-95"
-                >
-                  View Details
-                </button>
-                <button
-                  type="button"
-                  title="Chat with client"
-                  className="rounded-full border border-black/10 p-2.5 text-text-primary/50 active:scale-90"
-                >
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                    <path
-                      d="M4 5.5C4 4.67157 4.67157 4 5.5 4H18.5C19.3284 4 20 4.67157 20 5.5V15.5C20 16.3284 19.3284 17 18.5 17H8L4 20.5V5.5Z"
-                      stroke="currentColor"
-                      strokeWidth="1.6"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
-                </button>
-              </div>
-            </li>
-          );
-        })}
+              </li>
+            );
+          })
+        )}
       </ul>
 
       {/* Pagination */}
@@ -273,6 +292,7 @@ export default function BookingsTable({
             type="button"
             aria-label="Previous page"
             disabled={pagination.currentPage === 1}
+            onClick={() => onPageChange?.(pagination.currentPage - 1)}
             className="flex h-9 w-9 items-center justify-center rounded-full text-text-primary/40 transition-all duration-300 hover:scale-110 hover:bg-bg-tertiary disabled:pointer-events-none disabled:opacity-30"
           >
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -285,6 +305,7 @@ export default function BookingsTable({
               key={page}
               type="button"
               aria-current={page === pagination.currentPage ? "page" : undefined}
+              onClick={() => onPageChange?.(page)}
               className={`flex h-9 w-9 items-center justify-center rounded-full text-sm font-bold transition-all duration-300 hover:scale-110 ${
                 page === pagination.currentPage
                   ? "bg-accent-primary text-white"
@@ -299,6 +320,7 @@ export default function BookingsTable({
             type="button"
             aria-label="Next page"
             disabled={pagination.currentPage === pagination.totalPages}
+            onClick={() => onPageChange?.(pagination.currentPage + 1)}
             className="flex h-9 w-9 items-center justify-center rounded-full text-text-primary/40 transition-all duration-300 hover:scale-110 hover:bg-bg-tertiary disabled:pointer-events-none disabled:opacity-30"
           >
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">

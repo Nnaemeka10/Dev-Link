@@ -1,31 +1,4 @@
-// export interface User {
-//     id?: number;
-//     role_id: number;
-//     email: string;
-//     username?: string;
-//     password_hash?: string;
-//     full_name?: string;
-//     headline?: string;
-//     phone?: string;
-//     is_email_verified?: boolean;
-//     is_active?: boolean;
-//     created_at?: Date;
-//     updated_at?: Date;
-// }
 
-// export interface UserWithoutPassword {
-//     id?: number;
-//     role_id: number;
-//     email: string;
-//     username?: string;
-//     full_name?: string;
-//     headline?: string;
-//     phone?: string;
-//     is_email_verified?: boolean;
-//     is_active?: boolean;
-//     created_at?: Date;
-//     updated_at?: Date;
-// }
 
 export interface User {
     id?: number;
@@ -37,6 +10,7 @@ export interface User {
     date_of_birth?: string;
     headline?: string;
     phone?: string;
+    avatar_url?: string;
     is_email_verified?: boolean;
     is_active?: boolean;
     created_at?: Date;
@@ -52,6 +26,7 @@ export interface UserWithoutPassword {
     date_of_birth?: string;
     headline?: string;
     phone?: string;
+    avatar_url?: string;
     is_email_verified?: boolean;
     is_active?: boolean;
     created_at?: Date;
@@ -64,6 +39,7 @@ export interface AllowedUpdates {
     headline?: string;
     phone?: string;
     username?: string;
+    avatar_url?: string;
     is_email_verified?: boolean;
     is_active?: boolean;
 }

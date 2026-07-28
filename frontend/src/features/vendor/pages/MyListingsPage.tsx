@@ -1,11 +1,13 @@
 "use client";
 
-import Link from "next/link";
+
+import Image from "next/image";
 import VendorSideNavBar from "../../../components/layout/VendorSideNavBar";
 import VendorMobileDock from "../../../components/layout/VendorMobileDock";
 import { MOCK_VENDOR_LISTINGS } from "../vendor.data";
 import { Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useMyListingsStats, useVendorListings } from "../hooks/useVendorDashboard";
 
 function formatNaira(amount: number) {
   return new Intl.NumberFormat("en-NG", { style: "currency", currency: "NGN" }).format(amount);
@@ -13,6 +15,9 @@ function formatNaira(amount: number) {
 
 function MyListingsContent() {
   const router = useRouter();
+  const { data: stats } = useMyListingsStats();
+  const { data: listings } = useVendorListings();
+  
   return (
     <div className="max-w-6xl mx-auto py-8">
       {/* ── Page Header ─────────────────────────────────────────────────── */}
@@ -36,20 +41,20 @@ function MyListingsContent() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 mb-12">
         <div className="bg-surface-low p-5 md:p-6 rounded-2xl animate-fade-slide-up stagger-1 hover:bg-surface-high transition-all duration-300 cursor-default">
           <p className="text-text-muted text-xs font-bold uppercase tracking-widest mb-1">Total Listings</p>
-          <p className="text-3xl font-black font-headline text-accent-primary">24</p>
+          <p className="text-3xl font-black font-headline text-accent-primary">{stats?.totalListings ?? 0}</p>
         </div>
         <div className="bg-surface-low p-5 md:p-6 rounded-2xl animate-fade-slide-up stagger-2 hover:bg-surface-high transition-all duration-300 cursor-default">
           <p className="text-text-muted text-xs font-bold uppercase tracking-widest mb-1">Active Now</p>
-          <p className="text-3xl font-black font-headline text-text-green">18</p>
+          <p className="text-3xl font-black font-headline text-text-green">{stats?.activeListings ?? 0}</p>
         </div>
         <div className="bg-surface-low p-5 md:p-6 rounded-2xl animate-fade-slide-up stagger-3 hover:bg-surface-high transition-all duration-300 cursor-default">
           <p className="text-text-muted text-xs font-bold uppercase tracking-widest mb-1">Total Views</p>
-          <p className="text-3xl font-black font-headline text-text-primary">12.4k</p>
+          <p className="text-3xl font-black font-headline text-text-primary">{stats?.totalViews.toLocaleString() || "0"}</p>
         </div>
         <div className="bg-surface-low p-5 md:p-6 rounded-2xl animate-fade-slide-up stagger-4 hover:bg-surface-high transition-all duration-300 cursor-default">
           <p className="text-text-muted text-xs font-bold uppercase tracking-widest mb-1">Avg. Rating</p>
           <div className="flex items-center gap-2">
-            <p className="text-3xl font-black font-headline text-accent-secondary">4.9</p>
+            <p className="text-3xl font-black font-headline text-accent-secondary">{stats?.avgRating?.toFixed(1) || "0.0"}</p>
             <span className="material-symbols-outlined text-accent-secondary text-2xl" style={{ fontVariationSettings: "'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24" }}>
               star
             </span>
@@ -58,7 +63,7 @@ function MyListingsContent() {
       </div>
 
       {/* ── Listings Grid ───────────────────────────────────────────────── */}
-      {MOCK_VENDOR_LISTINGS.length === 0 ? (
+      {!listings || listings.length === 0 ? (
         <div className="py-24 flex flex-col items-center justify-center bg-surface-base rounded-3xl border border-border-light text-center px-4 animate-fade-slide-up stagger-5">
           <h2 className="text-xl font-bold font-headline mb-2">No listings yet</h2>
           <p className="text-text-muted mb-6 max-w-sm text-sm">
@@ -71,16 +76,18 @@ function MyListingsContent() {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {MOCK_VENDOR_LISTINGS.map((listing) => (
+          {listings.map((listing) => (
             <div
               key={listing.id}
               className="group relative bg-surface-base rounded-2xl overflow-hidden hover:-translate-y-2 transition-all duration-500 hover:shadow-2xl animate-fade-slide-up stagger-5"
             >
               <div className="relative aspect-[4/3] bg-surface-dim overflow-hidden">
-                <img
+                <Image
                   src={listing.thumbnailUrl}
                   alt={listing.title}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                  fill
+                  sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                  className="object-cover group-hover:scale-105 transition-transform duration-700"
                 />
                 <div className="absolute top-4 left-4 flex gap-2">
                   {listing.status === "active" ? (

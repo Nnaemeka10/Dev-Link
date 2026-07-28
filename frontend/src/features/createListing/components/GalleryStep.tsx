@@ -3,13 +3,16 @@
 import { useRef } from "react";
 import { useListingStore } from "../store/useListingStore";
 import type { GalleryPhoto } from "../types/listing";
+import { uploadToCloudinary } from "../api/listingDraft.api";
 
 const MIN_PHOTOS = 5;
 
 export default function GalleryStep() {
+  const listingId = useListingStore((s) => s.listingId);
   const category = useListingStore((s) => s.form.category);
   const gallery = useListingStore((s) => s.form.gallery);
   const addPhotos = useListingStore((s) => s.addPhotos);
+  const updatePhoto = useListingStore((s) => s.updatePhoto);
   const removePhoto = useListingStore((s) => s.removePhoto);
   const setCoverPhoto = useListingStore((s) => s.setCoverPhoto);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -22,9 +25,25 @@ export default function GalleryStep() {
   // NOTE(meks): local preview only — wire this to your Cloudinary signed
   // upload flow (get signature from the backend, upload client-side, then
   // call updatePhoto with the returned secure_url/public_id).
-  const handleFilesSelected = (files: FileList | null) => {
-    if (!files) return;
-    const newPhotos: GalleryPhoto[] = Array.from(files).map((file) => ({
+  // const handleFilesSelected = (files: FileList | null) => {
+  //   if (!files) return;
+  //   const newPhotos: GalleryPhoto[] = Array.from(files).map((file) => ({
+  //     id: `photo_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+  //     url: URL.createObjectURL(file),
+  //     publicId: null,
+  //     isCover: false,
+  //     uploadStatus: "pending",
+  //   }));
+  //   addPhotos(newPhotos);
+  // };
+
+  const handleFilesSelected = async (files: FileList | null) => {
+    if (!files || !listingId) return;
+    
+    const fileArray = Array.from(files);
+    
+    // 1. Add as pending with local blob preview
+    const newPhotos: GalleryPhoto[] = fileArray.map((file) => ({
       id: `photo_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
       url: URL.createObjectURL(file),
       publicId: null,
@@ -32,9 +51,24 @@ export default function GalleryStep() {
       uploadStatus: "pending",
     }));
     addPhotos(newPhotos);
-  };
 
+    // 2. Upload each file to Cloudinary
+    for (let i = 0; i < fileArray.length; i++) {
+      const file = fileArray[i];
+      const photoId = newPhotos[i].id;
+      
+      updatePhoto(photoId, { uploadStatus: "uploading" });
+      
+      try {
+        const { secure_url, public_id } = await uploadToCloudinary(file, listingId, () => {});
+        updatePhoto(photoId, { url: secure_url, publicId: public_id, uploadStatus: "uploaded" });
+      } catch (error) {
+        updatePhoto(photoId, { uploadStatus: "error" });
+      }
+    }
+  };
   const remaining = Math.max(0, MIN_PHOTOS - gallery.length);
+  const isUploading = gallery.some((p) => p.uploadStatus === "uploading" || p.uploadStatus === "pending"); 
 
   return (
     <div className="mx-auto max-w-4xl">
@@ -43,12 +77,14 @@ export default function GalleryStep() {
           Bring your listing to life
         </h2>
         <p className="mt-4 text-base text-text-primary/60 md:text-lg">{description}</p>
+        {isUploading && <p className="mt-2 text-sm font-bold text-accent-primary animate-pulse">Uploading images...</p>}
       </div>
 
       <div className="rounded-card bg-white p-5 shadow-card ring-1 ring-black/5 md:p-8">
         <button
           type="button"
           onClick={() => fileInputRef.current?.click()}
+          disabled={isUploading}
           className="flex w-full flex-col items-center justify-center rounded-card border-2 border-dashed border-black/10 bg-bg-tertiary py-10 text-center transition-colors hover:border-accent-primary/40 hover:bg-accent-tint md:py-14"
         >
           <span className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-accent-primary/10 text-accent-primary">
@@ -66,6 +102,7 @@ export default function GalleryStep() {
             multiple
             className="hidden"
             onChange={(e) => handleFilesSelected(e.target.files)}
+            disabled={isUploading}
           />
         </button>
 
@@ -82,6 +119,23 @@ export default function GalleryStep() {
               <div key={photo.id} className="group relative aspect-square overflow-hidden rounded-card bg-bg-tertiary">
                 {/* eslint-disable-next-line @next/next/no-img-element -- local blob preview, not a remote asset */}
                 <img src={photo.url} alt="" className="h-full w-full object-cover" />
+                
+                {photo.uploadStatus === "uploading" && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/50 text-white text-xs font-bold">
+                    Uploading...
+                  </div>
+                )}
+                {photo.uploadStatus === "error" && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-red-500/80 text-white text-xs font-bold">
+                    Failed
+                  </div>
+                )}
+
+                {photo.isCover && photo.uploadStatus === "uploaded" && (
+                  <span className="absolute left-2 top-2 flex items-center gap-1 rounded-full bg-white/90 px-2.5 py-1 text-[10px] font-bold text-accent-primary shadow-card">
+                    Cover
+                  </span>
+                )}
 
                 {photo.isCover && (
                   <span className="absolute left-2 top-2 flex items-center gap-1 rounded-full bg-white/90 px-2.5 py-1 text-[10px] font-bold text-accent-primary shadow-card">

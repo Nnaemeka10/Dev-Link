@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { ChevronDown, MapPin } from "lucide-react";
+import { Check, ChevronDown, MapPin } from "lucide-react";
 import type { BookingFormState } from "../booking.types";
 // import { EstimateSummary, VenueSelectionCard } from "./BookingSummary";
 import { DateTimeSection } from "./DateTimeSection";
@@ -24,7 +24,7 @@ export default function BookingDetailsStep({ form, listing, onContinue, onUpdate
   const gallery = listing.images.map((img) => img.url);
   const venueImage = listing.primaryImage?.url || gallery[0] || "/images/placeholder.jpg";
 
-  const { data: quote, isLoading: isQuoteLoading } = usePricingQuote(listing.id, form.dateRange);
+  const { data: quote, isLoading: isQuoteLoading } = usePricingQuote(listing.id, form.dateRange, form.packageId);
 
   const hasDates = !!(form.dateRange?.from && form.dateRange?.to);
   
@@ -129,6 +129,40 @@ export default function BookingDetailsStep({ form, listing, onContinue, onUpdate
           listingId={listing.id}
         />
 
+        {listing.kind === 'service' && listing.packages && listing.packages.length > 0 && (
+          <div className="mt-8 rounded-[2.2rem] bg-white p-8 shadow-[0_24px_54px_rgba(34,27,18,0.06)]">
+            <h2 className="text-2xl font-medium text-[#252423] mb-6">Select Package</h2>
+            <div className="space-y-4">
+              {listing.packages.map((pkg) => (
+                <div 
+                  key={pkg.id} 
+                  onClick={() => onUpdate({ packageId: pkg.id })}
+                  className={`cursor-pointer rounded-2xl border-2 p-5 transition-all ${
+                    form.packageId === pkg.id ? "border-[#252423] bg-[#F9F7F5]" : "border-[#E8DDD2] hover:border-[#252423]"
+                  }`}
+                >
+                  <div className="flex justify-between items-center mb-2">
+                    <h4 className="font-bold text-lg">{pkg.name}</h4>
+                    {pkg.isPopular && <span className="bg-[#FFDFA7] text-[#B9401D] text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">Popular</span>}
+                  </div>
+                  <p className="text-2xl font-extrabold">₦{pkg.price.toLocaleString()}</p>
+                  <p className="text-sm text-[#5E6588] mt-2">{pkg.description || ""}</p>
+                  
+                  {form.packageId === pkg.id && (
+                    <div className="mt-4 pt-4 border-t border-[#E8DDD2] space-y-3">
+                      {pkg.features.map((feat, i) => (
+                        <div key={i} className="flex gap-3 items-start">
+                          <Check className="w-5 h-5 text-[#B9401D] flex-shrink-0" />
+                          <span className="text-sm font-medium">{feat.text}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
         <aside className="rounded-[2.2rem] h-fit bg-white p-8 shadow-[0_24px_54px_rgba(34,27,18,0.08)]">
           <h2 className="text-2xl font-medium text-[#252423]">Estimated Cost</h2>
           {hasDates ? (

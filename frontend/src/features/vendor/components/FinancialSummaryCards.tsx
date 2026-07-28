@@ -12,13 +12,13 @@ export default function FinancialSummaryCards({ summary }: FinancialSummaryCards
       <div className="animate-fade-up rounded-card bg-text-primary p-6 text-white shadow-card lg:col-span-3 xl:p-8">
         <div className="flex items-center justify-between">
           <p className="text-xs font-bold uppercase tracking-widest text-white/60">Total Revenue</p>
-          <span className="flex items-center gap-1 rounded-full bg-white/10 px-2.5 py-1 text-xs font-bold text-emerald-400">
+          {/* <span className="flex items-center gap-1 rounded-full bg-white/10 px-2.5 py-1 text-xs font-bold text-emerald-400">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true">
               <path d="M4 17L10 11L14 15L20 8" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
               <path d="M14 8H20V14" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
             {summary.totalRevenueChangePercent}%
-          </span>
+          </span> */}
         </div>
         <p className="mt-6 font-man text-4xl font-black tracking-tight xl:text-5xl">
           {formatCurrency(summary.totalRevenue, summary.currencySymbol)}

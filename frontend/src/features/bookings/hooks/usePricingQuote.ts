@@ -11,9 +11,9 @@ interface QuoteResponse {
   currency: string;
 }
 
-export function usePricingQuote(listingId: string, dateRange: DateRange | undefined) {
+export function usePricingQuote(listingId: string, dateRange: DateRange | undefined, packageId?: string) {
   return useQuery({
-    queryKey: ["pricing-quote", listingId, dateRange?.from, dateRange?.to],
+    queryKey: ["pricing-quote", listingId, dateRange?.from, dateRange?.to, packageId],
     queryFn: async () => {
       if (!dateRange?.from || !dateRange?.to) return null;
 
@@ -23,6 +23,7 @@ export function usePricingQuote(listingId: string, dateRange: DateRange | undefi
           listingId,
           startDate: toLocalDateString(dateRange.from),
           endDate: toLocalDateString(dateRange.to),
+          packageId,
         }),
         redirectOn401: false,
       });

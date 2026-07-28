@@ -11,7 +11,7 @@ export const createBooking = async (req: Request, res: Response) => {
             return;
         }
 
-        const { listingId, startDate, endDate, startTime, endTime, preferences } = req.body as CreateBookingInput;
+        const { listingId, startDate, endDate, startTime, endTime, preferences, packageId } = req.body as CreateBookingInput;
 
         if (!listingId || !startDate || !endDate || !startTime || !endTime) {
             res.status(400).json({ message: 'Missing required booking fields' });
@@ -38,7 +38,7 @@ export const createBooking = async (req: Request, res: Response) => {
 
         // 3. Create Booking (Price calculated securely in model)
         const booking = await BookingModel.createBooking(req.user.userId, {
-            listingId, startDate, endDate, startTime, endTime, preferences
+            listingId, startDate, endDate, startTime, endTime, preferences, packageId
         });
 
         //add  this when i add dva 
@@ -101,14 +101,14 @@ export const getBookingDetails = async (req: Request, res: Response) => {
 
 export const getBookingQuote = async (req: Request, res: Response) => {
     try {
-        const { listingId, startDate, endDate } = req.body;
+        const { listingId, startDate, endDate, packageId } = req.body;
 
         if (!listingId || !startDate || !endDate) {
             res.status(400).json({ message: 'Listing ID, start date, and end date are required' });
             return;
         }
 
-        const quote = await BookingModel.getQuote(listingId, startDate, endDate);
+        const quote = await BookingModel.getQuote(listingId, startDate, endDate, packageId);
         res.status(200).json(quote);
     } catch (error: any) {
         console.error('Get quote error:', error);

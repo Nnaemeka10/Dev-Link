@@ -273,6 +273,7 @@ export const getCurrentUser = async (_req: Request, res: Response) => {
             lastName: user.last_name,
             dateOfBirth: user.date_of_birth,
             phone: user.phone,
+            avatarUrl: user.avatar_url,
             isEmailVerified: user.is_email_verified,
             isActive: user.is_active,
             };

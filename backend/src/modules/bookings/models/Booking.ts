@@ -54,7 +54,7 @@ export const BookingModel = {
 
     async createBooking(userId: number, input: CreateBookingInput): Promise<BookingRow> {
         const db = getDB();
-        const { listingId, startDate, endDate, startTime, endTime } = input;
+        const { listingId, startDate, endDate, startTime, endTime, packageId } = input;
         // const guestCount = Number.isFinite(Number(guests)) ? Math.max(1, Math.floor(Number(guests))) : 1;
         const cleanStart = startDate.split('T')[0];
         const cleanEnd = endDate.split('T')[0];
@@ -71,14 +71,27 @@ export const BookingModel = {
 
         const listing = listingRes.rows[0];
 
-        const basePrice = parseFloat(listing.base_price);
-        // Inclusive day calculation (Friday to Sunday = 3 days)
-        const startMs = new Date(cleanStart).getTime();
-        const endMs = new Date(cleanEnd).getTime();
-        const days = Math.max(1, Math.round((endMs - startMs) / 86400000) + 1);
-        
-        // 2. Calculate Amount (Backend is source of truth)
-        const subtotal = basePrice * days;
+         let subtotal = 0;
+         let days = 1;
+
+        if (listing.kind === 'service' && packageId) {
+            const pkgRes = await db.query('SELECT price FROM service_packages WHERE id = $1 AND listing_id = $2', [packageId, listingId]);
+            if (pkgRes.rows.length === 0) throw new Error('Invalid package selected');
+            const basePrice = parseFloat(pkgRes.rows[0].price);
+            const startMs = new Date(cleanStart).getTime();
+            const endMs = new Date(cleanEnd).getTime();
+            days = Math.max(1, Math.round((endMs - startMs) / 86400000) + 1);
+            subtotal = basePrice * days;
+         } else {
+            const basePrice = parseFloat(listing.base_price);
+            // Inclusive day calculation (Friday to Sunday = 3 days)
+            const startMs = new Date(cleanStart).getTime();
+            const endMs = new Date(cleanEnd).getTime();
+            days = Math.max(1, Math.round((endMs - startMs) / 86400000) + 1);
+            subtotal = basePrice * days;
+        }
+
+         // 2. Calculate Amount (Backend is source of truth)
         const vat = Math.round((subtotal * 0.075) * 100) / 100; // 7.5% VAT
         const totalAmount = Math.round((subtotal + vat) * 100) / 100;
 
@@ -264,7 +277,7 @@ export const BookingModel = {
         //make this do a refund later
     },
 
-    async getQuote(listingId: string, startDate: string, endDate: string): Promise<{ days: number; subtotal: number; vat: number; total: number; currency: string }> {
+    async getQuote(listingId: string, startDate: string, endDate: string, packageId?: string): Promise<{ days: number; subtotal: number; vat: number; total: number; currency: string }> {
         const db = getDB();
         
         // 1. Fetch listing base price
@@ -277,17 +290,32 @@ export const BookingModel = {
             throw new Error('Listing not found');
         }
 
-        const basePrice = parseFloat(listingRes.rows[0].base_price);
+        const listing = listingRes.rows[0];
         const cleanStart = startDate.split('T')[0];
         const cleanEnd = endDate.split('T')[0];
 
-        // 2. Inclusive day calculation (Friday to Sunday = 3 days)
-        const startMs = new Date(cleanStart).getTime();
-        const endMs = new Date(cleanEnd).getTime();
-        const days = Math.max(1, Math.round((endMs - startMs) / 86400000) + 1);
-        
+        let subtotal = 0; 
+        let days = 1;
+
+        if (listing.kind === 'service' && packageId) {
+            const pkgRes = await db.query('SELECT price FROM service_packages WHERE id = $1 AND listing_id = $2', [packageId, listingId]);
+            if (pkgRes.rows.length === 0) throw new Error('Invalid package selected');
+            const basePrice = parseFloat(pkgRes.rows[0].price);
+            const startMs = new Date(cleanStart).getTime();
+            const endMs = new Date(cleanEnd).getTime();
+            days = Math.max(1, Math.round((endMs - startMs) / 86400000) + 1);
+            subtotal = basePrice * days;
+        } else {
+            const basePrice = parseFloat(listingRes.rows[0].base_price);
+
+            // 2. Inclusive day calculation (Friday to Sunday = 3 days)
+            const startMs = new Date(cleanStart).getTime();
+            const endMs = new Date(cleanEnd).getTime();
+            days = Math.max(1, Math.round((endMs - startMs) / 86400000) + 1);
+            subtotal = basePrice * days;
+        }
+
         // 3. Calculate securely on backend
-        const subtotal = basePrice * days;
         const vat = Math.round((subtotal * 0.075) * 100) / 100; // 7.5% VAT
         const total = Math.round((subtotal + vat) * 100) / 100;
 

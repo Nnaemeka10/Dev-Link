@@ -3,10 +3,26 @@
 // These mirror the shape the backend is expected to return. Swap `data.ts`
 // for a real fetch/hook layer later without touching the UI components.
 // ────────────────────────────────────────────────────────────────────────────
-
-export type BookingStatus = "confirmed" | "pending" | "completed" | "cancelled";
+export type BookingStatus =
+  | "confirmed"
+  | "pending"
+  | "completed"
+  | "cancelled"
+  | "funds_held"
+  | "paid"
+  | "processing_payout"
+  | "payout_released"
+  | "refunded"
+  | "failed"
+  | "expired";
 
 export type BookingFilterKey = "all" | "upcoming" | "completed" | "cancelled";
+
+export interface BookingFilterTab {
+  key: BookingFilterKey;
+  label: string;
+  count: number;
+}
 
 export interface VendorProfile {
   id: string;
@@ -21,9 +37,9 @@ export interface VendorProfile {
 export interface FinancialSummary {
   currencySymbol: string;
   totalRevenue: number;
-  totalRevenueChangePercent: number;
+  totalRevenueChangePercent?: number;
   confirmedBookings: number;
-  confirmedBookingsChangePercent: number;
+  confirmedBookingsChangePercent?: number;
   pendingBookings: number;
   pendingBookingsNote: string;
 }
@@ -98,6 +114,25 @@ export interface PaginationState {
   itemsPerPage: number;
 }
 
+export interface VendorListing {
+  id: string;
+  title: string;
+  location: string;
+  status: "active" | "draft" | "offline";
+  pricePerUnit: number;
+  unit: string;
+  thumbnailUrl: string;
+  viewsLast30Days: number;
+  bookingsLast30Days: number;
+}
+
+export interface MyListingsStats {
+  totalListings: number;
+  activeListings: number;
+  totalViews: number;
+  avgRating: number;
+}
+
 export interface VendorDashboardData {
   vendor: VendorProfile;
   financialSummary: FinancialSummary;
@@ -106,4 +141,12 @@ export interface VendorDashboardData {
   bookingFilters: BookingFilterTab[];
   bookings: BookingRecord[];
   bookingsPagination: PaginationState;
+}
+
+export interface VendorDashboardSummary {
+  totalRevenue: number;
+  confirmedBookings: number;
+  pendingBookings: number;
+  nextPayoutDate: string | null;
+  nextPayoutListing: string | null;
 }

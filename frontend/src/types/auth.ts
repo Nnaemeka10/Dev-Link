@@ -9,6 +9,7 @@ export interface AuthUser {
   phone?: string;
   isEmailVerified: boolean;
   isActive: boolean;
+  avatarUrl?: string;
 }
 
 export interface AuthState {

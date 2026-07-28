@@ -11,6 +11,7 @@ export const DEFAULT_BOOKING_FORM: BookingFormState = {
   preferences: "",
   startTime: "16:00",
   termsAccepted: false,
+  packageId: "",
 };
 
 export const BOOKING_STEPS = ["Booking Details", "Review & Pay", "Confirmation"];

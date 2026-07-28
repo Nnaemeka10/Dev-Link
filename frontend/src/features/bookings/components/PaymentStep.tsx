@@ -61,6 +61,7 @@ export default function PaymentStep({ form, listing, wizard, variant = "desktop"
           startTime: form.startTime,
           endTime: form.endTime,
           preferences: form.preferences,
+          packageId: form.packageId,
         }),
         redirectOn401: true, // Redirect to login if user is not authenticated
       });
@@ -128,6 +129,10 @@ export default function PaymentStep({ form, listing, wizard, variant = "desktop"
 
 
   const { data: quote } = usePricingQuote(listing.id, form.dateRange);
+  const days = quote?.days
+  const hireLabel = listing.kind === 'service' 
+  ? `Service Package (${days ?? '...'} ${days === 1 ? 'day' : 'days'})` 
+  : `Venue hire (${days ?? '...'} ${days === 1 ? 'day' : 'days'})`;
 
   // Unified summary object for both Mobile and Desktop
   const paymentSummary = {
@@ -139,7 +144,7 @@ export default function PaymentStep({ form, listing, wizard, variant = "desktop"
     guests: `Up to ${listing.capacity} Guests`,
     verified: listing.autoApprove,
     fees: quote ? [
-      { label: `Venue hire (${quote.days} ${quote.days === 1 ? 'day' : 'days'})`, value: `₦${quote.subtotal.toLocaleString()}` },
+      { label: hireLabel, value: `₦${quote.subtotal.toLocaleString()}` },
       { label: "VAT (7.5%)", value: `₦${quote.vat.toLocaleString()}` }
     ] : [],
     total: quote ? `₦${quote.total.toLocaleString()}` : "Calculating...",

@@ -24,8 +24,8 @@ export interface CreateBookingInput {
     endDate: string;   // ISO string
     startTime: string; // "16:00"
     endTime: string;   // "23:00"
-    // guests: number;
     preferences?: string;
+    packageId?: string;
 }
 
 export interface BookingResponse {
