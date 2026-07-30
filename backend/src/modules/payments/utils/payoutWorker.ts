@@ -26,6 +26,7 @@ export async function processAutomatedEscrowPayouts() {
       WHERE b.status = 'funds_held'
         AND b.payout_hold = FALSE
         AND b.dispute_window_closes_at <= NOW()
+        AND v.verification_status = 'verified'
         AND NOT EXISTS (SELECT 1 FROM disputes d WHERE d.booking_id = b.id AND d.status = 'open')
       FOR UPDATE OF b SKIP LOCKED
       LIMIT 50

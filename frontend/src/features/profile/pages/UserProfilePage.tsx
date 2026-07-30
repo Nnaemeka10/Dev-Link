@@ -1,5 +1,6 @@
-
-
+import { useBankDirectory, usePayoutMethodStatus, useRemovePayoutMethod } from "@/features/profile/hooks/usePayoutVerification";
+import PayoutMethodForm from "@/features/profile/components/PayoutMethodForm";
+import { ShieldCheck, Loader2, AlertCircle, Banknote, Trash2 } from "lucide-react";
 import MobileDock from "@/components/layout/MobileDock";
 import SideNavBar from "@/components/layout/SideNavBar";
 import VendorMobileDock from "@/components/layout/VendorMobileDock";
@@ -18,6 +19,12 @@ import { useTheparam } from "@/hooks/useTheparam";
 import { useRouter } from "next/navigation";
 import type React from "react";
 import { useState, useRef, useEffect } from "react";
+
+
+interface PayoutMethodFormProps {
+  isOpen: boolean;
+  onClose: () => void;
+}
 
 type ProfileState = ReturnType<typeof useProfile>;
 
@@ -561,6 +568,12 @@ function ProfileContent({
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [showDeactivateConfirm, setShowDeactivateConfirm] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [payoutFormOpen, setPayoutFormOpen] = useState(false);
+
+   const { data: payoutStatus, isLoading: isLoadingPayoutStatus } = usePayoutMethodStatus();
+   const { data: banks = [] } = useBankDirectory();
+   const removePayoutMutation = useRemovePayoutMethod();
+   const bankName = banks.find((b) => b.code === payoutStatus?.bankCode)?.name || "Bank";
 
   const {
     profile,
@@ -787,6 +800,106 @@ function ProfileContent({
           </div>
         </button>
       </section>
+
+
+      {/* //payout method */}
+
+      <section>
+        <SectionHeader
+          icon={<Banknote className="w-5 h-5" />}
+          title="Payout Method"
+        />
+        
+        {isLoadingPayoutStatus ? (
+          <div className="bg-white rounded-3xl p-6 shadow-sm border border-stone-100 flex items-center gap-3">
+            <Loader2 className="w-5 h-5 text-stone-400 animate-spin" />
+            <p className="text-sm text-stone-500">Loading payout status...</p>
+          </div>
+        ) : payoutStatus && payoutStatus.status !== "unregistered" ? (
+          <div className="bg-white rounded-3xl p-5 shadow-sm border border-stone-100 space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-full bg-stone-100 flex items-center justify-center">
+                  <Banknote className="w-6 h-6 text-stone-600" />
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-stone-800">{payoutStatus.resolvedAccountName || "Unknown Account"}</p>
+                  <p className="text-xs text-stone-500 mt-0.5">
+                    {bankName} •••• {payoutStatus.accountLast4 || "****"}
+                  </p>
+                </div>
+              </div>
+              
+              {/* Status Badge */}
+              <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full ${
+                payoutStatus.status === "verified" ? "bg-emerald-100 text-emerald-700" :
+                payoutStatus.status === "pending" ? "bg-amber-100 text-amber-700" :
+                "bg-red-100 text-red-600"
+              }`}>
+                {payoutStatus.status === "manual_review" ? "Action Required" : payoutStatus.status.charAt(0).toUpperCase() + payoutStatus.status.slice(1)}
+              </span>
+            </div>
+
+            {/* Contextual Message */}
+            {payoutStatus.status === "pending" && (
+              <div className="flex items-center gap-2 bg-amber-50 text-amber-700 p-3 rounded-xl text-xs font-medium">
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Verification in progress. This usually takes 5 minutes.
+              </div>
+            )}
+            {payoutStatus.status === "manual_review" && (
+              <div className="flex items-center gap-2 bg-red-50 text-red-600 p-3 rounded-xl text-xs font-medium">
+                <AlertCircle className="w-4 h-4" />
+                We need to manually confirm your account details. Please contact support.
+              </div>
+            )}
+
+            {/* Actions */}
+            <div className="flex gap-2 pt-2 border-t border-stone-100">
+              <button 
+                onClick={() => setPayoutFormOpen(true)}
+                className="flex-1 py-2.5 rounded-xl bg-stone-100 text-stone-700 text-xs font-bold hover:bg-stone-200 transition-colors"
+              >
+                Replace Payout Method
+              </button>
+              <button 
+                onClick={() => removePayoutMutation.mutate()}
+                disabled={removePayoutMutation.isPending}
+                className="flex-1 py-2.5 rounded-xl border border-red-200 text-red-500 text-xs font-bold hover:bg-red-50 transition-colors disabled:opacity-50 flex items-center justify-center gap-1.5"
+              >
+                {removePayoutMutation.isPending ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <Trash2 className="w-3.5 h-3.5" />
+                )}
+                Remove
+              </button>
+            </div>
+          </div>
+        ) : (
+          // Empty State (Unregistered)
+          <button 
+            onClick={() => setPayoutFormOpen(true)}
+            className="w-full bg-white rounded-3xl p-5 shadow-sm border border-stone-100 hover:border-stone-200 hover:shadow-md transition-all text-left group"
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-full bg-red-50 flex items-center justify-center">
+                  <AlertCircle className="w-6 h-6 text-red-500" />
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-stone-800">Add Payout Method</p>
+                  <p className="text-xs text-stone-400 mt-0.5">Verify your bank account and BVN/NIN to receive payouts.</p>
+                </div>
+              </div>
+              <svg className="w-5 h-5 text-stone-300 group-hover:text-[#D65C3A] transition-colors shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </div>
+          </button>
+        )}
+      </section>
+
 
       {/* ── Bookings ──────────────────────────────────────────────────── */}
       <section>
@@ -1179,6 +1292,7 @@ function ProfileContent({
           </div>
         </>
       )}
+      <PayoutMethodForm isOpen={payoutFormOpen} onClose={() => setPayoutFormOpen(false)} />
     </div>
   );
 }

@@ -6,6 +6,7 @@ import { WebhookModel } from '../models/WebhookModel.js';
 import { LedgerModel } from '../models/LedgerModel.js';
 import { randomUUID } from 'crypto';
 import { applyConfirmedPayout } from './reconciliation.js'
+import { VendorVerificationModel } from '../../vendor/models/VendorVerification.js';
 
 /**
  * Polls for unprocessed webhooks and applies them transactionally.
@@ -25,9 +26,18 @@ export async function processWebhookEvents() {
         case 'charge.success':
           await handleChargeSuccess(client, payload);
           break;
+
         case 'transfer.success':
           await handleTransferSuccess(client, payload, event.id);
           break;
+
+        case 'customeridentification.success':
+        await handleIdentitySuccess(client, payload);
+        break;
+        
+      case 'customeridentification.failed':
+        await handleIdentityFailed(client, payload);
+        break;
         // transfer.failed, etc. will be handled here
         default:
           // Unhandled event types are safely marked as processed
@@ -182,4 +192,43 @@ async function handleTransferSuccess(client: any, payload: any, eventId: any) {
   );
 //   await newClient.query('COMMIT');
 //   newClient.release();
+}
+
+
+/**
+ * Handles successful Government ID (BVN/NIN) verification from Paystack.
+ */
+async function handleIdentitySuccess(client: any, payload: any) {
+  const customerCode = payload.data.customer_code;
+  if (!customerCode) return;
+
+  // Delegate to model to update vendor status to 'verified'
+  // We pass the client to keep it within the same transaction boundary
+  const db = getDB(); // Need db reference since client is locked
+  await db.query(
+    `UPDATE vendors SET 
+      verification_status = 'verified', 
+      verification_checked_at = NOW(),
+      updated_at = NOW()
+     WHERE user_id = (SELECT id FROM users WHERE paystack_customer_code = $1)`,
+    [customerCode]
+  );
+}
+
+/**
+ * Handles failed Government ID verification from Paystack.
+ */
+async function handleIdentityFailed(client: any, payload: any) {
+  const customerCode = payload.data.customer_code;
+  if (!customerCode) return;
+
+  const db = getDB();
+  await db.query(
+    `UPDATE vendors SET 
+      verification_status = 'manual_review', 
+      verification_checked_at = NOW(),
+      updated_at = NOW()
+     WHERE user_id = (SELECT id FROM users WHERE paystack_customer_code = $1)`,
+    [customerCode]
+  );
 }

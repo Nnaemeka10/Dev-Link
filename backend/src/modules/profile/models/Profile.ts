@@ -92,7 +92,6 @@ async function fetchPaystackAuthorizations(customerCode: string): Promise<Paysta
 // ─── Service ─────────────────────────────────────────────────────────────────
 
 export const ProfileService = {
-  // ── GET /api/profile ────────────────────────────────────────────────────
   async getProfile(userId: number): Promise<ProfileResponse> {
     const db = getDB();
 
@@ -186,7 +185,7 @@ export const ProfileService = {
         b.total_amount,
         b.status,
         b.created_at AS booked_on,
-        COALESCE(b.guests, 1) AS ticket_count,
+        l.capacity AS ticket_count,
         l.title AS event_title,
         COALESCE(NULLIF(CONCAT_WS(', ', l.city, l.state), ''), l.country, '') AS location,
         u.first_name AS vendor_first,

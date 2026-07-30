@@ -9,6 +9,7 @@ import paymentRoutes from './modules/payments/routes/payment.route.js';
 import chatRoutes from './modules/chat/routes/chat.route.js';
 import profileRoutes from './modules/profile/routes/profile.routes.js';
 import vendorRoutes from './modules/vendor/routes/vendor.routes.js';
+import vendorVerificationRoutes from './modules/vendor/routes/vendorVerification.routes.js';
 
 const app = express();
 
@@ -52,6 +53,7 @@ app.use("/api/payments", paymentRoutes)
 app.use("/api/chat", chatRoutes) 
 app.use("/api/profile", profileRoutes);
 app.use("/api/vendor", vendorRoutes);
+app.use("/api/vendor/verification", vendorVerificationRoutes); // Vendor verification routes
 
 //health check
 app.get('/api/health', (req, res) => {
