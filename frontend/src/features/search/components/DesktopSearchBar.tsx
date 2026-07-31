@@ -196,10 +196,12 @@ export default function DesktopSearchBar({ form, onSubmit, isPending, showShadow
                         className="flex w-full items-center gap-3 px-3 py-2 xl:px-4 xl:py-2.5 text-left text-xs xl:text-sm text-text-primary hover:bg-bg-primary transition-colors"
                       >
                         <MapPin className="h-4 w-4 shrink-0 text-text-primary/40" />
-                        <span>
-                          {s.name}
-                          <span className="ml-1 text-text-primary/45">{s.state}</span>
-                        </span>
+                        <div className="flex flex-col">
+                            <span className="font-semibold">{s.name}</span>
+                            <span className="text-[10px] text-text-primary/45">
+                                {s.type === "state" ? "State" : `LGA — ${s.state}`}
+                            </span>
+                        </div>
                       </button>
                     </li>
                   ))}

@@ -1,15 +1,17 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { apiFetch } from "@/lib/api" // adjust to your actual path
-import { useDebounce } from "@/hooks/useDebounce"; // adjust to your actual path
+import { apiFetch } from "@/lib/api" 
+import { useDebounce } from "@/hooks/useDebounce"; 
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 export interface LocationSuggestion {
   id: string;
   name: string;
+  type: "state" | "lga";
   state: string;
+  stateId: string;
 }
 
 export interface SearchResult {

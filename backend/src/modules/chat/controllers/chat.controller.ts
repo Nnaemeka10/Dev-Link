@@ -8,7 +8,8 @@ export const getConversations = async (req: Request, res: Response) => {
   try {
     if (!req.user?.userId) return res.status(401).json({ message: 'Unauthorized' });
     
-    await ChatModel.findOrCreateSupportConversation(req.user.userId);
+    // Removed findOrCreateSupportConversation. It should only be created when explicitly requested.
+    // await ChatModel.findOrCreateSupportConversation(req.user.userId);
     const conversations = await ChatModel.getUserConversations(req.user.userId);
     res.status(200).json(conversations);
   } catch (error: any) {

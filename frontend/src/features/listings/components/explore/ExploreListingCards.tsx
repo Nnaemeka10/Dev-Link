@@ -164,7 +164,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { Check, Heart, MapPin, Star } from "lucide-react";
+import { Check, Heart, MapPin, Star, Users } from "lucide-react";
 import type { ExploreListing } from "../../explore.types";
 import VerifiedBadge from "./VerifiedBadge";
 import { useRemoveSavedListing, useSavedListings, useSaveListing } from "../../hooks/useSavedListings";
@@ -182,6 +182,12 @@ function formatNaira(value: number) {
     maximumFractionDigits: 0,
   }).format(value);
 }
+
+function formatCapacity(capacity: number | null): string | null {
+    if (!capacity || capacity <= 0) return null;
+    return `Up to ${capacity.toLocaleString()} guests`;
+}
+
 
 interface ExploreCardProps {
   listing: ExploreListing;
@@ -264,6 +270,45 @@ function SaveButton({ listingId, listingName, className }: { listingId: string; 
   );
 }
 
+//  Hall type badge
+function HallTypeBadges({ hallTypes }: { hallTypes: ExploreListing["hallTypes"] }) {
+    if (!hallTypes || hallTypes.length === 0) return null;
+    // Show up to 3, with "+N" overflow
+    const visible = hallTypes.slice(0, 3);
+    const overflow = hallTypes.length - visible.length;
+
+    return (
+        <div className="flex flex-wrap gap-1.5">
+            {visible.map((ht) => (
+                <span
+                    key={ht.id}
+                    className="rounded-full bg-[#F0E6D9] px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.04em] text-[#8B5E14]"
+                >
+                    {ht.label}
+                </span>
+            ))}
+            {overflow > 0 && (
+                <span className="rounded-full bg-[#EEECE7] px-2.5 py-1 text-[10px] font-bold text-[#7A7C94]">
+                    +{overflow}
+                </span>
+            )}
+        </div>
+    );
+}
+
+// ── Capacity display ─────────────────────────────────────────────
+function CapacityBadge({ capacity }: { capacity: number | null }) {
+    const label = formatCapacity(capacity);
+    if (!label) return null;
+    return (
+        <span className="inline-flex items-center gap-1 text-xs font-semibold text-[#5E6588]">
+            <Users className="h-3.5 w-3.5" />
+            {label}
+        </span>
+    );
+}
+
+
 export function MobileExploreCard({ listing, selected, onToggleCompare }: ExploreCardProps) {
   const listingHref = `/listings/${listing.kind === "venue" ? "halls" : "services"}/${listing.id}`;
 
@@ -297,10 +342,23 @@ export function MobileExploreCard({ listing, selected, onToggleCompare }: Explor
             </p>
           </div>
 
+          
+            {listing.kind === "venue" && (
+              <div className="mt-3">
+                <HallTypeBadges hallTypes={listing.hallTypes} />
+              </div>
+            )}
+
           <p className="mt-3 text-xl font-extrabold text-[#B33E1F]">
             {formatNaira(listing.priceFrom)}
             <span className="ml-1 text-sm font-bold text-[#5E6588]">/ {listing.priceUnit}</span>
           </p>
+
+          {listing.kind === "venue" && (
+              <div className="mt-2">
+               <CapacityBadge capacity={listing.capacity} />
+               </div>
+          )}
 
           <div className="mt-4 flex flex-wrap gap-2">
             {listing.badges.map((badge) => (
@@ -368,6 +426,13 @@ export function DesktopExploreCard({ listing, selected, onToggleCompare }: Explo
             <MapPin className="h-4 w-4" />
             {listing.location}
           </p>
+
+           {listing.kind === "venue" && (
+                        <div className="mt-3 flex items-center justify-between gap-2">
+                            <HallTypeBadges hallTypes={listing.hallTypes} />
+                            <CapacityBadge capacity={listing.capacity} />
+                        </div>
+                    )}
 
           <div className="mt-5 flex items-end justify-between">
             <p className="text-2xl font-extrabold text-[#A83A1C]">

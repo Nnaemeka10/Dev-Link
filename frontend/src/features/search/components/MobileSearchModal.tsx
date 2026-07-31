@@ -248,10 +248,12 @@ export default function MobileSearchModal({ form, onSubmit, isPending }: MobileS
                             className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm text-text-primary hover:bg-white"
                           >
                             <MapPin className="h-4 w-4 text-text-primary/45" />
-                            <span>
-                              {s.name}
-                              <span className="ml-1 text-text-primary/45">{s.state}</span>
-                            </span>
+                            <div className="flex flex-col">
+                              <span className="font-semibold">{s.name}</span>
+                              <span className="text-[10px] text-text-primary/45">
+                                {s.type === "state" ? "State" : `LGA — ${s.state}`}
+                              </span>
+                            </div>
                           </button>
                         ))}
                       </div>

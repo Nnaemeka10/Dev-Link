@@ -90,10 +90,10 @@ export function registerChatHandlers(io: SocketIOServer) {
         // Acknowledge sender immediately (Optimistic UI will replace temp ID)
         callback(message, undefined);
 
-        // NOTE: We DO NOT emit `message.created` here.
-        // The Postgres LISTEN/NOTIFY bridge (listenBridge.ts) will catch the DB insert 
-        // and emit `message.created` to the room automatically. 
-        // This guarantees single source of truth and prevents double emissions.
+        // Emit the full message directly to the room. 
+        // This bypasses the need for the LISTEN/NOTIFY bridge for socket messages,
+        // making delivery instantaneous instead of requiring a follow-up HTTP request.
+        io.to(`conversation:${payload.conversationId}`).emit("message.created", message);
         
       } catch (error: any) {
         console.error("Message send error:", error);

@@ -47,6 +47,7 @@ export interface ListingCard {
     images: ListingImage[];
     badges: ListingBadge[];
     rankScore?: number;
+    hallTypes: HallTypeBadge[];
 }
 
 export interface ListingDetails extends ListingCard {
@@ -134,13 +135,19 @@ export type ListingReviewMetricsRow = {
     facilityQuality: string | number | null;
 };
 
+export interface HallTypeBadge {
+    id: string;
+    label: string;
+    icon: string | null;
+}
+
 export type ListingRow = {
     id: string;
     title: string;
     headline: string | null;
     kind: ListingKind;
     description: string | null;
-    base_price: string | number;
+    base_price_kobo: string | number;
     price_unit: string | null;
     address_line: string | null;
     city: string | null;
@@ -165,6 +172,7 @@ export type ListingRow = {
     features?: any[] | null;
     reviews?: any[] | null;
     service_areas?: any[] | null;   // was `serviceAreas`
+     hall_types?: HallTypeBadge[] | null;
 };
 
 export interface ListingFilters {
@@ -206,6 +214,9 @@ export interface ListingCardSmall {
     priceUnit: string;
     primaryImage: ListingImage | null;
     rating: number;
+    capacity: number | null;        
+    hallTypes: HallTypeBadge[];     
+    badges: ListingBadge[];
 }
 
 export interface PackageFeature {

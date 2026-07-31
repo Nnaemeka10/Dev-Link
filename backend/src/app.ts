@@ -10,6 +10,7 @@ import chatRoutes from './modules/chat/routes/chat.route.js';
 import profileRoutes from './modules/profile/routes/profile.routes.js';
 import vendorRoutes from './modules/vendor/routes/vendor.routes.js';
 import vendorVerificationRoutes from './modules/vendor/routes/vendorVerification.routes.js';
+import locationRoutes from './modules/locations/routes/location.route.js';
 
 const app = express();
 
@@ -54,6 +55,7 @@ app.use("/api/chat", chatRoutes)
 app.use("/api/profile", profileRoutes);
 app.use("/api/vendor", vendorRoutes);
 app.use("/api/vendor/verification", vendorVerificationRoutes); // Vendor verification routes
+app.use('/api/locations', locationRoutes);
 
 //health check
 app.get('/api/health', (req, res) => {

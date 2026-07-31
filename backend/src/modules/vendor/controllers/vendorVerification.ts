@@ -14,6 +14,10 @@ export const submitPayoutMethod = async (req: Request, res: Response) => {
       return res.status(400).json({ message: 'Missing required fields' });
     }
 
+      if (idType !== 'bvn') {
+      return res.status(400).json({ message: 'Only BVN is supported for verification at this time.' });
+    }
+
     // 1. Idempotency Check: Prevent double submission
     const existingVendor = await VendorVerificationModel.findByUserId(req.user.userId);
     if (existingVendor?.verification_status === 'verified') {
@@ -29,6 +33,7 @@ export const submitPayoutMethod = async (req: Request, res: Response) => {
       const resolved = await resolveBankAccount(accountNumber, bankCode);
       resolvedName = resolved.account_name;
     } catch (error: any) {
+      console.error("Paystack Resolve Error:", error.message);
       return res.status(422).json({ message: 'Could not verify this account number. Please check your details.' });
     }
 
@@ -80,7 +85,7 @@ export const submitPayoutMethod = async (req: Request, res: Response) => {
 
     // Fire-and-forget ID verification dispatch
     try {
-      await dispatchIdentityVerification(customerCode, idType, idNumber);
+      await dispatchIdentityVerification(customerCode, legalFirstName, legalLastName, idNumber, bankCode, accountNumber);
     } catch (error: any) {
       console.error(`ID Verification dispatch failed for user ${req.user.userId}:`, error.message);
       // We leave status as 'pending'. The reconciliation job will pick it up and retry.

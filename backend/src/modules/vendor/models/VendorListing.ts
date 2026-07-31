@@ -73,8 +73,11 @@ export const VendorListingModel = {
    * Flips status to pending_review. The frontend schema is trusted here only if 
    * the backend re-validates it (handled in controller).
    */
-  async publishDraft(listingId: string, userId: number): Promise<void> {
+  async publishDraft(listingId: string, userId: number, payload?:any): Promise<void> {
     const db = getDB();
+    if (payload) {
+        await this.processDraftPayload(listingId, payload);
+    }
     await db.query(
       `UPDATE listings SET status = 'pending_review', updated_at = NOW() 
        WHERE id = $1 AND vendor_id = $2`,
@@ -112,5 +115,138 @@ export const VendorListingModel = {
       apiKey: ENV.CLOUDINARY_API_KEY,
       cloudName: ENV.CLOUDINARY_CLOUD_NAME,
     };
-  }
+  },
+
+
+  /**
+ * Processes the draft_payload JSONB and writes structured data to
+ * relational tables (hall types, location, capacity, features, etc.).
+ * Called by publishDraft — keeps the DB "smart" while the draft stays flexible.
+ */
+async processDraftPayload(listingId: string, payload: any): Promise<void> {
+    const db = getDB();
+    const client = await db.connect();
+    try {
+        await client.query('BEGIN');
+
+        // 1. Update listing core fields from draft
+        const details = payload.details;
+        const category = payload.category;
+        const pricing = payload.pricing;
+
+        if (category === 'hall' && details?.hallLocation) {
+            const stateName = await this.resolveStateName(client, details.hallLocation.stateId);
+            const lgaName = await this.resolveLgaName(client, details.hallLocation.lgaId);
+
+            await client.query(
+                `UPDATE listings SET
+                    title = COALESCE($2, title),
+                    headline = COALESCE($3, headline),
+                    description = COALESCE($4, description),
+                    address_line = $5,
+                    city = $6,
+                    state = $7,
+                    capacity = $8,
+                    base_price_kobo = $9,
+                    price_unit = COALESCE($10, price_unit),
+                    updated_at = NOW()
+                 WHERE id = $1`,
+                [
+                    listingId,
+                    details.name || null,
+                    details.name ? `${details.name} — Premium Event Venue` : null, // auto-headline
+                    details.description || null,
+                    details.hallLocation.streetAddress || null,
+                    lgaName,
+                    stateName,
+                    this.extractCapacityFromAmenities(payload.amenities),
+                    pricing?.basePrice ? Math.round(pricing.basePrice) : 0,
+                    'per event',
+                ]
+            );
+        } else if (category === 'service' && details?.serviceLocation) {
+            await client.query(
+                `UPDATE listings SET
+                    title = COALESCE($2, title),
+                    headline = COALESCE($3, headline),
+                    description = COALESCE($4, description),
+                    address_line = $5,
+                    base_price_kobo = $6,
+                    price_unit = COALESCE($7, price_unit),
+                    service_metadata = $8,
+                    updated_at = NOW()
+                 WHERE id = $1`,
+                [
+                    listingId,
+                    details.name || null,
+                    details.name || null,
+                    details.description || null,
+                    details.serviceLocation.businessAddress || null,
+                    pricing?.basePrice ? Math.round(pricing.basePrice) : 0,
+                    'per event',
+                    JSON.stringify({
+                        requirements: this.buildRequirementsArray(payload),
+                        response_time: null,
+                    }),
+                ]
+            );
+        }
+
+        // 2. Insert hall types (halls only)
+        if (category === 'hall' && details?.selectedTypeIds?.length) {
+            // Clear existing, then insert fresh
+            await client.query(`DELETE FROM listing_hall_types WHERE listing_id = $1`, [listingId]);
+
+            const values = details.selectedTypeIds
+                .map((_: string, i: number) => `($1, $${i + 2})`)
+                .join(', ');
+
+            if (values) {
+                await client.query(
+                    `INSERT INTO listing_hall_types (listing_id, type_id) VALUES ${values}
+                     ON CONFLICT DO NOTHING`,
+                    [listingId, ...details.selectedTypeIds]
+                );
+            }
+        }
+
+        await client.query('COMMIT');
+    } catch (error) {
+        await client.query('ROLLBACK');
+        throw error;
+    } finally {
+        client.release();
+    }
+  },
+
+  private async resolveStateName(client: any, stateId: string | null): Promise<string | null> {
+      if (!stateId) return null;
+      const res = await client.query(`SELECT name FROM nigeria_states WHERE id = $1`, [stateId]);
+      return res.rows[0]?.name ?? null;
+  },
+
+  private async resolveLgaName(client: any, lgaId: string | null): Promise<string | null> {
+      if (!lgaId) return null;
+      const res = await client.query(`SELECT name FROM nigeria_lgas WHERE id = $1`, [lgaId]);
+      return res.rows[0]?.name ?? null;
+  },
+
+  private extractCapacityFromAmenities(amenities: any[]): number | null {
+      const capacityAmenity = amenities?.find((a) => a.amenityId === 'capacity');
+      if (!capacityAmenity?.value) return null;
+      const parsed = parseInt(capacityAmenity.value, 10);
+      return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+  },
+
+  private buildRequirementsArray(payload: any): string[] {
+      const reqs: string[] = [];
+      if (payload.requirements) {
+          reqs.push(...payload.requirements.map((r: any) => `${r.value}`));
+      }
+      if (payload.customRequirements) {
+          reqs.push(...payload.customRequirements.map((r: any) => r.text));
+      }
+      return reqs;
+  },
 };
+

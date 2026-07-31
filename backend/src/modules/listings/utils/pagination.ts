@@ -85,7 +85,7 @@ export function buildCursorFromRow(row: ListingRow, sort: ListingSort): ListingC
         case 'price':
             return {
                 ...base,
-                priceFrom: toNumber(row.base_price),
+                priceFrom: toNumber(row.base_price_kobo),
                 rating: toNumber(row.average_rating),
             };
         case 'reviews':

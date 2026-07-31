@@ -61,7 +61,7 @@ export const BookingModel = {
 
         // 1. Fetch listing to securely calculate price
         const listingRes = await db.query(
-            `SELECT base_price FROM listings WHERE id = $1 AND status = 'published'`,
+            `SELECT base_price_kobo FROM listings WHERE id = $1 AND status = 'published'`,
             [listingId]
         );
         
@@ -75,15 +75,15 @@ export const BookingModel = {
          let days = 1;
 
         if (listing.kind === 'service' && packageId) {
-            const pkgRes = await db.query('SELECT price FROM service_packages WHERE id = $1 AND listing_id = $2', [packageId, listingId]);
+            const pkgRes = await db.query('SELECT price_kobo FROM service_packages WHERE id = $1 AND listing_id = $2', [packageId, listingId]);
             if (pkgRes.rows.length === 0) throw new Error('Invalid package selected');
-            const basePrice = parseFloat(pkgRes.rows[0].price);
+            const basePrice = parseFloat(pkgRes.rows[0].price_kobo);
             const startMs = new Date(cleanStart).getTime();
             const endMs = new Date(cleanEnd).getTime();
             days = Math.max(1, Math.round((endMs - startMs) / 86400000) + 1);
             subtotal = basePrice * days;
          } else {
-            const basePrice = parseFloat(listing.base_price);
+            const basePrice = parseFloat(listing.base_price_kobo);
             // Inclusive day calculation (Friday to Sunday = 3 days)
             const startMs = new Date(cleanStart).getTime();
             const endMs = new Date(cleanEnd).getTime();
@@ -282,7 +282,7 @@ export const BookingModel = {
         
         // 1. Fetch listing base price
         const listingRes = await db.query(
-            `SELECT base_price FROM listings WHERE id = $1 AND status = 'published'`,
+            `SELECT base_price_kobo FROM listings WHERE id = $1 AND status = 'published'`,
             [listingId]
         );
         
@@ -298,15 +298,15 @@ export const BookingModel = {
         let days = 1;
 
         if (listing.kind === 'service' && packageId) {
-            const pkgRes = await db.query('SELECT price FROM service_packages WHERE id = $1 AND listing_id = $2', [packageId, listingId]);
+            const pkgRes = await db.query('SELECT price_kobo FROM service_packages WHERE id = $1 AND listing_id = $2', [packageId, listingId]);
             if (pkgRes.rows.length === 0) throw new Error('Invalid package selected');
-            const basePrice = parseFloat(pkgRes.rows[0].price);
+            const basePrice = parseFloat(pkgRes.rows[0].price_kobo);
             const startMs = new Date(cleanStart).getTime();
             const endMs = new Date(cleanEnd).getTime();
             days = Math.max(1, Math.round((endMs - startMs) / 86400000) + 1);
             subtotal = basePrice * days;
         } else {
-            const basePrice = parseFloat(listingRes.rows[0].base_price);
+            const basePrice = parseFloat(listingRes.rows[0].base_price_kobo);
 
             // 2. Inclusive day calculation (Friday to Sunday = 3 days)
             const startMs = new Date(cleanStart).getTime();

@@ -45,19 +45,27 @@ export function useChatSocket({ userId, activeThreadId, onMessageReceived, onTyp
       });
     });
 
-    socket.on("message.created", async (payload: SocketMessagePayload) => {
-      // The backend LISTEN/NOTIFY only sends IDs. We must fetch the full message.
-      try {
-        const message = await fetchMessageById(payload.conversation_id, payload.message_id);
-        onMessageReceived(payload.conversation_id, message);
-        lastSeqRef.current[payload.conversation_id] = Math.max(
-          lastSeqRef.current[payload.conversation_id] || 0, 
-          message.conversation_seq
-        );
-      } catch (error) {
-        console.error("Failed to fetch message details:", error);
-      }
+    // socket.on("message.created", async (payload: SocketMessagePayload) => {
+    //   // The backend LISTEN/NOTIFY only sends IDs. We must fetch the full message.
+    //   try {
+    //     const message = await fetchMessageById(payload.conversation_id, payload.message_id);
+    //     onMessageReceived(payload.conversation_id, message);
+    //     lastSeqRef.current[payload.conversation_id] = Math.max(
+    //       lastSeqRef.current[payload.conversation_id] || 0, 
+    //       message.conversation_seq
+    //     );
+    //   } catch (error) {
+    //     console.error("Failed to fetch message details:", error);
+    //   }
+    // });
+    socket.on("message.created", (message: ChatMessage) => {
+      onMessageReceived(message.conversation_id, message);
+      lastSeqRef.current[message.conversation_id] = Math.max(
+        lastSeqRef.current[message.conversation_id] || 0, 
+        message.conversation_seq
+      );
     });
+    
 
     socket.on("message:read", (data: { conversationId: string, readerId: number, readUpToSeq: number }) => {
       // Update message statuses in cache to "read"

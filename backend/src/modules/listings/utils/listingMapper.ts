@@ -1,4 +1,6 @@
 import type {
+    HallTypeBadge,
+    ListingBadge,
     ListingCard,
     ListingCardSmall,
     ListingDetails,
@@ -57,14 +59,15 @@ export function mapListingCard(row: ListingRow): ListingCard {
         category: row.kind,
         kind: row.kind,
         description: row.description ?? '',
-        priceFrom: toNumber(row.base_price),
+        priceFrom: toNumber(row.base_price_kobo),
         priceUnit: row.price_unit ?? 'per event',
         rating,
         reviewCount,
         capacity: row.capacity,
         primaryImage,
         images,
-        badges: row.badges ?? [],
+        badges: (row.badges ?? []) as ListingBadge[],
+        hallTypes: (row.hall_types ?? []) as HallTypeBadge[],
         rankScore: calculateTrendingScore({
             averageRating: rating,
             reviewCount,
@@ -120,7 +123,7 @@ export function mapTrendingCard(row: ListingRow): TrendingCard {
         title: row.title,
         headline: row.headline,
         kind: row.kind,
-        priceFrom: toNumber(row.base_price),
+        priceFrom: toNumber(row.base_price_kobo),
         priceUnit: row.price_unit ?? 'per event',
         primaryImage,
         rankScore: calculateTrendingScore({
@@ -142,9 +145,12 @@ export function mapListingCardSmall (row: ListingRow) : ListingCardSmall {
         location: getLocation(row),
         category: row.kind,
         rating: toNumber(row.average_rating),
-        priceFrom: toNumber(row.base_price),
+        priceFrom: toNumber(row.base_price_kobo),
         priceUnit: row.price_unit ?? 'per event',
         primaryImage,
+        capacity: row.capacity ?? null,                          
+        hallTypes: (row.hall_types ?? []) as HallTypeBadge[],    
+        badges: (row.badges ?? []) as ListingBadge[],  
     };
 } 
 

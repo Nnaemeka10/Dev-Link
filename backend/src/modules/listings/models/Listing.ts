@@ -42,7 +42,7 @@ function buildListingsSelect(): string {
             l.headline,
             l.kind,
             l.description,
-            l.base_price,
+            l.base_price_kobo,
             l.price_unit,
             l.address_line,
             l.city,
@@ -59,7 +59,8 @@ function buildListingsSelect(): string {
             l.created_at,
             0 AS booking_count,
             COALESCE(asset_data.assets, '[]'::json) AS assets,
-            COALESCE(badge_data.badges, '[]'::json) AS badges
+            COALESCE(badge_data.badges, '[]'::json) AS badges,
+            COALESCE(hall_type_data.hall_types, '[]'::json) AS hall_types
         FROM listings l
         LEFT JOIN LATERAL (
             SELECT json_agg(
@@ -88,6 +89,19 @@ function buildListingsSelect(): string {
             JOIN badge_dictionary bd ON bd.id = lb.badge_id
             WHERE lb.listing_id = l.id
         ) badge_data ON TRUE
+         LEFT JOIN LATERAL (
+            SELECT json_agg(
+                json_build_object(
+                    'id', htd.id,
+                    'label', htd.label,
+                    'icon', htd.icon
+                )
+                ORDER BY htd.label ASC
+            ) AS hall_types
+            FROM listing_hall_types lht
+            JOIN hall_type_dictionary htd ON htd.id = lht.type_id
+            WHERE lht.listing_id = l.id
+        ) hall_type_data ON TRUE
     `;
 }
 
@@ -105,7 +119,12 @@ function buildFilterParts(options: ListingPageOptions): QueryParts {
     }
 
     if (filters.location) {
-        clauses.push(`CONCAT_WS(' ', l.address_line, l.city, l.state, l.country) ILIKE ${addValue(values, `%${filters.location}%`)}`);
+        // Structured location search: match against state, city (LGA), or address.
+        // The autocomplete provides state names or LGA names — both land here.
+        const locPattern = addValue(values, `%${filters.location}%`);
+        clauses.push(
+            `(l.state ILIKE ${locPattern} OR l.city ILIKE ${locPattern} OR l.address_line ILIKE ${locPattern})`
+        );
     }
 
     if (filters.searchTerm) {
@@ -163,10 +182,10 @@ function addCursorClause(
 
         clauses.push(`
             (
-                l.base_price ${primaryOperator} ${price}
-                OR (l.base_price = ${price} AND l.average_rating < ${rating})
-                OR (l.base_price = ${price} AND l.average_rating = ${rating} AND l.created_at < ${createdAt}::timestamptz)
-                OR (l.base_price = ${price} AND l.average_rating = ${rating} AND l.created_at = ${createdAt}::timestamptz AND l.id < ${id}::uuid)
+                l.base_price_kobo ${primaryOperator} ${price}
+                OR (l.base_price_kobo = ${price} AND l.average_rating < ${rating})
+                OR (l.base_price_kobo = ${price} AND l.average_rating = ${rating} AND l.created_at < ${createdAt}::timestamptz)
+                OR (l.base_price_kobo = ${price} AND l.average_rating = ${rating} AND l.created_at = ${createdAt}::timestamptz AND l.id < ${id}::uuid)
             )
         `);
         return;
@@ -219,7 +238,7 @@ function buildOrderBy(sort: ListingSort, direction: SortDirection): string {
 
     switch (sort) {
         case 'price':
-            return `ORDER BY l.base_price ${sqlDirection}, l.average_rating DESC, l.created_at DESC, l.id DESC`;
+            return `ORDER BY l.base_price_kobo ${sqlDirection}, l.average_rating DESC, l.created_at DESC, l.id DESC`;
         case 'reviews':
             return `ORDER BY l.review_count ${sqlDirection}, l.average_rating DESC, l.created_at DESC, l.id DESC`;
         case 'newest':
@@ -254,7 +273,7 @@ export const ListingModel = {
                 WITH listing_details AS (
                     SELECT 
                         l.id, l.title, l.headline, l.kind, l.description,
-                        l.base_price, l.price_unit, l.address_line, l.city, l.state, l.country,
+                        l.base_price_kobo, l.price_unit, l.address_line, l.city, l.state, l.country,
                         l.latitude, l.longitude, l.average_rating, l.review_count, l.capacity,
                         l.available_from, l.available_to, l.auto_approve, l.created_at,
                         l.service_metadata,
@@ -292,7 +311,7 @@ export const ListingModel = {
                             json_build_object(
                                 'id', sp.id,
                                 'name', sp.name,
-                                'price', sp.price,
+                                'price', sp.price_kobo,
                                 'description', sp.description,
                                 'isPopular', sp.is_popular,
                                 'sortOrder', sp.sort_order,
@@ -457,7 +476,7 @@ async function recalculateListingPrice(listingId: string): Promise<void> {
     const db = getDB();
     await db.query(`
         UPDATE listings
-        SET base_price = COALESCE(
+        SET base_price_kobo = COALESCE(
             (SELECT MIN(price) FROM service_packages WHERE listing_id = $1), 
             0
         )

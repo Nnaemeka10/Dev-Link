@@ -2,7 +2,7 @@
 
 import { useWatch } from "react-hook-form";
 import { useMemo, useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useSearchForm } from "@/features/search/hooks/useSearchForm";
 import { buildListingsHref } from "@/features/listings/searchParams";
 import type { SearchFormData } from "@/features/search/utils/searchSchema";
@@ -23,8 +23,27 @@ function formatDateLabel(date: Date) {
 }
 
 export default function ExploreHalls() {
+   const searchParams = useSearchParams();
+    const location = searchParams.get("location") || undefined;
+    const capacity = searchParams.get("capacity") ? Number(searchParams.get("capacity")) : undefined;
+    const dateFrom = searchParams.get("dateFrom") || undefined;
+    const dateTo = searchParams.get("dateTo") || undefined;
+    const sort = searchParams.get("sort") || undefined;
+    const sortOrder = searchParams.get("sortOrder") || undefined;
+
+        // ── Fetch listings with search params ────────────────────────────
+    const { data, isPending, isError } = useExploreListings({
+        kind: "hall",
+        location,
+        capacity: capacity && capacity > 0 ? capacity : undefined,
+        dateFrom,
+        dateTo,
+        sort,
+        sortOrder,
+    });
+
   // --- REAL DATA HOOK ---
-  const { data: listings = [], isPending, isError } = useExploreListings("hall");
+  const listings = data?.data ?? [];
   
   const [mobileSelectedIds, setMobileSelectedIds] = useState(() => new Set<string>());
   const [desktopSelectedIds, setDesktopSelectedIds] = useState(() => new Set<string>());

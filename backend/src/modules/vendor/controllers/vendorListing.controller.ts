@@ -79,7 +79,7 @@ export const publishListing = async (req: Request, res: Response) => {
       return res.status(422).json({ errors: parsed.error.flatten() });
     }
 
-    await VendorListingModel.publishDraft(req.params.id, req.user.userId);
+    await VendorListingModel.publishDraft(req.params.id, req.user.userId, parsed.data);
     res.status(200).json({ status: 'pending_review' });
   } catch (error: any) {
     res.status(500).json({ message: error.message || 'Failed to publish listing' });
@@ -98,3 +98,4 @@ export const signUpload = async (req: Request, res: Response) => {
     res.status(500).json({ message: 'Failed to sign upload' });
   }
 };
+

@@ -15,9 +15,12 @@ export function ConversationList({ conversations, activeId, onSelect }: Conversa
 
   const getConversationName = (c: ChatThread) => {
     if (c.context_type === 'support') return "EventVnV Support";
-    if (c.participant_first_name) return `${c.participant_first_name} ${c.participant_last_name || ''}`;
+    const participantName = `${c.participant_first_name || ""} ${c.participant_last_name || ""}`.trim();
+    if (participantName) return participantName;
+    // Fallback to listing title or default
     return c.listing_title || "Direct Chat";
   };
+
   const filtered = conversations.filter((c) => getConversationName(c).toLowerCase().includes(search.toLowerCase()));
 
   return (
@@ -50,7 +53,7 @@ export function ConversationList({ conversations, activeId, onSelect }: Conversa
                     {getConversationName(c)}
                   </span>
                   <span className="text-xs text-gray-400 flex-shrink-0">
-                    {c.updated_at && new Date(c.updated_at).toLocaleTimeString()}
+                    {c.updated_at && new Date(c.updated_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                   </span>
                 </div>
                 <div className="flex items-center justify-between gap-2">

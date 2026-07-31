@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { fetchConversations, fetchMessages, uploadAttachment } from "../chat.api";
 import { useChatSocket } from "./useChatWebsocket";
 import { useCallback, useState } from "react";
-import type { ChatMessage, ChatAttachment } from "../chat.types";
+import type { ChatMessage, ChatAttachment, AttachmentType } from "../chat.types";
 
 export function useChat(userId: number | undefined) {
   const queryClient = useQueryClient();
@@ -23,6 +23,14 @@ export function useChat(userId: number | undefined) {
     enabled: !!activeThreadId,
   });
 
+   // Helper to infer attachment type from mime_type
+  const inferAttachmentType = (mimeType: string): AttachmentType => {
+    if (mimeType.startsWith("image/")) return "image";
+    if (mimeType.startsWith("video/")) return "video";
+    if (mimeType.startsWith("audio/")) return "audio";
+    return "document";
+  };
+
   // 3. Socket.IO Integration (Handles real-time updates & cache invalidation)
   const {emitSendMessage, emitTyping} = useChatSocket({
     userId,
@@ -32,9 +40,13 @@ export function useChat(userId: number | undefined) {
       if (conversationId === activeThreadId) {
         queryClient.setQueryData<ChatMessage[]>(["chat", "messages", conversationId], (old = []) => {
           // Prevent duplicates (idempotency safety net)
-          if (old.some(m => m.id === message.id || (m.client_id && m.client_id === message.client_id))) {
-            return old;
+          if (old.some(m => m.id === message.id)) return old;
+
+          //If we have an optimistic message with this client_id, replace it
+          if (message.client_id && old.some(m => m.client_id === message.client_id)) {
+            return old.map(m => m.client_id === message.client_id ? { ...message, status: "sent" } : m);
           }
+          
           return [...old, message];
         });
       }
@@ -48,55 +60,63 @@ export function useChat(userId: number | undefined) {
     }
   });
 
-  // 4. Send Message Mutation (Optimistic UI)
-  const { mutateAsync: sendMessage, isPending: isSending } = useMutation({
-    mutationFn: async (params: { 
-      conversationId: string; 
-      content: string; 
-      clientId: string; 
-      files?: File[] 
-    }) => {
-      // Upload attachments first if any
-      let attachments = [];
-      if (params.files && params.files.length > 0) {
-        attachments = await Promise.all(params.files.map(f => uploadAttachment(f)));
-      }
+  
+
+  // // 4. Send Message Mutation (Optimistic UI)
+  // const { mutateAsync: sendMessage, isPending: isSending } = useMutation({
+  //   mutationFn: async (params: { 
+  //     conversationId: string; 
+  //     content: string; 
+  //     clientId: string; 
+  //     files?: File[] 
+  //   }) => {
+  //     // Upload attachments first if any
+  //     let attachments: ChatAttachment[] = [];
+  //     if (params.files && params.files.length > 0) {
+  //       const uploaded = await Promise.all(params.files.map(f => uploadAttachment(f)));
+  //       // FIX: Map to full ChatAttachment type
+  //       attachments = uploaded.map((att, i) => ({
+  //         id: `temp-${Date.now()}-${i}`,
+  //         type: inferAttachmentType(att.mime_type),
+  //         ...att,
+  //       }));
+  //     }
       
-      // The actual socket emission is handled inside the component to get the ack callback,
-      // but for React Query state, we handle the optimistic update here.
-      return params;
-    },
-    onMutate: async (params) => {
-      // Cancel outgoing refetches so they don't overwrite our optimistic update
-      await queryClient.cancelQueries({ queryKey: ["chat", "messages", params.conversationId] });
+  //     // The actual socket emission is handled inside the component to get the ack callback,
+  //     // but for React Query state, we handle the optimistic update here.
+  //     return params;
+  //   },
+  //   onMutate: async (params) => {
+  //     // Cancel outgoing refetches so they don't overwrite our optimistic update
+  //     await queryClient.cancelQueries({ queryKey: ["chat", "messages", params.conversationId] });
 
-      // Optimistically add the message to the cache
-      const tempMessage: ChatMessage = {
-        id: Date.now(), // Temp ID
-        conversation_id: params.conversationId,
-        sender_id: userId!,
-        conversation_seq: Date.now(), // Temp seq
-        client_id: params.clientId,
-        type: "text",
-        body: params.content,
-        created_at: new Date().toISOString(),
-        status: "sending",
-        attachments: []
-      };
+  //     // Optimistically add the message to the cache
+  //     const tempMessage: ChatMessage = {
+  //       id: Date.now(), // Temp ID
+  //       conversation_id: params.conversationId,
+  //       sender_id: userId!,
+  //       conversation_seq: Date.now(), // Temp seq
+  //       client_id: params.clientId,
+  //       type: "text",
+  //       body: params.content,
+  //       created_at: new Date().toISOString(),
+  //       status: "sending",
+  //       attachments: []
+  //     };
 
-      queryClient.setQueryData<ChatMessage[]>(["chat", "messages", params.conversationId], (old = []) => [...old, tempMessage]);
+  //     queryClient.setQueryData<ChatMessage[]>(["chat", "messages", params.conversationId], (old = []) => [...old, tempMessage]);
 
-      return { tempMessage };
-    },
-    onError: (err, params, context) => {
-      // Rollback on error
-      if (context?.tempMessage) {
-        queryClient.setQueryData<ChatMessage[]>(["chat", "messages", params.conversationId], (old = []) => 
-          old.filter(m => m.id !== context.tempMessage.id)
-        );
-      }
-    }
-  });
+  //     return { tempMessage };
+  //   },
+  //   onError: (err, params, context) => {
+  //     // Rollback on error
+  //     if (context?.tempMessage) {
+  //       queryClient.setQueryData<ChatMessage[]>(["chat", "messages", params.conversationId], (old = []) => 
+  //         old.filter(m => m.id !== context.tempMessage.id)
+  //       );
+  //     }
+  //   }
+  // });
 
   // const handleSendMessage = useCallback(async (content: string, files?: File[]) => {
   //   if (!activeThreadId || !userId) return;
@@ -108,15 +128,24 @@ export function useChat(userId: number | undefined) {
   //   return clientId;
   // }, [activeThreadId, userId, sendMessage]);
 
+   const [isSending, setIsSending] = useState(false);
+
   const handleSendMessage = useCallback(
     async (content: string, files?: File[]) => {
       if (!activeThreadId || !userId) return;
 
+      setIsSending(true);
       const clientId = crypto.randomUUID();
 
-      let attachments = [] ;
+      let attachments: ChatAttachment[] = [] ;
       if (files?.length) {
-        attachments = await Promise.all(files.map((file) => uploadAttachment(file)));
+        const uploaded = await Promise.all(files.map((file) => uploadAttachment(file)));
+        // FIX: Map to full ChatAttachment type
+        attachments = uploaded.map((att, i) => ({
+          id: `temp-${Date.now()}-${i}`,
+          type: inferAttachmentType(att.mime_type),
+          ...att,
+        }));
       }
 
       const optimisticMessage: ChatMessage = {

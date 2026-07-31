@@ -45,8 +45,8 @@ export const ChatModel = {
         c.id, c.type, c.created_at, c.updated_at, c.last_message_at,
         ctx.listing_id, ctx.booking_id, ctx.type as context_type,
         cp.role, cp.last_read_message_id, cp.delivered_message_id,
-        u_other.first_name as participant_first_name, 
-        u_other.last_name as participant_last_name,
+       COALESCE(u_other.first_name, u_vendor.first_name) as participant_first_name, 
+        COALESCE(u_other.last_name, u_vendor.last_name) as participant_last_name,
         l.title as listing_title,
         (SELECT la.url FROM listing_assets la WHERE la.listing_id = l.id AND la.is_primary = true LIMIT 1) as listing_image,
         (SELECT json_build_object(
@@ -61,6 +61,7 @@ export const ChatModel = {
        JOIN conversation_participants cp ON cp.conversation_id = c.id
        LEFT JOIN conversation_context ctx ON ctx.conversation_id = c.id
        LEFT JOIN listings l ON l.id = ctx.listing_id
+       LEFT JOIN users u_vendor ON u_vendor.id = l.vendor_id
        LEFT JOIN conversation_participants cp_other ON cp_other.conversation_id = c.id AND cp_other.user_id != $1
        LEFT JOIN users u_other ON u_other.id = cp_other.user_id
        WHERE cp.user_id = $1 AND cp.left_at IS NULL
@@ -85,7 +86,7 @@ export const ChatModel = {
         const existing = await client.query(
           `SELECT c.id FROM conversations c
            JOIN conversation_context ctx ON ctx.conversation_id = c.id
-           WHERE ctx.${contextCol} = $1 AND c.type = $2`,
+           WHERE ctx.${contextCol} = $1 AND ctx.type = $2 AND c.type = 'direct'`,
           [contextId, type]
         );
         if (existing.rows.length > 0) {

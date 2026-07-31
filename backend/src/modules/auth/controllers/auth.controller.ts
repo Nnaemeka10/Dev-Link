@@ -651,7 +651,9 @@ export const resetPassword = async (req: Request<{}, {}, ResetPasswordBody>, res
         await PasswordResetModel.markAsUsed(resetToken.id!);
 
         // send confirmation email
-        await emailService.sendPasswordResetSuccessEmail(user.email);
+        emailService.sendPasswordResetSuccessEmail(user.email).catch(emailError => {
+            console.error("Background task: Failed to send password reset success email:", emailError);
+        });
 
         return res.status(200).json({ message: 'Password reset successfully' });
     } catch (error: any) {

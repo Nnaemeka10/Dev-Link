@@ -15,6 +15,12 @@ export interface ListingImage {
   isPrimary: boolean;
 }
 
+export interface HallTypeBadge {
+    id: string;
+    label: string;
+    icon: string | null;
+}
+
 export interface HomeListingCard {
   id: string;
   title: string;
@@ -26,6 +32,8 @@ export interface HomeListingCard {
   rating: number;
   primaryImage: ListingImage | null;
   badges: string[]; // Added badges property to HomeListingCard
+  capacity: number | null;        
+  hallTypes: HallTypeBadge[];
 }
 
 export interface SavedListingCard {

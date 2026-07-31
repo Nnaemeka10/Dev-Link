@@ -27,7 +27,10 @@ async function paystackRequest<T>(endpoint: string, method: string, body?: any):
 
 /** Step 1: Resolve bank account to get account name */
 export async function resolveBankAccount(accountNumber: string, bankCode: string): Promise<{ account_name: string }> {
+    console.log(accountNumber, bankCode);
     const res = await paystackRequest<any>(`/bank/resolve?account_number=${accountNumber}&bank_code=${bankCode}`, 'GET');
+    console.log('Bank account resolution response:', res);
+    
     if (!res.status) throw new Error('Could not verify this account number.');
     return { account_name: res.data.account_name };
 }
