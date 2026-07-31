@@ -363,10 +363,10 @@ export function MobileExploreCard({ listing, selected, onToggleCompare }: Explor
           <div className="mt-4 flex flex-wrap gap-2">
             {listing.badges.map((badge) => (
               <span
-                key={badge}
+                key={badge.id}
                 className="rounded-full bg-[#EEECE7] px-4 py-2 text-[10px] font-extrabold uppercase tracking-[0.08em] text-[#7A7C94]"
               >
-                {badge}
+                {badge.name}
               </span>
             ))}
           </div>
@@ -428,11 +428,22 @@ export function DesktopExploreCard({ listing, selected, onToggleCompare }: Explo
           </p>
 
            {listing.kind === "venue" && (
-                        <div className="mt-3 flex items-center justify-between gap-2">
-                            <HallTypeBadges hallTypes={listing.hallTypes} />
-                            <CapacityBadge capacity={listing.capacity} />
-                        </div>
-                    )}
+              <div className="mt-3 flex items-center justify-between gap-2">
+                <HallTypeBadges hallTypes={listing.hallTypes} />
+                <CapacityBadge capacity={listing.capacity} />
+              </div>
+            )}
+
+            <div className="mt-4 flex flex-wrap gap-2">
+            {listing.badges.map((badge) => (
+              <span
+                key={badge.id}
+                className="rounded-full bg-[#EEECE7] px-4 py-2 text-[10px] font-extrabold uppercase tracking-[0.08em] text-[#7A7C94]"
+              >
+                {badge.name}
+              </span>
+            ))}
+          </div>
 
           <div className="mt-5 flex items-end justify-between">
             <p className="text-2xl font-extrabold text-[#A83A1C]">

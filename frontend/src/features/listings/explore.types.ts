@@ -1,5 +1,6 @@
 // NOTE: Removed StaticImageData. Images are now strings from Cloudinary.
 
+import { ListingBadge } from "./details.types";
 import { HallTypeBadge } from "./listings.types";
 
 export type ExploreListingKind = "venue" | "service";
@@ -13,9 +14,9 @@ export interface ExploreListing {
   rating: number;    // Changed from string to number
   imageUrl: string | null; // Changed from 'image'
   kind: ExploreListingKind;
-  badges: string[];
+  badges: ListingBadge[];
   verified?: boolean;
-  capacity: number | null;        // NEW
+  capacity: number | null;        // 
   hallTypes: HallTypeBadge[]; 
 }
 

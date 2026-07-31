@@ -63,34 +63,7 @@ export function DesktopExploreHeader({ handleSearch, form, isPending, filter }: 
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-export function DesktopResultsHeader() {
+export function DesktopResultsHeader({count, locationLabel, listingType} : {count: number; locationLabel:string, listingType: string}) {
   const router = useRouter();
   const searchParams = useSearchParams();
   function nullableToUndefined(value: string | null) {
@@ -121,8 +94,18 @@ export function DesktopResultsHeader() {
   return (
     <div className="mb-6 xl:mb-8 flex items-end justify-between">
       <div>
-        <h2 className="text-[1.5rem] xl:text-[2rem] font-extrabold tracking-[-0.02em]">Venues in Lagos</h2>
-        <p className="mt-1 text-base xl:text-lg text-[#555B7F]">248 premium spaces found for your event</p>
+        {listingType === "hall" && (
+          <>
+            <h2 className="text-[1.5rem] xl:text-[2rem] font-extrabold tracking-[-0.02em]">Venues in {locationLabel}</h2>
+            <p className="mt-1 text-base xl:text-lg text-[#555B7F]"> {count} {count === 1 ? "premium space" : "premium spaces"} found for your event</p>
+          </>
+        )}
+        {listingType === "service" && (
+          <>
+            <h2 className="text-[1.5rem] xl:text-[2rem] font-extrabold tracking-[-0.02em]">Services in {locationLabel}</h2>
+            <p className="mt-1 text-base xl:text-lg text-[#555B7F]"> {count} {count === 1 ? "premium service" : "premium services"} found for your event</p>
+          </>
+        )}
       </div>
       <SortDropdown 
         currentSort={params.sort} 

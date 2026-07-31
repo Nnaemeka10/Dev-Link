@@ -1,3 +1,5 @@
+import { ListingBadge } from "./details.types";
+
 export interface Listing {
   id: string;
   title: string;
@@ -31,7 +33,7 @@ export interface HomeListingCard {
   priceUnit: string;
   rating: number;
   primaryImage: ListingImage | null;
-  badges: string[]; // Added badges property to HomeListingCard
+  badges: ListingBadge[]; // Added badges property to HomeListingCard
   capacity: number | null;        
   hallTypes: HallTypeBadge[];
 }

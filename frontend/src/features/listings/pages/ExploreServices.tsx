@@ -167,7 +167,7 @@
 
 import { useWatch } from "react-hook-form";
 import { useMemo, useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useSearchForm } from "@/features/search/hooks/useSearchForm";
 import { buildListingsHref } from "@/features/listings/searchParams";
 import type { SearchFormData } from "@/features/search/utils/searchSchema";
@@ -188,8 +188,25 @@ function formatDateLabel(date: Date) {
 }
 
 export default function ExploreServices() {
+  const searchParams = useSearchParams();
+   const location = searchParams.get("location") || undefined;
+    const dateFrom = searchParams.get("dateFrom") || undefined;
+    const dateTo = searchParams.get("dateTo") || undefined;
+    const sort = searchParams.get("sort") || undefined;
+    const sortOrder = searchParams.get("sortOrder") || undefined;
+
+
   // --- REAL DATA HOOK ---
-  const { data: listings = [], isPending, isError } = useExploreListings("service");
+  const { data, isPending, isError } = useExploreListings({
+        kind: "service",
+        location,
+        dateFrom,
+        dateTo,
+        sort,
+        sortOrder,
+    });
+
+  const listings = useMemo(() => data?.data ?? [], [data]);
   
   const [mobileSelectedIds, setMobileSelectedIds] = useState(() => new Set<string>());
   const [desktopSelectedIds, setDesktopSelectedIds] = useState(() => new Set<string>());
@@ -230,14 +247,31 @@ export default function ExploreServices() {
     return lines;
   })();
 
+  const resultsCount = listings.length;
+  const locationLabel = location || "Nigeria";
+
   return (
     <main className="min-h-screen bg-bg-primary text-[#252423]">
       <section className="md:hidden">
         <MobileExploreHeader handleSearch={handleSearch} form={form} isPending={isTransitioning} mobileSummary={mobileSummaryLines} />
-        <MobileResultsHeader />
+        <MobileResultsHeader count={resultsCount} locationLabel= {locationLabel} listingType="service"/>
         <div className="flex flex-col gap-12 px-5 pb-44">
-          {isPending && <p>Loading Services...</p>}
-          {isError && <p>Failed to load services.</p>}
+          {isPending && (
+              <div className="space-y-4">
+                  {[...Array(3)].map((_, i) => (
+                      <div key={i} className="h-[24rem] animate-pulse rounded-[2rem] bg-text-primary/8" />
+                  ))}
+              </div>
+            )}
+            {isError && (
+              <p className="text-center text-sm font-medium text-[#5E6588]">Failed to load halls.</p>
+            )}
+            {!isPending && !isError && listings.length === 0 && (
+              <div className="flex flex-col items-center py-20 text-center">
+                  <p className="text-lg font-bold text-[#2A2826]">No halls found</p>
+                  <p className="mt-1 text-sm text-[#5E6588]">Try adjusting your search filters.</p>
+              </div>
+            )}
           {listings.map((listing) => (
             <MobileExploreCard key={listing.id} listing={listing} selected={mobileSelectedIds.has(listing.id)} onToggleCompare={() => setMobileSelectedIds((current) => toggleSelection(current, listing.id))} />
           ))}
@@ -251,10 +285,24 @@ export default function ExploreServices() {
         <DesktopExploreHeader handleSearch={handleSearch} form={form} isPending={isTransitioning} />
         <div className="flex flex-1 overflow-hidden">
           <div className="flex-1 overflow-y-auto px-8 pb-12 pt-10">
-            <DesktopResultsHeader />
+            <DesktopResultsHeader count={resultsCount} locationLabel={locationLabel} listingType="service"/>
             <div className="grid grid-cols-2 gap-8">
-              {isPending && <p>Loading services...</p>}
-              {isError && <p>Failed to load services.</p>}
+              {isPending && (
+                <div className="space-y-4">
+                    {[...Array(3)].map((_, i) => (
+                        <div key={i} className="h-[24rem] animate-pulse rounded-[2rem] bg-text-primary/8" />
+                    ))}
+                </div>
+              )}
+              {isError && (
+                <p className="text-center text-sm font-medium text-[#5E6588]">Failed to load halls.</p>
+              )}
+              {!isPending && !isError && listings.length === 0 && (
+                <div className="flex flex-col items-center py-20 text-center">
+                    <p className="text-lg font-bold text-[#2A2826]">No halls found</p>
+                    <p className="mt-1 text-sm text-[#5E6588]">Try adjusting your search filters.</p>
+                </div>
+              )}
               {listings.map((listing) => (
                 <DesktopExploreCard key={listing.id} listing={listing} selected={desktopSelectedIds.has(listing.id)} onToggleCompare={() => setDesktopSelectedIds((current) => toggleSelection(current, listing.id))} />
               ))}
@@ -273,10 +321,26 @@ export default function ExploreServices() {
           <div className="flex flex-1 overflow-hidden">
             <div className="flex-1 overflow-y-auto">
               <div className="px-8 pb-12 pt-10">
-                <DesktopResultsHeader />
+                <DesktopResultsHeader count={resultsCount} locationLabel={locationLabel} listingType="service"/>
                 <div className="grid grid-cols-2 gap-8">
-                  {isPending && <p>Loading Services...</p>}
-                  {isError && <p>Failed to load services.</p>}
+
+                  {isPending && (
+                    <div className="space-y-4">
+                        {[...Array(3)].map((_, i) => (
+                            <div key={i} className="h-[24rem] animate-pulse rounded-[2rem] bg-text-primary/8" />
+                        ))}
+                    </div>
+                  )}
+                  {isError && (
+                    <p className="text-center text-sm font-medium text-[#5E6588]">Failed to load halls.</p>
+                  )}
+                  {!isPending && !isError && listings.length === 0 && (
+                    <div className="flex flex-col items-center py-20 text-center">
+                        <p className="text-lg font-bold text-[#2A2826]">No halls found</p>
+                        <p className="mt-1 text-sm text-[#5E6588]">Try adjusting your search filters.</p>
+                    </div>
+                  )}
+
                   {listings.map((listing) => (
                     <DesktopExploreCard key={listing.id} listing={listing} selected={desktopSelectedIds.has(listing.id)} onToggleCompare={() => setDesktopSelectedIds((current) => toggleSelection(current, listing.id))} />
                   ))}

@@ -43,7 +43,7 @@ export default function ExploreHalls() {
     });
 
   // --- REAL DATA HOOK ---
-  const listings = data?.data ?? [];
+ const listings = useMemo(() => data?.data ?? [], [data]);
   
   const [mobileSelectedIds, setMobileSelectedIds] = useState(() => new Set<string>());
   const [desktopSelectedIds, setDesktopSelectedIds] = useState(() => new Set<string>());
@@ -62,7 +62,14 @@ export default function ExploreHalls() {
 
   const handleSearch = (data: SearchFormData) => {
     startTransition(() => {
-      router.push(buildListingsHref({ category: data.category, location: data.location || undefined, dateFrom: data.dateRange?.from?.toISOString(), dateTo: data.dateRange?.to?.toISOString(), capacity: data.capacity, role: data.role }));
+      router.push(buildListingsHref({ 
+        category: data.category, 
+        location: data.location || undefined, 
+        dateFrom: data.dateRange?.from?.toISOString(), 
+        dateTo: data.dateRange?.to?.toISOString(), 
+        capacity: data.capacity, 
+        role: data.role
+       }));
     });
   };
 
@@ -83,17 +90,38 @@ export default function ExploreHalls() {
     if (mobileDateLabel) lines.push(mobileDateLabel);
     return lines;
   })();
+  const resultsCount = listings.length;
+  const locationLabel = location || "Nigeria";
 
   return (
     <main className="min-h-screen bg-bg-primary text-[#252423]">
       <section className="md:hidden">
         <MobileExploreHeader handleSearch={handleSearch} form={form} isPending={isTransitioning} mobileSummary={mobileSummaryLines} />
-        <MobileResultsHeader />
+        <MobileResultsHeader count = {resultsCount} locationLabel = {locationLabel} listingType = "hall"/>
         <div className="flex flex-col gap-12 px-5 pb-44">
-          {isPending && <p>Loading halls...</p>}
-          {isError && <p>Failed to load halls.</p>}
+          {isPending && (
+            <div className="space-y-4">
+                {[...Array(3)].map((_, i) => (
+                    <div key={i} className="h-[24rem] animate-pulse rounded-[2rem] bg-text-primary/8" />
+                ))}
+            </div>
+          )}
+          {isError && (
+            <p className="text-center text-sm font-medium text-[#5E6588]">Failed to load halls.</p>
+          )}
+          {!isPending && !isError && listings.length === 0 && (
+            <div className="flex flex-col items-center py-20 text-center">
+                <p className="text-lg font-bold text-[#2A2826]">No halls found</p>
+                <p className="mt-1 text-sm text-[#5E6588]">Try adjusting your search filters.</p>
+            </div>
+          )}
           {listings.map((listing) => (
-            <MobileExploreCard key={listing.id} listing={listing} selected={mobileSelectedIds.has(listing.id)} onToggleCompare={() => setMobileSelectedIds((current) => toggleSelection(current, listing.id))} />
+            <MobileExploreCard 
+              key={listing.id} 
+              listing={listing} 
+              selected={mobileSelectedIds.has(listing.id)} 
+              onToggleCompare={() => setMobileSelectedIds((current) => toggleSelection(current, listing.id))}
+             />
           ))}
         </div>
         <MobileCompareBar selectedListings={mobileSelectedListings} onClear={() => setMobileSelectedIds(new Set())} />
@@ -101,14 +129,30 @@ export default function ExploreHalls() {
         <HomeFooter />
       </section>
 
+
+        {/* Tablet */}
       <section className="hidden md:block xl:hidden">
         <DesktopExploreHeader handleSearch={handleSearch} form={form} isPending={isTransitioning} />
         <div className="flex flex-1 overflow-hidden">
           <div className="flex-1 overflow-y-auto px-8 pb-12 pt-10">
-            <DesktopResultsHeader />
+            <DesktopResultsHeader count={resultsCount} locationLabel={locationLabel} listingType = "hall" />
             <div className="grid grid-cols-2 gap-8">
-              {isPending && <p>Loading halls...</p>}
-              {isError && <p>Failed to load halls.</p>}
+              {isPending && (
+                <div className="space-y-4">
+                    {[...Array(3)].map((_, i) => (
+                        <div key={i} className="h-[24rem] animate-pulse rounded-[2rem] bg-text-primary/8" />
+                    ))}
+                </div>
+              )}
+              {isError && (
+                <p className="text-center text-sm font-medium text-[#5E6588]">Failed to load halls.</p>
+              )}
+              {!isPending && !isError && listings.length === 0 && (
+                <div className="flex flex-col items-center py-20 text-center">
+                    <p className="text-lg font-bold text-[#2A2826]">No halls found</p>
+                    <p className="mt-1 text-sm text-[#5E6588]">Try adjusting your search filters.</p>
+                </div>
+              )}
               {listings.map((listing) => (
                 <DesktopExploreCard key={listing.id} listing={listing} selected={desktopSelectedIds.has(listing.id)} onToggleCompare={() => setDesktopSelectedIds((current) => toggleSelection(current, listing.id))} />
               ))}
@@ -127,10 +171,24 @@ export default function ExploreHalls() {
           <div className="flex flex-1 overflow-hidden">
             <div className="flex-1 overflow-y-auto">
               <div className="px-8 pb-12 pt-10">
-                <DesktopResultsHeader />
+                <DesktopResultsHeader count={resultsCount} locationLabel={locationLabel} listingType="hall" />
                 <div className="grid grid-cols-2 gap-8">
-                  {isPending && <p>Loading halls...</p>}
-                  {isError && <p>Failed to load halls.</p>}
+                  {isPending && (
+                    <div className="space-y-4">
+                        {[...Array(3)].map((_, i) => (
+                            <div key={i} className="h-[24rem] animate-pulse rounded-[2rem] bg-text-primary/8" />
+                        ))}
+                    </div>
+                  )}
+                  {isError && (
+                    <p className="text-center text-sm font-medium text-[#5E6588]">Failed to load halls.</p>
+                  )}
+                  {!isPending && !isError && listings.length === 0 && (
+                    <div className="flex flex-col items-center py-20 text-center">
+                        <p className="text-lg font-bold text-[#2A2826]">No halls found</p>
+                        <p className="mt-1 text-sm text-[#5E6588]">Try adjusting your search filters.</p>
+                    </div>
+                  )}
                   {listings.map((listing) => (
                     <DesktopExploreCard key={listing.id} listing={listing} selected={desktopSelectedIds.has(listing.id)} onToggleCompare={() => setDesktopSelectedIds((current) => toggleSelection(current, listing.id))} />
                   ))}

@@ -66,7 +66,7 @@ export default function MobileExploreHeader({
   );
 }
 
-export function MobileResultsHeader() {
+export function MobileResultsHeader({count, locationLabel, listingType} : {count: number, locationLabel: string, listingType: string}) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -98,8 +98,20 @@ export function MobileResultsHeader() {
   return (
     <div className="mb-6 px-6 py-4 justify-between flex">
       <div>
-        <h2 className="text-lg font-extrabold tracking-[-0.02em] text-text-primary">Venues in Lagos</h2>
-        <p className="mt-1 text-xs text-[#555B7F]">248 spaces found for your event</p>
+        
+        {listingType === "hall" && (
+          <>
+          <h2 className="text-lg font-extrabold tracking-[-0.02em] text-text-primary">Venues in {locationLabel}</h2>
+          <p className="mt-1 text-xs text-[#555B7F]"> {count} {count === 1 ? "premium space" : "premium spaces"} found for your event</p>
+          </>
+        )}
+        {listingType === "service" && (
+          <>
+          <h2 className="text-lg font-extrabold tracking-[-0.02em] text-text-primary">Services in {locationLabel}</h2>
+          <p className="mt-1 text-xs text-[#555B7F]"> {count} {count === 1 ? "premium service" : "premium services"} found for your event</p>
+          </>
+        )}
+        
       </div>
       <div className="flex items-center justify-between">
         <SortDropdown 

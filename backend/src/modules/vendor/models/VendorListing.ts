@@ -135,8 +135,8 @@ async processDraftPayload(listingId: string, payload: any): Promise<void> {
         const pricing = payload.pricing;
 
         if (category === 'hall' && details?.hallLocation) {
-            const stateName = await this.resolveStateName(client, details.hallLocation.stateId);
-            const lgaName = await this.resolveLgaName(client, details.hallLocation.lgaId);
+            const stateName = await this._resolveStateName(client, details.hallLocation.stateId);
+            const lgaName = await this._resolveLgaName(client, details.hallLocation.lgaId);
 
             await client.query(
                 `UPDATE listings SET
@@ -159,7 +159,7 @@ async processDraftPayload(listingId: string, payload: any): Promise<void> {
                     details.hallLocation.streetAddress || null,
                     lgaName,
                     stateName,
-                    this.extractCapacityFromAmenities(payload.amenities),
+                    this._extractCapacityFromAmenities(payload.amenities),
                     pricing?.basePrice ? Math.round(pricing.basePrice) : 0,
                     'per event',
                 ]
@@ -185,7 +185,7 @@ async processDraftPayload(listingId: string, payload: any): Promise<void> {
                     pricing?.basePrice ? Math.round(pricing.basePrice) : 0,
                     'per event',
                     JSON.stringify({
-                        requirements: this.buildRequirementsArray(payload),
+                        requirements: this._buildRequirementsArray(payload),
                         response_time: null,
                     }),
                 ]
@@ -219,26 +219,26 @@ async processDraftPayload(listingId: string, payload: any): Promise<void> {
     }
   },
 
-  private async resolveStateName(client: any, stateId: string | null): Promise<string | null> {
+   async _resolveStateName(client: any, stateId: string | null): Promise<string | null> {
       if (!stateId) return null;
       const res = await client.query(`SELECT name FROM nigeria_states WHERE id = $1`, [stateId]);
       return res.rows[0]?.name ?? null;
   },
 
-  private async resolveLgaName(client: any, lgaId: string | null): Promise<string | null> {
+  async _resolveLgaName(client: any, lgaId: string | null): Promise<string | null> {
       if (!lgaId) return null;
       const res = await client.query(`SELECT name FROM nigeria_lgas WHERE id = $1`, [lgaId]);
       return res.rows[0]?.name ?? null;
   },
 
-  private extractCapacityFromAmenities(amenities: any[]): number | null {
+  _extractCapacityFromAmenities(amenities: any[]): number | null {
       const capacityAmenity = amenities?.find((a) => a.amenityId === 'capacity');
       if (!capacityAmenity?.value) return null;
       const parsed = parseInt(capacityAmenity.value, 10);
       return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
   },
 
-  private buildRequirementsArray(payload: any): string[] {
+  _buildRequirementsArray(payload: any): string[] {
       const reqs: string[] = [];
       if (payload.requirements) {
           reqs.push(...payload.requirements.map((r: any) => `${r.value}`));
