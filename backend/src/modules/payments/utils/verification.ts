@@ -57,15 +57,38 @@ export async function getOrCreatePaystackCustomer(userId: number, email: string,
     return customerCode;
 }
 
-/** Step 3: Dispatch Government ID check (BVN/NIN) - Fire and forget */
-export async function dispatchIdentityVerification(customerCode: string, idType: IdType, idNumber: string): Promise<void> {
-    await paystackRequest<any>('/customer/validate', 'POST', {
-        customer: customerCode,
+/**
+ * Step 3: Dispatch Government ID check (BVN/NIN) for Nigeria.
+ * Uses type: "bank_account" and passes the BVN as required by Paystack NG documentation.
+ */
+export async function dispatchIdentityVerification(
+    customerCode: string, 
+    firstName: string,
+    lastName: string,
+    bvn: string, 
+    bankCode: string, 
+    accountNumber: string
+): Promise<void> {
+    await paystackRequest<any>(`/customer/${customerCode}/identification`, 'POST', {
         country: 'NG',
-        type: idType,
-        value: idNumber,
+        type: 'bank_account',
+        account_number: accountNumber,
+        bvn: bvn,
+        bank_code: bankCode,
+        first_name: firstName,
+        last_name: lastName
     });
 }
+// /** Step 3: Dispatch Government ID check (BVN/NIN) - Fire and forget */
+// export async function dispatchIdentityVerification(customerCode: string, idType: IdType, idNumber: string): Promise<void> {
+//     await paystackRequest<any>('/customer/validate', 'POST', {
+//         customer: customerCode,
+//         country: 'NG',
+//         type: idType,
+//         value: idNumber,
+//     });
+// }
+
 
 
 
