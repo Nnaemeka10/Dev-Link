@@ -483,7 +483,7 @@ export default function ServiceDetails() {
     <main className="min-h-screen bg-bg-primary text-[#252423]">
       {/* MOBILE */}
       <section className="md:hidden">
-        <MobileDetailsHeader />
+        <MobileDetailsHeader title={listing.name} />
         <MobileHeroPhoto image={gallery[0] || "/placeholder.jpg"} name={listing.title} />
 
         <div className="relative z-10 -mt-12 px-5">
