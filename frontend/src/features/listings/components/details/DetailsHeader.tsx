@@ -11,18 +11,9 @@ interface ApiError {
   message?: string;
 }
 
-export function MobileDetailsHeader() {
+export function MobileDetailsHeader({title} : {title : string}) {
   const router = useRouter();
-  const params  = useParams();
-  const id = params.id as string;
 
-  function formatSlug(slug: string): string {
-    return slug
-      .replace(/-/g, ' ') // Replace all hyphens with spaces
-      .replace(/\b\w/g, (char) => char.toUpperCase()); // Capitalize first letter of each word
-  }
-
-  const listing = formatSlug(id);
   return (
     <header className="sticky top-0 z-40 flex h-14 items-center justify-between bg-bg-primary px-5">
       <div className=" flex gap-2">
@@ -30,7 +21,7 @@ export function MobileDetailsHeader() {
           <ArrowLeft className="h-5 w-5" />
         </button>
         
-        <h1 className="text-base font-extrabold text-[#252423]">{listing}</h1>
+        <h1 className="text-base font-extrabold text-[#252423]">{title}</h1>
       </div>
       <DetailsActions />
     </header>
@@ -96,7 +87,7 @@ function SharePopover({ onClose }: { onClose: () => void }) {
     <div className="fixed inset-0 z-9999 bg-black/50" onClick={onClose}>
       {/* Popover content */}
       <div 
-        className="absolute right-[30%] top-[50%] w-[25rem] origin-top-right rounded-2xl border border-[#E8DDD2] bg-white p-5 shadow-[0_24px_54px_rgba(34,27,18,0.12)]"
+        className="absolute md:right-[30%] md:top-[50%] md:w-[25rem] md:origin-top-right w-[80vw] top-[50%] left-[10vw]  rounded-2xl border border-[#E8DDD2] bg-white p-5 shadow-[0_24px_54px_rgba(34,27,18,0.12)]"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between mb-3">

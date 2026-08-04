@@ -30,7 +30,7 @@ export default function TransactionHistory({ transactions }: TransactionHistoryP
   return (
     <section className="animate-fade-up rounded-card bg-bg-tertiary p-6 shadow-card lg:col-span-2 xl:p-8">
       <div className="flex items-center justify-between">
-        <h2 className="font-man text-lg font-bold text-text-primary xl:text-xl">Transaction History</h2>
+        <h2 className="font-man text-heading-m font-bold text-text-primary xl:text-xl">Transaction History</h2>
         <button
           type="button"
           className="text-xs font-bold text-accent-primary hover:underline"

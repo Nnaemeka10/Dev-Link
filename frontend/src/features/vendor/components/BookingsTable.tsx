@@ -33,8 +33,8 @@ export default function BookingsTable({
   return (
     <section className="animate-fade-up overflow-hidden rounded-card border border-black/5 bg-white shadow-card">
       {/* Filter bar */}
-      <div className="flex flex-col gap-4 border-b border-black/5 px-5 py-5 sm:flex-row sm:items-center sm:justify-between md:px-8">
-        <div className="flex flex-wrap gap-1 rounded-full bg-bg-tertiary p-1">
+      <div className="flex flex-col gap-4 border-b border-black/5 px-0 py-5 sm:flex-row sm:items-center sm:justify-between md:px-8">
+        <div className="flex flex-wrap md:gap-1 rounded-full bg-bg-tertiary p-1 justify-between">
           {filters.map((tab) => {
             const isActive = tab.key === activeFilterKey;
             return (
@@ -42,7 +42,7 @@ export default function BookingsTable({
                 key={tab.key}
                 type="button"
                 onClick={() => onFilterChange?.(tab.key)}
-                className={`rounded-full px-4 py-2 text-sm font-bold transition-all duration-300 xs:px-5 ${
+                className={`rounded-full md:px-4 px-2.5 py-2 md:text-sm text-micro font-bold transition-all duration-300 xs:px-5 ${
                   isActive
                     ? "bg-white text-accent-primary shadow-card"
                     : "text-text-primary/55 hover:bg-white/60 hover:text-text-primary"
@@ -55,10 +55,10 @@ export default function BookingsTable({
           })}
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="items-center gap-3 hidden md:flex">
           <button
             type="button"
-            className="flex items-center gap-2 rounded-full border border-black/10 px-4 py-2 text-sm font-medium text-text-primary/60 transition-all duration-300 hover:border-accent-primary/30 hover:bg-bg-tertiary"
+            className="flex items-center gap-2 rounded-full border border-black/10 px-4 py-2 md:text-sm text-micro font-medium text-text-primary/60 transition-all duration-300 hover:border-accent-primary/30 hover:bg-bg-tertiary"
           >
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true">
               <path d="M4 6H20L14 13V19L10 21V13L4 6Z" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" />
@@ -67,7 +67,7 @@ export default function BookingsTable({
           </button>
           <button
             type="button"
-            className="flex items-center gap-2 rounded-full border border-black/10 px-4 py-2 text-sm font-medium text-text-primary/60 transition-all duration-300 hover:border-accent-primary/30 hover:bg-bg-tertiary"
+            className="flex items-center gap-2 rounded-full border border-black/10 px-4 py-2 md:text-sm text-micro font-medium text-text-primary/60 transition-all duration-300 hover:border-accent-primary/30 hover:bg-bg-tertiary"
           >
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true">
               <path d="M6 8H18M8 12H16M10 16H14" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
@@ -198,7 +198,7 @@ export default function BookingsTable({
       {/* Mobile card list */}
       <ul className="divide-y divide-black/5 md:hidden">
         {bookings.length === 0 ? (
-          <li className="p-8 text-center text-sm text-text-primary/50">No bookings found.</li>
+          <li className="p-8 text-center md:text-sm text-micro text-text-primary/50">No bookings found.</li>
         ) : (
           bookings.map((booking) => {
             const isCancelled = booking.status === "cancelled";
@@ -283,8 +283,8 @@ export default function BookingsTable({
       </ul>
 
       {/* Pagination */}
-      <div className="flex flex-col items-center justify-between gap-4 border-t border-black/5 bg-bg-tertiary/40 px-5 py-6 xs:flex-row md:px-8">
-        <p className="text-sm font-medium text-text-primary/55">
+      <div className="flex flex-col items-center justify-between gap-1 border-t border-black/5 bg-bg-tertiary/40 px-5 py-6 xs:flex-row md:px-8">
+        <p className="md:text-sm text-tiny font-medium text-text-primary/55">
           Showing {rangeStart}-{rangeEnd} of {pagination.totalItems} bookings
         </p>
         <div className="flex items-center gap-1.5">

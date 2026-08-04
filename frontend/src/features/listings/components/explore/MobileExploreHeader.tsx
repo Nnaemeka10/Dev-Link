@@ -102,13 +102,13 @@ export function MobileResultsHeader({count, locationLabel, listingType} : {count
         {listingType === "hall" && (
           <>
           <h2 className="text-lg font-extrabold tracking-[-0.02em] text-text-primary">Venues in {locationLabel}</h2>
-          <p className="mt-1 text-xs text-[#555B7F]"> {count} {count === 1 ? "premium space" : "premium spaces"} found for your event</p>
+          <p className="mt-1 text-tiny text-[#555B7F]"> {count} {count === 1 ? "premium space" : "premium spaces"} found for your event</p>
           </>
         )}
         {listingType === "service" && (
           <>
           <h2 className="text-lg font-extrabold tracking-[-0.02em] text-text-primary">Services in {locationLabel}</h2>
-          <p className="mt-1 text-xs text-[#555B7F]"> {count} {count === 1 ? "premium service" : "premium services"} found for your event</p>
+          <p className="mt-1 text-tiny text-[#555B7F]"> {count} {count === 1 ? "premium service" : "premium services"} found for your event</p>
           </>
         )}
         

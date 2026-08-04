@@ -81,7 +81,7 @@ function PreferenceRow({
         <span className="text-stone-400">{icon}</span>
         <div>
           <p className="text-sm font-semibold text-stone-800">{label}</p>
-          {sublabel && <p className="text-xs text-stone-400">{sublabel}</p>}
+          {sublabel && <p className="md:text-xs text-tiny text-stone-400">{sublabel}</p>}
         </div>
       </div>
       {right && <span className="text-stone-300">{right}</span>}
@@ -406,25 +406,32 @@ function BookingCard({ booking }: { booking: Booking }) {
   const cfg = statusConfig[booking.status];
 
   return (
-    <div className="flex gap-4 p-4 bg-stone-50 rounded-2xl hover:bg-white border border-transparent hover:border-stone-200 hover:shadow-sm transition-all group cursor-pointer">
-      <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-xl overflow-hidden shrink-0 bg-stone-200">
-        <img
-          src={booking.imageUrl}
-          alt={booking.eventTitle}
-          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-        />
-      </div>
-      <div className="flex-1 min-w-0">
-        <div className="flex items-start justify-between gap-2 mb-0.5">
-          <h4 className="text-sm font-bold text-stone-900 leading-snug line-clamp-2">
-            {booking.eventTitle}
-          </h4>
-          <span
-            className={`shrink-0 text-[10px] font-bold px-2 py-1 rounded-full ${cfg.bg} ${cfg.text}`}
-          >
-            {cfg.label}
-          </span>
+    <div className="flex flex-col gap-4 p-4 bg-stone-50 rounded-2xl hover:bg-white border border-transparent hover:border-stone-200 hover:shadow-sm transition-all group cursor-pointer">
+
+      <div className="flex gap-4 items-center">
+        <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-xl overflow-hidden shrink-0 bg-stone-200">
+          <img
+            src={booking.imageUrl}
+            alt={booking.eventTitle}
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+          />
         </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex flex-col items-start justify-between gap-2 mb-0.5">
+            <h4 className="text-sm font-bold text-stone-900 leading-snug line-clamp-2">
+              {booking.eventTitle}
+            </h4>
+            <span
+              className={`shrink-0 text-[10px] font-bold px-2 py-1 rounded-full ${cfg.bg} ${cfg.text}`}
+            >
+              {cfg.label}
+            </span>
+          </div>
+        </div>
+      </div>
+
+
+      <div className="flex-1 flex-col min-w-0">       
         <p className="text-xs text-stone-400 mb-2">{booking.vendorName}</p>
         <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-stone-500">
           <span className="flex items-center gap-1">
@@ -503,12 +510,12 @@ function BookingsSection({ bookings }: { bookings: Booking[] }) {
   return (
     <div className="space-y-5">
       {/* Tab pills */}
-      <div className="flex gap-1 p-1 bg-stone-100 rounded-2xl w-fit">
+      <div className="flex md:gap-1 gap-2 p-1 bg-stone-100 rounded-2xl w-fit">
         {(["pending", "past"] as BookingTab[]).map((t) => (
           <button
             key={t}
             onClick={() => setTab(t)}
-            className={`px-5 py-2 rounded-xl text-sm font-semibold transition-all ${
+            className={`px-5 py-2 rounded-xl md:text-sm text-tiny font-semibold transition-all ${
               tab === t
                 ? "bg-white text-stone-900 shadow-sm"
                 : "text-stone-400 hover:text-stone-600"
@@ -645,7 +652,7 @@ function ProfileContent({
       {/* ── Profile Header ────────────────────────────────────────────── */}
       <div className="flex items-center gap-5">
         <div className="relative shrink-0">
-          <div className="w-20 h-20 md:w-24 md:h-24 rounded-full overflow-hidden ring-4 ring-white shadow-lg">
+          <div className="w-16 h-16 md:w-24 md:h-24 rounded-full overflow-hidden ring-4 ring-white shadow-lg">
             <img
               src={profile.avatarUrl}
               alt={profile.fullName}
@@ -687,10 +694,10 @@ function ProfileContent({
           </label>
         </div>
         <div>
-          <h2 className="text-2xl md:text-3xl font-extrabold text-stone-900 tracking-tight leading-tight">
+          <h2 className="text-heading-m md:text-3xl font-extrabold text-stone-900 tracking-tight leading-tight">
             {profile.fullName}
           </h2>
-          <p className="text-sm text-stone-400 mt-0.5">
+          <p className="md:text-sm text-small text-stone-400 mt-0.5">
             Member since {profile.memberSince}
           </p>
         </div>
@@ -1056,7 +1063,7 @@ function ProfileContent({
       </section>
 
       {/* ── Become a Vendor ──────────────────────────────────────────── */}
-      <section>
+      <section onClick={() => router.push("/vendor/create-listing")}>
         <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#D65C3A] to-[#8c2a09] p-7 shadow-lg shadow-[#D65C3A]/20 cursor-pointer hover:shadow-xl hover:shadow-[#D65C3A]/30 transition-all group">
           {/* Decorative circles */}
           <div className="absolute -right-8 -top-8 w-36 h-36 rounded-full bg-white/10 pointer-events-none" />

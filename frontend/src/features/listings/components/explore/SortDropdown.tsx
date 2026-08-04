@@ -34,7 +34,7 @@ export function SortDropdown({ currentSort, currentSortOrder, onSort }: SortDrop
     }
 
     const option = SORT_OPTIONS.find((opt) => opt.sort === currentSort && opt.order === currentSortOrder);
-    return option ? `Sort by: ${option.label}` : "Sort by: Recommended";
+    return option ? `Sort by: ${option.sort}` : "Sort by: Recommended";
   };
 
   const handleSelectSort = (option: SortOption) => {

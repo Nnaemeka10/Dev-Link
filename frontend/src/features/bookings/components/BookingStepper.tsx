@@ -12,8 +12,8 @@ export default function BookingStepper({
   if (variant === "mobile") {
     return (
       <div className="px-6 pb-7 pt-2">
-        <div className="mb-3 flex items-center justify-between text-xs font-extrabold uppercase tracking-[0.12em] text-[#555B7F]">
-          <span>Step {Math.min(step, labels.length).toString().padStart(2, "0")} / {labels.length.toString().padStart(2, "0")}</span>
+        <div className="mb-3 flex items-center justify-between text-tiny md:text-xs font-extrabold uppercase tracking-[0.12em] text-[#555B7F]">
+          <span>Step {Math.min(step, labels.length).toString()} / {labels.length.toString()}</span>
           <span>{labels[Math.min(step, labels.length) - 1]}</span>
         </div>
         <div className="h-1 rounded-full bg-[#E8E4DC]">

@@ -85,7 +85,7 @@ export function DateTimeSection({
 }: DateTimeSectionProps) {
   return (
     <div className="rounded-[2rem] bg-[#F4F1EA] p-6 md:p-8">
-      <h3 className="mb-6 font-man text-xl font-extrabold text-[#252423]">
+      <h3 className="mt-6 mb-2 font-man text-heading-m font-extrabold text-[#252423]">
         Select Date &amp; Time
       </h3>
 
@@ -101,7 +101,7 @@ export function DateTimeSection({
               onChange={onDateRangeChange}
               unavailableDates={unavailableDates}
               variant="ghost"
-              triggerClassName="flex-1 bg-transparent text-sm font-semibold text-[#252423] focus:outline-none text-left"
+              triggerClassName="flex-1 bg-transparent md:text-sm text-small font-semibold text-[#252423] focus:outline-none text-left"
               listingId = {listingId}
             />
           </FieldPill>
@@ -134,7 +134,7 @@ export function DateTimeSection({
                 options={START_TIMES}
                 value={startTime}
                 onChange={onStartTimeChange}
-                triggerClassName="!p-0 font-semibold text-[#252423] text-tiny lg:text-sm"
+                triggerClassName="!p-0 font-semibold text-[#252423]"
               />
             </div>
           </div>
@@ -152,7 +152,7 @@ export function DateTimeSection({
                 options={END_TIMES}
                 value={endTime}
                 onChange={onEndTimeChange}
-                triggerClassName="!p-0 font-semibold text-[#252423]"
+                triggerClassName="!p-0 font-semibold text-[#252423] text-2xl"
               />
             </div>
           </div>

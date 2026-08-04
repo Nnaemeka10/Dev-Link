@@ -25,7 +25,7 @@ function toRankedItem(item: HomeTrendingCard): RankedItem {
     id: item.id,
     title: item.title,
     meta: item.headline ?? `${Math.round(item.rankScore)} trend score`,
-    priceLine: `${formatNaira(item.priceFrom)} / ${item.priceUnit}`,
+    priceLine: `${formatNaira(item.priceFrom)} / day`,
     imageUrl: item.primaryImage?.thumbnailUrl ?? item.primaryImage?.url ?? null,
   };
 }

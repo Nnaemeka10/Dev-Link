@@ -65,18 +65,18 @@ export default function PopularHallsSection() {
   return (
     <section className="px-4 py-10 md:px-8 md:py-12">
       <div className="mx-auto max-w-7xl">
-        <div className="mb-6 flex items-start justify-between md:mb-7 md:items-end">
+        <div className="mb-6 flex items-center justify-between md:mb-7 md:items-end">
           <div>
             <h2 className="text-heading-m text-text-primary leading-tight font-semibold md:text-4xl">
               {POPULAR_HALLS_CONTENT.heading}
             </h2>
-            <p className="text-small text-text-primary/62 mt-2 md:text-base">
+            <p className="text-tiny text-text-primary/62 mt-2 md:text-base">
               {POPULAR_HALLS_CONTENT.subheading}
             </p>
           </div>
           <Link
             href={POPULAR_HALLS_CONTENT.ctaLink}
-            className="text-small text-text-primary font-semibold underline md:text-sm"
+            className="text-tiny text-text-primary font-semibold underline md:text-sm"
           >
             {POPULAR_HALLS_CONTENT.ctaLabel}
           </Link>
@@ -112,23 +112,23 @@ export default function PopularHallsSection() {
                   </span>
                 </div>
 
-                <div className="mt-3 flex items-start justify-between gap-2">
-                  <h3 className="text-text-primary text-lg font-semibold">{hall.title}</h3>
-                  <p className="text-small text-text-primary inline-flex items-center gap-1 font-semibold">
+                <div className="mt-3 flex items-start justify-between gap-2 px-2">
+                  <h3 className="text-text-primary text-base font-semibold">{hall.title}</h3>
+                  <p className="text-tiny text-text-primary inline-flex items-center gap-1 font-semibold">
                     <Star className="text-accent-secondary h-4 w-4 fill-current" />
                     {hall.rating.toFixed(1)}
                   </p>
                 </div>
 
-                <p className="text-tiny text-text-primary/58 mt-1 inline-flex items-center gap-1">
+                <p className="text-tiny text-text-primary/58 mt-1 inline-flex px-2 items-center gap-1">
                   <MapPin className="h-4 w-4" />
                   {hall.location}
                 </p>
 
-                <p className="text-text-primary mt-2 text-base font-semibold">
+                <p className="text-text-primary px-2 mt-2 text-small font-semibold">
                   {formatNaira(hall.priceFrom)}
                   <span className="text-text-primary/60 ml-1 text-sm font-normal">
-                    /{hall.priceUnit}
+                    /day
                   </span>
                 </p>
               </article>

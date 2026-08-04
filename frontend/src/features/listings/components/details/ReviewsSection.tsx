@@ -93,7 +93,7 @@ function ReviewCard({ review }: { review: ListingReview }) {
   });
 
   return (
-    <article className="min-w-[19rem] rounded-[2rem] bg-white p-7 shadow-[0_16px_34px_rgba(36,28,18,0.06)] md:min-w-0">
+    <article className="min-w-76 rounded-4xl bg-white p-7 shadow-[0_16px_34px_rgba(36,28,18,0.06)] md:min-w-0">
       <div className="flex items-center gap-4">
         <span className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-[#F7D1C8] text-sm font-extrabold text-[#B9401D]">
           VG
@@ -103,7 +103,7 @@ function ReviewCard({ review }: { review: ListingReview }) {
           <p className="text-xs font-semibold text-[#7B7E9B]">{formattedDate}</p>
         </div>
       </div>
-      <p className="mt-5 text-sm font-medium italic leading-6 text-[#5E6588]">&quot;{review.body}&quot;</p>
+      <p className="mt-5 md:text-sm  text-small font-medium italic leading-6 text-[#5E6588]">&quot;{review.body}&quot;</p>
     </article>
   );
 }

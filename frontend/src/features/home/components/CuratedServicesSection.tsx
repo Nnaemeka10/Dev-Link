@@ -63,18 +63,18 @@ export default function CuratedServicesSection() {
   return (
     <section className="px-4 py-10 md:px-8 md:py-12">
       <div className="mx-auto max-w-7xl">
-        <div className="mb-6 flex items-start justify-between md:mb-7 md:items-end">
+        <div className="mb-6 flex items-center justify-between md:mb-7 md:items-end">
           <div>
             <h2 className="text-heading-m text-text-primary leading-tight font-semibold md:text-4xl">
               {CURATED_SERVICES_CONTENT.heading}
             </h2>
-            <p className="text-small text-text-primary/62 mt-2 md:text-base">
+            <p className="text-tiny text-text-primary/62 mt-2 md:text-base">
               {CURATED_SERVICES_CONTENT.subheading}
             </p>
           </div>
           <Link
             href={CURATED_SERVICES_CONTENT.ctaLink}
-            className="text-small text-text-primary font-semibold underline md:text-sm"
+            className="text-tiny text-text-primary font-semibold underline md:text-sm"
           >
             {CURATED_SERVICES_CONTENT.ctaLabel}
           </Link>
@@ -113,11 +113,11 @@ export default function CuratedServicesSection() {
                   </div>
                 </div>
 
-                <div className="mt-3 flex items-center justify-between">
-                  <p className="text-text-primary text-base font-semibold">
+                <div className="mt-3 flex items-center justify-between px-2">
+                  <p className="text-text-primary text-small font-semibold">
                     {formatNaira(service.priceFrom)}
                     <span className="text-text-primary/60 ml-1 text-sm font-normal">
-                      /{service.priceUnit}
+                      /day
                     </span>
                   </p>
                   <p className="inline-flex items-center gap-1 rounded-full bg-[#F6E9BE] px-2 py-1 text-xs font-semibold text-[#7E6000]">

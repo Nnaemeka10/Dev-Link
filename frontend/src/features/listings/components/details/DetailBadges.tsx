@@ -21,7 +21,7 @@ export function VerifiedVenueBadge() {
 
 export function ListingBadge({ children }: { children: React.ReactNode }) {
   return (
-    <span className="rounded-full bg-[#FFE7B5] px-4 py-2 text-[10px] font-extrabold uppercase tracking-[0.08em] text-[#6E4A12]">
+    <span className="rounded-full bg-[#EEECE7] md:px-4 md:py-2 md:text-tiny px-2 py-1 text-nano font-extrabold uppercase tracking-[0.08em] text-[#6E4A12]">
       {children}
     </span>
   );

@@ -6,11 +6,12 @@ export const VendorDashboardModel = {
    * Computes total revenue, confirmed bookings, and pending bookings.
    * Revenue is strictly defined as funds that have reached 'payout_released' status.
    */
-  async getFinancialSummary(userId: number) {
+    async getFinancialSummary(userId: number) {
     const db = getDB();
     const res = await db.query(
       `SELECT 
-        COALESCE(SUM(b.total_amount), 0) FILTER (WHERE b.status = 'payout_released') AS total_revenue,
+        -- FIX: FILTER goes directly on SUM, inside COALESCE
+        COALESCE(SUM(b.total_amount) FILTER (WHERE b.status = 'payout_released'), 0) AS total_revenue,
         COUNT(*) FILTER (WHERE b.status IN ('confirmed', 'funds_held', 'paid', 'processing_payout', 'payout_released')) AS confirmed_bookings,
         COUNT(*) FILTER (WHERE b.status = 'pending') AS pending_bookings
        FROM bookings b
@@ -37,7 +38,6 @@ export const VendorDashboardModel = {
       nextPayout: payoutRes.rows[0] || null,
     };
   },
-
   /**
    * Revenue trend bucketed by month for the trailing 6 months.
    */

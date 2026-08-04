@@ -7,6 +7,7 @@ import { ChatInput } from "./ChatInput";
 import { EmptyState } from "./EmptyState";
 import type { ChatMessage, ChatThread } from "../chat.types";
 import { getConversationName } from "../utils";
+import { ArrowBigLeft, ArrowLeft } from "lucide-react";
 
 interface ChatWindowProps {
   conversation: ChatThread | null;
@@ -38,7 +39,20 @@ export function ChatWindow({ conversation, messages, currentUserId, isTyping, is
         <div className="flex items-center gap-3">
           {onBack && (
             <button onClick={onBack} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors text-gray-500 mr-1" aria-label="Back to conversations">
-              {/* Back Arrow Icon */}
+              <svg
+                 xmlns="http://www.w3.org/2000/svg"
+                 fill="none"
+                 viewBox="0 0 24 24"
+                 strokeWidth={2}
+                 stroke="currentColor"
+                 className="w-5 h-5"
+               >
+                 <path
+                   strokeLinecap="round"
+                   strokeLinejoin="round"
+                   d="M15.75 19.5L8.25 12l7.5-7.5"
+                 />
+               </svg>
             </button>
           )}
           <Avatar name={displayName} avatarUrl={conversation.avatarUrl} isOnline={conversation.isOnline} size="sm" />
@@ -54,7 +68,7 @@ export function ChatWindow({ conversation, messages, currentUserId, isTyping, is
       {/* Messages */}
       <div className="flex-1 overflow-y-auto px-5 py-5 space-y-4 bg-gray-50">
         {messages.map((msg) => (
-          <MessageBubble key={msg.id} message={msg} isMine={msg.sender_id === currentUserId} senderName={conversation.name} senderAvatar={conversation.avatarUrl} />
+          <MessageBubble key={msg.id} message={msg} isMine={String(msg.sender_id) === String(currentUserId)} senderName={conversation.name} senderAvatar={conversation.avatarUrl} />
         ))}
         {isTyping && (
           <div className="flex items-center gap-2.5 max-w-[80%]">

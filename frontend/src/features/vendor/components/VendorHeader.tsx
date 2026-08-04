@@ -39,7 +39,7 @@ export default function VendorHeader({ vendor }: VendorHeaderProps) {
         <div className="h-8 w-px bg-text-primary/10" />
 
         <div className="flex cursor-pointer items-center gap-3">
-          <span className="hidden text-sm font-medium text-text-primary sm:inline">
+          <span className="text-sm font-medium text-text-primary inline">
             {vendor.name}
           </span>
           <div className="relative h-9 w-9 overflow-hidden rounded-full bg-bg-tertiary ring-1 ring-black/5">

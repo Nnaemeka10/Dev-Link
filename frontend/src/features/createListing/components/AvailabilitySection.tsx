@@ -1,58 +1,30 @@
-// TODO(meks): swap the placeholder below for your existing calendar component, e.g.
-// import AvailabilityCalendar from "@/components/booking/AvailabilityCalendar";
+"use client";
 
-import { CalendarDays } from "lucide-react";
+import { DayPicker, type Modifiers } from "react-day-picker";
 import { useListingStore } from "../store/useListingStore";
-import { DateRangePicker } from "@/features/search";
-
-function FieldPill({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="mt-2.5 flex items-center gap-3 rounded-full bg-[#E8E4DC] px-5 py-3.5">
-      {children}
-    </div>
-  );
-}
-
-function FieldLabel({ children }: { children: React.ReactNode }) {
-  return (
-    <span className="text-[10px] font-extrabold uppercase tracking-[0.16em] text-[#555B7F]">
-      {children}
-    </span>
-  );
-}
-
-// export const AvailabilityCalender = () => {
-//   const blockedDates = useListingStore((s) => s.form.pricing.availability.blockedDates);
-//   const toggleBlockedDate = useListingStore((s) => s.toggleBlockedDate);
-//   const unavailableDates = []
-//   const listingId = ''
-
-//   return (
-//     <div className="rounded-[2rem] bg-[#F4F1EA] p-6 md:p-8">
-//       <h3 className="mb-6 font-man text-xl font-extrabold text-[#252423]">
-//         Select Date
-//       </h3>
-
-//         {/* ── Event Date — full width ─────────────────────────────────────── */}
-//         <div>
-//           <FieldLabel>Event Date</FieldLabel>
-//           <FieldPill>
-//             <CalendarDays className="h-4 w-4 shrink-0 text-[#B9401D]" aria-hidden="true" />
-//             <DateRangePicker
-//               value={dateRange}
-//               onChange={onDateRangeChange}
-//               unavailableDates={unavailableDates}
-//               variant="ghost"
-//               triggerClassName="flex-1 bg-transparent text-sm font-semibold text-[#252423] focus:outline-none text-left"
-//               listingId = {listingId}
-//             />
-//           </FieldPill>
-//         </div>
-//       </div>
-//   )};
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 export default function AvailabilitySection() {
   const blockedDates = useListingStore((s) => s.form.pricing.availability.blockedDates);
+  const toggleBlockedDate = useListingStore((s) => s.toggleBlockedDate);
+
+  const today = new Date(new Date().toDateString());
+
+  // Convert ISO strings (YYYY-MM-DD) to Date objects for react-day-picker
+  const selectedDates = blockedDates.map((d) => new Date(d + "T00:00:00"));
+
+  const handleSelect = (days: Date[] | undefined, triggerDate: Date, modifiers: Modifiers) => {
+    // Ignore clicks on disabled days (past days)
+    if (modifiers.disabled) return;
+    
+    // FIX: Use local time methods to prevent timezone shifts from UTC
+    const year = triggerDate.getFullYear();
+    const month = String(triggerDate.getMonth() + 1).padStart(2, '0');
+    const day = String(triggerDate.getDate()).padStart(2, '0');
+    const isoDate = `${year}-${month}-${day}`;
+    
+    toggleBlockedDate(isoDate);
+  };
 
   return (
     <section className="space-y-5">
@@ -64,15 +36,51 @@ export default function AvailabilitySection() {
           </p>
         </div>
         {blockedDates.length > 0 && (
-          <span className="text-xs font-semibold text-text-primary/45">{blockedDates.length} date(s) blocked</span>
+          <span className="text-xs font-semibold text-text-primary/45">
+            {blockedDates.length} date{blockedDates.length === 1 ? "" : "s"} blocked
+          </span>
         )}
       </div>
 
-      <div className="rounded-card bg-white p-6 shadow-card ring-1 ring-black/5 md:p-10">
-        {/* <AvailabilityCalendar blockedDates={blockedDates} onToggleDate={toggleBlockedDate} /> */}
-        <div className="flex h-64 items-center justify-center rounded-input border border-dashed border-black/10 text-sm text-text-primary/40">
-          Your availability calendar component renders here
-        </div>
+      <div className="rounded-card bg-white p-6 shadow-card ring-1 ring-black/5 md:p-10 flex justify-center">
+        <DayPicker
+          mode="multiple"
+          selected={selectedDates}
+          onSelect={handleSelect}
+          disabled={[
+            { before: today } // Grey out past dates and make them non-selectable
+          ]}
+          showOutsideDays={false}
+          classNames={{
+            root:           "rdp-root",
+            months:         "rdp-months",
+            month:          "rdp-month",
+            month_caption:  "rdp-month-caption",
+            caption_label:  "rdp-caption-label",
+            nav:            "rdp-nav",
+            button_previous:"rdp-nav-btn rdp-nav-btn--prev",
+            button_next:    "rdp-nav-btn rdp-nav-btn--next",
+            month_grid:     "rdp-grid",
+            weekdays:       "rdp-weekdays",
+            weekday:        "rdp-weekday",
+            week:           "rdp-week",
+            day:            "rdp-day",
+            day_button:     "rdp-day-btn",
+            today:          "rdp-day--today",
+            outside:        "rdp-day--outside",
+            disabled:       "rdp-day--disabled", // Applies greyed out styling to past dates
+            selected:       "rdp-day--selected", // Highlights dates the vendor has blocked
+            hidden:         "rdp-day--hidden",
+          }}
+          components={{
+            Chevron: ({ orientation }) =>
+              orientation === "left" ? (
+                <ChevronLeft className="h-4 w-4" />
+              ) : (
+                <ChevronRight className="h-4 w-4" />
+              ),
+          }}
+        />
       </div>
     </section>
   );

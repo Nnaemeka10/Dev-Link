@@ -24,7 +24,7 @@ export default function ConfirmationStep({wizard, variant = "desktop" }: Confirm
     // We just need to find it. We can use the createConversation endpoint 
     // which is idempotent, but we need to pass the bookingId.
     // For simplicity, we'll just push them to the chat inbox, and the conversation will be at the top.
-    router.push(`/chat`);
+    router.push(`/messages`);
   } catch (error) {
     console.error("Failed to open chat", error);
   }
@@ -47,8 +47,6 @@ export default function ConfirmationStep({wizard, variant = "desktop" }: Confirm
   const totalAmount = parseFloat(booking.total_amount.toString()).toLocaleString();  
   const bookingStatus = booking.status === 'confirmed' ? 'Confirmed' : 'Pending Approval';
 
-  // const gallery = listing.images.map((img) => img.url);
-  // const venueImage = listing.primaryImage?.url || gallery[0] || "/images/placeholder.jpg";
 
 
   if (variant === "mobile") {
@@ -57,15 +55,15 @@ export default function ConfirmationStep({wizard, variant = "desktop" }: Confirm
         <div className="mx-auto mt-4 inline-flex h-24 w-24 items-center justify-center rounded-full bg-[#B9401D] text-white shadow-[0_24px_44px_rgba(185,64,29,0.22)]">
           <Check className="h-10 w-10" />
         </div>
-        <h1 className="mt-8 text-3xl font-extrabold">Booking Confirmed!</h1>
-        <p className="mt-3 text-lg text-[#555B7F]">Your event reservation is now secured.</p>
+        <h1 className="mt-8 text-heading-m font-extrabold">Booking Confirmed!</h1>
+        <p className="mt-3 text-base text-[#555B7F]">Your event reservation is now secured.</p>
 
         <div className="mt-10 mb-32 rounded-4xl bg-[#F4F1EA] p-6 text-left">
-          <p className="text-xs font-extrabold uppercase tracking-[0.14em] text-[#555B7F]">Event Summary</p>
+          <p className="text-small font-extrabold uppercase tracking-[0.14em] text-[#555B7F]">Event Summary</p>
           <div className="mt-6 space-y-6">
             <SummaryRow icon={Building} label="Venue" value={`${booking.listing_title}`} />
             <SummaryRow icon={MapPin} label="Location" value={booking.listing_location} />
-             <SummaryRow icon={CalendarDays} label="Date & Time" value={`${eventDate} · ${eventTime}`} />
+             <SummaryRow icon={CalendarDays} label="Date & Time" value={`${eventDate} : ${eventTime}`} />
             <SummaryRow icon={UsersRound} label="Capacity" value={`Up to ${booking.listing_capacity || 'N/A'} Guests`} />
             <SummaryRow icon={Clock} label="Check-in" value="Ensure to check into the venue on time" />
             
@@ -74,10 +72,11 @@ export default function ConfirmationStep({wizard, variant = "desktop" }: Confirm
 
 
         <div className="fixed inset-x-0 bottom-20 z-40 bg-white px-6 py-5 shadow-[0_-12px_32px_rgba(34,27,18,0.08)]">
-          <button type="button" className="w-full rounded-full bg-[#B9401D] px-8 py-4 font-extrabold text-white flex items-center justify-center gap-2"><FileText /> View My Bookings</button>
-          <button type="button" className="w-full mt-5 font-extrabold text-[#555B7F] flex items-center justify-center gap-2" onClick={() => handleChatWithVendor()}>
+          <button type="button" className="text-small md:text-base w-full rounded-full bg-[#B9401D] md:px-8 md:py-4 px-0 py-4 font-extrabold text-white flex items-center justify-center gap-2" onClick={() => handleChatWithVendor()}>
             <Mail /> Chat with Vendor
           </button>
+          <button type="button" className="text-small md:text-base w-full mt-5 font-extrabold text-[#555B7F] flex items-center justify-center gap-2"><FileText /> View My Bookings</button>
+          
         </div>
       </section>
     );
@@ -166,13 +165,13 @@ export default function ConfirmationStep({wizard, variant = "desktop" }: Confirm
 
 function SummaryRow({ icon: Icon, label, value }: { icon: typeof MapPin; label: string; value: string }) {
   return (
-    <div className="flex gap-4">
-      <span className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#E8E4DC] text-[#B9401D]">
-        <Icon className="h-5 w-5" />
+    <div className="flex gap-4 ">
+      <span className="inline-flex md:h-12 md:w-12 h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#E8E4DC] text-[#B9401D]">
+        <Icon className="h-4 w-4 md:h-5 md:w-5" />
       </span>
       <div>
-        <p className="font-medium text-[#555B7F]">{label}</p>
-        <p className="font-extrabold">{value}</p>
+        <p className="font-extrabold text-small md:text-base text-[#555B7F]">{label}</p>
+        <p className="font-medium text-tiny md:text-base">{value}</p>
       </div>
     </div>
   );

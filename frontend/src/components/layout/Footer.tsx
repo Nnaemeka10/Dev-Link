@@ -32,7 +32,7 @@ function FooterColumn({ title, items }: { title: string; items: string[] }) {
 
 export default function HomeFooter() {
   return (
-    <footer className="bg-bg-tertiary min-h-50 px-4 pb-28 pt-10 lg:px-8 lg:pb-10 lg:pt-12">
+    <footer className="bg-linear-to-b from-bg-tertiary to-bg-secondary min-h-50 px-4 pb-28 pt-96 lg:px-8 lg:pb-10 lg:pt-12">
       <div className="mx-auto grid max-w-7xl gap-8 lg:grid-cols-[1fr_280px_180px_140px_90px] lg:items-start">
         <div>
           <Link href="/" className="text-2xl flex font-semibold tracking-[-0.02em] text-text-primary items-end gap-1">

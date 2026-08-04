@@ -50,8 +50,8 @@ export const VendorListingModel = {
   async createDraft(userId: number, kind: 'hall' | 'service'): Promise<{ id: string }> {
     const db = getDB();
     const res = await db.query(
-      `INSERT INTO listings (vendor_id, kind, status, base_price_kobo) 
-       VALUES ($1, $2, 'draft', 0) RETURNING id`,
+      `INSERT INTO listings (vendor_id, kind, status, base_price_kobo, title) 
+       VALUES ($1, $2, 'draft', 0, 'Untitled Draft') RETURNING id`,
       [userId, kind]
     );
     return res.rows[0];

@@ -140,7 +140,8 @@ export default function PaymentStep({ form, listing, wizard, variant = "desktop"
     venueLocation: listing.location,
     venueImage: listing.primaryImage?.url || "/placeholder.jpg",
     eventName: "Event Booking",
-    eventDate: form.dateRange?.from?.toLocaleDateString() || "Invalid Date",
+    eventDateFrom: form.dateRange?.from?.toLocaleDateString() || "Invalid Date",
+    eventDateto: form.dateRange?.to?.toLocaleDateString() ,
     guests: `Up to ${listing.capacity} Guests`,
     verified: listing.autoApprove,
     fees: quote ? [

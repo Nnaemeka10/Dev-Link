@@ -15,6 +15,7 @@ export const getSummary = async (req: Request, res: Response) => {
       nextPayoutListing: summary.nextPayout?.listing_title || null,
     });
   } catch (error: any) {
+    console.error('Get summary error:', error);
     res.status(500).json({ message: 'Failed to fetch financial summary' });
   }
 };

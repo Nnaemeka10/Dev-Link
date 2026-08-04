@@ -21,7 +21,8 @@ interface BookingSummary {
   venueLocation: string;   // e.g. "Victoria Island, Lagos"
   venueImage: string | StaticImageData;      // image src
   eventName: string;       // e.g. "Corporate Dinner"
-  eventDate: string;       // e.g. "December 24, 2024"
+  eventDateFrom?: string;
+  eventDateTo?: string;       // e.g. "December 24, 2024"
   guests: string;          // e.g. "350 Attendees"
   verified: boolean;
   fees: Fee[];
@@ -60,7 +61,7 @@ function SummarySheet({
   onPay: () => void;
 }) {
   return (
-    <div className="flex max-h-[92dvh] flex-col">
+    <div className="flex max-h-[92dvh] flex-col pb-7">
 
       {/* Drag handle */}
       <div className="flex shrink-0 justify-center pb-1 pt-3">
@@ -110,43 +111,43 @@ function SummarySheet({
         </div>
 
         {/* ── Event details ──────────────────────────────────────────────── */}
-        <div className="mt-4 grid grid-cols-3 gap-2">
+        <div className="mt-4 grid grid-cols-5 gap-2">
           {/* Event name */}
-          <div className="col-span-3 flex items-center gap-2.5 rounded-2xl bg-[#F4F1EA] px-4 py-3">
+          <div className="col-span-5 flex items-center gap-2.5 rounded-2xl bg-[#F4F1EA] px-4 py-3">
             <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-white text-[#B9401D] shadow-sm">
               <BadgeCheck className="h-4 w-4" />
             </div>
             <div>
-              <p className="text-[10px] font-extrabold uppercase tracking-widest text-[#9A9AAE]">
+              <p className="text-micro font-extrabold uppercase tracking-widest text-[#9A9AAE]">
                 Event
               </p>
-              <p className="text-sm font-extrabold text-[#252423]">{summary.eventName}</p>
+              <p className="md:text-sm text-micro font-extrabold text-[#252423]">{summary.eventName}</p>
             </div>
           </div>
 
           {/* Date */}
-          <div className="col-span-2 flex items-center gap-2.5 rounded-2xl bg-[#F4F1EA] px-4 py-3">
+          <div className="col-span-3 flex items-center gap-2.5 rounded-2xl bg-[#F4F1EA] px-4 py-1">
             <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-white text-[#B9401D] shadow-sm">
               <CalendarDays className="h-4 w-4" />
             </div>
             <div>
-              <p className="text-[10px] font-extrabold uppercase tracking-widest text-[#9A9AAE]">
+              <p className="text-tiny font-extrabold uppercase tracking-widest text-[#9A9AAE]">
                 Date
               </p>
-              <p className="text-sm font-extrabold text-[#252423]">{summary.eventDate}</p>
+              <p className="md:text-sm text-micro font-extrabold text-[#252423]">{summary.eventDateFrom} - {summary.eventDateTo}</p>
             </div>
           </div>
 
           {/* Guests */}
-          <div className="flex items-center gap-2 rounded-2xl bg-[#F4F1EA] px-3 py-3">
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-white text-[#B9401D] shadow-sm">
-              <Users className="h-4 w-4" />
+          <div className="flex items-center gap-2 rounded-2xl bg-[#F4F1EA] py-3 px-1 col-span-2">
+            <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-xl bg-white text-[#B9401D] shadow-sm">
+              <Users className="h-3 w-3" />
             </div>
             <div>
-              <p className="text-[10px] font-extrabold uppercase tracking-widest text-[#9A9AAE]">
-                Guests
+              <p className="text-tiny font-extrabold uppercase tracking-widest text-[#9A9AAE]">
+                Capacity
               </p>
-              <p className="text-sm font-extrabold text-[#252423]">{summary.guests}</p>
+              <p className="text-micro font-extrabold text-[#252423]">{summary.guests}</p>
             </div>
           </div>
         </div>
@@ -154,7 +155,7 @@ function SummarySheet({
         {/* ── Price breakdown ────────────────────────────────────────────── */}
         <div className="mt-4 space-y-3.5 rounded-2xl border border-[#EFE8DE] bg-white px-4 py-4">
           {summary.fees.map((fee) => (
-            <div key={fee.label} className="flex items-start justify-between gap-2 text-sm">
+            <div key={fee.label} className="flex items-start justify-between gap-2 text-small">
               <span
                 className={`text-[#5E6588] ${fee.sublabel ? "underline underline-offset-2" : ""}`}
               >
@@ -168,10 +169,10 @@ function SummarySheet({
         {/* ── Total ─────────────────────────────────────────────────────── */}
         <div className="mt-3 rounded-2xl bg-[#E8E4DC] px-4 py-4">
           <div className="flex items-center justify-between">
-            <p className="text-xs font-extrabold uppercase tracking-widest text-[#555B7F]">
+            <p className="text-base font-extrabold uppercase tracking-widest text-[#555B7F]">
               Total
             </p>
-            <strong className="text-xl font-extrabold text-[#B9401D]">
+            <strong className="text-lg font-extrabold text-[#B9401D]">
               {summary.total}
             </strong>
           </div>
@@ -222,14 +223,14 @@ export function MobilePaymentDock({ summary, onPay, isProcessing }: MobilePaymen
             className="flex min-w-0 flex-col items-start gap-0.5 text-left"
           >
             {/* Venue name — truncated */}
-            <span className="flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-[0.1em] text-[#555B7F]">
-              <span className="max-w-[180px] truncate">{summary.venueName}</span>
+            <span className="flex items-center gap-1.5 text-small font-extrabold uppercase tracking-[0.1em] text-[#555B7F]">
+              <span className="max-w-45 truncate">{summary.venueName}</span>
               <ChevronUp className="h-3 w-3 shrink-0 text-[#B9401D]" />
             </span>
             {/* Total */}
-            <span className="flex items-baseline gap-1">
-              <span className="text-xl font-extrabold text-[#252423]">{summary.total}</span>
-              <span className="text-[11px] font-bold text-[#B9401D] underline underline-offset-2">
+            <span className="flex flex-col items-baseline gap-1">
+              <span className="text-base font-extrabold text-[#252423]">{summary.total}</span>
+              <span className="text-micro font-bold text-[#B9401D] underline underline-offset-2">
                 See details
               </span>
             </span>
@@ -240,7 +241,7 @@ export function MobilePaymentDock({ summary, onPay, isProcessing }: MobilePaymen
             type="button"
             onClick={onPay}
              disabled={isProcessing}
-            className="shrink-0 rounded-full bg-[#B9401D] px-8 py-4 text-sm font-extrabold text-white shadow-sm transition hover:brightness-95 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+            className="shrink-0 rounded-full bg-[#B9401D] px-6 py-3 text-small font-extrabold text-white shadow-sm transition hover:brightness-95 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isProcessing ? "Processing..." : "Pay Now →"}
           </button>

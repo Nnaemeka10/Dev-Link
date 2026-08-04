@@ -282,13 +282,13 @@ function HallTypeBadges({ hallTypes }: { hallTypes: ExploreListing["hallTypes"] 
             {visible.map((ht) => (
                 <span
                     key={ht.id}
-                    className="rounded-full bg-[#F0E6D9] px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.04em] text-[#8B5E14]"
+                    className="rounded-full bg-[#EEECE7] px-2.5 py-1 text-nano font-bold uppercase tracking-[0.04em] text-[#8B5E14]"
                 >
                     {ht.label}
                 </span>
             ))}
             {overflow > 0 && (
-                <span className="rounded-full bg-[#EEECE7] px-2.5 py-1 text-[10px] font-bold text-[#7A7C94]">
+                <span className="rounded-full bg-[#EEECE7] px-2.5 py-1 text-nano font-bold text-[#7A7C94]">
                     +{overflow}
                 </span>
             )}
@@ -301,7 +301,7 @@ function CapacityBadge({ capacity }: { capacity: number | null }) {
     const label = formatCapacity(capacity);
     if (!label) return null;
     return (
-        <span className="inline-flex items-center gap-1 text-xs font-semibold text-[#5E6588]">
+        <span className="inline-flex items-center gap-1 text-tiny md:text-xs font-semibold text-[#5E6588]">
             <Users className="h-3.5 w-3.5" />
             {label}
         </span>
@@ -311,6 +311,7 @@ function CapacityBadge({ capacity }: { capacity: number | null }) {
 
 export function MobileExploreCard({ listing, selected, onToggleCompare }: ExploreCardProps) {
   const listingHref = `/listings/${listing.kind === "venue" ? "halls" : "services"}/${listing.id}`;
+  const router = useRouter()
 
   return (
     <Link href={listingHref} className="group">
@@ -330,13 +331,13 @@ export function MobileExploreCard({ listing, selected, onToggleCompare }: Explor
         <div className="px-6 py-5">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <h2 className="text-[1.35rem] font-extrabold leading-tight text-[#2A2826]">{listing.name}</h2>
-              <p className="mt-1 flex items-center gap-1 text-sm font-medium text-[#5E6588]">
+              <h2 className="text-heading-m font-extrabold leading-tight text-[#2A2826]">{listing.name}</h2>
+              <p className="mt-1 flex items-center gap-1 text-tiny font-medium text-[#5E6588]">
                 <MapPin className="h-4 w-4" />
                 {listing.location}
               </p>
             </div>
-            <p className="flex items-center gap-1 text-sm font-extrabold text-[#2A2826]">
+            <p className="flex items-center gap-1 text-tiny font-extrabold text-[#2A2826]">
               <Star className="h-4 w-4 fill-[#E3A700] text-[#E3A700]" />
               {listing.rating.toFixed(1)}
             </p>
@@ -349,9 +350,9 @@ export function MobileExploreCard({ listing, selected, onToggleCompare }: Explor
               </div>
             )}
 
-          <p className="mt-3 text-xl font-extrabold text-[#B33E1F]">
+          <p className="mt-3 text-base md:text-xl font-extrabold text-[#B33E1F]">
             {formatNaira(listing.priceFrom)}
-            <span className="ml-1 text-sm font-bold text-[#5E6588]">/ {listing.priceUnit}</span>
+            <span className="ml-1 text-tiny md:text-small font-bold text-[#5E6588]">/ day</span>
           </p>
 
           {listing.kind === "venue" && (
@@ -364,7 +365,7 @@ export function MobileExploreCard({ listing, selected, onToggleCompare }: Explor
             {listing.badges.map((badge) => (
               <span
                 key={badge.id}
-                className="rounded-full bg-[#EEECE7] px-4 py-2 text-[10px] font-extrabold uppercase tracking-[0.08em] text-[#7A7C94]"
+                className="rounded-full bg-[#EEECE7] px-2 py-1 md:px-4 md:py-2 text-nano  md:text-[10px] font-extrabold uppercase tracking-[0.08em] text-[#7A7C94]"
               >
                 {badge.name}
               </span>
@@ -375,7 +376,7 @@ export function MobileExploreCard({ listing, selected, onToggleCompare }: Explor
             <button
               type="button"
               onClick={(e) => { e.preventDefault(); onToggleCompare(); }}
-              className="flex items-center gap-2 text-sm font-bold text-[#6A6786]"
+              className="flex items-center gap-2 md:text-sm text-small  font-bold text-[#6A6786]"
             >
               <span
                 className={`inline-flex h-6 w-6 items-center justify-center rounded-md border ${
@@ -386,7 +387,13 @@ export function MobileExploreCard({ listing, selected, onToggleCompare }: Explor
               </span>
               Compare {listing.kind}
             </button>
-            <button type="button" className="text-sm font-extrabold text-[#B9401D]" onClick={(e) => e.preventDefault()}>
+            <button 
+              type="button" 
+              className="text-small md:text-sm font-extrabold text-[#B9401D]" 
+              onClick={(e) =>{ 
+                e.preventDefault()
+                router.push(listingHref)
+              }}>
               View Details
             </button>
           </div>

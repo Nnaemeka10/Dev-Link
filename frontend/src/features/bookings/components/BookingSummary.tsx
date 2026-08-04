@@ -7,7 +7,8 @@ interface SummaryData {
   venueLocation: string;   // e.g. "Victoria Island, Lagos"
   venueImage: string | StaticImageData;      // image src
   eventName: string;       // e.g. "Corporate Dinner"
-  eventDate: string;       // e.g. "December 24, 2024"
+  eventDateFrom?: string;
+  eventDateTo?: string;       // e.g. "December 24, 2024"
   guests: string;          // e.g. "350 Attendees"
   verified: boolean;
   fees: Fee[];
@@ -65,7 +66,7 @@ export function PaymentSummary({ summary, onPay, isProcessing }: { summary: Summ
         <div className="grid lg:grid-cols-2 grid-cols-1 gap-8 border-b border-[#E8DED2] pb-7">
           <div>
             <p className="text-xs font-extrabold uppercase tracking-[0.14em] text-[#555B7F]">Event Date</p>
-            <p className="mt-2 font-extrabold">{summary.eventDate}</p>
+            <p className="mt-2 font-extrabold">{summary.eventDateFrom} - {summary.eventDateTo}</p>
           </div>
           <div className="text-right">
             <p className="text-xs font-extrabold uppercase tracking-[0.14em] text-[#555B7F]">Guests</p>

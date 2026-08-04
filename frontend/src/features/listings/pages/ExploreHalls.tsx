@@ -138,11 +138,18 @@ export default function ExploreHalls() {
             <DesktopResultsHeader count={resultsCount} locationLabel={locationLabel} listingType = "hall" />
             <div className="grid grid-cols-2 gap-8">
               {isPending && (
-                <div className="space-y-4">
-                    {[...Array(3)].map((_, i) => (
-                        <div key={i} className="h-[24rem] animate-pulse rounded-[2rem] bg-text-primary/8" />
-                    ))}
-                </div>
+                <>
+                  <div className="space-y-4">
+                      {[...Array(3)].map((_, i) => (
+                          <div key={i} className="h-[24rem] animate-pulse rounded-[2rem] bg-text-primary/8" />
+                      ))}
+                  </div>
+                  <div className="space-y-4">
+                      {[...Array(3)].map((_, i) => (
+                          <div key={i} className="h-[24rem] animate-pulse rounded-[2rem] bg-text-primary/8" />
+                      ))}
+                  </div>
+                </>
               )}
               {isError && (
                 <p className="text-center text-sm font-medium text-[#5E6588]">Failed to load halls.</p>
@@ -172,13 +179,25 @@ export default function ExploreHalls() {
             <div className="flex-1 overflow-y-auto">
               <div className="px-8 pb-12 pt-10">
                 <DesktopResultsHeader count={resultsCount} locationLabel={locationLabel} listingType="hall" />
-                <div className="grid grid-cols-2 gap-8">
+                <div className="grid grid-cols-3 gap-8">
                   {isPending && (
+                    <>
                     <div className="space-y-4">
                         {[...Array(3)].map((_, i) => (
                             <div key={i} className="h-[24rem] animate-pulse rounded-[2rem] bg-text-primary/8" />
                         ))}
                     </div>
+                    <div className="space-y-4">
+                        {[...Array(3)].map((_, i) => (
+                            <div key={i} className="h-[24rem] animate-pulse rounded-[2rem] bg-text-primary/8" />
+                        ))}
+                    </div>
+                    <div className="space-y-4">
+                        {[...Array(3)].map((_, i) => (
+                            <div key={i} className="h-[24rem] animate-pulse rounded-[2rem] bg-text-primary/8" />
+                        ))}
+                    </div>
+                    </>
                   )}
                   {isError && (
                     <p className="text-center text-sm font-medium text-[#5E6588]">Failed to load halls.</p>

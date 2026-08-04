@@ -91,7 +91,7 @@ function SavedCard({ listing, index, onRemove }: CardProps) {
       layout
       className="group relative flex flex-col"
     >
-      <div className="relative aspect-[4/5] w-full overflow-hidden rounded-3xl bg-[#ebe8e1]">
+      <div className="relative aspect-4/5 w-full overflow-hidden rounded-3xl bg-surface-high">
         <Image
           src={listing.imageUrl}
           alt={listing.name}
@@ -106,14 +106,14 @@ function SavedCard({ listing, index, onRemove }: CardProps) {
           aria-label="Remove from saved"
           className="absolute right-3 top-3 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-white/85 shadow-sm backdrop-blur-sm transition-all duration-200 hover:scale-110 hover:bg-white md:right-4 md:top-4"
         >
-          <Heart className="h-4 w-4 fill-[#d65c3a] text-[#d65c3a]" />
+          <Heart className="h-4 w-4 fill-accent-primary text-accent-primary" />
         </button>
 
-        <div className="absolute inset-x-0 bottom-0 hidden translate-y-full flex-col gap-0 bg-gradient-to-t from-black/65 via-black/30 to-transparent p-4 transition-transform duration-300 ease-out group-hover:translate-y-0 md:flex">
+        <div className="absolute inset-x-0 bottom-0 hidden translate-y-full flex-col gap-0 bg-linear-to-t from-black/65 via-black/30 to-transparent p-4 transition-transform duration-300 ease-out group-hover:translate-y-0 md:flex">
           <div className="flex items-center gap-2 pt-6">
             <Link
               href={`/listings/${listing.category}/${listing.id}`}
-              className="flex flex-1 items-center justify-center gap-1.5 rounded-full bg-white py-2.5 text-xs font-extrabold uppercase tracking-wide text-[#1a1f3c] transition-colors hover:bg-[#d65c3a] hover:text-white"
+              className="flex flex-1 items-center justify-center gap-1.5 rounded-full bg-white py-2.5 text-xs font-extrabold uppercase tracking-wide text-text-primary transition-colors hover:bg-accent-primary hover:text-white"
             >
               View Listing
               <ArrowRight className="h-3 w-3" />
@@ -156,18 +156,18 @@ function SavedCard({ listing, index, onRemove }: CardProps) {
           >
             {listing.name}
           </Link>
-          <span className="flex shrink-0 items-center gap-1 text-sm font-semibold text-[#1a1f3c]">
+          <span className="flex shrink-0 items-center gap-1 md:text-sm text-small font-semibold text-[#1a1f3c]">
             <Star className="h-3.5 w-3.5 fill-[#c9993a] text-[#c9993a]" />
             {listing.rating.toFixed(1)}
           </span>
         </div>
 
-        <p className="flex items-center gap-1 text-sm text-[#1a1f3c]/55">
+        <p className="flex items-center gap-1 md:text-sm text-small text-[#1a1f3c]/55">
           <MapPin className="h-3 w-3 shrink-0" />
           {listing.location}
         </p>
 
-        <p className="pt-1 text-sm font-bold text-[#1a1f3c]">
+        <p className="pt-1 md:text-sm text-base font-bold text-[#1a1f3c]">
           {formatNaira(listing.priceAmount)}
           <span className="ml-1 text-xs font-normal text-[#1a1f3c]/50">
             {listing.priceUnit}
@@ -226,29 +226,29 @@ function SavedContent({
 }: SavedContentProps) {
   return (
     <>
-      <header className="mb-10 flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
+      <header className="mb-10 flex gap-6 flex-row items-end justify-between">
         <div>
-          <p className="mb-1 text-xs font-extrabold uppercase tracking-[0.18em] text-[#d65c3a]">
+          <p className="mb-1 md:text-xs text-tiny font-extrabold uppercase tracking-[0.18em] text-accent-primary">
             Your Collection
           </p>
-          <h1 className="font-man text-4xl font-extrabold leading-tight tracking-tight text-[#1a1f3c] md:text-5xl">
+          <h1 className="font-man text-heading-m font-extrabold leading-tight tracking-tight text-[#1a1f3c] md:text-5xl">
             Saved Listings
           </h1>
-          <p className="mt-2 text-sm text-[#1a1f3c]/50">
+          <p className="mt-2 md:text-sm text-tiny text-text-primary/50">
             {!isLoading && `${saved.length} ${saved.length === 1 ? "listing" : "listings"} saved`}
           </p>
         </div>
 
         <button
           type="button"
-          className="flex w-fit items-center gap-2 rounded-full border border-[#1a1f3c]/12 bg-white px-4 py-2.5 text-sm font-semibold text-[#1a1f3c]/70 shadow-sm transition hover:shadow-md"
+          className="flex w-fit items-center gap-2 rounded-full border border-[#1a1f3c]/12 bg-white md:px-4 px-2 py-2.5 md:text-sm text-micro font-semibold text-[#1a1f3c]/70 shadow-sm transition hover:shadow-md"
         >
-          <SlidersHorizontal className="h-4 w-4" />
+          <SlidersHorizontal className="md:h-4 md:w-4 h-3 w-3" />
           Sort & Filter
         </button>
       </header>
 
-      <div className="mb-8 flex gap-0 border-b border-[#1a1f3c]/8">
+      <div className="mb-8 flex justify-between gap-0 border-b border-[#1a1f3c]/8">
         {(["halls", "services"] as SavedCategory[]).map((cat) => {
           const isActive = category === cat;
           const count = cat === "halls" ? hallCount : serviceCount;
@@ -259,7 +259,7 @@ function SavedContent({
               type="button"
               onClick={() => startTransition(() => setCategory(cat))}
               className={[
-                "relative px-5 py-3 text-sm font-semibold transition-colors",
+                "relative px-5 py-3 md:text-sm text-small font-semibold transition-colors",
                 isActive ? "text-[#1a1f3c]" : "text-[#1a1f3c]/45 hover:text-[#1a1f3c]/70",
               ].join(" ")}
             >

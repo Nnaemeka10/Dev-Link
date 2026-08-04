@@ -308,7 +308,7 @@ export function MobileBookingDock({
             aria-label="View price details"
           >
             <span className="flex items-baseline gap-1">
-              <span className="text-xl font-extrabold text-[#252423]">{price}</span>
+              <span className="text-base font-extrabold text-[#252423]">{price}</span>
               <span className="text-xs font-bold text-[#5E6588]">/ day</span>
             </span>
             {days ? (
@@ -317,7 +317,7 @@ export function MobileBookingDock({
                 <ChevronUp className="h-3 w-3" />
               </span>
             ) : (
-              <span className="text-xs font-semibold text-[#9A9AAE]">Select dates</span>
+              <span className="text-small font-semibold text-[#9A9AAE]">Select dates</span>
             )}
           </button>
 

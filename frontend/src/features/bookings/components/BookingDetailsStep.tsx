@@ -32,17 +32,19 @@ export default function BookingDetailsStep({ form, listing, onContinue, onUpdate
   if (variant === "mobile") {
     
     return (
-      <section className="px-6 pb-28">
+      <section className="px-6 pb-28 mb-64">
         <article className="flex items-center gap-5 rounded-4xl bg-white p-5 shadow-[0_18px_40px_rgba(34,27,18,0.08)]">
-          <Image src={venueImage} alt={listing.title} width={96} height={96} className="h-24 w-24 rounded-[1.4rem] object-cover" />
+          <Image src={venueImage} alt={listing.title} width={126} height={126} className="rounded-[1.4rem] object-cover" />
           <div>
-            <h2 className="text-lg font-extrabold">{listing.title}</h2>
-            <p className="mt-1 flex items-center gap-1 text-sm font-semibold text-[#555B7F]">
+            <h2 className="text-base font-extrabold">{listing.title}</h2>
+            <p className="mt-1 flex items-center gap-1 text-tiny font-semibold text-[#555B7F]">
               <MapPin className="h-4 w-4" />
               {listing.location}
             </p>
-            <p className="mt-2 inline-flex rounded-full bg-[#FFE3A2] px-3 py-1 text-tiny font-extrabold">★ {listing.rating.toFixed(1)} ({listing.reviewCount})</p>
-            <p className="mt-2 text-tiny font-extrabold text-[#B9401D]">{listing.capacity} Guests</p>
+            <div className="flex items-center gap-2 mt-8">
+            <p className="mt-2 inline-flex rounded-full bg-[#FFE3A2] px-3 py-1 text-micro font-extrabold">★ {listing.rating.toFixed(1)} ({listing.reviewCount})</p>
+            <p className="mt-2 text-micro font-extrabold text-[#B9401D]">{listing.capacity} Guests</p>
+            </div>
           </div>
         </article>
         <DateTimeSection 
@@ -58,7 +60,7 @@ export default function BookingDetailsStep({ form, listing, onContinue, onUpdate
        
 
         <div className="mt-9 rounded-4xl bg-[#F4F1EA] p-6">
-          <h2 className="text-2xl font-medium text-[#252423]">Estimated Cost</h2>
+          <h2 className="md:text-2xl text-heading-m font-medium text-[#252423]">Estimated Cost</h2>
           {hasDates ? (
             <>
               <div className="mt-7 space-y-4 border-b border-[#E8DED2] pb-6">
@@ -69,23 +71,25 @@ export default function BookingDetailsStep({ form, listing, onContinue, onUpdate
                   </div>
                 ) : quote ? (
                   <>
-                    <div className="flex justify-between gap-8 text-base">
+                    <div className="flex justify-between gap-8 md:text-base text-small">
                       <span className="text-[#6B5F57]">Venue hire ({quote.days} {quote.days === 1 ? 'day' : 'days'})</span>
                       <strong>₦{quote.subtotal.toLocaleString()}</strong>
                     </div>
-                    <div className="flex justify-between gap-8 text-base text-[#555B7F]">
+                    <div className="flex justify-between gap-8 text-small md:text-base text-[#555B7F]">
                       <span>VAT (7.5%)</span>
                       <span>₦{quote.vat.toLocaleString()}</span>
                     </div>
                   </>
                 ) : null}
               </div>
-              <div className="mt-6 flex items-end justify-between">
-                <div>
+
+              <div className="mt-6 ">
+                <div className= "flex items-end justify-between md:mb-0 mb-4">
                   <p className="font-extrabold text-[#252423]">Total Estimate</p>
-                  <p className="text-[11px] font-extrabold uppercase tracking-[0.16em] text-[#7B7E9B]">Final amount calculated at checkout</p>
+                   {quote && <strong className="text-base md:text-3xl font-extrabold text-[#B9401D]">₦{quote.total.toLocaleString()}</strong>}
                 </div>
-                {quote && <strong className="text-3xl font-extrabold text-[#B9401D]">₦{quote.total.toLocaleString()}</strong>}
+                  <p className="text-micro font-extrabold uppercase tracking-[0.16em] text-[#7B7E9B]">Final amount calculated at checkout</p>
+               
               </div>
             </>
           ) : (
@@ -96,8 +100,8 @@ export default function BookingDetailsStep({ form, listing, onContinue, onUpdate
         </div>
 
         <div className="fixed inset-x-0 bottom-20 z-40 flex items-center justify-between bg-bg-primary px-6 py-5 shadow-[0_-12px_32px_rgba(34,27,18,0.08)]">
-          <button type="button" onClick={() => router.back()} className="font-extrabold text-[#555B7F]">‹ Back</button>
-          <button type="button" onClick={onContinue} className="rounded-full bg-[#B9401D] px-10 py-4 font-extrabold text-white">Continue to Pay →</button>
+          <button type="button" onClick={() => router.back()} className="font-extrabold text-[#555B7F] text-base">‹ Back</button>
+          <button type="button" onClick={onContinue} className="rounded-full bg-[#B9401D] md:px-10 md:py-4 px-6 py-4 font-extrabold text-white text-small">Continue to Pay</button>
         </div>
       </section>
     );
