@@ -4,13 +4,14 @@
 import { getDB } from '../../../lib/db.js';
 import { randomUUID } from 'crypto';
 import type { LedgerAccount } from '../types/payment.js';
+import type { PoolClient } from 'pg'; 
 
 export const LedgerModel = {
   /**
    * Fetches or creates a ledger account for a specific booking/vendor/type.
    */
   async getOrCreateAccount(
-    client: any,
+    client: PoolClient,
     accountType: 'escrow_holding' | 'platform_revenue' | 'vendor_payable' | 'refund_reserve' | 'paystack_wallet',
     bookingId?: string,
     vendorId?: string
