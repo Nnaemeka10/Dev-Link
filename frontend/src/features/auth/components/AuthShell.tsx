@@ -19,7 +19,7 @@ export default function AuthShell({ children, variant = "centered" }: AuthShellP
           <div className="order-2 lg:order-1">
             <aside className="flex flex-col justify-between">
               <div>
-                <h1 className="text-2xl font-extrabold leading-tight tracking-[-0.04em] md:text-3xl lg:text-[4.6rem] lg:leading-[0.98]">
+                <h1 className="text-heading-m font-extrabold leading-tight tracking-[-0.04em] md:text-3xl lg:text-[4.6rem] lg:leading-[0.98]">
                   Discover Nigeria&apos;s finest <span className="text-[#B9401D]">curated</span> experiences.
                 </h1>
               </div>

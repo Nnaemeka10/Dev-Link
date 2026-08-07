@@ -128,48 +128,7 @@ export default function OtpVerifyModal({
     setTimeout(() => setShake(false), 420);
   };
 
-  // const verifyCode = useCallback(
-  //   async (code: string) => {
-  //     setVerifying(true);
-  //     setError(null);
-  //     try {
-  //       const response = await apiFetch<VerifyResetOtpResponse>("/api/auth/verify-reset-otp", {
-  //         method: "POST",
-  //         body: JSON.stringify({ email, code }),
-  //         redirectOn401: false,
-  //       });
-  //       onVerified(response.sessionToken);
-  //     } catch (err) {
-  //       if (err instanceof ApiError) {
-  //         const data = err.data as
-  //           | { error?: string; attemptsRemaining?: number; lockedUntil?: string }
-  //           | undefined;
-
-  //         if (data?.lockedUntil) {
-  //           setLockedUntil(data.lockedUntil);
-  //           setError("Too many incorrect attempts. Try again later.");
-  //         } else if (typeof data?.attemptsRemaining === "number") {
-  //           setError(
-  //             data.attemptsRemaining > 0
-  //               ? `Incorrect code. ${data.attemptsRemaining} attempt${data.attemptsRemaining === 1 ? "" : "s"} left.`
-  //               : "Incorrect code."
-  //           );
-  //         } else {
-  //           setError(data?.error ?? "Invalid or expired code.");
-  //         }
-  //       } else {
-  //         setError("Something went wrong. Please try again.");
-  //       }
-
-  //       triggerShake();
-  //       setDigits(Array(CODE_LENGTH).fill(""));
-  //       inputRefs.current[0]?.focus();
-  //     } finally {
-  //       setVerifying(false);
-  //     }
-  //   },
-  //   [email, onVerified]
-  // );
+  
   const verifyCode = useCallback(
   async (code: string) => {
     setVerifying(true);
@@ -262,15 +221,8 @@ export default function OtpVerifyModal({
   const handleResend = async () => {
     setResending(true);
     setError(null);
+    setCurrentExpiresAt(expiresAt);
     try {
-      // const response = await apiFetch<{ message: string; expiresAt: string }>(
-      //   "/api/auth/forgot-password",
-      //   {
-      //     method: "POST",
-      //     body: JSON.stringify({ email }),
-      //     redirectOn401: false,
-      //   }
-      // );
       const response = await onResend();
 
       setCurrentExpiresAt(response.expiresAt);
@@ -317,10 +269,10 @@ export default function OtpVerifyModal({
         </button>
 
         <div className="text-center">
-          <h2 id="otp-modal-title" className="text-2xl font-extrabold tracking-[-0.03em] md:text-[1.75rem]">
+          <h2 id="otp-modal-title" className="text-heading-m font-extrabold tracking-[-0.03em] md:text-[1.75rem]">
             Confirm your code
           </h2>
-          <p className="mt-3 text-sm leading-6 text-[#555B7F] md:text-[0.95rem]">
+          <p className="mt-3 text-small leading-6 text-[#555B7F] md:text-[0.95rem]">
             Enter the 6-digit code we sent to
             <br />
             <span className="font-semibold text-[#221B12]">{email}</span>
@@ -344,7 +296,7 @@ export default function OtpVerifyModal({
               onKeyDown={(e) => handleKeyDown(index, e)}
               onFocus={(e) => e.currentTarget.select()}
               aria-label={`Digit ${index + 1} of ${CODE_LENGTH}`}
-              className={`h-13 w-10 rounded-2xl border-2 text-center text-xl font-bold text-[#221B12] outline-none transition md:h-14 md:w-12 ${
+              className={`h-13 w-10 rounded-2xl border-2 text-center text-base md:text-xl font-bold text-[#221B12] outline-none transition md:h-14 md:w-12 ${
                 error
                   ? "border-[#B9401D]/60 bg-[#FBEFEA]"
                   : "border-[#EFE8DE] bg-[#FAF7F2] focus:border-[#B9401D] focus:bg-white"
@@ -355,21 +307,21 @@ export default function OtpVerifyModal({
 
         <div className="mt-5 min-h-5 text-center">
           {error ? (
-            <p className="text-sm font-semibold text-[#B9401D]">{error}</p>
+            <p className="md:text-sm text-small font-semibold text-[#B9401D]">{error}</p>
           ) : verifying ? (
-            <p className="text-sm font-semibold text-[#555B7F]">Verifying...</p>
+            <p className="md:text-sm text-small font-semibold text-[#555B7F]">Verifying...</p>
           ) : null}
         </div>
 
         <div className="mt-2 text-center">
           {locked ? (
-            <p className="text-sm text-[#555B7F]">
+            <p className="md:text-sm text-small text-[#555B7F]">
               Try again in <span className="font-semibold text-[#221B12]">{formatTime(lockSecondsLeft)}</span>
             </p>
           ) : expired ? (
-            <p className="text-sm font-semibold text-[#B9401D]">Code expired</p>
+            <p className="md:text-sm text-small font-semibold text-[#B9401D]">Code expired</p>
           ) : (
-            <p className="text-sm text-[#555B7F]">
+            <p className="md:text-sm text-small text-[#555B7F]">
               Code expires in{" "}
               <span className="font-semibold text-[#221B12]">{formatTime(secondsLeft)}</span>
             </p>
@@ -377,7 +329,7 @@ export default function OtpVerifyModal({
         </div>
 
         <div className="mt-7 border-t border-[#EFE8DE] pt-6 text-center">
-          <p className="text-sm text-[#555B7F]">
+          <p className="md:text-sm text-small text-[#555B7F]">
             Didn&apos;t get a code?{" "}
             {resendCooldown > 0 ? (
               <span className="font-semibold text-[#A39A8F]">Resend in {resendCooldown}s</span>

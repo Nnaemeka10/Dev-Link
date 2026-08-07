@@ -78,13 +78,13 @@ export default function LoginPage() {
     <AuthShell>
       <section className="w-full max-w-160 rounded-[2.25rem] bg-white px-6 py-10 shadow-[0_24px_70px_rgba(34,27,18,0.08)] md:px-14 md:py-16">
         <div className="text-center">
-          <h1 className="text-4xl font-extrabold tracking-[-0.03em] md:text-5xl">Welcome Back</h1>
-          <p className="mt-4 text-lg text-[#555B7F]">Sign in to curate your next extraordinary event</p>
+          <h1 className="text-heading-m font-extrabold tracking-[-0.03em] md:text-5xl">Welcome Back</h1>
+          <p className="mt-4 md:text-lg text-small text-[#555B7F]">Sign in to curate your next extraordinary event</p>
         </div>
 
         <div className="mt-10 grid gap-4 grid-cols-2">
-          <button type="button" className="rounded-full border border-[#EFE0D8] px-2 w-full py-4 font-extrabold text-xs md:text-sm">Google</button>
-          <button type="button" className="rounded-full border border-[#EFE0D8] px-2 w-full py-4 font-extrabold text-xs md:text-sm">Facebook</button>
+          <button type="button" className="rounded-full border border-[#EFE0D8] px-2 w-full py-4 font-extrabold text-tiny md:text-sm">Google</button>
+          <button type="button" className="rounded-full border border-[#EFE0D8] px-2 w-full py-4 font-extrabold text-tiny md:text-sm">Facebook</button>
         </div>
 
         <div className="my-10">
@@ -115,13 +115,13 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={formState.isSubmitting}
-            className="w-full rounded-full bg-[#B9401D] px-8 py-5 text-lg font-extrabold text-white shadow-[0_14px_28px_rgba(185,64,29,0.2)] disabled:opacity-60"
+            className="w-full rounded-full bg-[#B9401D] px-8 py-5 text-small md:text-lg font-extrabold text-white shadow-[0_14px_28px_rgba(185,64,29,0.2)] disabled:opacity-60"
           >
             {formState.isSubmitting ? "Signing in..." : "Login"}
           </button>
         </form>
 
-        <p className="mt-10 text-center text-base text-[#555B7F]">
+        <p className="mt-10 text-center text-tiny md:text-base text-[#555B7F]">
           Don&apos;t have an account?{" "}
           <Link href={withReturnTo("/signup", returnTo)} className="font-extrabold text-[#252423]">
             Sign Up

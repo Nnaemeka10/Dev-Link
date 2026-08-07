@@ -73,8 +73,8 @@ export default function SignupPage() {
     <AuthShell variant="split">
       <section className="w-full">
         <div className="mx-auto max-w-2xl">
-          <h1 className="text-2xl font-extrabold tracking-[-0.03em] md:text-3xl lg:text-4xl">Create your account</h1>
-          <p className="mt-2 text-sm text-[#555B7F] md:mt-3 md:text-base">Join our digital concierge for the Nigerian events industry.</p>
+          <h1 className="text-heading-m font-extrabold tracking-[-0.03em] md:text-3xl lg:text-4xl">Create your account</h1>
+          <p className="mt-2 text-small text-[#555B7F] md:mt-3 md:text-base">Join our digital concierge for the Nigerian events industry.</p>
 
 
           <form className="mt-6 space-y-5 md:mt-8 md:space-y-6 lg:mt-10 lg:space-y-7" onSubmit={onSubmit}>
@@ -137,7 +137,7 @@ export default function SignupPage() {
             <button
               type="submit"
               disabled={formState.isSubmitting}
-              className="w-full rounded-full bg-[#B9401D] px-6 py-4 text-base font-extrabold text-white shadow-[0_14px_28px_rgba(185,64,29,0.2)] disabled:opacity-60 md:px-8 md:py-5 md:text-lg"
+              className="w-full rounded-full bg-[#B9401D] px-6 py-4 text-small font-extrabold text-white shadow-[0_14px_28px_rgba(185,64,29,0.2)] disabled:opacity-60 md:px-8 md:py-5 md:text-lg"
             >
               {formState.isSubmitting ? "Creating..." : "Create Account"}
             </button>
@@ -148,11 +148,11 @@ export default function SignupPage() {
           </div>
 
           <div className="grid gap-3 md:gap-4 md:grid-cols-2">
-            <button type="button" className="rounded-full bg-[#F4F1EA] px-4 py-3 text-sm font-extrabold md:px-6 md:py-4 md:text-base">Google</button>
-            <button type="button" className="rounded-full bg-[#F4F1EA] px-4 py-3 text-sm font-extrabold md:px-6 md:py-4 md:text-base">Apple</button>
+            <button type="button" className="rounded-full bg-[#F4F1EA] px-4 py-3 text-small font-extrabold md:px-6 md:py-4 md:text-base">Google</button>
+            <button type="button" className="rounded-full bg-[#F4F1EA] px-4 py-3 text-small font-extrabold md:px-6 md:py-4 md:text-base">Facebook</button>
           </div>
 
-          <div className="mt-8 text-center md:mt-10">
+          <div className="mt-8 text-center md:mt-10 text-small">
             <p className="text-[#555B7F]">
               Already have an account?{" "}
               <Link href={withReturnTo("/login", returnTo)} className="font-extrabold text-[#B9401D]">
