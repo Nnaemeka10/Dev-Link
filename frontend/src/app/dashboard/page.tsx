@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import Sidebar from "@/components/layout/Sidebar";
+import SideNavbar from "@/components/layout/SideNavBar";
 import Card from "@/components/ui/Card";
 import AuthGuard from "@/features/auth/AuthGuard";
 
@@ -11,7 +11,7 @@ export default function DashboardPage() {
   return (
     <AuthGuard>
       <main className="mx-auto grid w-full max-w-6xl gap-4 px-4 py-8 md:grid-cols-[240px_1fr] md:px-6 md:py-12">
-        <Sidebar />
+        <SideNavbar />
         <section className="space-y-4">
           <Card>
             <h1 className="text-2xl font-semibold text-text-primary">Dashboard</h1>
