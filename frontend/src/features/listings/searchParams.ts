@@ -11,6 +11,14 @@ export interface ListingSearchParams {
   role?: string;
   sort?: SortBy;
   sortOrder?: SortOrder;
+  priceMin?: number;
+  priceMax?: number;
+  capacityMin?: number;
+  capacityMax?: number;
+  minRating?: number;
+  verified?: boolean;
+  venueTypes?: string[];
+  amenities?: string[];
 }
 
 type RawSearchParams = Record<string, string | string[] | undefined>;
@@ -33,7 +41,7 @@ function sanitizeDate(value: string | undefined): string | undefined {
   return Number.isNaN(date.getTime()) ? undefined : date.toISOString();
 }
 
-function sanitizeCapacity(value: string | undefined): number | undefined {
+function sanitizeNumber(value: string | undefined): number | undefined {
   if (!value) return undefined;
 
   const num = parseInt(value, 10);
@@ -50,49 +58,49 @@ function sanitizeSortOrder(value: string | undefined): SortOrder | undefined {
 
 export function normalizeListingSearchParams(raw: RawSearchParams): ListingSearchParams {
   const category = takeFirst(raw.category) === "services" ? "services" : "halls";
+  const venueTypes = takeFirst(raw.venueTypes);
+  const amenities = takeFirst(raw.amenities);
 
   return {
     category,
     location: sanitizeText(takeFirst(raw.location)),
     dateFrom: sanitizeDate(takeFirst(raw.dateFrom)),
     dateTo: sanitizeDate(takeFirst(raw.dateTo)),
-    capacity: category === "halls" ? sanitizeCapacity(takeFirst(raw.capacity)) : undefined,
+    capacity: category === "halls" ? sanitizeNumber(takeFirst(raw.capacity)) : undefined,
     role: category === "services" ? sanitizeText(takeFirst(raw.role)) : undefined,
     sort: sanitizeSort(takeFirst(raw.sort)),
     sortOrder: sanitizeSortOrder(takeFirst(raw.sortOrder)),
+    priceMin: sanitizeNumber(takeFirst(raw.priceMin)),
+    priceMax: sanitizeNumber(takeFirst(raw.priceMax)),
+    capacityMin: sanitizeNumber(takeFirst(raw.capacityMin)),
+    capacityMax: sanitizeNumber(takeFirst(raw.capacityMax)),
+    minRating: sanitizeNumber(takeFirst(raw.minRating)),
+    verified: takeFirst(raw.verified) === "true",
+    venueTypes: venueTypes ? venueTypes.split(",").filter(Boolean) : undefined,
+    amenities: amenities ? amenities.split(",").filter(Boolean) : undefined,
   };
 }
+
 
 export function buildListingsHref(params: ListingSearchParams): string {
   const search = new URLSearchParams({ category: params.category });
 
-  if (params.location) {
-    search.set("location", params.location);
-  }
+  if (params.location) search.set("location", params.location);
+  if (params.dateFrom) search.set("dateFrom", params.dateFrom);
+  if (params.dateTo) search.set("dateTo", params.dateTo);
+  if (params.capacity !== undefined) search.set("capacity", params.capacity.toString());
+  if (params.role) search.set("role", params.role);
+  if (params.sort) search.set("sort", params.sort);
+  if (params.sortOrder) search.set("sortOrder", params.sortOrder);
 
-  if (params.dateFrom) {
-    search.set("dateFrom", params.dateFrom);
-  }
-
-  if (params.dateTo) {
-    search.set("dateTo", params.dateTo);
-  }
-
-  if (params.capacity !== undefined) {
-    search.set("capacity", params.capacity.toString());
-  }
-
-  if (params.role) {
-    search.set("role", params.role);
-  }
-
-  if (params.sort) {
-    search.set("sort", params.sort);
-  }
-
-  if (params.sortOrder) {
-    search.set("sortOrder", params.sortOrder);
-  }
+  if (params.priceMin !== undefined) search.set("priceMin", params.priceMin.toString());
+  if (params.priceMax !== undefined) search.set("priceMax", params.priceMax.toString());
+  if (params.capacityMin !== undefined) search.set("capacityMin", params.capacityMin.toString());
+  if (params.capacityMax !== undefined && params.capacityMax > 0) search.set("capacityMax", params.capacityMax.toString());
+  if (params.minRating !== undefined) search.set("minRating", params.minRating.toString());
+  if (params.verified) search.set("verified", "true");
+  if (params.venueTypes && params.venueTypes.length > 0) search.set("venueTypes", params.venueTypes.join(","));
+  if (params.amenities && params.amenities.length > 0) search.set("amenities", params.amenities.join(","));
 
   return `/listings?${search.toString()}`;
 }

@@ -23,15 +23,43 @@ interface DesktopExploreHeaderProps {
 
 export function DesktopExploreHeader({ handleSearch, form, isPending, filter }: DesktopExploreHeaderProps) {
   
-  
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [isFilterOpen, setIsFilterOpen] = useState(false); //
 
-
+   const currentFilters: Partial<FilterState> = {
+    priceMin: searchParams.get("priceMin") ? Number(searchParams.get("priceMin")) : undefined,
+    priceMax: searchParams.get("priceMax") ? Number(searchParams.get("priceMax")) : undefined,
+    capacityMin: searchParams.get("capacityMin") ? Number(searchParams.get("capacityMin")) : undefined,
+    capacityMax: searchParams.get("capacityMax") ? Number(searchParams.get("capacityMax")) : undefined,
+    minRating: searchParams.get("minRating") ? Number(searchParams.get("minRating")) : undefined,
+    verified: searchParams.get("verified") === "true",
+    venueTypes: searchParams.get("venueTypes")?.split(",").filter(Boolean),
+    amenities: searchParams.get("amenities")?.split(",").filter(Boolean),
+  };
   
 
   const handleApplyFilters = (filters: FilterState) => {
-    // Handle filter application - can update search params or trigger filtering
-    console.log("Filters applied:", filters);
+    const params = normalizeListingSearchParams({
+      category: searchParams.get("category") || "halls",
+      location: searchParams.get("location") || undefined,
+      dateFrom: searchParams.get("dateFrom") || undefined,
+      dateTo: searchParams.get("dateTo") || undefined,
+      sort: searchParams.get("sort") || undefined,
+      sortOrder: searchParams.get("sortOrder") || undefined,
+    });
+
+    router.push(buildListingsHref({
+      ...params,
+      priceMin: filters.priceMin,
+      priceMax: filters.priceMax,
+      capacityMin: filters.capacityMin,
+      capacityMax: filters.capacityMax,
+      minRating: filters.minRating,
+      verified: filters.verified,
+      venueTypes: filters.venueTypes,
+      amenities: filters.amenities,
+    }));
   };
 
   return (
@@ -53,7 +81,7 @@ export function DesktopExploreHeader({ handleSearch, form, isPending, filter }: 
         </div>
       </header>
 
-      <FilterModal isOpen={isFilterOpen} onClose={() => setIsFilterOpen(false)} onApplyFilters={handleApplyFilters} />
+      <FilterModal isOpen={isFilterOpen} onClose={() => setIsFilterOpen(false)} onApplyFilters={handleApplyFilters} initialFilters={currentFilters} />
     </>
   );
 }

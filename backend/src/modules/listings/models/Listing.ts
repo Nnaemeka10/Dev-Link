@@ -136,6 +136,49 @@ function buildFilterParts(options: ListingPageOptions): QueryParts {
         clauses.push(`(l.capacity IS NULL OR l.capacity >= ${addValue(values, filters.capacity)})`);
     }
 
+     if (filters.priceMin) {
+        clauses.push(`l.base_price_kobo >= ${addValue(values, filters.priceMin)}`);
+    }
+    if (filters.priceMax) {
+        clauses.push(`l.base_price_kobo <= ${addValue(values, filters.priceMax)}`);
+    }
+
+    if (filters.capacityMin) {
+        clauses.push(`(l.capacity IS NULL OR l.capacity >= ${addValue(values, filters.capacityMin)})`);
+    }
+    if (filters.capacityMax) {
+        clauses.push(`(l.capacity IS NULL OR l.capacity <= ${addValue(values, filters.capacityMax)})`);
+    }
+
+    if (filters.minRating) {
+        clauses.push(`l.average_rating >= ${addValue(values, filters.minRating)}`);
+    }
+
+    if (filters.verified) {
+        clauses.push(`l.auto_approve = true`);
+    }
+
+    if (filters.venueTypes && filters.venueTypes.length > 0) {
+        const typePlaceholders = filters.venueTypes.map((_, i) => `$${values.length + i + 1}`).join(',');
+        clauses.push(`EXISTS (
+            SELECT 1 FROM listing_hall_types lht
+            JOIN hall_type_dictionary htd ON htd.id = lht.type_id
+            WHERE lht.listing_id = l.id AND htd.label IN (${typePlaceholders})
+        )`);
+        values.push(...filters.venueTypes);
+    }
+
+    if (filters.amenities && filters.amenities.length > 0) {
+        // Match amenities against the listing_features label
+        const amenityPlaceholders = filters.amenities.map((_, i) => `$${values.length + i + 1}`).join(',');
+        clauses.push(`EXISTS (
+            SELECT 1 FROM listing_features lf
+            WHERE lf.listing_id = l.id AND lf.label IN (${amenityPlaceholders})
+        )`);
+        values.push(...filters.amenities);
+    }
+    
+
     if (filters.dateFrom && filters.dateTo) {
         const dateFrom = addValue(values, filters.dateFrom);
         const dateTo = addValue(values, filters.dateTo);

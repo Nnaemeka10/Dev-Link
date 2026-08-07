@@ -79,7 +79,14 @@ export interface ListingSearchQuery {
     dateFrom?: string;
     dateTo?: string;
     capacity?: string;
-    role?: string;
+    capacityMin?: string;
+    capacityMax?: string;
+    priceMin?: string;
+    priceMax?: string;
+    minRating?: string;
+    verified?: string;
+    venueTypes?: string;
+    amenities?: string;
     sort?: string;
     sortOrder?: string;
     limit?: string;
@@ -180,9 +187,17 @@ export interface ListingFilters {
     location?: string;
     searchTerm?: string;
     capacity?: number;
+    capacityMin?: number;
+    capacityMax?: number;
     dateFrom?: string;
     dateTo?: string;
     excludeId?: string;
+    priceMin?: number; // in kobo
+    priceMax?: number; // in kobo
+    minRating?: number;
+    verified?: boolean;
+    venueTypes?: string[];
+    amenities?: string[];
 }
 
 export interface ListingPageOptions {

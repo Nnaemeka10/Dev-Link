@@ -30,12 +30,45 @@ export default function MobileExploreHeader({
  mobileSummary,
 }: MobileExploreHeaderProps) {
 
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
   const [isFilterOpen, setIsFilterOpen] = useState(false);
 
-   const handleApplyFilters = (filters: FilterState) => {
-    // Handle filter application - can update search params or trigger filtering
-    console.log("Filters applied:", filters);
+  const currentFilters: Partial<FilterState> = {
+    priceMin: searchParams.get("priceMin") ? Number(searchParams.get("priceMin")) : undefined,
+    priceMax: searchParams.get("priceMax") ? Number(searchParams.get("priceMax")) : undefined,
+    capacityMin: searchParams.get("capacityMin") ? Number(searchParams.get("capacityMin")) : undefined,
+    capacityMax: searchParams.get("capacityMax") ? Number(searchParams.get("capacityMax")) : undefined,
+    minRating: searchParams.get("minRating") ? Number(searchParams.get("minRating")) : undefined,
+    verified: searchParams.get("verified") === "true",
+    venueTypes: searchParams.get("venueTypes")?.split(",").filter(Boolean),
+    amenities: searchParams.get("amenities")?.split(",").filter(Boolean),
   };
+
+  const handleApplyFilters = (filters: FilterState) => {
+    const params = normalizeListingSearchParams({
+      category: searchParams.get("category") || "halls",
+      location: searchParams.get("location") || undefined,
+      dateFrom: searchParams.get("dateFrom") || undefined,
+      dateTo: searchParams.get("dateTo") || undefined,
+      sort: searchParams.get("sort") || undefined,
+      sortOrder: searchParams.get("sortOrder") || undefined,
+    });
+
+    router.push(buildListingsHref({
+      ...params,
+      priceMin: filters.priceMin,
+      priceMax: filters.priceMax,
+      capacityMin: filters.capacityMin,
+      capacityMax: filters.capacityMax,
+      minRating: filters.minRating,
+      verified: filters.verified,
+      venueTypes: filters.venueTypes,
+      amenities: filters.amenities,
+    }));
+  };
+
 
   return (
     <>
@@ -55,16 +88,15 @@ export default function MobileExploreHeader({
           </button>
         </div>
         
-
         <MobileSearchTrigger mobileSummaryLines={mobileSummary} />
-
         <MobileSearchModal onSubmit={handleSearch} form={form} isPending={isPending} />
       </header>
 
-      <FilterModal isOpen={isFilterOpen} onClose={() => setIsFilterOpen(false)} onApplyFilters={handleApplyFilters} />
+      <FilterModal isOpen={isFilterOpen} onClose={() => setIsFilterOpen(false)} onApplyFilters={handleApplyFilters} initialFilters={currentFilters} />
     </>
   );
 }
+
 
 export function MobileResultsHeader({count, locationLabel, listingType} : {count: number, locationLabel: string, listingType: string}) {
   const router = useRouter();

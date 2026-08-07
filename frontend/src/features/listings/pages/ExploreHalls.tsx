@@ -30,6 +30,14 @@ export default function ExploreHalls() {
     const dateTo = searchParams.get("dateTo") || undefined;
     const sort = searchParams.get("sort") || undefined;
     const sortOrder = searchParams.get("sortOrder") || undefined;
+    const priceMin = searchParams.get("priceMin") ? Number(searchParams.get("priceMin")) : undefined;
+    const priceMax = searchParams.get("priceMax") ? Number(searchParams.get("priceMax")) : undefined;
+    const capacityMin = searchParams.get("capacityMin") ? Number(searchParams.get("capacityMin")) : undefined;
+    const capacityMax = searchParams.get("capacityMax") ? Number(searchParams.get("capacityMax")) : undefined;
+    const minRating = searchParams.get("minRating") ? Number(searchParams.get("minRating")) : undefined;
+    const verified = searchParams.get("verified") === "true";
+    const venueTypes = searchParams.get("venueTypes")?.split(",").filter(Boolean);
+    const amenities = searchParams.get("amenities")?.split(",").filter(Boolean);
 
         // ── Fetch listings with search params ────────────────────────────
     const { data, isPending, isError } = useExploreListings({
@@ -40,6 +48,14 @@ export default function ExploreHalls() {
         dateTo,
         sort,
         sortOrder,
+        priceMin,
+        priceMax,
+        capacityMin,
+        capacityMax,
+        minRating,
+        verified,
+        venueTypes,
+        amenities
     });
 
   // --- REAL DATA HOOK ---

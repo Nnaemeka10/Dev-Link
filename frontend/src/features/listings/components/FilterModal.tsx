@@ -18,12 +18,12 @@ export interface FilterState {
   minRating: number;
   venueTypes: string[];
 }
-
 interface FilterModalProps {
   isOpen: boolean;
   onClose: () => void;
   onApplyFilters: (filters: FilterState) => void;
-  resultCount?: number;        // e.g. "Show 248 venues"
+  initialFilters?: Partial<FilterState>;
+  resultCount?: number;
 }
 
 // ─── Static data ──────────────────────────────────────────────────────────────
@@ -363,10 +363,18 @@ export default function FilterModal({
   isOpen,
   onClose,
   onApplyFilters,
+  initialFilters,
   resultCount,
 }: FilterModalProps) {
-  const [filters, setFilters] = useState<FilterState>(DEFAULT_FILTERS);
+  const [filters, setFilters] = useState<FilterState>({ ...DEFAULT_FILTERS, ...initialFilters });
 
+  const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
+    if (isOpen !== prevIsOpen) {
+      setPrevIsOpen(isOpen);
+      if (isOpen) {
+        setFilters({ ...DEFAULT_FILTERS, ...initialFilters });
+      }
+    }
   // Close on Escape
   useEffect(() => {
     if (!isOpen) return;
