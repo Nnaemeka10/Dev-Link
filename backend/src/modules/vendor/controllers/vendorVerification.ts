@@ -8,6 +8,7 @@ import { getDB } from '../../../lib/db.js';
 export const submitPayoutMethod = async (req: Request, res: Response) => {
   try {
     if (!req.user?.userId) return res.status(401).json({ message: 'Unauthorized' });
+    const userId = req.user.userId;
 
     const { bankCode, accountNumber, legalFirstName, legalLastName, idType, idNumber } = req.body;
     if (!bankCode || !accountNumber || !legalFirstName || !legalLastName || !idType || !idNumber) {
@@ -83,14 +84,26 @@ export const submitPayoutMethod = async (req: Request, res: Response) => {
       });
     }
 
-    // Fire-and-forget ID verification dispatch
-    try {
-      await dispatchIdentityVerification(customerCode, legalFirstName, legalLastName, idNumber, bankCode, accountNumber);
-    } catch (error: any) {
-      console.error(`ID Verification dispatch failed for user ${req.user.userId}:`, error.message);
-      // We leave status as 'pending'. The reconciliation job will pick it up and retry.
-    }
+    // We dispatch the request to Paystack but DO NOT await it.
+    // The API responds to the frontend instantly with "pending".
+    // The final verification result will arrive asynchronously via Paystack webhook.
+    
+    dispatchIdentityVerification(customerCode, legalFirstName, legalLastName, idNumber, bankCode, accountNumber)
+      .catch(async (error: any) => {
+        const errorMessage = error.message || '';
+        
+        // Edge case: Paystack rejects it because the customer is ALREADY validated.
+        // Since Paystack confirms the credentials are valid, we safely mark the vendor as verified in the background.
+        if (errorMessage.includes('already validated using the same credentials')) {
+          await VendorVerificationModel.updateStatusByCustomerCode(customerCode, 'verified');
+        } else {
+          // Actual error (e.g. invalid BVN). Mark as failed so the frontend can tell the user to try again.
+          console.error(`ID Verification dispatch failed for user ${userId}:`, errorMessage);
+          await VendorVerificationModel.updateStatusByCustomerCode(customerCode, 'failed');
+        }
+      });
 
+    // Respond instantly while the Paystack dispatch runs in the background
     return res.status(202).json({
       status: 'pending',
       message: 'Verification initiated. This usually completes within 5 minutes.'

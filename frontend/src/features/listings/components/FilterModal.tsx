@@ -357,6 +357,20 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   );
 }
 
+
+function mergeFilters(initial?: Partial<FilterState>): FilterState {
+  const base = { ...DEFAULT_FILTERS };
+  if (initial) {
+    (Object.keys(initial) as Array<keyof FilterState>).forEach((key) => {
+      const val = initial[key];
+      if (val !== undefined) {
+        (base as any)[key] = val;
+      }
+    });
+  }
+  return base;
+}
+
 // ─── Main modal ───────────────────────────────────────────────────────────────
 
 export default function FilterModal({
@@ -366,13 +380,13 @@ export default function FilterModal({
   initialFilters,
   resultCount,
 }: FilterModalProps) {
-  const [filters, setFilters] = useState<FilterState>({ ...DEFAULT_FILTERS, ...initialFilters });
+    const [filters, setFilters] = useState<FilterState>(() => mergeFilters(initialFilters));
 
   const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
     if (isOpen !== prevIsOpen) {
       setPrevIsOpen(isOpen);
       if (isOpen) {
-        setFilters({ ...DEFAULT_FILTERS, ...initialFilters });
+        setFilters(mergeFilters(initialFilters));
       }
     }
   // Close on Escape
