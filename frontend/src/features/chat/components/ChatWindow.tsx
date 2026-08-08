@@ -7,7 +7,7 @@ import { ChatInput } from "./ChatInput";
 import { EmptyState } from "./EmptyState";
 import type { ChatMessage, ChatThread } from "../chat.types";
 import { getConversationName } from "../utils";
-import { ArrowBigLeft, ArrowLeft } from "lucide-react";
+
 
 interface ChatWindowProps {
   conversation: ChatThread | null;
@@ -19,6 +19,29 @@ interface ChatWindowProps {
   onTyping: (isTyping: boolean) => void;
   onBack?: () => void;
 }
+
+function formatDateLabel(dateStr: string): string {
+  const date = new Date(dateStr);
+  const today = new Date();
+  const yesterday = new Date();
+  yesterday.setDate(today.getDate() - 1);
+
+  const isSameDay = (d1: Date, d2: Date) => 
+    d1.getDate() === d2.getDate() &&
+    d1.getMonth() === d2.getMonth() &&
+    d1.getFullYear() === d2.getFullYear();
+
+  if (isSameDay(date, today)) return "Today";
+  if (isSameDay(date, yesterday)) return "Yesterday";
+  
+  // If same year, don't show year
+  if (date.getFullYear() === today.getFullYear()) {
+    return date.toLocaleDateString("en-NG", { day: "numeric", month: "long" });
+  }
+  
+  return date.toLocaleDateString("en-NG", { day: "numeric", month: "long", year: "numeric" });
+}
+
 
 export function ChatWindow({ conversation, messages, currentUserId, isTyping, isSending, onSendMessage, onTyping, onBack }: ChatWindowProps) {
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -32,10 +55,12 @@ export function ChatWindow({ conversation, messages, currentUserId, isTyping, is
 
   if (!conversation) return <EmptyState />;
 
+ 
+
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 bg-white flex-shrink-0">
+      <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 bg-white shrink-0">
         <div className="flex items-center gap-3">
           {onBack && (
             <button onClick={onBack} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors text-gray-500 mr-1" aria-label="Back to conversations">
@@ -67,9 +92,34 @@ export function ChatWindow({ conversation, messages, currentUserId, isTyping, is
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto px-5 py-5 space-y-4 bg-gray-50">
-        {messages.map((msg) => (
-          <MessageBubble key={msg.id} message={msg} isMine={String(msg.sender_id) === String(currentUserId)} senderName={conversation.name} senderAvatar={conversation.avatarUrl} />
-        ))}
+        {messages.map((msg, index) => {
+          const dateLabel = formatDateLabel(msg.created_at);
+          const prevMsg = messages[index - 1];
+          
+          // Show separator if it's the first message OR the date differs from the previous message
+          const showDateSeparator = !prevMsg || formatDateLabel(prevMsg.created_at) !== dateLabel;
+
+          return (
+            <div key={msg.id}>
+              {/* Date Separator */}
+              {showDateSeparator && (
+                <div className="flex justify-center my-4">
+                  <span className="text-[11px] font-medium text-gray-500 bg-gray-200 rounded-full px-3 py-1 shadow-sm">
+                    {dateLabel}
+                  </span>
+                </div>
+              )}
+              
+              <MessageBubble 
+                message={msg} 
+                isMine={String(msg.sender_id) === String(currentUserId)} 
+                senderName={conversation.name} 
+                senderAvatar={conversation.avatarUrl} 
+              />
+            </div>
+          );
+        })}
+        
         {isTyping && (
           <div className="flex items-center gap-2.5 max-w-[80%]">
             <Avatar name={conversation.name} avatarUrl={conversation.avatarUrl} size="sm" />

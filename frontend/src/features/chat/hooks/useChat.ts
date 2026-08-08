@@ -62,71 +62,7 @@ export function useChat(userId: number | undefined) {
 
   
 
-  // // 4. Send Message Mutation (Optimistic UI)
-  // const { mutateAsync: sendMessage, isPending: isSending } = useMutation({
-  //   mutationFn: async (params: { 
-  //     conversationId: string; 
-  //     content: string; 
-  //     clientId: string; 
-  //     files?: File[] 
-  //   }) => {
-  //     // Upload attachments first if any
-  //     let attachments: ChatAttachment[] = [];
-  //     if (params.files && params.files.length > 0) {
-  //       const uploaded = await Promise.all(params.files.map(f => uploadAttachment(f)));
-  //       // FIX: Map to full ChatAttachment type
-  //       attachments = uploaded.map((att, i) => ({
-  //         id: `temp-${Date.now()}-${i}`,
-  //         type: inferAttachmentType(att.mime_type),
-  //         ...att,
-  //       }));
-  //     }
-      
-  //     // The actual socket emission is handled inside the component to get the ack callback,
-  //     // but for React Query state, we handle the optimistic update here.
-  //     return params;
-  //   },
-  //   onMutate: async (params) => {
-  //     // Cancel outgoing refetches so they don't overwrite our optimistic update
-  //     await queryClient.cancelQueries({ queryKey: ["chat", "messages", params.conversationId] });
-
-  //     // Optimistically add the message to the cache
-  //     const tempMessage: ChatMessage = {
-  //       id: Date.now(), // Temp ID
-  //       conversation_id: params.conversationId,
-  //       sender_id: userId!,
-  //       conversation_seq: Date.now(), // Temp seq
-  //       client_id: params.clientId,
-  //       type: "text",
-  //       body: params.content,
-  //       created_at: new Date().toISOString(),
-  //       status: "sending",
-  //       attachments: []
-  //     };
-
-  //     queryClient.setQueryData<ChatMessage[]>(["chat", "messages", params.conversationId], (old = []) => [...old, tempMessage]);
-
-  //     return { tempMessage };
-  //   },
-  //   onError: (err, params, context) => {
-  //     // Rollback on error
-  //     if (context?.tempMessage) {
-  //       queryClient.setQueryData<ChatMessage[]>(["chat", "messages", params.conversationId], (old = []) => 
-  //         old.filter(m => m.id !== context.tempMessage.id)
-  //       );
-  //     }
-  //   }
-  // });
-
-  // const handleSendMessage = useCallback(async (content: string, files?: File[]) => {
-  //   if (!activeThreadId || !userId) return;
-  //   const clientId = crypto.randomUUID(); // Idempotency key
-  //   await sendMessage({ conversationId: activeThreadId, content, clientId, files });
-    
-  //   // The actual socket.emit("message:send") is triggered in the component to handle the ack
-  //   // For simplicity in this hook, we return the clientId so the component can use it
-  //   return clientId;
-  // }, [activeThreadId, userId, sendMessage]);
+ 
 
    const [isSending, setIsSending] = useState(false);
 
@@ -134,13 +70,12 @@ export function useChat(userId: number | undefined) {
     async (content: string, files?: File[]) => {
       if (!activeThreadId || !userId) return;
 
-      setIsSending(true);
+
       const clientId = crypto.randomUUID();
 
       let attachments: ChatAttachment[] = [] ;
       if (files?.length) {
         const uploaded = await Promise.all(files.map((file) => uploadAttachment(file)));
-        // FIX: Map to full ChatAttachment type
         attachments = uploaded.map((att, i) => ({
           id: `temp-${Date.now()}-${i}`,
           type: inferAttachmentType(att.mime_type),

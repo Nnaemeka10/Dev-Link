@@ -33,8 +33,8 @@ export function MessageBubble({ message, isMine, senderName, senderAvatar }: Mes
     return (
       <div className="flex flex-row-reverse items-end gap-2.5 max-w-[80%] ml-auto">
         <div className="flex flex-col items-end">
-          <div className="bg-orange-500 text-white rounded-2xl rounded-br-sm px-4 py-3 shadow-sm">
-            <p className="text-sm leading-relaxed">{message.body}</p>
+           <div className="bg-orange-500 text-white rounded-2xl rounded-br-sm px-4 py-3 shadow-sm">
+            <p className="md:text-sm text-small leading-relaxed whitespace-pre-wrap max-w-[40vw] wrap-break-word">{message.body}</p>
           </div>
           <span className="text-[11px] text-gray-400 mt-1 block mr-1">
             {time}
@@ -51,8 +51,8 @@ export function MessageBubble({ message, isMine, senderName, senderAvatar }: Mes
     <div className="flex items-end gap-2.5 max-w-[80%]">
       <Avatar name={senderName} avatarUrl={senderAvatar} size="sm" />
       <div>
-        <div className="bg-white border border-gray-100 rounded-2xl rounded-bl-sm px-4 py-3 shadow-sm">
-          <p className="text-sm text-gray-800 leading-relaxed">{message.body}</p>
+         <div className="bg-white border border-gray-100 rounded-2xl rounded-bl-sm px-4 py-3 shadow-sm">
+          <p className="md:text-sm text-small text-gray-800 max-w-[40vw] leading-relaxed whitespace-pre-wrap wrap-break-word">{message.body}</p>
         </div>
         <span className="text-[11px] text-gray-400 mt-1 block ml-1">{time}</span>
       </div>

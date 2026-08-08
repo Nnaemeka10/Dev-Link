@@ -67,7 +67,7 @@ export function mapListingCard(row: ListingRow): ListingCard {
         kind: row.kind,
         description: row.description ?? '',
         priceFrom: koboToNaira(row.base_price_kobo),
-        priceUnit: row.price_unit ?? 'per event',
+        priceUnit: row.price_unit ?? 'per day',
         rating,
         reviewCount,
         capacity: row.capacity,

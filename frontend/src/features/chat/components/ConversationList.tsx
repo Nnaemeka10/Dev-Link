@@ -24,7 +24,7 @@ export function ConversationList({ conversations, activeId, onSelect }: Conversa
   const filtered = conversations.filter((c) => getConversationName(c).toLowerCase().includes(search.toLowerCase()));
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full mb-16">
       <div className="px-5 pt-6 pb-4">
         <div className="flex items-center justify-between mb-5">
           <h2 className="text-xl font-semibold text-gray-900 tracking-tight">Messages</h2>

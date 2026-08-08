@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 
 interface ChatInputProps {
   onSendMessage: (content: string, files?: File[]) => Promise<string | undefined>;
@@ -11,6 +11,15 @@ interface ChatInputProps {
 export function ChatInput({ onSendMessage, onTyping, isSending }: ChatInputProps) {
   const [text, setText] = useState("");
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    const textarea = textareaRef.current;
+    if (textarea) {
+      textarea.style.height = "auto"; // Reset height
+      textarea.style.height = `${Math.min(textarea.scrollHeight, 120)}px`; // Expand up to 120px
+    }
+  }, [text]);
 
   const handleTyping = (val: string) => {
     setText(val);
@@ -25,13 +34,14 @@ export function ChatInput({ onSendMessage, onTyping, isSending }: ChatInputProps
 
   const handleSend = async () => {
     const trimmed = text.trim();
-    if (!trimmed || isSending) return;
+    if (!trimmed ) return;
     setText("");
+    if (textareaRef.current) textareaRef.current.style.height = "auto";
     onTyping(false);
     await onSendMessage(trimmed);
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       handleSend();
@@ -39,7 +49,7 @@ export function ChatInput({ onSendMessage, onTyping, isSending }: ChatInputProps
   };
 
   return (
-    <div className="md:px-4 px-1 py-3.5 bg-white border-t border-gray-100 flex-shrink-0">
+    <div className="md:px-4 px-1 py-3.5 bg-white border-t border-gray-100 shrink-0">
       <div className="flex items-center gap-2 bg-gray-100 rounded-2xl px-3 py-2">
         <button className="w-8 h-8 shrink-0 flex items-center justify-center rounded-full text-gray-400 hover:text-gray-600 hover:bg-gray-200 transition-colors">
           <svg
@@ -57,15 +67,17 @@ export function ChatInput({ onSendMessage, onTyping, isSending }: ChatInputProps
               />
             </svg>
         </button>
-        <input
-          type="text" 
-          value={text} 
-          onChange={(e) => handleTyping(e.target.value)} 
+        <textarea
+          ref={textareaRef}
+          value={text}
+          onChange={(e) => handleTyping(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="Message..." disabled={isSending}
-          className="flex-1 bg-transparent border-0 focus:outline-none text-sm text-gray-800 placeholder:text-gray-400 py-1"
+          placeholder="Message..."
+          rows={1}
+          className="flex-1 bg-transparent border-0 focus:outline-none text-sm text-gray-800 placeholder:text-gray-400 py-1.5 resize-none max-h-30 overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         />
-        <button className="w-8 h-8 flex-shrink-0 flex items-center justify-center rounded-full text-gray-400 hover:text-gray-600 hover:bg-gray-200 transition-colors">
+
+        <button className="w-8 h-8 shrink-0 flex items-center justify-center rounded-full text-gray-400 hover:text-gray-600 hover:bg-gray-200 transition-colors">
             <svg
               xmlns="http://www.w3.org/2000/svg"
               fill="none"
@@ -81,7 +93,11 @@ export function ChatInput({ onSendMessage, onTyping, isSending }: ChatInputProps
               />
             </svg>
           </button>
-        <button onClick={handleSend} disabled={!text.trim() || isSending} className="w-8 h-8 flex-shrink-0 flex items-center justify-center rounded-full bg-orange-500 text-white hover:bg-orange-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors" aria-label="Send message">
+        <button 
+          onClick={handleSend} 
+          disabled={!text.trim()} 
+          className="w-8 h-8 shrink-0 flex items-center justify-center rounded-full bg-orange-500 text-white hover:bg-orange-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          aria-label="Send message">
           <svg
               xmlns="http://www.w3.org/2000/svg"
               viewBox="0 0 24 24"
