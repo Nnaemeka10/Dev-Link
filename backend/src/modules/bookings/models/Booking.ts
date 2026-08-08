@@ -71,27 +71,27 @@ export const BookingModel = {
 
         const listing = listingRes.rows[0];
 
-         let subtotal = 0;
+         let subtotalKobo = 0;
          let days = 1;
 
-        if (listing.kind === 'service' && packageId) {
+         if (listing.kind === 'service' && packageId) {
             const pkgRes = await db.query('SELECT price_kobo FROM service_packages WHERE id = $1 AND listing_id = $2', [packageId, listingId]);
             if (pkgRes.rows.length === 0) throw new Error('Invalid package selected');
-            const basePrice = parseFloat(pkgRes.rows[0].price_kobo);
+            const basePriceKobo = parseFloat(pkgRes.rows[0].price_kobo);
             const startMs = new Date(cleanStart).getTime();
             const endMs = new Date(cleanEnd).getTime();
             days = Math.max(1, Math.round((endMs - startMs) / 86400000) + 1);
-            subtotal = basePrice * days;
-         } else {
-            const basePrice = parseFloat(listing.base_price_kobo);
-            // Inclusive day calculation (Friday to Sunday = 3 days)
+            subtotalKobo = basePriceKobo * days;
+        } else {
+            const basePriceKobo = parseFloat(listing.base_price_kobo);
             const startMs = new Date(cleanStart).getTime();
             const endMs = new Date(cleanEnd).getTime();
             days = Math.max(1, Math.round((endMs - startMs) / 86400000) + 1);
-            subtotal = basePrice * days;
+            subtotalKobo = basePriceKobo * days;
         }
 
-         // 2. Calculate Amount (Backend is source of truth)
+        // 2. Calculate Amount in NAIRA (Backend is source of truth)
+        const subtotal = subtotalKobo / 100; // Convert Kobo to Naira
         const vat = Math.round((subtotal * 0.075) * 100) / 100; // 7.5% VAT
         const totalAmount = Math.round((subtotal + vat) * 100) / 100;
 
@@ -294,28 +294,28 @@ export const BookingModel = {
         const cleanStart = startDate.split('T')[0];
         const cleanEnd = endDate.split('T')[0];
 
-        let subtotal = 0; 
+        let subtotalKobo = 0; 
         let days = 1;
 
         if (listing.kind === 'service' && packageId) {
             const pkgRes = await db.query('SELECT price_kobo FROM service_packages WHERE id = $1 AND listing_id = $2', [packageId, listingId]);
             if (pkgRes.rows.length === 0) throw new Error('Invalid package selected');
-            const basePrice = parseFloat(pkgRes.rows[0].price_kobo);
+            const basePriceKobo = parseFloat(pkgRes.rows[0].price_kobo);
             const startMs = new Date(cleanStart).getTime();
             const endMs = new Date(cleanEnd).getTime();
             days = Math.max(1, Math.round((endMs - startMs) / 86400000) + 1);
-            subtotal = basePrice * days;
+            subtotalKobo = basePriceKobo * days;
         } else {
-            const basePrice = parseFloat(listingRes.rows[0].base_price_kobo);
-
-            // 2. Inclusive day calculation (Friday to Sunday = 3 days)
+            const basePriceKobo = parseFloat(listing.base_price_kobo);
             const startMs = new Date(cleanStart).getTime();
             const endMs = new Date(cleanEnd).getTime();
             days = Math.max(1, Math.round((endMs - startMs) / 86400000) + 1);
-            subtotal = basePrice * days;
+            subtotalKobo = basePriceKobo * days;
         }
 
-        // 3. Calculate securely on backend
+
+        // 3. Calculate securely on backend and Convert Kobo to Naira BEFORE returning to frontend
+        const subtotal = subtotalKobo / 100; 
         const vat = Math.round((subtotal * 0.075) * 100) / 100; // 7.5% VAT
         const total = Math.round((subtotal + vat) * 100) / 100;
 

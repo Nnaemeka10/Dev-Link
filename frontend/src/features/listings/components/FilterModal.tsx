@@ -359,16 +359,17 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 
 
 function mergeFilters(initial?: Partial<FilterState>): FilterState {
-  const base = { ...DEFAULT_FILTERS };
-  if (initial) {
-    (Object.keys(initial) as Array<keyof FilterState>).forEach((key) => {
-      const val = initial[key];
-      if (val !== undefined) {
-        (base as any)[key] = val;
-      }
-    });
-  }
-  return base;
+  if (!initial) return { ...DEFAULT_FILTERS };
+  
+  // Filter out any undefined values so they don't overwrite the defaults
+  const cleanInitial = Object.fromEntries(
+    Object.entries(initial).filter(([, v]) => v !== undefined)
+  ) as Partial<FilterState>;
+  
+  return {
+    ...DEFAULT_FILTERS,
+    ...cleanInitial,
+  };
 }
 
 // ─── Main modal ───────────────────────────────────────────────────────────────

@@ -149,6 +149,7 @@ const handleChatWithVendor = async () => {
       <SimilarVenues venues={similarVenues || []} variant="mobile" />
 
       <MobileBookingDock
+        listingId= {listing.id}
         price={`₦${listing.priceFrom.toLocaleString()}`}
         priceRaw={listing.priceFrom}
         booked={booking.booked}

@@ -5,11 +5,13 @@ import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { DayPicker, type DateRange as DayPickerRange } from "react-day-picker";
 import { ChevronLeft, ChevronRight, X, ChevronUp, Calendar } from "lucide-react";
-import type { DateRange } from "@/features/search/utils/searchSchema"; // adjust path
+import type { DateRange } from "@/features/search/utils/searchSchema"; 
+import { usePricingQuote } from "@/features/bookings/hooks/usePricingQuote";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 interface MobileBookingDockProps {
+  listingId: string;
   price: string;           // e.g. "₦1,250,000"
   priceRaw: number;        // numeric for calculations e.g. 1250000
   booked: boolean;
@@ -24,9 +26,7 @@ function fmt(n: number): string {
   return `₦${n.toLocaleString("en-NG")}`;
 }
 
-function formatDate(d: Date): string {
-  return d.toLocaleDateString("en-NG", { day: "numeric", month: "short", year: "numeric" });
-}
+
 
 function formatShort(d: Date): string {
   return d.toLocaleDateString("en-NG", { day: "numeric", month: "short" });
@@ -123,6 +123,7 @@ function InlineCalendar({ value, onChange, onApply, onClear }: InlineCalendarPro
 // ─── Price detail sheet ───────────────────────────────────────────────────────
 
 interface PriceDetailSheetProps {
+  listingId: string;
   priceRaw: number;
   price: string;
   dateRange: DateRange | undefined;
@@ -133,6 +134,7 @@ interface PriceDetailSheetProps {
 }
 
 function PriceDetailSheet({
+  listingId,
   priceRaw,
   price,
   dateRange,
@@ -141,6 +143,7 @@ function PriceDetailSheet({
   onBook,
   booked,
 }: PriceDetailSheetProps) {
+   const { data: quote, isLoading: isQuoteLoading } = usePricingQuote(listingId, dateRange);
   const days   = dateRange?.from && dateRange?.to
     ? daysBetween(dateRange.from, dateRange.to)
     : 1;
@@ -191,27 +194,41 @@ function PriceDetailSheet({
         </button>
       </div>
 
+  
       {/* Breakdown */}
       <div className="flex-1 space-y-4 overflow-y-auto px-5">
-        <div className="flex items-center justify-between text-sm">
-          <span className="font-semibold text-[#5E6588] underline underline-offset-2">
-            {price} × {days} {days === 1 ? "day" : "days"}
-          </span>
-          <strong className="text-[#252423]">{fmt(priceRaw * days)}</strong>
-        </div>
-        <div className="flex items-center justify-between text-sm">
-          <span className="font-semibold text-[#5E6588] underline underline-offset-2">
-            VAT (10%)
-          </span>
-          <strong className="text-[#252423]">{fmt(vat)}</strong>
-        </div>
-        <div className="flex items-center justify-between border-t border-[#EFE8DE] pt-4 text-base">
-          <strong className="text-[#252423]">Total</strong>
-          <strong className="text-[#252423]">{fmt(total)}</strong>
-        </div>
+        {isQuoteLoading ? (
+          <div className="animate-pulse space-y-4">
+            <div className="h-4 w-3/4 rounded bg-gray-300"></div>
+            <div className="h-4 w-1/2 rounded bg-gray-300"></div>
+            <div className="h-6 w-full rounded bg-gray-300 mt-4"></div>
+          </div>
+        ) : quote ? (
+          <>
+            <div className="flex items-center justify-between text-sm">
+              <span className="font-semibold text-[#5E6588] underline underline-offset-2">
+                {price} × {quote.days} {quote.days === 1 ? "day" : "days"}
+              </span>
+              <strong className="text-[#252423]">{fmt(quote.subtotal)}</strong>
+            </div>
+            <div className="flex items-center justify-between text-sm">
+              <span className="font-semibold text-[#5E6588] underline underline-offset-2">
+                VAT (7.5%)
+              </span>
+              <strong className="text-[#252423]">{fmt(quote.vat)}</strong>
+            </div>
+            <div className="flex items-center justify-between border-t border-[#EFE8DE] pt-4 text-base">
+              <strong className="text-[#252423]">Total</strong>
+              <strong className="text-[#252423]">{fmt(quote.total)}</strong>
+            </div>
+          </>
+        ) : (
+          <div className="py-10 text-center text-[#555B7F]">
+            <p className="font-semibold">Select dates to calculate price</p>
+          </div>
+        )}
       </div>
 
-      {/* Book button */}
       <div className="shrink-0 px-5 pb-[env(safe-area-inset-bottom,1rem)] pt-4">
         <button
           type="button"
@@ -233,6 +250,7 @@ function PriceDetailSheet({
 type Sheet = "none" | "price" | "calendar";
 
 export function MobileBookingDock({
+  listingId,
   price,
   priceRaw,
   booked,
@@ -372,6 +390,7 @@ export function MobileBookingDock({
                 {/* ── Price detail sheet ──────────────────────────────────── */}
                 {sheet === "price" && (
                   <PriceDetailSheet
+                    listingId={listingId}
                     priceRaw={priceRaw}
                     price={price}
                     dateRange={dateRange}

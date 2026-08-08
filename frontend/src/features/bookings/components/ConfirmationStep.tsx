@@ -12,6 +12,16 @@ interface ConfirmationStepProps {
   variant?: "desktop" | "mobile";
 }
 
+// Helper to format HH:MM:SS to h:mm AM/PM
+function formatTime(timeStr: string | null | undefined): string {
+  if (!timeStr) return "N/A";
+  const [h, m] = timeStr.split(':');
+  const hour = parseInt(h, 10);
+  const ampm = hour >= 12 ? 'PM' : 'AM';
+  const displayHour = hour % 12 || 12;
+  return `${displayHour}:${m} ${ampm}`;
+}
+
 export default function ConfirmationStep({wizard, variant = "desktop" }: ConfirmationStepProps) {
   const booking = wizard.bookingDetails;
 
@@ -43,7 +53,7 @@ export default function ConfirmationStep({wizard, variant = "desktop" }: Confirm
   };
 
   const eventDate = parseDateSafe(booking.start_date).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-  const eventTime = `${booking.start_time || '00:00'} - ${booking.end_time || '00:00'}`;
+  const eventTime = formatTime(booking.start_time) + ' - ' + formatTime(booking.end_time);
   const totalAmount = parseFloat(booking.total_amount.toString()).toLocaleString();  
   const bookingStatus = booking.status === 'confirmed' ? 'Confirmed' : 'Pending Approval';
 
@@ -72,10 +82,20 @@ export default function ConfirmationStep({wizard, variant = "desktop" }: Confirm
 
 
         <div className="fixed inset-x-0 bottom-20 z-40 bg-white px-6 py-5 shadow-[0_-12px_32px_rgba(34,27,18,0.08)]">
-          <button type="button" className="text-small md:text-base w-full rounded-full bg-[#B9401D] md:px-8 md:py-4 px-0 py-4 font-extrabold text-white flex items-center justify-center gap-2" onClick={() => handleChatWithVendor()}>
-            <Mail /> Chat with Vendor
+          <button 
+            type="button" 
+            className="text-small md:text-base w-full rounded-full bg-[#B9401D] md:px-8 md:py-4 px-0 py-4 font-extrabold text-white flex items-center justify-center gap-2" 
+            onClick={() => handleChatWithVendor()}>
+              <Mail /> 
+              Chat with Vendor
           </button>
-          <button type="button" className="text-small md:text-base w-full mt-5 font-extrabold text-[#555B7F] flex items-center justify-center gap-2"><FileText /> View My Bookings</button>
+          <button 
+            type="button" 
+            onClick={() => router.push('/profile#bookings')}
+            className="text-small md:text-base w-full mt-5 font-extrabold text-[#555B7F] flex items-center justify-center gap-2">
+              <FileText /> 
+              View My Bookings
+          </button>
           
         </div>
       </section>
@@ -141,6 +161,15 @@ export default function ConfirmationStep({wizard, variant = "desktop" }: Confirm
           <button type="button" className="mt-9 inline-flex w-full items-center justify-center gap-2 rounded-full bg-white px-6 py-4 font-extrabold text-[#B9401D]" onClick={() => handleChatWithVendor()}>
             <MessageSquare className="h-4 w-4" />
             Chat with Vendor
+          </button>
+
+          <button 
+            type="button" 
+            onClick={() => router.push('/profile#bookings')} 
+            className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#E8E4DC] px-6 py-4 text-sm font-extrabold text-[#252423] border border-[#DDB6AA]"
+          >
+            <FileText className="h-4 w-4" />
+            View My Bookings
           </button>
         </aside>
       </div>

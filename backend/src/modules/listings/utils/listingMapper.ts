@@ -18,6 +18,13 @@ import {
 } from './cloudinaryImage.js';
 import { calculateTrendingScore } from './ranking.js';
 
+export function koboToNaira(value: string | number | null | undefined): number {
+    if (value === null || value === undefined) return 0;
+    const kobo = Number(value);
+    if (isNaN(kobo)) return 0;
+    return kobo / 100;
+}
+
 export function toNumber(value: string | number | null | undefined): number {
     if (value === null || value === undefined) return 0;
 
@@ -59,7 +66,7 @@ export function mapListingCard(row: ListingRow): ListingCard {
         category: row.kind,
         kind: row.kind,
         description: row.description ?? '',
-        priceFrom: toNumber(row.base_price_kobo),
+        priceFrom: koboToNaira(row.base_price_kobo),
         priceUnit: row.price_unit ?? 'per event',
         rating,
         reviewCount,
@@ -123,8 +130,8 @@ export function mapTrendingCard(row: ListingRow): TrendingCard {
         title: row.title,
         headline: row.headline,
         kind: row.kind,
-        priceFrom: toNumber(row.base_price_kobo),
-        priceUnit: row.price_unit ?? 'per event',
+        priceFrom: koboToNaira(row.base_price_kobo),
+        priceUnit: row.price_unit ?? 'per day',
         primaryImage,
         rankScore: calculateTrendingScore({
             averageRating: toNumber(row.average_rating),
@@ -145,8 +152,8 @@ export function mapListingCardSmall (row: ListingRow) : ListingCardSmall {
         location: getLocation(row),
         category: row.kind,
         rating: toNumber(row.average_rating),
-        priceFrom: toNumber(row.base_price_kobo),
-        priceUnit: row.price_unit ?? 'per event',
+        priceFrom: koboToNaira(row.base_price_kobo),
+        priceUnit: row.price_unit ?? 'per day',
         primaryImage,
         capacity: row.capacity ?? null,                          
         hallTypes: (row.hall_types ?? []) as HallTypeBadge[],    
@@ -158,7 +165,7 @@ function mapPackage(pkg: any): ServicePackage {
     return {
         id: pkg.id,
         name: pkg.name,
-        price: toNumber(pkg.price),
+        price: koboToNaira(pkg.price),
         description: pkg.description ?? '',
         isPopular: Boolean(pkg.isPopular),
         sortOrder: pkg.sortOrder,
