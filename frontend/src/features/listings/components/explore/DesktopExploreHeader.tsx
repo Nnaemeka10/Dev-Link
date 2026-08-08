@@ -40,11 +40,13 @@ export function DesktopExploreHeader({ handleSearch, form, isPending, filter }: 
   
 
   const handleApplyFilters = (filters: FilterState) => {
-    const params = normalizeListingSearchParams({
+     const params = normalizeListingSearchParams({
       category: searchParams.get("category") || "halls",
       location: searchParams.get("location") || undefined,
       dateFrom: searchParams.get("dateFrom") || undefined,
       dateTo: searchParams.get("dateTo") || undefined,
+      capacity: searchParams.get("capacity") || undefined,    
+      role: searchParams.get("role") || undefined,               
       sort: searchParams.get("sort") || undefined,
       sortOrder: searchParams.get("sortOrder") || undefined,
     });
@@ -64,7 +66,7 @@ export function DesktopExploreHeader({ handleSearch, form, isPending, filter }: 
 
   return (
     <>
-      <header className="sticky top-0 z-30 border-b border-[#EDE4D8] bg-bg-primary/95 backdrop-blur flex-shrink-0">
+      <header className="sticky top-0 z-30 border-b border-[#EDE4D8] bg-bg-primary/95 backdrop-blur shrink-0">
         <div className="flex items-center gap-4 xl:gap-8 px-4 xl:px-8 py-4 xl:py-6 max-w-full">
           <DesktopSearchBar form={form} onSubmit={handleSearch} isPending={isPending} showShadow={true} />
 
@@ -72,7 +74,7 @@ export function DesktopExploreHeader({ handleSearch, form, isPending, filter }: 
             <button
               type="button"
               onClick={() => setIsFilterOpen(true)}
-              className="ml-auto inline-flex items-center gap-2 rounded-full bg-[#FFDFA7] px-4 py-2 xl:px-6 xl:py-3 text-xs xl:text-sm font-extrabold hover:brightness-95 transition-all flex-shrink-0"
+              className="ml-auto inline-flex items-center gap-2 rounded-full bg-[#FFDFA7] px-4 py-2 xl:px-6 xl:py-3 text-xs xl:text-sm font-extrabold hover:brightness-95 transition-all shrink-0"
             >
               <SlidersHorizontal className="h-3.5 w-3.5 xl:h-4 xl:w-4" />
               Filters
@@ -124,13 +126,13 @@ export function DesktopResultsHeader({count, locationLabel, listingType} : {coun
       <div>
         {listingType === "hall" && (
           <>
-            <h2 className="text-[1.5rem] xl:text-[2rem] font-extrabold tracking-[-0.02em]">Venues in {locationLabel}</h2>
+            <h2 className="text-heading-l xl:text-heading-xl font-extrabold tracking-[-0.02em]">Venues in {locationLabel}</h2>
             <p className="mt-1 text-base xl:text-lg text-[#555B7F]"> {count} {count === 1 ? "premium space" : "premium spaces"} found for your event</p>
           </>
         )}
         {listingType === "service" && (
           <>
-            <h2 className="text-[1.5rem] xl:text-[2rem] font-extrabold tracking-[-0.02em]">Services in {locationLabel}</h2>
+            <h2 className="text-heading-l xl:text-heading-xl font-extrabold tracking-[-0.02em]">Services in {locationLabel}</h2>
             <p className="mt-1 text-base xl:text-lg text-[#555B7F]"> {count} {count === 1 ? "premium service" : "premium services"} found for your event</p>
           </>
         )}

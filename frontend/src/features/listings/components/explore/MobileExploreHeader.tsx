@@ -52,9 +52,12 @@ export default function MobileExploreHeader({
       location: searchParams.get("location") || undefined,
       dateFrom: searchParams.get("dateFrom") || undefined,
       dateTo: searchParams.get("dateTo") || undefined,
+      capacity: searchParams.get("capacity") || undefined,      
+      role: searchParams.get("role") || undefined,               
       sort: searchParams.get("sort") || undefined,
       sortOrder: searchParams.get("sortOrder") || undefined,
     });
+
 
     router.push(buildListingsHref({
       ...params,

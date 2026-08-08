@@ -24,25 +24,27 @@ function formatDateLabel(date: Date) {
 
 export default function ExploreServices() {
   const searchParams = useSearchParams();
-   const location = searchParams.get("location") || undefined;
-    const dateFrom = searchParams.get("dateFrom") || undefined;
-    const dateTo = searchParams.get("dateTo") || undefined;
-    const sort = searchParams.get("sort") || undefined;
-    const sortOrder = searchParams.get("sortOrder") || undefined;
-    const priceMin = searchParams.get("priceMin") ? Number(searchParams.get("priceMin")) : undefined;
-    const priceMax = searchParams.get("priceMax") ? Number(searchParams.get("priceMax")) : undefined;
-    const capacityMin = searchParams.get("capacityMin") ? Number(searchParams.get("capacityMin")) : undefined;
-    const capacityMax = searchParams.get("capacityMax") ? Number(searchParams.get("capacityMax")) : undefined;
-    const minRating = searchParams.get("minRating") ? Number(searchParams.get("minRating")) : undefined;
-    const verified = searchParams.get("verified") === "true";
-    const venueTypes = searchParams.get("venueTypes")?.split(",").filter(Boolean);
-    const amenities = searchParams.get("amenities")?.split(",").filter(Boolean);
+  const location = searchParams.get("location") || undefined;
+  const dateFrom = searchParams.get("dateFrom") || undefined;
+  const dateTo = searchParams.get("dateTo") || undefined;
+  const sort = searchParams.get("sort") || undefined;
+  const sortOrder = searchParams.get("sortOrder") || undefined;
+  const priceMin = searchParams.get("priceMin") ? Number(searchParams.get("priceMin")) : undefined;
+  const priceMax = searchParams.get("priceMax") ? Number(searchParams.get("priceMax")) : undefined;
+  const capacityMin = searchParams.get("capacityMin") ? Number(searchParams.get("capacityMin")) : undefined;
+  const capacityMax = searchParams.get("capacityMax") ? Number(searchParams.get("capacityMax")) : undefined;
+  const minRating = searchParams.get("minRating") ? Number(searchParams.get("minRating")) : undefined;
+  const verified = searchParams.get("verified") === "true";
+  const venueTypes = searchParams.get("venueTypes")?.split(",").filter(Boolean);
+  const amenities = searchParams.get("amenities")?.split(",").filter(Boolean);
 
+  const role = searchParams.get("role") || undefined;
 
   // --- REAL DATA HOOK ---
   const { data, isPending, isError } = useExploreListings({
         kind: "service",
         location,
+        role,
         dateFrom,
         dateTo,
         sort,

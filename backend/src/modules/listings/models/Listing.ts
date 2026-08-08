@@ -186,19 +186,21 @@ function buildFilterParts(options: ListingPageOptions): QueryParts {
         )`);
     }
 
-    if (filters.dateFrom && filters.dateTo) {
-        const dateFrom = addValue(values, filters.dateFrom);
-        const dateTo = addValue(values, filters.dateTo);
-        clauses.push(`
-            NOT EXISTS (
-                SELECT 1
-                FROM listing_unavailable_dates lud
-                WHERE lud.listing_id = l.id
-                    AND lud.start_date <= ${dateTo}::date
-                    AND lud.end_date >= ${dateFrom}::date
-            )
-        `);
-    }
+    if (filters.dateFrom || filters.dateTo) {
+    const dateFrom = filters.dateFrom || filters.dateTo!;
+    const dateTo = filters.dateTo || filters.dateFrom!;
+    const fromParam = addValue(values, dateFrom);
+    const toParam = addValue(values, dateTo);
+    clauses.push(`
+        NOT EXISTS (
+            SELECT 1
+            FROM listing_unavailable_dates lud
+            WHERE lud.listing_id = l.id
+                AND lud.start_date <= ${toParam}::date
+                AND lud.end_date >= ${fromParam}::date
+        )
+    `);
+}
 
     addCursorClause(clauses, values, options.cursor, options.sort, options.sortDirection);
 
