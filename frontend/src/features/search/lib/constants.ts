@@ -3,10 +3,11 @@ export const SERVICE_CATEGORIES = [
   { id: "mc", label: "MC" },
   { id: "photographer", label: "Photographer" },
   { id: "videographer", label: "Videographer" },
-  { id: "planner", label: "Event Planner" },
-  { id: "makeup", label: "Make-up Artist" },
+  { id: "event-planner", label: "Event Planner" },    
+  { id: "makeup-artist", label: "Make-up Artist" },   
   { id: "ushers", label: "Ushers" },
   { id: "security", label: "Security" },
   { id: "car-rental", label: "Car Rental" },
   { id: "hall-decorator", label: "Hall Decorator" },
+  { id: "culinary", label: "Catering" },               
 ];

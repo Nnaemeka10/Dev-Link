@@ -192,8 +192,8 @@ async processDraftPayload(listingId: string, payload: any): Promise<void> {
             );
         }
 
-        // 2. Insert hall types (halls only)
-        if (category === 'hall' && details?.selectedTypeIds?.length) {
+        // 2. Insert hall types (halls and services)
+        if (details?.selectedTypeIds?.length) {
             // Clear existing, then insert fresh
             await client.query(`DELETE FROM listing_hall_types WHERE listing_id = $1`, [listingId]);
 

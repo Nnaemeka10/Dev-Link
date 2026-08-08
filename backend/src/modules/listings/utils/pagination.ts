@@ -46,7 +46,7 @@ export function parseSortDirection(value: string | undefined): SortDirection {
 
 export function parseSearchQuery(query: ListingSearchQuery) {
     const capacity = Number(query.capacity);
-     const capacityMin = Number(query.capacityMin);
+    const capacityMin = Number(query.capacityMin);
     const capacityMax = Number(query.capacityMax);
     const priceMin = Number(query.priceMin);
     const priceMax = Number(query.priceMax);
@@ -59,12 +59,13 @@ export function parseSearchQuery(query: ListingSearchQuery) {
         capacity: Number.isFinite(capacity) && capacity > 0 ? capacity : undefined,
         capacityMin: Number.isFinite(capacityMin) && capacityMin > 0 ? capacityMin : undefined,
         capacityMax: Number.isFinite(capacityMax) && capacityMax > 0 ? capacityMax : undefined,
-        priceMin: Number.isFinite(priceMin) && priceMin > 0 ? Math.round(priceMin * 100) : undefined, // Convert Naira to Kobo
+        priceMin: Number.isFinite(priceMin) && priceMin > 0 ? Math.round(priceMin * 100) : undefined,
         priceMax: Number.isFinite(priceMax) && priceMax > 0 ? Math.round(priceMax * 100) : undefined,
         minRating: Number.isFinite(minRating) && minRating > 0 ? minRating : undefined,
         verified: query.verified === 'true',
         venueTypes: query.venueTypes?.split(',').filter(Boolean),
         amenities: query.amenities?.split(',').filter(Boolean),
+        role: query.role?.trim() || undefined, 
         dateFrom: query.dateFrom,
         dateTo: query.dateTo,
     };

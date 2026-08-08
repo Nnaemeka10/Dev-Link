@@ -5,33 +5,28 @@ import SideNavBar from "@/components/layout/SideNavBar";
 import VendorMobileDock from "@/components/layout/VendorMobileDock";
 import VendorSideNavBar from "@/components/layout/VendorSideNavBar";
 import { useTheparam } from "@/hooks/useTheparam";
-import { useAuth } from "@/features/auth/useAuth"; // Adjust import path as needed
+import { useAuth } from "@/features/auth/useAuth";
 import { useChat } from "../hooks/useChat";
 import { ConversationList } from "../components/ConversationList";
 import { ChatWindow } from "../components/ChatWindow";
-import { useEffect, useMemo } from "react";
-import { useSearchParams } from "next/navigation";
+import { useMemo } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { ChatThread } from "../chat.types";
 
 export default function MessagesPage() {
   const { user } = useAuth(); 
   const searchParams = useSearchParams();
-  const initialConversationId = searchParams.get("conversationId");
-
+  const router = useRouter();
+  
+  // Derive active conversation directly from URL
+  const activeThreadId = searchParams.get("conversationId");
   
   const userId = user?.id ? Number(user.id) : undefined;
   
   const { 
-    conversations, activeThreadId, activeMessages, isLoadingThreads, 
-    isSending, handleSendMessage, handleTyping, typingStatus, setActiveThreadId 
-  } = useChat(userId);
-
-  useEffect(() => {
-    if (initialConversationId && !activeThreadId) {
-      setActiveThreadId(initialConversationId);
-    }
-  }, [initialConversationId, activeThreadId, setActiveThreadId]);
-
+    conversations, activeMessages, isLoadingThreads, 
+    isSending, handleSendMessage, handleTyping, typingStatus 
+  } = useChat(userId, activeThreadId);
 
   const path = useTheparam();
   
@@ -65,9 +60,15 @@ export default function MessagesPage() {
     return null;
   }, [conversations, activeThreadId, isLoadingThreads]);
 
-  // const onTyping = useCallback((isTyping: boolean) => {
-  //   // Typing logic is handled inside useChat, but we can expose emit here if needed
-  // }, []);
+  // Handle routing when a conversation is selected
+  const handleSelectConversation = (id: string) => {
+    router.push(`/messages?conversationId=${id}`);
+  };
+
+  // Handle routing when the back button is clicked
+  const handleBack = () => {
+    router.push(`/messages`);
+  };
 
   return (
     <>
@@ -83,13 +84,13 @@ export default function MessagesPage() {
               isSending={isSending}
               onSendMessage={handleSendMessage}
               onTyping={handleTyping}
-              onBack={() => setActiveThreadId(null)} 
+              onBack={handleBack} 
             />
           </div>
         ) : (
           <>
             <div className="flex-1 overflow-hidden">
-              <ConversationList conversations={conversations} activeId={activeThreadId} onSelect={setActiveThreadId} />
+              <ConversationList conversations={conversations} activeId={activeThreadId} onSelect={handleSelectConversation} />
             </div>
             <div className="pb-4">{dockMapping[path]}</div>
           </>
@@ -100,7 +101,7 @@ export default function MessagesPage() {
       <section className="hidden md:flex xl:hidden flex-col h-screen bg-white">
         <div className="flex flex-1 overflow-hidden">
           <aside className="w-80 shrink-0 border-r border-gray-100 overflow-y-auto">
-            <ConversationList conversations={conversations} activeId={activeThreadId} onSelect={setActiveThreadId} />
+            <ConversationList conversations={conversations} activeId={activeThreadId} onSelect={handleSelectConversation} />
           </aside>
           <main className="flex-1 overflow-hidden">
             <ChatWindow 
@@ -111,6 +112,7 @@ export default function MessagesPage() {
               isSending={isSending}
               onSendMessage={handleSendMessage}
               onTyping={handleTyping}
+              onBack={handleBack}
             />
           </main>
         </div>
@@ -123,7 +125,7 @@ export default function MessagesPage() {
         <div className="w-[85%] ml-[15%] flex h-screen">
           <div className="flex flex-1 overflow-hidden bg-white rounded-tl-2xl shadow-sm border border-gray-100">
             <aside className="w-80 shrink-0 border-r border-gray-100 overflow-y-auto">
-              <ConversationList conversations={conversations} activeId={activeThreadId} onSelect={setActiveThreadId} />
+              <ConversationList conversations={conversations} activeId={activeThreadId} onSelect={handleSelectConversation} />
             </aside>
             <main className="flex-1 overflow-hidden">
               <ChatWindow 

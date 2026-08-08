@@ -1,12 +1,11 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { fetchConversations, fetchMessages, uploadAttachment } from "../chat.api";
 import { useChatSocket } from "./useChatWebsocket";
 import { useCallback, useState } from "react";
 import type { ChatMessage, ChatAttachment, AttachmentType } from "../chat.types";
 
-export function useChat(userId: number | undefined) {
+export function useChat(userId: number | undefined, activeThreadId: string | null) {
   const queryClient = useQueryClient();
-  const [activeThreadId, setActiveThreadId] = useState<string | null>(null);
   const [typingUsers, setTypingUsers] = useState<Record<string, boolean>>({});
 
   // 1. Fetch Conversations
@@ -16,7 +15,7 @@ export function useChat(userId: number | undefined) {
     enabled: !!userId,
   });
 
-  // 2. Fetch Active Thread Messages
+ // 2. Fetch Active Thread Messages based on URL parameter
   const { data: activeMessages = [], isLoading: isLoadingMessages } = useQuery({
     queryKey: ["chat", "messages", activeThreadId],
     queryFn: () => activeThreadId ? fetchMessages(activeThreadId) : Promise.resolve([]),
@@ -64,7 +63,7 @@ export function useChat(userId: number | undefined) {
 
  
 
-   const [isSending, setIsSending] = useState(false);
+   const [isSending] = useState(false);
 
   const handleSendMessage = useCallback(
     async (content: string, files?: File[]) => {
@@ -150,14 +149,13 @@ export function useChat(userId: number | undefined) {
   [activeThreadId, emitTyping]
 );
 
-  return {
+   return {
     conversations,
     activeThreadId,
     activeMessages,
     isLoadingThreads,
     isLoadingMessages,
     isSending,
-    setActiveThreadId,
     handleSendMessage,
     handleTyping,
     typingStatus: activeThreadId ? typingUsers[activeThreadId] : false,

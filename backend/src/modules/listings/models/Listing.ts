@@ -177,7 +177,14 @@ function buildFilterParts(options: ListingPageOptions): QueryParts {
         )`);
         values.push(...filters.amenities);
     }
-    
+
+    if (filters.role) {
+        clauses.push(`EXISTS (
+            SELECT 1 FROM listing_hall_types lht
+            JOIN hall_type_dictionary htd ON htd.id = lht.type_id
+            WHERE lht.listing_id = l.id AND htd.id = ${addValue(values, filters.role)}
+        )`);
+    }
 
     if (filters.dateFrom && filters.dateTo) {
         const dateFrom = addValue(values, filters.dateFrom);

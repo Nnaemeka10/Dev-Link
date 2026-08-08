@@ -67,7 +67,7 @@ export interface ListingDetails extends ListingCard {
     features: any[];
     reviews: any[];
     serviceAreas: any[];
-    unavailableDates: { from: string; to: string }[];   // add this — was missing entirely
+    unavailableDates: { from: string; to: string }[];   
 }
 
 export interface ListingSearchQuery {
@@ -92,6 +92,7 @@ export interface ListingSearchQuery {
     limit?: string;
     page?: string;
     cursor?: string;
+    role?: string
 }
 
 export interface ListingRankInput {
@@ -198,6 +199,7 @@ export interface ListingFilters {
     verified?: boolean;
     venueTypes?: string[];
     amenities?: string[];
+    role?: string;
 }
 
 export interface ListingPageOptions {

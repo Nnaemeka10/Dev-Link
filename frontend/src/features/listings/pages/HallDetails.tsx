@@ -4,8 +4,6 @@
 import { MapPin, MessageSquare } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
-import { usePricingQuote } from "@/features/bookings/hooks/usePricingQuote";
-
 import BookingCard from "../components/details/BookingCard";
 import { DetailsActions, MobileDetailsHeader } from "../components/details/DetailsHeader";
 import { ListingBadge, RatingBadge, VerifiedVenueBadge } from "../components/details/DetailBadges";

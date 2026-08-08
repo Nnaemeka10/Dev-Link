@@ -96,9 +96,9 @@ export default function ServiceDetails() {
     <>
       <div className="flex items-start justify-between gap-8">
         <div>
-          <h1 className={variant === "mobile" ? "mt-4 text-[2rem] font-medium leading-tight text-[#252423]" : "text-[2rem] font-extrabold text-[#252423]"}>{listing.title}</h1>
+          <h1 className={variant === "mobile" ? "mt-4 text-heading-m font-medium leading-tight text-[#252423]" : "text-heading-xl font-extrabold text-[#252423]"}>{listing.title}</h1>
           <span className="flex gap-8"> 
-            <p className="mt-1 flex items-center gap-1 text-sm font-semibold text-[#5E6588]">
+            <p className="mt-1 flex items-center gap-1 md:text-sm text-tiny font-semibold text-[#5E6588]">
               <MapPin className="h-4 w-4" />
               {listing.location}
             </p>
@@ -118,7 +118,7 @@ export default function ServiceDetails() {
         )}
       </div>
 
-      <div className="mt-7 flex flex-wrap gap-3">
+      <div className="md:mt-7 mt-4 flex flex-wrap gap-3">
         {listing.badges.map((badge) => (
           <ListingBadge key={badge.id}>{badge.name}</ListingBadge>
         ))}
@@ -131,11 +131,11 @@ export default function ServiceDetails() {
               <Image src={provider.avatar} alt={provider.name} fill className="object-cover" />
             </div>
             <div>
-              <h2 className="flex items-center gap-2 text-xl font-bold">
+              <h2 className="flex items-center gap-2 md:text-xl text-heading-m font-bold">
                 {provider.name}
                 {provider.verified && <ShieldCheck className="h-5 w-5 text-green-600" />}
               </h2>
-              <p className="mt-1 text-sm text-[#5E6588]">
+              <p className="mt-1 md:text-sm text-tiny text-[#5E6588]">
                 Joined {provider.joined} • {provider.totalEvents} Events
               </p>
             </div>
@@ -144,10 +144,12 @@ export default function ServiceDetails() {
       </div>
 
       <div className={variant === "mobile" ? "mt-10" : "mt-12"}>
-        <h3 className="text-[1.35rem] font-extrabold text-[#252423]">About the Service</h3>
-        <p className="mt-4 text-[0.95rem] leading-[1.8] text-[#555B7F]">{listing.description}</p>
+        <h3 className="md:text-[1.35rem] text-base font-extrabold text-[#252423]">About the Service</h3>
+        <p className="mt-4 md:text-[0.95rem] text-tiny leading-[1.8] text-[#555B7F]">{listing.description}</p>
       </div>
 
+      { variant !== "mobile" && (
+      <>
       <div className="mt-12 border-t border-[#E8DDD2] pt-12">
         <h3 className="text-[1.35rem] font-extrabold text-[#252423]">Provider Requirements</h3>
         <div className="mt-6 space-y-4">
@@ -160,7 +162,9 @@ export default function ServiceDetails() {
         </div>
       </div>
       
-      <ReviewsSection metrics={listing.reviewMetrics} reviews={listing.reviews} rating={listing.rating} reviewCount={listing.reviewCount} variant={variant === "mobile" ? "mobile" : "desktop"} />
+      <ReviewsSection metrics={listing.reviewMetrics} reviews={listing.reviews} rating={listing.rating} reviewCount={listing.reviewCount} variant = "desktop" />
+      </>
+      )}
     </>
   );
 
@@ -188,7 +192,7 @@ export default function ServiceDetails() {
               <div className="mt-4 pt-4 border-t border-[#E8DDD2] space-y-3">
                 {pkg.features.map((feat, i) => (
                   <div key={i} className="flex gap-3 items-start">
-                    <Check className="w-5 h-5 text-[#B9401D] flex-shrink-0" />
+                    <Check className="w-5 h-5 text-[#B9401D] shrink-0" />
                     <span className="text-sm font-medium">{feat}</span>
                   </div>
                 ))}
@@ -223,7 +227,7 @@ export default function ServiceDetails() {
         <MobileHeroPhoto image={gallery[0] || "/placeholder.jpg"} name={listing.title} />
 
         <div className="relative z-10 -mt-12 px-5">
-          <section className="rounded-[2rem] bg-white p-7 shadow-[0_20px_38px_rgba(36,28,18,0.08)]">
+          <section className="rounded-4xl bg-white p-7 shadow-[0_20px_38px_rgba(36,28,18,0.08)]">
             <div className="flex flex-wrap items-center gap-3">
               {provider.verified && (
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-[#E5F5EC] px-3 py-1 text-[11px] font-extrabold uppercase tracking-widest text-[#0D6229]">
@@ -238,7 +242,31 @@ export default function ServiceDetails() {
         </div>
 
         <div className="px-5 pb-10 mt-10">
-          <h3 className="text-2xl font-bold mb-4">Packages</h3>
+          <div className="mt-12 border-t border-[#E8DDD2] pt-12">
+            <h3 className="text-base font-extrabold text-[#252423]">Provider Requirements</h3>
+            <div className="mt-6 space-y-4">
+              {listing.requirements.map((req, i) => (
+                <div key={i} className="flex items-start gap-4">
+                  <Info className="h-4 w-4 text-[#B9401D]" />
+                  <p className="text-small text-[#555B7F]">{req}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div className="px-0 pb-10 mt-10">
+        <ReviewsSection 
+            metrics={listing.reviewMetrics} 
+            reviews={listing.reviews} 
+            rating={listing.rating} 
+            reviewCount={listing.reviewCount} 
+            variant="mobile"
+          />
+        </div>
+
+        <div className="px-5 pb-10 mt-10">
+          <h3 className="text-heading-m font-bold mb-4">Packages</h3>
           <div className="space-y-4">
             {mappedPackages.map((pkg) => (
               <div 
@@ -249,15 +277,15 @@ export default function ServiceDetails() {
                 }`}
               >
                 <div className="flex justify-between items-center mb-2">
-                 <h4 className="font-bold text-lg">{pkg.name}</h4>
+                 <h4 className="font-bold text-base">{pkg.name}</h4>
                  {pkg.isPopular && <span className="bg-[#FFDFA7] text-[#B9401D] text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">Popular</span>}
                 </div>
-                <p className="text-2xl font-extrabold">{pkg.price}</p>
+                <p className="text-lg font-extrabold">{pkg.price}</p>
                 {selectedPackage === pkg.id && (
                   <div className="mt-4 pt-4 space-y-3 border-t border-[#E8DDD2]">
                     {pkg.features.map((feat, i) => (
-                      <div key={i} className="flex gap-3 text-sm font-medium">
-                        <Check className="w-5 h-5 text-[#B9401D] flex-shrink-0" /> {feat}
+                      <div key={i} className="flex gap-3 text-small font-medium">
+                        <Check className="w-5 h-5 text-[#B9401D] shrink-0" /> {feat}
                       </div>
                     ))}
                   </div>
@@ -270,15 +298,15 @@ export default function ServiceDetails() {
         <div className="px-5 pb-32">
           <button
             type="button"
-            className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#E8E4DC] px-6 py-4 text-base font-extrabold text-[#252423]"
+            className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#E8E4DC] px-6 py-4 text-small font-extrabold text-[#252423]"
           >
             <MessageSquare className="h-5 w-5" />
             Chat with Vendor
           </button>
         </div>
 
-        <div className="fixed bottom-[5.5rem] left-0 right-0 z-40 border-t border-[#E8DDD2] bg-white p-5 shadow-[0_-10px_30px_rgba(0,0,0,0.05)]">
-          <div className="flex items-center justify-between mx-auto max-w-[420px]">
+        <div className="fixed bottom-22 left-0 right-0 z-40 border-t border-[#E8DDD2] bg-white p-5 shadow-[0_-10px_30px_rgba(0,0,0,0.05)]">
+          <div className="flex items-center justify-between mx-auto max-w-105">
             <div>
               <p className="text-[1.3rem] font-extrabold text-[#252423]">{getPackage()?.price}</p>
               <p className="text-xs font-extrabold underline text-[#5E6588]">{getPackage()?.name}</p>
