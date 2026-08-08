@@ -112,16 +112,16 @@ export default function ExploreServices() {
           {isPending && (
               <div className="space-y-4">
                   {[...Array(3)].map((_, i) => (
-                      <div key={i} className="h-[24rem] animate-pulse rounded-[2rem] bg-text-primary/8" />
+                      <div key={i} className="h-96 animate-pulse rounded-4xl bg-text-primary/8" />
                   ))}
               </div>
             )}
             {isError && (
-              <p className="text-center text-sm font-medium text-[#5E6588]">Failed to load halls.</p>
+              <p className="text-center text-sm font-medium text-[#5E6588]">Failed to load services.</p>
             )}
             {!isPending && !isError && listings.length === 0 && (
               <div className="flex flex-col items-center py-20 text-center">
-                  <p className="text-lg font-bold text-[#2A2826]">No halls found</p>
+                  <p className="text-lg font-bold text-[#2A2826]">No Services found</p>
                   <p className="mt-1 text-sm text-[#5E6588]">Try adjusting your search filters.</p>
               </div>
             )}
@@ -145,19 +145,19 @@ export default function ExploreServices() {
                 <>
                 <div className="space-y-4">
                     {[...Array(3)].map((_, i) => (
-                        <div key={i} className="h-[24rem] animate-pulse rounded-[2rem] bg-text-primary/8" />
+                        <div key={i} className="h-96 animate-pulse rounded-4xl bg-text-primary/8" />
                     ))}
                 </div>
 
                 <div className="space-y-4">
                     {[...Array(3)].map((_, i) => (
-                        <div key={i} className="h-[24rem] animate-pulse rounded-[2rem] bg-text-primary/8" />
+                        <div key={i} className="h-96 animate-pulse rounded-4xl bg-text-primary/8" />
                     ))}
                 </div>
                 </>
               )}
               {isError && (
-                <p className="text-center text-sm font-medium text-[#5E6588]">Failed to load halls.</p>
+                <p className="text-center text-sm font-medium text-[#5E6588]">Failed to load services.</p>
               )}
               {!isPending && !isError && listings.length === 0 && (
                 <div className="flex flex-col items-center py-20 text-center">
@@ -190,29 +190,29 @@ export default function ExploreServices() {
                     <>
                     <div className="space-y-4">
                         {[...Array(3)].map((_, i) => (
-                            <div key={i} className="h-[24rem] animate-pulse rounded-[2rem] bg-text-primary/8" />
+                            <div key={i} className="h-96 animate-pulse rounded-4xl bg-text-primary/8" />
                         ))}
                     </div>
 
                     <div className="space-y-4">
                         {[...Array(3)].map((_, i) => (
-                            <div key={i} className="h-[24rem] animate-pulse rounded-[2rem] bg-text-primary/8" />
+                            <div key={i} className="h-96 animate-pulse rounded-4xl bg-text-primary/8" />
                         ))}
                     </div>
 
                     <div className="space-y-4">
                         {[...Array(3)].map((_, i) => (
-                            <div key={i} className="h-[24rem] animate-pulse rounded-[2rem] bg-text-primary/8" />
+                            <div key={i} className="h-96 animate-pulse rounded-4xl bg-text-primary/8" />
                         ))}
                     </div>
                     </>
                   )}
                   {isError && (
-                    <p className="text-center text-sm font-medium text-[#5E6588]">Failed to load halls.</p>
+                    <p className="text-center text-sm font-medium text-[#5E6588]">Failed to load services.</p>
                   )}
                   {!isPending && !isError && listings.length === 0 && (
                     <div className="flex flex-col items-center py-20 text-center">
-                        <p className="text-lg font-bold text-[#2A2826]">No halls found</p>
+                        <p className="text-lg font-bold text-[#2A2826]">No services found</p>
                         <p className="mt-1 text-sm text-[#5E6588]">Try adjusting your search filters.</p>
                     </div>
                   )}

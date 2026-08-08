@@ -61,7 +61,7 @@ export default function UserMenu() {
               referrerPolicy="no-referrer"
             />
           ) : (
-            <div className="flex h-7 w-7 items-center justify-center bg-gray-500 text-[10px] font-bold uppercase text-white">
+            <div className="flex h-7 w-7 items-center justify-center bg-gray-500 text-tiny font-bold uppercase text-white">
               {user?.firstName?.charAt(0) || "G"}
             </div>
           )}

@@ -47,7 +47,7 @@ export default function VendorMobileDock() {
             <Link
               key={item.id}
               href={item.href}
-              className={`flex flex-col items-center justify-center gap-1 rounded-[1.15rem] py-3 text-[10px] font-semibold uppercase tracking-[0.08em] ${
+              className={`flex flex-col items-center justify-center gap-1 rounded-[1.15rem] py-3 text-tiny font-semibold uppercase tracking-[0.08em] ${
                 isActive
                   ? "bg-[#FFF1DE] text-[#5A2A12] shadow-[inset_0_1px_0_rgba(255,255,255,0.6)]"
                   : "text-text-primary/45 hover:bg-[#F3EFE9]"
