@@ -11,9 +11,8 @@ import { apiFetch, ApiError } from "@/lib/api";
 import { usePricingQuote } from "../hooks/usePricingQuote";
 
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
-import { useEffect } from "react";
 import { getPaystack } from "@/lib/paystack";
 import { useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
@@ -128,11 +127,14 @@ export default function PaymentStep({ form, listing, wizard, variant = "desktop"
   };
 
 
-  const { data: quote } = usePricingQuote(listing.id, form.dateRange);
+  const { data: quote } = usePricingQuote(listing.id, form.dateRange, form.packageId);
   const days = quote?.days
-  const hireLabel = listing.kind === 'service' 
-  ? `Service Package (${days ?? '...'} ${days === 1 ? 'day' : 'days'})` 
-  : `Venue hire (${days ?? '...'} ${days === 1 ? 'day' : 'days'})`;
+  const selectedPackage = listing.packages?.find(p => p.id === form.packageId);
+  const hireLabel = selectedPackage 
+    ? `${selectedPackage.name} (${days ?? '...'} ${days === 1 ? 'day' : 'days'})` 
+    : (listing.kind === 'service' ? `Service fee (${days ?? '...'} ${days === 1 ? 'day' : 'days'})` 
+    : `Venue hire (${days ?? '...'} ${days === 1 ? 'day' : 'days'})`);
+
 
   // Unified summary object for both Mobile and Desktop
   const paymentSummary = {
@@ -142,7 +144,7 @@ export default function PaymentStep({ form, listing, wizard, variant = "desktop"
     eventName: "Event Booking",
     eventDateFrom: form.dateRange?.from?.toLocaleDateString() || "Invalid Date",
     eventDateto: form.dateRange?.to?.toLocaleDateString() ,
-    guests: `Up to ${listing.capacity} Guests`,
+    guests: listing.kind === 'service' ? undefined : `Up to ${listing.capacity} Guests`,
     verified: listing.autoApprove,
     fees: quote ? [
       { label: hireLabel, value: `₦${quote.subtotal.toLocaleString()}` },
@@ -151,8 +153,6 @@ export default function PaymentStep({ form, listing, wizard, variant = "desktop"
     total: quote ? `₦${quote.total.toLocaleString()}` : "Calculating...",
     totalNote: "Includes all taxes and fees",
   };
-
-  
 
   if (variant === "mobile") {
     return (

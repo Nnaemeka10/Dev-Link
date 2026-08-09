@@ -78,10 +78,10 @@ export async function uploadAttachment(file: File): Promise<{ url: string; mime_
   };
 }
 
-export async function createConversation(listingId: string): Promise<{ id: string }> {
+export async function createConversation(payload: { listingId?: string; bookingId?: string }): Promise<{ id: string }> {
   return apiFetch<{ id: string }>("/api/chat/conversations", {
     method: "POST",
-    body: JSON.stringify({ listingId }),
+    body: JSON.stringify(payload),
   });
 }
 

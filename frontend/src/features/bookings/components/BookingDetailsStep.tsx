@@ -3,7 +3,6 @@
 import Image from "next/image";
 import { Check, ChevronDown, MapPin } from "lucide-react";
 import type { BookingFormState } from "../booking.types";
-// import { EstimateSummary, VenueSelectionCard } from "./BookingSummary";
 import { DateTimeSection } from "./DateTimeSection";
 import { useRouter } from "next/navigation";
 import { ListingDetailsResponse } from "@/features/listings/details.types";
@@ -17,7 +16,6 @@ interface BookingDetailsStepProps {
   variant?: "desktop" | "mobile";
 }
 
-
 export default function BookingDetailsStep({ form, listing, onContinue, onUpdate, variant = "desktop" }: BookingDetailsStepProps) {
   const router = useRouter();
 
@@ -27,10 +25,10 @@ export default function BookingDetailsStep({ form, listing, onContinue, onUpdate
   const { data: quote, isLoading: isQuoteLoading } = usePricingQuote(listing.id, form.dateRange, form.packageId);
 
   const hasDates = !!(form.dateRange?.from && form.dateRange?.to);
-  
+  const hireLabel = listing.kind === 'service' ? 'Service fee' : 'Venue hire';
+  const selectedPackage = listing.packages?.find(p => p.id === form.packageId);
   
   if (variant === "mobile") {
-    
     return (
       <section className="px-6 pb-28 mb-64">
         <article className="flex items-center gap-5 rounded-4xl bg-white p-5 shadow-[0_18px_40px_rgba(34,27,18,0.08)]">
@@ -57,7 +55,41 @@ export default function BookingDetailsStep({ form, listing, onContinue, onUpdate
           unavailableDates={listing.unavailableDates || []}
           listingId={listing.id}
         />
-       
+        
+        {listing.kind === 'service' && listing.packages && listing.packages.length > 0 && (
+          <div className="mt-9 rounded-4xl bg-[#F4F1EA] p-6">
+            <h2 className="text-heading-m font-medium text-[#252423] mb-4">Select Package</h2>
+            <div className="space-y-4">
+              {listing.packages.map((pkg) => (
+                <div 
+                  key={pkg.id} 
+                  onClick={() => onUpdate({ packageId: pkg.id })}
+                  className={`cursor-pointer rounded-2xl border-2 p-5 transition-all ${
+                    form.packageId === pkg.id ? "border-[#252423] bg-white" : "border-[#E8DDD2] bg-white hover:border-[#252423]"
+                  }`}
+                >
+                  <div className="flex justify-between items-center mb-2">
+                    <h4 className="font-bold text-base">{pkg.name}</h4>
+                    {pkg.isPopular && <span className="bg-[#FFDFA7] text-[#B9401D] text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">Popular</span>}
+                  </div>
+                  <p className="text-lg font-extrabold">₦{pkg.price.toLocaleString()}</p>
+                  <p className="text-sm text-[#5E6588] mt-2">{pkg.description || ""}</p>
+                  
+                  {form.packageId === pkg.id && (
+                    <div className="mt-4 pt-4 border-t border-[#E8DDD2] space-y-3">
+                      {pkg.features.map((feat, i) => (
+                        <div key={i} className="flex gap-3 items-start">
+                          <Check className="w-5 h-5 text-[#B9401D] shrink-0" />
+                          <span className="text-sm font-medium">{feat.text}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         <div className="mt-9 rounded-4xl bg-[#F4F1EA] p-6">
           <h2 className="md:text-2xl text-heading-m font-medium text-[#252423]">Estimated Cost</h2>
@@ -71,8 +103,14 @@ export default function BookingDetailsStep({ form, listing, onContinue, onUpdate
                   </div>
                 ) : quote ? (
                   <>
+                    {selectedPackage && (
+                      <div className="flex justify-between gap-8 text-small md:text-base">
+                        <span className="text-[#6B5F57]">Selected Package</span>
+                        <strong className="text-right">{selectedPackage.name}</strong>
+                      </div>
+                    )}
                     <div className="flex justify-between gap-8 md:text-base text-small">
-                      <span className="text-[#6B5F57]">Venue hire ({quote.days} {quote.days === 1 ? 'day' : 'days'})</span>
+                      <span className="text-[#6B5F57]">{hireLabel} ({quote.days} {quote.days === 1 ? 'day' : 'days'})</span>
                       <strong>₦{quote.subtotal.toLocaleString()}</strong>
                     </div>
                     <div className="flex justify-between gap-8 text-small md:text-base text-[#555B7F]">
@@ -89,7 +127,6 @@ export default function BookingDetailsStep({ form, listing, onContinue, onUpdate
                    {quote && <strong className="text-base md:text-3xl font-extrabold text-[#B9401D]">₦{quote.total.toLocaleString()}</strong>}
                 </div>
                   <p className="text-micro font-extrabold uppercase tracking-[0.16em] text-[#7B7E9B]">Final amount calculated at checkout</p>
-               
               </div>
             </>
           ) : (
@@ -156,7 +193,7 @@ export default function BookingDetailsStep({ form, listing, onContinue, onUpdate
                     <div className="mt-4 pt-4 border-t border-[#E8DDD2] space-y-3">
                       {pkg.features.map((feat, i) => (
                         <div key={i} className="flex gap-3 items-start">
-                          <Check className="w-5 h-5 text-[#B9401D] flex-shrink-0" />
+                          <Check className="w-5 h-5 text-[#B9401D] shrink-0" />
                           <span className="text-sm font-medium">{feat.text}</span>
                         </div>
                       ))}
@@ -179,8 +216,14 @@ export default function BookingDetailsStep({ form, listing, onContinue, onUpdate
                   </div>
                 ) : quote ? (
                   <>
+                    {selectedPackage && (
+                      <div className="flex justify-between gap-8 text-base">
+                        <span className="text-[#6B5F57]">Selected Package</span>
+                        <strong className="text-right">{selectedPackage.name}</strong>
+                      </div>
+                    )}
                     <div className="flex justify-between gap-8 text-base">
-                      <span className="text-[#6B5F57]">Venue hire ({quote.days} {quote.days === 1 ? 'day' : 'days'})</span>
+                      <span className="text-[#6B5F57]">{hireLabel} ({quote.days} {quote.days === 1 ? 'day' : 'days'})</span>
                       <strong>₦{quote.subtotal.toLocaleString()}</strong>
                     </div>
                     <div className="flex justify-between gap-8 text-base text-[#555B7F]">
@@ -213,7 +256,6 @@ export default function BookingDetailsStep({ form, listing, onContinue, onUpdate
           <p className="mt-4 text-sm leading-6 text-[#6B5F57]">By proceeding, you agree to venue house rules and deposit terms.</p>
         </details>
       </div>
-      {/* <EstimateSummary onContinue={onContinue} /> */}
     </section>
   );
 }

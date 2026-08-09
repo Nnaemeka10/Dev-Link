@@ -56,4 +56,6 @@ export interface BookingDetailsResponse {
     vendor_phone: string | null;
     vendor_email: string | null;
     auto_approve: boolean;
+    package_id: string | null; 
+    package_name: string | null;
 }

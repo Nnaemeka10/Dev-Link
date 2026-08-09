@@ -23,7 +23,7 @@ interface BookingSummary {
   eventName: string;       // e.g. "Corporate Dinner"
   eventDateFrom?: string;
   eventDateTo?: string;       // e.g. "December 24, 2024"
-  guests: string;          // e.g. "350 Attendees"
+  guests?: string;          // e.g. "350 Attendees"
   verified: boolean;
   fees: Fee[];
   total: string;           // formatted e.g. "₦495,000"
@@ -95,7 +95,7 @@ function SummarySheet({
               className="object-cover brightness-75"
             />
             {summary.verified && (
-              <span className="absolute left-3 top-3 flex items-center gap-1 rounded-full bg-white/90 px-2.5 py-1 text-[10px] font-extrabold text-[#B9401D] backdrop-blur-sm">
+              <span className="absolute left-3 top-3 flex items-center gap-1 rounded-full bg-white/90 px-2.5 py-1 text-tiny font-extrabold text-[#B9401D] backdrop-blur-sm">
                 <BadgeCheck className="h-3 w-3" />
                 Verified
               </span>
@@ -118,38 +118,35 @@ function SummarySheet({
               <BadgeCheck className="h-4 w-4" />
             </div>
             <div>
-              <p className="text-micro font-extrabold uppercase tracking-widest text-[#9A9AAE]">
-                Event
-              </p>
+              <p className="text-micro font-extrabold uppercase tracking-widest text-[#9A9AAE]">Event</p>
               <p className="md:text-sm text-micro font-extrabold text-[#252423]">{summary.eventName}</p>
             </div>
           </div>
 
           {/* Date */}
-          <div className="col-span-3 flex items-center gap-2.5 rounded-2xl bg-[#F4F1EA] px-4 py-1">
+          <div className={`${summary.guests ? 'col-span-3' : 'col-span-5'} flex items-center gap-2.5 rounded-2xl bg-[#F4F1EA] px-4 py-1`}>
             <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-white text-[#B9401D] shadow-sm">
               <CalendarDays className="h-4 w-4" />
             </div>
             <div>
-              <p className="text-tiny font-extrabold uppercase tracking-widest text-[#9A9AAE]">
-                Date
-              </p>
+              <p className="text-tiny font-extrabold uppercase tracking-widest text-[#9A9AAE]">Date</p>
               <p className="md:text-sm text-micro font-extrabold text-[#252423]">{summary.eventDateFrom} - {summary.eventDateTo}</p>
             </div>
           </div>
 
+
           {/* Guests */}
-          <div className="flex items-center gap-2 rounded-2xl bg-[#F4F1EA] py-3 px-1 col-span-2">
-            <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-xl bg-white text-[#B9401D] shadow-sm">
-              <Users className="h-3 w-3" />
+          {summary.guests && (
+            <div className="flex items-center gap-2 rounded-2xl bg-[#F4F1EA] py-3 px-1 col-span-2">
+              <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-xl bg-white text-[#B9401D] shadow-sm">
+                <Users className="h-3 w-3" />
+              </div>
+              <div>
+                <p className="text-tiny font-extrabold uppercase tracking-widest text-[#9A9AAE]">Capacity</p>
+                <p className="text-micro font-extrabold text-[#252423]">{summary.guests}</p>
+              </div>
             </div>
-            <div>
-              <p className="text-tiny font-extrabold uppercase tracking-widest text-[#9A9AAE]">
-                Capacity
-              </p>
-              <p className="text-micro font-extrabold text-[#252423]">{summary.guests}</p>
-            </div>
-          </div>
+          )}
         </div>
 
         {/* ── Price breakdown ────────────────────────────────────────────── */}
@@ -177,7 +174,7 @@ function SummarySheet({
             </strong>
           </div>
           {summary.totalNote && (
-            <p className="mt-1 text-right text-[10px] text-[#9A756C]">
+            <p className="mt-1 text-right text-tiny text-[#9A756C]">
               {summary.totalNote}
             </p>
           )}
@@ -223,7 +220,7 @@ export function MobilePaymentDock({ summary, onPay, isProcessing }: MobilePaymen
             className="flex min-w-0 flex-col items-start gap-0.5 text-left"
           >
             {/* Venue name — truncated */}
-            <span className="flex items-center gap-1.5 text-small font-extrabold uppercase tracking-[0.1em] text-[#555B7F]">
+            <span className="flex items-center gap-1.5 text-small font-extrabold uppercase tracking-widest text-[#555B7F]">
               <span className="max-w-45 truncate">{summary.venueName}</span>
               <ChevronUp className="h-3 w-3 shrink-0 text-[#B9401D]" />
             </span>
@@ -276,7 +273,7 @@ export function MobilePaymentDock({ summary, onPay, isProcessing }: MobilePaymen
                 animate="visible"
                 exit="hidden"
                 transition={sheetTransition}
-                className="fixed inset-x-0 bottom-0 z-50 overflow-hidden rounded-t-[2rem] bg-white shadow-[0_-8px_48px_rgba(36,28,18,0.18)]"
+                className="fixed inset-x-0 bottom-0 z-50 overflow-hidden rounded-t-4xl bg-white shadow-[0_-8px_48px_rgba(36,28,18,0.18)]"
                 style={{ maxHeight: "92dvh" }}
                 onClick={(e) => e.stopPropagation()}
               >

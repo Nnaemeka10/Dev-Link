@@ -285,13 +285,11 @@ export const BookingModel = {
         
         // 1. Fetch listing base price
         const listingRes = await db.query(
-            `SELECT base_price_kobo FROM listings WHERE id = $1 AND status = 'published'`,
+            `SELECT base_price_kobo, kind FROM listings WHERE id = $1 AND status = 'published'`,
             [listingId]
         );
         
-        if (listingRes.rows.length === 0) {
-            throw new Error('Listing not found');
-        }
+        if (listingRes.rows.length === 0) throw new Error('Listing not found');
 
         const listing = listingRes.rows[0];
         const cleanStart = startDate.split('T')[0];

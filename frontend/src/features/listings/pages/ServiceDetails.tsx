@@ -19,6 +19,7 @@ import { useParams } from "next/navigation";
 import { useListingDetails } from "../hooks/useListingDetails";
 import { useRouter } from "next/navigation";
 import { BOOKING_STORAGE_KEY } from "@/features/bookings/booking.data";
+import { createConversation } from "@/features/chat/chat.api";
 
 export default function ServiceDetails() {
   const form = useSearchForm();
@@ -26,7 +27,20 @@ export default function ServiceDetails() {
   const id = params.id as string;
   const router = useRouter();
 
+
+  
+
   const { data: listing, isLoading, isError } = useListingDetails(id);
+
+  const handleChatWithVendor = async () => {
+    if (!listing) return;
+    try {
+      const res = await createConversation({ listingId: listing.id });
+      router.push(`/messages?conversationId=${res.id}`);
+    } catch (error) {
+      console.error("Failed to start chat", error);
+    }
+  };
   
   // Fallback default package safely
   const [selectedPackage, setSelectedPackage] = useState<string>("");
@@ -242,7 +256,9 @@ export default function ServiceDetails() {
         className="w-full rounded-full bg-[#B9401D] px-6 py-4 text-sm font-extrabold text-white transition hover:brightness-95">
         Request to Book
       </button>
-      <button className="mt-4 flex w-full items-center justify-center gap-2 rounded-full bg-[#E8E4DC] px-6 py-4 text-sm font-extrabold text-[#252423]">
+      <button 
+        onClick={handleChatWithVendor}
+        className="mt-4 flex w-full items-center justify-center gap-2 rounded-full bg-[#E8E4DC] px-6 py-4 text-sm font-extrabold text-[#252423]">
         <MessageSquare className="h-4 w-4" />
         Contact Vendor
       </button>
@@ -332,6 +348,7 @@ export default function ServiceDetails() {
 
         <div className="px-5 pb-32">
           <button
+            onClick={handleChatWithVendor}
             type="button"
             className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#E8E4DC] px-6 py-4 text-small font-extrabold text-[#252423]"
           >

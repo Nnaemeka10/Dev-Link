@@ -9,7 +9,7 @@ interface SummaryData {
   eventName: string;       // e.g. "Corporate Dinner"
   eventDateFrom?: string;
   eventDateTo?: string;       // e.g. "December 24, 2024"
-  guests: string;          // e.g. "350 Attendees"
+  guests?: string;          // e.g. "350 Attendees" (Optional now)
   verified: boolean;
   fees: Fee[];
   total: string;           // formatted e.g. "₦495,000"
@@ -63,15 +63,18 @@ export function PaymentSummary({ summary, onPay, isProcessing }: { summary: Summ
       </div>
       
       <div className="p-8">
-        <div className="grid lg:grid-cols-2 grid-cols-1 gap-8 border-b border-[#E8DED2] pb-7">
-          <div>
+        {/* FIX: Conditionally render grid based on whether guests exists */}
+        <div className={`grid gap-8 border-b border-[#E8DED2] pb-7 ${summary.guests ? 'lg:grid-cols-2 grid-cols-1' : 'grid-cols-1'}`}>
+          <div className={summary.guests ? '' : 'lg:col-span-2'}>
             <p className="text-xs font-extrabold uppercase tracking-[0.14em] text-[#555B7F]">Event Date</p>
             <p className="mt-2 font-extrabold">{summary.eventDateFrom} - {summary.eventDateTo}</p>
           </div>
-          <div className="text-right">
-            <p className="text-xs font-extrabold uppercase tracking-[0.14em] text-[#555B7F]">Guests</p>
-            <p className="mt-2 font-extrabold">{summary.guests}</p>
-          </div>
+          {summary.guests && (
+            <div className="text-right">
+              <p className="text-xs font-extrabold uppercase tracking-[0.14em] text-[#555B7F]">Guests</p>
+              <p className="mt-2 font-extrabold">{summary.guests}</p>
+            </div>
+          )}
         </div>
 
         <div className="mt-7 space-y-4">

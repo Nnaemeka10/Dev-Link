@@ -96,7 +96,7 @@ function MobileDetailsView({ booking, listing, similarVenues }: { booking: Retur
 
 const handleChatWithVendor = async () => {
   try {
-    const res = await createConversation(listing.id);
+    const res = await createConversation({ listingId: listing.id });
     router.push(`/messages?conversationId=${res.id}`);
   } catch (error) {
     console.error("Failed to start chat", error);

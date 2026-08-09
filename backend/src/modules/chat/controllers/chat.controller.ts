@@ -121,20 +121,48 @@ export const createConversation = async (req: Request, res: Response) => {
   try {
     if (!req.user?.userId) return res.status(401).json({ message: 'Unauthorized' });
 
-    const { listingId } = req.body;
-    if (!listingId) return res.status(400).json({ message: 'Listing ID is required' });
+    const { listingId, bookingId } = req.body;
+    let conversationId: string = "";
+     const db = getDB();
 
-    // Fetch listing to get the vendor_id
-    const db = getDB();
-    const listingRes = await db.query('SELECT vendor_id FROM listings WHERE id = $1 AND status = \'published\'', [listingId]);
-    if (listingRes.rows.length === 0) return res.status(404).json({ message: 'Listing not found' });
+    if (bookingId) {
+      // 1. Check if a conversation already exists for this booking
+      const existing = await db.query(
+        `SELECT c.id FROM conversations c
+         JOIN conversation_context ctx ON ctx.conversation_id = c.id
+         WHERE ctx.booking_id = $1 AND ctx.type = 'booking'`,
+        [bookingId]
+      );
 
-    const vendorId = listingRes.rows[0].vendor_id;
-    if (vendorId === req.user.userId) return res.status(400).json({ message: 'Cannot chat with yourself' });
+      if (existing.rows.length > 0) {
+        conversationId = existing.rows[0].id;
+      } else {
+        // 2. Fallback: If somehow it doesn't exist, create it using the booking's listing_id
+        const bookingRes = await db.query('SELECT listing_id FROM bookings WHERE id = $1', [bookingId]);
+        if (bookingRes.rows.length === 0) return res.status(404).json({ message: 'Booking not found' });
+        
+        const listingIdFromBooking = bookingRes.rows[0].listing_id;
+        const listingRes = await db.query('SELECT vendor_id FROM listings WHERE id = $1', [listingIdFromBooking]);
+        if (listingRes.rows.length === 0) return res.status(404).json({ message: 'Listing not found' });
 
-    // Find or create conversation
-    const conversationId = await ChatModel.findOrCreateDirectConversation(req.user.userId, vendorId, 'listing', listingId);
-    
+        const vendorId = listingRes.rows[0].vendor_id;
+        if (vendorId === req.user.userId) return res.status(400).json({ message: 'Cannot chat with yourself' });
+
+        conversationId = await ChatModel.findOrCreateDirectConversation(req.user.userId, vendorId, 'booking', bookingId);
+      }
+    } else if (listingId) {
+      // Standard listing inquiry flow
+      const listingRes = await db.query('SELECT vendor_id FROM listings WHERE id = $1 AND status = \'published\'', [listingId]);
+      if (listingRes.rows.length === 0) return res.status(404).json({ message: 'Listing not found' });
+
+      const vendorId = listingRes.rows[0].vendor_id;
+      if (vendorId === req.user.userId) return res.status(400).json({ message: 'Cannot chat with yourself' });
+
+      conversationId = await ChatModel.findOrCreateDirectConversation(req.user.userId, vendorId, 'listing', listingId);
+    } else {
+      return res.status(400).json({ message: 'Listing ID or Booking ID is required' });
+    }
+
     res.status(200).json({ id: conversationId });
   } catch (error: any) {
     console.error('Create conversation error:', error);

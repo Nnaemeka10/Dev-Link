@@ -2,10 +2,10 @@
 
 import Image from "next/image";
 import { Building, CalendarDays, Check, Clock, FileText, Mail, MapPin, MessageSquare, Phone, UsersRound } from "lucide-react";
-import { createConversation } from "@/features/chat/chat.api";
 import { useRouter } from "next/navigation";
 
 import type { useBookingWizard } from "../hooks/useBookingWizard";
+import { createConversation } from "@/features/chat/chat.api";
 
 interface ConfirmationStepProps {
   wizard: ReturnType<typeof useBookingWizard>;
@@ -28,17 +28,21 @@ export default function ConfirmationStep({wizard, variant = "desktop" }: Confirm
   const router = useRouter();
 
   const handleChatWithVendor = async () => {
-  if (!booking) return;
-  try {
-    // The booking conversation was already created by the backend during markAsPaid.
-    // We just need to find it. We can use the createConversation endpoint 
-    // which is idempotent, but we need to pass the bookingId.
-    // For simplicity, we'll just push them to the chat inbox, and the conversation will be at the top.
-    router.push(`/messages`);
-  } catch (error) {
-    console.error("Failed to open chat", error);
-  }
-};
+    if (!booking) return;
+    try {
+      // Pass the bookingId to retrieve the existing conversation
+      const res = await createConversation({ bookingId: booking.id });
+      router.push(`/messages?conversationId=${res.id}`);
+    } catch (error) {
+      console.error("Failed to start chat", error);
+      // Fallback to inbox if something fails
+      router.push(`/messages`);
+    }
+  };
+
+
+
+
 
   if (wizard.isBookingLoading || !booking) {
     return <div className="min-h-screen flex items-center justify-center">Loading confirmation...</div>;
@@ -72,6 +76,7 @@ export default function ConfirmationStep({wizard, variant = "desktop" }: Confirm
           <p className="text-small font-extrabold uppercase tracking-[0.14em] text-[#555B7F]">Event Summary</p>
           <div className="mt-6 space-y-6">
             <SummaryRow icon={Building} label="Venue" value={`${booking.listing_title}`} />
+            {booking.package_name && <SummaryRow icon={Check} label="Package" value={booking.package_name} />}
             <SummaryRow icon={MapPin} label="Location" value={booking.listing_location} />
              <SummaryRow icon={CalendarDays} label="Date & Time" value={`${eventDate} : ${eventTime}`} />
             <SummaryRow icon={UsersRound} label="Capacity" value={`Up to ${booking.listing_capacity || 'N/A'} Guests`} />
@@ -131,6 +136,7 @@ export default function ConfirmationStep({wizard, variant = "desktop" }: Confirm
             <div className="mt-10 grid gap-8 md:grid-cols-2">
               <SummaryText label="Date" value={eventDate} />
               <SummaryText label="Time" value={eventTime} />
+              {booking.package_name && <SummaryText label="Package" value={booking.package_name} />}
               <SummaryText label="Capacity" value={`Up to ${booking.listing_capacity || 'N/A'} Guests`} />
               <SummaryText label="Total Paid" value={`₦${totalAmount}`} />
               <SummaryText label="Status" value={bookingStatus} badge />
@@ -146,7 +152,6 @@ export default function ConfirmationStep({wizard, variant = "desktop" }: Confirm
           <h2 className="text-xl font-medium">Vendor Contact</h2>
            <p className="mt-8 text-sm text-[#6B5F57]">You can message the vendor directly regarding your event specifics.</p>
 
-         
           <div className="mt-8 flex items-center gap-4">
             <span className="inline-flex h-16 w-16 items-center justify-center rounded-full bg-white text-2xl">{vendorName.charAt(0).toUpperCase()}</span>
             <div>
@@ -155,9 +160,7 @@ export default function ConfirmationStep({wizard, variant = "desktop" }: Confirm
             </div>
           </div> 
           {booking.vendor_email && <p className="mt-8 flex items-center gap-3 text-sm text-[#6B5F57]"><Mail className="h-4 w-4 text-[#B9401D]" /> {booking.vendor_email}</p>}
-          {booking.vendor_phone && <p className="mt-5 flex items-center gap-3 text-sm text-[#6B5F57]"><Phone className="h-4 w-4 text-[#B9401D]" /> {booking.vendor_phone}</p>}
-
-          
+          {booking.vendor_phone && <p className="mt-5 flex items-center gap-3 text-sm text-[#6B5F57]"><Phone className="h-4 w-4 text-[#B9401D]" /> {booking.vendor_phone}</p>} 
           <button type="button" className="mt-9 inline-flex w-full items-center justify-center gap-2 rounded-full bg-white px-6 py-4 font-extrabold text-[#B9401D]" onClick={() => handleChatWithVendor()}>
             <MessageSquare className="h-4 w-4" />
             Chat with Vendor
