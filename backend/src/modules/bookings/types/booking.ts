@@ -16,6 +16,7 @@ export interface BookingRow {
     payment_provider: string;
     payment_status: string;
     paid_at: string | null;
+    package_id: string | null;
 }
 
 export interface CreateBookingInput {
@@ -45,4 +46,5 @@ export interface BookingDetailsResponse extends BookingRow {
     vendor_phone: string | null;
     vendor_email: string | null;
     auto_approve: boolean;
+    package_name: string | null;
 }

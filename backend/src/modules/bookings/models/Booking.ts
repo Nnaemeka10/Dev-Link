@@ -118,9 +118,9 @@ export const BookingModel = {
         const result = await db.query<BookingRow>(
             `INSERT INTO bookings (
                 listing_id, user_id, start_date, end_date, status, total_amount, 
-                booking_reference, start_time, end_time, expires_at, currency, platform_fee, dispute_window_closes_at
+                booking_reference, start_time, end_time, expires_at, currency, platform_fee, dispute_window_closes_at, package_id
             ) 
-            VALUES ($1, $2, $3, $4, 'pending', $5, $6, $7, $8, $9, $10, $11, $12) 
+            VALUES ($1, $2, $3, $4, 'pending', $5, $6, $7, $8, $9, $10, $11, $12, $13) 
             RETURNING *`,
             [
                 listingId, 
@@ -136,7 +136,8 @@ export const BookingModel = {
                 currency,
                 // guestCount,
                 platformFee,
-                disputeWindowClosesAt
+                disputeWindowClosesAt,
+                packageId || null
             ]
         );
 
@@ -160,6 +161,7 @@ export const BookingModel = {
                 l.state as listing_state,
                 l.capacity as listing_capacity,
                 l.auto_approve,
+                sp.name as package_name,
                 (
                     SELECT la.url FROM listing_assets la 
                     WHERE la.listing_id = l.id AND la.is_primary = true 
@@ -172,6 +174,7 @@ export const BookingModel = {
              FROM bookings b
              JOIN listings l ON b.listing_id = l.id
              JOIN users u ON l.vendor_id = u.id
+             LEFT JOIN service_packages sp ON b.package_id = sp.id
              WHERE b.id = $1`,
             [id]
         );

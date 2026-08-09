@@ -18,6 +18,7 @@ interface MobileBookingDockProps {
   dateRange: DateRange | undefined;
   onDateChange: (range: DateRange | undefined) => void;
   onBook: () => void;
+  packageId?: string
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -131,6 +132,7 @@ interface PriceDetailSheetProps {
   onClose: () => void;
   onBook: () => void;
   booked: boolean;
+  packageId?: string;
 }
 
 function PriceDetailSheet({
@@ -142,8 +144,9 @@ function PriceDetailSheet({
   onClose,
   onBook,
   booked,
+  packageId,
 }: PriceDetailSheetProps) {
-   const { data: quote, isLoading: isQuoteLoading } = usePricingQuote(listingId, dateRange);
+   const { data: quote, isLoading: isQuoteLoading } = usePricingQuote(listingId, dateRange, packageId);
   const days   = dateRange?.from && dateRange?.to
     ? daysBetween(dateRange.from, dateRange.to)
     : 1;
@@ -173,7 +176,7 @@ function PriceDetailSheet({
         <div className="flex items-center gap-2.5">
           <Calendar className="h-4 w-4 shrink-0 text-[#B9401D]" />
           <div>
-            <p className="text-[10px] font-extrabold uppercase tracking-widest text-[#9A9AAE]">
+            <p className="text-tiny font-extrabold uppercase tracking-widest text-[#9A9AAE]">
               Dates
             </p>
             <p className="text-sm font-semibold text-[#252423]">
@@ -194,7 +197,6 @@ function PriceDetailSheet({
         </button>
       </div>
 
-  
       {/* Breakdown */}
       <div className="flex-1 space-y-4 overflow-y-auto px-5">
         {isQuoteLoading ? (
@@ -257,6 +259,7 @@ export function MobileBookingDock({
   dateRange,
   onDateChange,
   onBook,
+  packageId,
 }: MobileBookingDockProps) {
   const [sheet, setSheet] = useState<Sheet>("none");
 
@@ -315,7 +318,7 @@ export function MobileBookingDock({
   return (
     <>
       {/* ── Dock bar (always visible) ─────────────────────────────────────── */}
-      <div className="fixed inset-x-0 bottom-20 z-40 rounded-t-[2rem] border-t border-[#EFE8DE] bg-white px-5 py-4 shadow-[0_-8px_32px_rgba(36,28,18,0.10)]">
+      <div className="fixed inset-x-0 bottom-20 z-40 rounded-t-4xl border-t border-[#EFE8DE] bg-white px-5 py-4 shadow-[0_-8px_32px_rgba(36,28,18,0.10)]">
         <div className="flex items-center justify-between gap-4">
 
           {/* Price + duration — tappable, opens price detail sheet */}
@@ -398,6 +401,7 @@ export function MobileBookingDock({
                     onClose={closeSheet}
                     onBook={onBook}
                     booked={booked}
+                    packageId={packageId}
                   />
                 )}
 

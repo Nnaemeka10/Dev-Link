@@ -129,10 +129,10 @@ function SavedCard({ listing, index, onRemove }: CardProps) {
           </div>
         </div>
 
-        <div className="absolute inset-x-0 bottom-0 flex items-center justify-between bg-gradient-to-t from-black/60 to-transparent p-3 md:hidden">
+        <div className="absolute inset-x-0 bottom-0 flex items-center justify-between bg-linear-to-t from-black/60 to-transparent p-3 md:hidden">
           <Link
             href={`/listings/${listing.category}/${listing.id}`}
-            className="flex items-center gap-1 rounded-full bg-white/90 px-4 py-2 text-xs font-extrabold text-[#1a1f3c] backdrop-blur-sm"
+            className="flex items-center gap-1 rounded-full bg-white/90 px-4 py-2 text-xs font-extrabold text-text-primary backdrop-blur-sm"
           >
             View
             <ArrowRight className="h-3 w-3" />
@@ -152,24 +152,24 @@ function SavedCard({ listing, index, onRemove }: CardProps) {
         <div className="flex items-start justify-between gap-2">
           <Link
             href={`/listings/${listing.category}/${listing.id}`}
-            className="flex-1 text-base font-bold leading-snug text-[#1a1f3c] hover:text-[#d65c3a] transition-colors line-clamp-1"
+            className="flex-1 text-base font-bold leading-snug text-text-primary hover:text-accent-primary transition-colors line-clamp-1"
           >
             {listing.name}
           </Link>
-          <span className="flex shrink-0 items-center gap-1 md:text-sm text-small font-semibold text-[#1a1f3c]">
-            <Star className="h-3.5 w-3.5 fill-[#c9993a] text-[#c9993a]" />
+          <span className="flex shrink-0 items-center gap-1 md:text-sm text-small font-semibold text-text-primary">
+            <Star className="h-3.5 w-3.5 fill-accent-secondary text-accent-secondary" />
             {listing.rating.toFixed(1)}
           </span>
         </div>
 
-        <p className="flex items-center gap-1 md:text-sm text-small text-[#1a1f3c]/55">
+        <p className="flex items-center gap-1 md:text-sm text-small text-text-primary/55">
           <MapPin className="h-3 w-3 shrink-0" />
           {listing.location}
         </p>
 
-        <p className="pt-1 md:text-sm text-base font-bold text-[#1a1f3c]">
+        <p className="pt-1 md:text-sm text-base font-bold text-text-primary">
           {formatNaira(listing.priceAmount)}
-          <span className="ml-1 text-xs font-normal text-[#1a1f3c]/50">
+          <span className="ml-1 text-xs font-normal text-text-primary/50">
             {listing.priceUnit}
           </span>
         </p>
@@ -189,17 +189,17 @@ function EmptyState({ category }: { category: SavedCategory }) {
       className="flex flex-col items-center justify-center py-28 text-center"
     >
       <div className="mb-5 flex h-20 w-20 items-center justify-center rounded-3xl bg-white shadow-[0_4px_20px_rgba(26,31,60,0.08)]">
-        <BookmarkX className="h-9 w-9 text-[#1a1f3c]/25" />
+        <BookmarkX className="h-9 w-9 text-text-primary/25" />
       </div>
-      <h3 className="font-man text-xl font-bold text-[#1a1f3c]">
+      <h3 className="font-man text-xl font-bold text-text-primary">
         No saved {category === "halls" ? "venues" : "services"} yet
       </h3>
-      <p className="mt-2 max-w-xs text-sm text-[#1a1f3c]/50">
+      <p className="mt-2 max-w-xs text-sm text-text-primary/50">
         Tap the heart on any listing to save it here for later.
       </p>
       <Link
         href="/"
-        className="mt-6 rounded-full bg-[#d65c3a] px-6 py-3 text-sm font-extrabold text-white transition hover:brightness-95"
+        className="mt-6 rounded-full bg-accent-primary px-6 py-3 text-sm font-extrabold text-white transition hover:brightness-95"
       >
         Explore {category === "halls" ? "venues" : "services"}
       </Link>
@@ -231,7 +231,7 @@ function SavedContent({
           <p className="mb-1 md:text-xs text-tiny font-extrabold uppercase tracking-[0.18em] text-accent-primary">
             Your Collection
           </p>
-          <h1 className="font-man text-heading-m font-extrabold leading-tight tracking-tight text-[#1a1f3c] md:text-5xl">
+          <h1 className="font-man text-heading-m font-extrabold leading-tight tracking-tight text-text-primary md:text-5xl">
             Saved Listings
           </h1>
           <p className="mt-2 md:text-sm text-tiny text-text-primary/50">
@@ -241,14 +241,14 @@ function SavedContent({
 
         <button
           type="button"
-          className="flex w-fit items-center gap-2 rounded-full border border-[#1a1f3c]/12 bg-white md:px-4 px-2 py-2.5 md:text-sm text-micro font-semibold text-[#1a1f3c]/70 shadow-sm transition hover:shadow-md"
+          className="flex w-fit items-center gap-2 rounded-full border border-text-primary/12 bg-white md:px-4 px-2 py-2.5 md:text-sm text-micro font-semibold text-text-primary/70 shadow-sm transition hover:shadow-md"
         >
           <SlidersHorizontal className="md:h-4 md:w-4 h-3 w-3" />
           Sort & Filter
         </button>
       </header>
 
-      <div className="mb-8 flex justify-between gap-0 border-b border-[#1a1f3c]/8">
+      <div className="mb-8 flex justify-between gap-0 border-b border-text-primary/8">
         {(["halls", "services"] as SavedCategory[]).map((cat) => {
           const isActive = category === cat;
           const count = cat === "halls" ? hallCount : serviceCount;
@@ -260,15 +260,15 @@ function SavedContent({
               onClick={() => startTransition(() => setCategory(cat))}
               className={[
                 "relative px-5 py-3 md:text-sm text-small font-semibold transition-colors",
-                isActive ? "text-[#1a1f3c]" : "text-[#1a1f3c]/45 hover:text-[#1a1f3c]/70",
+                isActive ? "text-text-primary" : "text-text-primary/45 hover:text-text-primary/70",
               ].join(" ")}
             >
               {cat === "halls" ? "Event Halls" : "Services"}
               {count > 0 && (
                 <span
                   className={[
-                    "ml-2 inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full px-1.5 text-[10px] font-extrabold",
-                    isActive ? "bg-[#d65c3a] text-white" : "bg-[#1a1f3c]/8 text-[#1a1f3c]/50",
+                    "ml-2 inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-tiny font-extrabold",
+                    isActive ? "bg-accent-primary text-white" : "bg-text-primary/8 text-text-primary/50",
                   ].join(" ")}
                 >
                   {count}
@@ -277,7 +277,7 @@ function SavedContent({
               {isActive && (
                 <motion.div
                   layoutId="saved-tab-underline"
-                  className="absolute bottom-0 left-0 right-0 h-[2px] rounded-full bg-[#d65c3a]"
+                  className="absolute bottom-0 left-0 right-0 h-0.5 rounded-full bg-accent-primary"
                   transition={{ type: "spring", bounce: 0.2, duration: 0.4 }}
                 />
               )}
@@ -290,7 +290,7 @@ function SavedContent({
         {isLoading ? (
           <div className="grid grid-cols-1 gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
             {[...Array(3)].map((_, i) => (
-              <div key={i} className="aspect-[4/5] w-full animate-pulse rounded-3xl bg-[#e6e3dc]" />
+              <div key={i} className="aspect-4/5 w-full animate-pulse rounded-3xl bg-[#e6e3dc]" />
             ))}
           </div>
         ) : filtered.length === 0 ? (
@@ -321,7 +321,7 @@ function SavedContent({
 
 function MobileSavedView(props: SavedContentProps) {
   return (
-    <section className="flex flex-col md:hidden min-h-screen bg-[#f9f6ef] pb-32">
+    <section className="flex flex-col md:hidden min-h-screen bg-bg-primary pb-32">
       <div className="px-4 pt-8 pb-10">
         <SavedContent {...props} />
       </div>
@@ -332,7 +332,7 @@ function MobileSavedView(props: SavedContentProps) {
 
 function TabletSavedView(props: SavedContentProps) {
   return (
-    <section className="hidden md:flex xl:hidden flex-col min-h-screen bg-[#f9f6ef] pb-32">
+    <section className="hidden md:flex xl:hidden flex-col min-h-screen bg-bg-primary pb-32">
       <div className="px-10 lg:px-14 pt-8 pb-10">
         <SavedContent {...props} />
       </div>
@@ -343,7 +343,7 @@ function TabletSavedView(props: SavedContentProps) {
 
 function DesktopSavedView(props: SavedContentProps) {
   return (
-    <section className="hidden xl:flex min-h-screen bg-[#f9f6ef]">
+    <section className="hidden xl:flex min-h-screen bg-bg-primary">
       <SideNavBar />
       <div className="w-[85%] ml-[15%]">
         <div className="px-4 pb-28 pt-8 md:px-10 lg:px-14 xl:px-16">
@@ -388,7 +388,7 @@ export default function SavedPage() {
   };
 
   return (
-    <main className="text-[#1a1f3c]">
+    <main className="text-text-primary">
       <MobileSavedView {...contentProps} />
       <TabletSavedView {...contentProps} />
       <DesktopSavedView {...contentProps} />

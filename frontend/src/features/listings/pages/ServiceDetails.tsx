@@ -12,6 +12,8 @@ import { RatingBadge, ListingBadge } from "../components/details/DetailBadges";
 import ReviewsSection from "../components/details/ReviewsSection";
 import MobileDock from "@/components/layout/MobileDock";
 import HomeFooter from "@/components/layout/Footer";
+import { MobileBookingDock } from "../components/details/MobileBookingDock.tsx";  
+import type { DateRange } from "@/features/search/utils/searchSchema";
 
 import { useParams } from "next/navigation";
 import { useListingDetails } from "../hooks/useListingDetails";
@@ -28,6 +30,7 @@ export default function ServiceDetails() {
   
   // Fallback default package safely
   const [selectedPackage, setSelectedPackage] = useState<string>("");
+  const [dateRange, setDateRange] = useState<DateRange | undefined>();
 
   // Adapt backend packages to the frontend shape
   const mappedPackages = (listing?.packages || []).map(pkg => ({
@@ -79,14 +82,19 @@ export default function ServiceDetails() {
     ? Array.from(new Set(listing.serviceAreas.map(area => area.city).filter(Boolean)))
     : [];
 
+  const activePackage = getPackage();
+  const priceRaw = activePackage ? parseFloat(activePackage.price.replace(/[^0-9.-]/g, '')) : listing.priceFrom;
+  const priceString = activePackage ? activePackage.price : `₦${listing.priceFrom.toLocaleString()}`;
+
+
   const handleRequestToBook = () => {
     if (!selectedPackage) {
       alert("Please select a package to continue.");
       return;
     }
 
-    // Save the selected package to local storage so the booking wizard picks it up
-    const bookingPayload = { packageId: selectedPackage };
+    // Save the selected package AND dateRange to local storage
+    const bookingPayload = { packageId: selectedPackage, dateRange };
     try {
       localStorage.setItem(BOOKING_STORAGE_KEY, JSON.stringify(bookingPayload));
     } catch (error) {
@@ -184,7 +192,12 @@ export default function ServiceDetails() {
         </div>
       </div>
       
-      <ReviewsSection metrics={listing.reviewMetrics} reviews={listing.reviews} rating={listing.rating} reviewCount={listing.reviewCount} variant = "desktop" />
+      <ReviewsSection 
+        metrics={listing.reviewMetrics} 
+        reviews={listing.reviews} 
+        rating={listing.rating} 
+        reviewCount={listing.reviewCount} 
+        variant = "desktop" />
       </>
       )}
     </>
@@ -327,19 +340,16 @@ export default function ServiceDetails() {
           </button>
         </div>
 
-        <div className="fixed bottom-22 left-0 right-0 z-40 border-t border-[#E8DDD2] bg-white p-5 shadow-[0_-10px_30px_rgba(0,0,0,0.05)]">
-          <div className="flex items-center justify-between mx-auto max-w-105">
-            <div>
-              <p className="text-[1.3rem] font-extrabold text-[#252423]">{getPackage()?.price}</p>
-              <p className="text-xs font-extrabold underline text-[#5E6588]">{getPackage()?.name}</p>
-            </div>
-            <button 
-            onClick={handleRequestToBook}
-            className="rounded-full bg-[#B9401D] px-8 py-3.5 text-[0.95rem] font-extrabold text-white">
-              Request to Book
-            </button>
-          </div>
-        </div>
+        <MobileBookingDock
+          listingId={listing.id}
+          price={priceString}
+          priceRaw={priceRaw}
+          booked={false}
+          dateRange={dateRange}
+          onDateChange={setDateRange}
+          onBook={handleRequestToBook}
+          packageId={selectedPackage}
+        />
 
         <MobileDock />
         <HomeFooter />

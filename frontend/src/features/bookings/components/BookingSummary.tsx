@@ -53,7 +53,7 @@ interface Fee {
 
 export function PaymentSummary({ summary, onPay, isProcessing }: { summary: SummaryData; onPay: () => void; isProcessing: boolean }) {
   return (
-    <aside className="overflow-hidden rounded-[2rem] bg-white shadow-[0_24px_54px_rgba(34,27,18,0.08)]">
+    <aside className="overflow-hidden rounded-4xl bg-white shadow-[0_24px_54px_rgba(34,27,18,0.08)]">
       <div className="relative h-64">
         <Image src={summary.venueImage} alt={summary.venueName} fill className="object-cover brightness-75" sizes="34vw" />
         <div className="absolute bottom-6 left-8 text-white">
