@@ -112,13 +112,13 @@ export default function ExploreHalls() {
   return (
     <main className="min-h-screen bg-bg-primary text-[#252423]">
       <section className="md:hidden">
-        <MobileExploreHeader handleSearch={handleSearch} form={form} isPending={isTransitioning} mobileSummary={mobileSummaryLines} />
+        <MobileExploreHeader handleSearch={handleSearch} form={form} isPending={isTransitioning} mobileSummary={mobileSummaryLines} category="halls"/>
         <MobileResultsHeader count = {resultsCount} locationLabel = {locationLabel} listingType = "hall"/>
         <div className="flex flex-col gap-12 px-5 pb-44">
           {isPending && (
             <div className="space-y-4">
                 {[...Array(3)].map((_, i) => (
-                    <div key={i} className="h-[24rem] animate-pulse rounded-[2rem] bg-text-primary/8" />
+                    <div key={i} className="h-96 animate-pulse rounded-4xl bg-text-primary/8" />
                 ))}
             </div>
           )}
@@ -148,7 +148,7 @@ export default function ExploreHalls() {
 
         {/* Tablet */}
       <section className="hidden md:block xl:hidden">
-        <DesktopExploreHeader handleSearch={handleSearch} form={form} isPending={isTransitioning} />
+        <DesktopExploreHeader handleSearch={handleSearch} form={form} isPending={isTransitioning} category="halls" />
         <div className="flex flex-1 overflow-hidden">
           <div className="flex-1 overflow-y-auto px-8 pb-12 pt-10">
             <DesktopResultsHeader count={resultsCount} locationLabel={locationLabel} listingType = "hall" />
@@ -157,12 +157,12 @@ export default function ExploreHalls() {
                 <>
                   <div className="space-y-4">
                       {[...Array(3)].map((_, i) => (
-                          <div key={i} className="h-[24rem] animate-pulse rounded-[2rem] bg-text-primary/8" />
+                          <div key={i} className="h-96 animate-pulse rounded-4xl bg-text-primary/8" />
                       ))}
                   </div>
                   <div className="space-y-4">
                       {[...Array(3)].map((_, i) => (
-                          <div key={i} className="h-[24rem] animate-pulse rounded-[2rem] bg-text-primary/8" />
+                          <div key={i} className="h-96 animate-pulse rounded-4xl bg-text-primary/8" />
                       ))}
                   </div>
                 </>
@@ -190,7 +190,7 @@ export default function ExploreHalls() {
       <section className="hidden xl:flex h-screen">
         <SideNavBar />
         <div className="ml-[15%] w-[85%] flex flex-col overflow-hidden">
-          <DesktopExploreHeader handleSearch={handleSearch} form={form} isPending={isTransitioning} />
+          <DesktopExploreHeader handleSearch={handleSearch} form={form} isPending={isTransitioning} category="halls"/>
           <div className="flex flex-1 overflow-hidden">
             <div className="flex-1 overflow-y-auto">
               <div className="px-8 pb-12 pt-10">
@@ -200,17 +200,17 @@ export default function ExploreHalls() {
                     <>
                     <div className="space-y-4">
                         {[...Array(3)].map((_, i) => (
-                            <div key={i} className="h-[24rem] animate-pulse rounded-[2rem] bg-text-primary/8" />
+                            <div key={i} className="h-96 animate-pulse rounded-4xl bg-text-primary/8" />
                         ))}
                     </div>
                     <div className="space-y-4">
                         {[...Array(3)].map((_, i) => (
-                            <div key={i} className="h-[24rem] animate-pulse rounded-[2rem] bg-text-primary/8" />
+                            <div key={i} className="h-96 animate-pulse rounded-4xl bg-text-primary/8" />
                         ))}
                     </div>
                     <div className="space-y-4">
                         {[...Array(3)].map((_, i) => (
-                            <div key={i} className="h-[24rem] animate-pulse rounded-[2rem] bg-text-primary/8" />
+                            <div key={i} className="h-96 animate-pulse rounded-4xl bg-text-primary/8" />
                         ))}
                     </div>
                     </>

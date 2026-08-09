@@ -19,9 +19,10 @@ interface DesktopExploreHeaderProps {
   form: ReturnType<typeof useSearchForm>;
   isPending: boolean;
   filter?: boolean; // Optional prop to conditionally show filter button
+  category: "halls" | "services";
 }
 
-export function DesktopExploreHeader({ handleSearch, form, isPending, filter }: DesktopExploreHeaderProps) {
+export function DesktopExploreHeader({ handleSearch, form, isPending, filter, category }: DesktopExploreHeaderProps) {
   
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -36,13 +37,14 @@ export function DesktopExploreHeader({ handleSearch, form, isPending, filter }: 
     verified: searchParams.get("verified") === "true",
     venueTypes: searchParams.get("venueTypes")?.split(",").filter(Boolean),
     amenities: searchParams.get("amenities")?.split(",").filter(Boolean),
+    coverageArea: searchParams.get("location") || undefined,
   };
   
 
   const handleApplyFilters = (filters: FilterState) => {
      const params = normalizeListingSearchParams({
       category: searchParams.get("category") || "halls",
-      location: searchParams.get("location") || undefined,
+      location: filters.coverageArea || searchParams.get("location") || undefined,
       dateFrom: searchParams.get("dateFrom") || undefined,
       dateTo: searchParams.get("dateTo") || undefined,
       capacity: searchParams.get("capacity") || undefined,    
@@ -83,7 +85,7 @@ export function DesktopExploreHeader({ handleSearch, form, isPending, filter }: 
         </div>
       </header>
 
-      <FilterModal isOpen={isFilterOpen} onClose={() => setIsFilterOpen(false)} onApplyFilters={handleApplyFilters} initialFilters={currentFilters} />
+      <FilterModal isOpen={isFilterOpen} onClose={() => setIsFilterOpen(false)} onApplyFilters={handleApplyFilters} initialFilters={currentFilters} category={category} />
     </>
   );
 }

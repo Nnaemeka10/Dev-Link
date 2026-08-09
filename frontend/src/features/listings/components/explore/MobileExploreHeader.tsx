@@ -1,6 +1,6 @@
 "use client";
 
-import { ListFilter, SlidersHorizontal } from "lucide-react";
+import { SlidersHorizontal } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -19,11 +19,13 @@ interface MobileExploreHeaderProps {
   handleSearch: (data: SearchFormData) => void;
   form: ReturnType<typeof useSearchForm>;
   isPending: boolean;
-  mobileSummary: string[]; // Array of lines for mobile summary display
+  mobileSummary: string[];
+  category: "halls" | "services";
 }
 
 
 export default function MobileExploreHeader({
+ category,
  handleSearch,
  form,
  isPending,
@@ -44,12 +46,13 @@ export default function MobileExploreHeader({
     verified: searchParams.get("verified") === "true",
     venueTypes: searchParams.get("venueTypes")?.split(",").filter(Boolean),
     amenities: searchParams.get("amenities")?.split(",").filter(Boolean),
+    coverageArea: searchParams.get("location") || undefined,
   };
 
   const handleApplyFilters = (filters: FilterState) => {
     const params = normalizeListingSearchParams({
       category: searchParams.get("category") || "halls",
-      location: searchParams.get("location") || undefined,
+      location: filters.coverageArea || searchParams.get("location") || undefined,
       dateFrom: searchParams.get("dateFrom") || undefined,
       dateTo: searchParams.get("dateTo") || undefined,
       capacity: searchParams.get("capacity") || undefined,      
@@ -95,7 +98,7 @@ export default function MobileExploreHeader({
         <MobileSearchModal onSubmit={handleSearch} form={form} isPending={isPending} />
       </header>
 
-      <FilterModal isOpen={isFilterOpen} onClose={() => setIsFilterOpen(false)} onApplyFilters={handleApplyFilters} initialFilters={currentFilters} />
+      <FilterModal isOpen={isFilterOpen} onClose={() => setIsFilterOpen(false)} onApplyFilters={handleApplyFilters} initialFilters={currentFilters} category={category} />
     </>
   );
 }

@@ -106,7 +106,7 @@ export default function ExploreServices() {
   return (
     <main className="min-h-screen bg-bg-primary text-[#252423]">
       <section className="md:hidden">
-        <MobileExploreHeader handleSearch={handleSearch} form={form} isPending={isTransitioning} mobileSummary={mobileSummaryLines} />
+        <MobileExploreHeader handleSearch={handleSearch} form={form} isPending={isTransitioning} mobileSummary={mobileSummaryLines} category="services"/>
         <MobileResultsHeader count={resultsCount} locationLabel= {locationLabel} listingType="service"/>
         <div className="flex flex-col gap-12 px-5 pb-44">
           {isPending && (
@@ -135,7 +135,7 @@ export default function ExploreServices() {
       </section>
 
       <section className="hidden md:block xl:hidden">
-        <DesktopExploreHeader handleSearch={handleSearch} form={form} isPending={isTransitioning} />
+        <DesktopExploreHeader handleSearch={handleSearch} form={form} isPending={isTransitioning} category="services"/>
         <div className="flex flex-1 overflow-hidden">
           <div className="flex-1 overflow-y-auto px-8 pb-12 pt-10">
             <DesktopResultsHeader count={resultsCount} locationLabel={locationLabel} listingType="service"/>
@@ -179,7 +179,7 @@ export default function ExploreServices() {
       <section className="hidden xl:flex h-screen">
         <SideNavBar />
         <div className="ml-[15%] w-[85%] flex flex-col overflow-hidden">
-          <DesktopExploreHeader handleSearch={handleSearch} form={form} isPending={isTransitioning} />
+          <DesktopExploreHeader handleSearch={handleSearch} form={form} isPending={isTransitioning} category="services"/>
           <div className="flex flex-1 overflow-hidden">
             <div className="flex-1 overflow-y-auto">
               <div className="px-8 pb-12 pt-10">

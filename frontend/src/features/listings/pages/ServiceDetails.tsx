@@ -4,12 +4,11 @@ import { useState } from "react";
 import Image from "next/image";
 import { Check, Info, ShieldCheck, MapPin, MessageSquare, Clock } from "lucide-react";
 import SideNavBar from "@/components/layout/SideNavBar";
-import DesktopSearchBar from "@/features/search/components/DesktopSearchBar";
 import { useSearchForm } from "@/features/search/hooks/useSearchForm";
-import { DesktopDetailsHeader, MobileDetailsHeader, DetailsActions } from "../components/details/DetailsHeader";
+import { MobileDetailsHeader, DetailsActions } from "../components/details/DetailsHeader";
 import { DesktopPhotoGallery, TabletPhotoGallery, MobileHeroPhoto } from "../components/details/PhotoGallery";
 import { DesktopExploreHeader } from "../components/explore/DesktopExploreHeader";
-import { RatingBadge, ListingBadge, VerifiedVenueBadge } from "../components/details/DetailBadges";
+import { RatingBadge, ListingBadge } from "../components/details/DetailBadges";
 import ReviewsSection from "../components/details/ReviewsSection";
 import MobileDock from "@/components/layout/MobileDock";
 import HomeFooter from "@/components/layout/Footer";
@@ -325,7 +324,7 @@ export default function ServiceDetails() {
 
       {/* TABLET */}
       <section className="hidden md:block xl:hidden w-full">
-        <DesktopExploreHeader handleSearch={() => {}} form={form} isPending={false} filter={false} />
+        <DesktopExploreHeader handleSearch={() => {}} form={form} isPending={false} filter={false} category="services"/>
         <TabletPhotoGallery gallery={gallery} name={listing.title} />
 
         <div className="mx-auto grid grid-cols-[minmax(0,1fr)_20rem] gap-10 px-8 py-12">
@@ -342,7 +341,7 @@ export default function ServiceDetails() {
       <section className="hidden xl:flex">
         <SideNavBar />
         <div className="ml-[15%] w-[85%] flex flex-col">
-          <DesktopExploreHeader handleSearch={() => {}} form={form} isPending={false} filter={false} />
+          <DesktopExploreHeader handleSearch={() => {}} form={form} isPending={false} filter={false} category="services"/>
 
           <div className="flex flex-1">
             <div className="flex-1 px-8 pb-12 pt-10">

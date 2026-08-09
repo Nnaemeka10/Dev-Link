@@ -166,7 +166,7 @@ function TabletDetailsView({ booking, handleSearch, form, isPending, listing, si
 
   return (
     <section className="hidden md:block xl:hidden w-full">
-      <DesktopExploreHeader handleSearch={handleSearch} form={form} isPending={isPending} filter={false} />
+      <DesktopExploreHeader handleSearch={handleSearch} form={form} isPending={isPending} filter={false} category="halls"/>
       <TabletPhotoGallery gallery={gallery} name={listing.title} />
 
       <div className="mx-auto grid grid-cols-[minmax(0,1fr)_20rem] gap-10 px-8 py-12">
@@ -228,7 +228,7 @@ function DesktopDetailsView({ booking, handleSearch, form, isPending, listing, s
     <section className="hidden xl:flex">
       <SideNavBar />
       <div className="ml-[15%] w-[85%] flex flex-col">
-        <DesktopExploreHeader handleSearch={handleSearch} form={form} isPending={isPending} filter={false} />
+        <DesktopExploreHeader handleSearch={handleSearch} form={form} isPending={isPending} filter={false} category="halls" />
 
         <div className="flex flex-1">
           <div className="flex-1 px-8 pb-12 pt-10">

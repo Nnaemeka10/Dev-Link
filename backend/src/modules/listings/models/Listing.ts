@@ -123,7 +123,12 @@ function buildFilterParts(options: ListingPageOptions): QueryParts {
         // The autocomplete provides state names or LGA names — both land here.
         const locPattern = addValue(values, `%${filters.location}%`);
         clauses.push(
-            `(l.state ILIKE ${locPattern} OR l.city ILIKE ${locPattern} OR l.address_line ILIKE ${locPattern})`
+            `(l.state ILIKE ${locPattern} OR l.city ILIKE ${locPattern} OR l.address_line ILIKE ${locPattern}
+             OR EXISTS (
+                 SELECT 1 FROM listing_service_areas lsa
+                 WHERE lsa.listing_id = l.id
+                 AND (lsa.state ILIKE ${locPattern} OR lsa.city ILIKE ${locPattern})
+             ))`
         );
     }
 
