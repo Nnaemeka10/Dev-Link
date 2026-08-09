@@ -22,13 +22,6 @@ interface BookingCardProps {
   variant?: "desktop" | "mobile";
 }
 
-const GUEST_OPTIONS: DropdownOption[] = [
-  { value: "1",   label: "1 guest"   },
-  { value: "2",   label: "2 guests"  },
-  { value: "10",  label: "10 guests" },
-  { value: "50",  label: "50 guests" },
-  { value: "200", label: "200 guests"},
-];
  
 const TIME_OPTIONS: DropdownOption[] = [
   { value: "morning",   label: "Morning",   description: "8 AM – 12 PM"  },
@@ -54,7 +47,7 @@ export default function BookingCard({
 
 const handleChatWithVendor = async () => {
   try {
-    const res = await createConversation(listingId);
+    const res = await createConversation({ listingId });
     router.push(`/messages?conversationId=${res.id}`);
   } catch (error) {
     console.error("Failed to start chat", error);

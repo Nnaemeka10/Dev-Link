@@ -381,7 +381,7 @@ export function MobileBookingDock({
                 animate="visible"
                 exit="hidden"
                 transition={sheetTransition}
-                className="fixed inset-x-0 bottom-0 z-50 rounded-t-[2rem] bg-white shadow-[0_-8px_48px_rgba(36,28,18,0.18)]"
+                className="fixed inset-x-0 bottom-0 z-50 rounded-t-4xl bg-white shadow-[0_-8px_48px_rgba(36,28,18,0.18)]"
                 style={{ maxHeight: "92dvh" }}
                 onClick={(e) => e.stopPropagation()}
               >
