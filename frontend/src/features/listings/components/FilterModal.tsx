@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useRef, useCallback, useEffect } from "react";
-import { X, Minus, Plus, Star, BadgeCheck } from "lucide-react";
+import { X, Minus, Plus, Star, BadgeCheck, MapPin } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useLocationSuggestions } from "@/features/home/hooks/useHeroSearch";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -18,6 +19,7 @@ export interface FilterState {
   minRating: number;
   venueTypes: string[];
   coverageArea: string; 
+
 }
 
   
@@ -73,6 +75,65 @@ const DEFAULT_FILTERS: FilterState = {
   venueTypes:      [],
   coverageArea:    "",
 };
+
+
+function CoverageAreaInput({ value, onChange }: { value: string; onChange: (val: string) => void }) {
+  const [input, setInput] = useState(value);
+  const [showSuggest, setShowSuggest] = useState(false);
+  const { data: suggestions = [] } = useLocationSuggestions(input);
+
+  useEffect(() => { setInput(value); }, [value]);
+
+  return (
+    <div className="relative">
+      <div className="flex items-center gap-2 rounded-xl border border-text-primary/15 bg-white px-4 py-3">
+        <MapPin className="h-4 w-4 text-text-primary/40" />
+        <input
+          type="text"
+          value={input}
+          onChange={(e) => {
+            setInput(e.target.value);
+            onChange(e.target.value);
+            setShowSuggest(true);
+          }}
+          onFocus={() => setShowSuggest(true)}
+          onBlur={() => setTimeout(() => setShowSuggest(false), 150)}
+          placeholder="e.g. Lagos, Abuja"
+          className="w-full bg-transparent text-sm text-text-primary outline-none"
+        />
+        {input && (
+          <button type="button" onClick={() => { setInput(""); onChange(""); }} className="text-text-primary/40 hover:text-text-primary">
+            <X className="h-4 w-4" />
+          </button>
+        )}
+      </div>
+      {showSuggest && suggestions.length > 0 && (
+        <div className="absolute z-50 mt-2 w-full overflow-hidden rounded-xl border border-text-primary/10 bg-white py-1 shadow-lg">
+          {suggestions.map((s) => (
+            <button
+              type="button"
+              key={s.id}
+              onMouseDown={() => {
+                setInput(s.name);
+                onChange(s.name);
+                setShowSuggest(false);
+              }}
+              className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-text-primary hover:bg-bg-primary"
+            >
+              <MapPin className="h-3.5 w-3.5 text-text-primary/40" />
+              <div className="flex flex-col">
+                <span className="font-medium">{s.name}</span>
+                <span className="text-tiny text-text-primary/45">
+                  {s.type === "state" ? "State" : `LGA in ${s.state}`}
+                </span>
+              </div>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 
 
@@ -426,17 +487,6 @@ export default function FilterModal({
   function handleApply() { onApplyFilters(filters); onClose(); }
   function handleReset()  { setFilters(DEFAULT_FILTERS); }
 
-  // const activeCount = [
-  //   filters.venueTypes.length > 0,
-  //   filters.amenities.length > 0,
-  //   filters.accessibility.length > 0,
-  //   filters.verified,
-  //   filters.minRating > 0,
-  //   filters.capacityMin > 0 || filters.capacityMax > 0,
-  //   filters.parkingCapacity > 0,
-  //   filters.priceMin !== DEFAULT_FILTERS.priceMin || filters.priceMax !== DEFAULT_FILTERS.priceMax,
-  // ].filter(Boolean).length;
-
   const activeCount = [
     category === "halls" && filters.venueTypes.length > 0,
     category === "halls" && filters.amenities.length > 0,
@@ -654,17 +704,15 @@ export default function FilterModal({
       {category === "services" && (
         <>
           <Section title="Coverage Area">
-            <input
-              type="text"
+            <CoverageAreaInput
               value={filters.coverageArea}
-              onChange={(e) => setFilters((p) => ({ ...p, coverageArea: e.target.value }))}
-              placeholder="e.g. Lagos, Abuja"
-              className="w-full rounded-xl border border-[#1a1f3c]/15 bg-white px-4 py-3 text-sm text-[#1a1f3c] outline-none focus:ring-2 focus:ring-[#d65c3a]/25"
+              onChange={(val) => setFilters((p) => ({ ...p, coverageArea: val }))}
             />
             <p className="mt-2 text-xs text-text-primary/45">
               Search vendors by their base location or areas they cover.
             </p>
           </Section>
+
         </>
       )}
 

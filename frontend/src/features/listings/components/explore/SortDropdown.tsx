@@ -61,7 +61,7 @@ export function SortDropdown({ currentSort, currentSortOrder, onSort }: SortDrop
 
       {isOpen && (
         <div
-          className="absolute -left-13 md:left-0 top-full mt-2 w-fit md:px-2 px-1 bg-white border border-[#E8DFD3] rounded-lg shadow-lg py-2 z-50"
+          className="absolute -left-13 md:left-0 top-full mt-2 w-fit md:px-2 px-1 bg-white border border-[#E8DFD3] rounded-lg shadow-lg py-2 z-5"
           role="listbox"
         >
           {SORT_OPTIONS.map((option) => {

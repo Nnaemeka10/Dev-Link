@@ -74,6 +74,11 @@ export default function ServiceDetails() {
     responseTime: listing.responseTime || "1 hour"
   };
 
+    // Safely map the array of objects into an array of city strings, and deduplicate them
+  const coverageAreas = listing.serviceAreas && Array.isArray(listing.serviceAreas)
+    ? Array.from(new Set(listing.serviceAreas.map(area => area.city).filter(Boolean)))
+    : [];
+
   const handleRequestToBook = () => {
     if (!selectedPackage) {
       alert("Please select a package to continue.");
@@ -145,7 +150,25 @@ export default function ServiceDetails() {
       <div className={variant === "mobile" ? "mt-10" : "mt-12"}>
         <h3 className="md:text-[1.35rem] text-base font-extrabold text-[#252423]">About the Service</h3>
         <p className="mt-4 md:text-[0.95rem] text-tiny leading-[1.8] text-[#555B7F]">{listing.description}</p>
+
+          {coverageAreas.length > 0 && (
+          <div className="mt-12 border-t border-[#E8DDD2] pt-12">
+            <h3 className="md:text-[1.35rem] text-base font-extrabold text-[#252423] flex items-center gap-2">
+              <MapPin className="md:h-5 md:w-5 h-4 w-4 text-[#B9401D]" />
+              Coverage Areas
+            </h3>
+            <div className="mt-6 flex flex-wrap gap-3">
+              {coverageAreas.map((area, i) => (
+                <span key={i} className="inline-flex items-center gap-1.5 rounded-full bg-[#F5F2EC] px-4 py-2 text-tiny md:text-sm font-bold text-[#3A3734] capitalize">
+                  {area}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
+
+
 
       { variant !== "mobile" && (
       <>

@@ -59,6 +59,13 @@ export interface ServicePackageResponse {
     features: PackageFeature[];
 }
 
+export interface ServiceArea {
+    city: string;
+    state: string;
+    country: string;
+}
+
+
 export interface ListingDetailsResponse {
     id: string;
     title: string;
@@ -97,6 +104,8 @@ export interface ListingDetailsResponse {
     packages: ServicePackageResponse[];
     requirements: string[];
     responseTime: string | null;
+
+    serviceAreas: ServiceArea[] | null;
 }
 
 export interface ListingCardSmall {

@@ -49,7 +49,10 @@ function sanitizeNumber(value: string | undefined): number | undefined {
 }
 
 function sanitizeSort(value: string | undefined): SortBy | undefined {
-  return value === "price" || value === "rating" ? value : undefined;
+  if (value === "price" || value === "rating" || value === "recommended") {
+    return value;
+  }
+  return undefined;
 }
 
 function sanitizeSortOrder(value: string | undefined): SortOrder | undefined {

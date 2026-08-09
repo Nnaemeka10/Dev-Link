@@ -1,6 +1,5 @@
 import { Suspense } from "react";
 import type { Metadata } from "next";
-import GrandAtriumDetailsPage from "@/features/bookings/pages/BookingDetails";
 import SavedListings from "@/features/listings/pages/SavedListings";
 
 export const metadata: Metadata = {
