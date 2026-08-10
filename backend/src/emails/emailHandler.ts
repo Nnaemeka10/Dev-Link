@@ -12,10 +12,9 @@ export const emailService = {
         try {
             const { subject, html } = getVerificationEmailTemplate(code, email);
             const sender = getSender();
-            
 
-            const { data, error} = await resend.emails.send({
-                from: `${sender.name} <${sender.email}>`,
+            const { data, error } = await resend.emails.send({
+                from: sender.formatted, // Use pre-formatted string
                 to: [email],
                 subject,
                 html,
@@ -39,8 +38,8 @@ export const emailService = {
             const { subject, html } = getWelcomeEmailTemplate(userName, email);
             const sender = getSender();
 
-            const { data, error} = await resend.emails.send({
-                from: `${sender.name} <${sender.email}>`,
+            const { data, error } = await resend.emails.send({
+                from: sender.formatted,
                 to: [email],
                 subject,
                 html
@@ -59,17 +58,16 @@ export const emailService = {
         }
     },
 
-
     async sendPasswordResetEmail(email: string, resetToken: string, resetLink: string) {
         try {
             const resetUrl = `${process.env.CLIENT_URL || 'http://localhost:5173'}/reset-password?token=${resetLink}`;
             const { subject, html } = getPasswordResetEmailTemplate(resetUrl, email, resetToken);
-
             const sender = getSender();
-            
 
-            const { data, error} = await resend.emails.send({
-                from: `${sender.name} <${sender.email}>`,
+            console.log(sender.email, sender.name, sender.formatted)
+
+            const { data, error } = await resend.emails.send({
+                from: sender.formatted,
                 to: [email],
                 subject,
                 html
@@ -89,14 +87,13 @@ export const emailService = {
         }
     },
     
-
     async sendPasswordResetSuccessEmail(email: string) {
         try {
             const { subject, html } = getPasswordResetSuccessTemplate(email);
             const sender = getSender();
 
-            const { data, error} = await resend.emails.send({
-                from: `${sender.name} <${sender.email}>`,
+            const { data, error } = await resend.emails.send({
+                from: sender.formatted,
                 to: [email],
                 subject,
                 html
