@@ -28,6 +28,7 @@ export const ENV = {
     PAYSTACK_SECRET_KEY: required('PAYSTACK_SECRET_KEY'),
     REDIS_URL: process.env.REDIS_URL,
     PGCRYPTO_KEY: required('PGCRYPTO_KEY'),
+    GOOGLE_CLIENT_ID: required('GOOGLE_CLIENT_ID'),
 }
 
 // Add this safety check to catch configuration errors instantly
