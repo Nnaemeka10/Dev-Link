@@ -1531,23 +1531,23 @@ export const getWelcomeEmailTemplate = (userName: string, userEmail: string) => 
                                     <span class="step-icon"><span>1</span></span>
                                     <span class="step-title">Complete your profile</span>
                                 </div>
-                                <p class="step-desc">Add your details so others can find and connect with you at events.</p>
+                                <p class="step-desc">Add your details.</p>
                             </div>
 
                             <div class="step">
                                 <div class="step-header">
                                     <span class="step-icon"><span>2</span></span>
-                                    <span class="step-title">Discover events</span>
+                                    <span class="step-title">Discover halls and services and save the ones you like</span>
                                 </div>
-                                <p class="step-desc">Browse upcoming events, save the ones you like, and RSVP in seconds.</p>
+                                <p class="step-desc">Browse halls and services.</p>
                             </div>
 
                             <div class="step">
                                 <div class="step-header">
                                     <span class="step-icon"><span>3</span></span>
-                                    <span class="step-title">Connect with people</span>
+                                    <span class="step-title">Book halls and services</span>
                                 </div>
-                                <p class="step-desc">Meet attendees, speakers, and organizers — build real relationships.</p>
+                                <p class="step-desc">Seamless booking flow. Book with confidence.</p>
                             </div>
 
                             <div class="cta-wrapper">

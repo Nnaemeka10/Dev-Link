@@ -39,20 +39,19 @@ export default function SignupPage() {
  
   // Google Signup/Login Handler
   const googleSignup = useGoogleLogin({
-    scope: "openid email profile", // REQUIRED to get the ID Token
+    scope: "email profile",
     onSuccess: async (tokenResponse) => {
       setError(null);
       setGoogleLoading(true);
       try {
-        // Cast to any to access id_token (it exists at runtime but is missing from the TS types)
-        const idToken = (tokenResponse as { id_token?: string }).id_token;
-        if (!idToken) {
-          throw new Error("Failed to retrieve Google ID Token.");
+        const accessToken = tokenResponse.access_token;
+        if (!accessToken) {
+          throw new Error("Failed to retrieve Google access token.");
         }
 
         const response = await apiFetch<{ user: AuthUser }>("/api/auth/google", {
           method: "POST",
-          body: JSON.stringify({ credential: idToken }),
+          body: JSON.stringify({ accessToken }),
           redirectOn401: false,
         });
 

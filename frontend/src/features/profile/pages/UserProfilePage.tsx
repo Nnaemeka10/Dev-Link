@@ -1,6 +1,6 @@
 import { useBankDirectory, usePayoutMethodStatus, useRemovePayoutMethod } from "@/features/profile/hooks/usePayoutVerification";
 import PayoutMethodForm from "@/features/profile/components/PayoutMethodForm";
-import { ShieldCheck, Loader2, AlertCircle, Banknote, Trash2 } from "lucide-react";
+import { Loader2, AlertCircle, Banknote, Trash2 } from "lucide-react";
 import MobileDock from "@/components/layout/MobileDock";
 import SideNavBar from "@/components/layout/SideNavBar";
 import VendorMobileDock from "@/components/layout/VendorMobileDock";
@@ -11,20 +11,14 @@ import { useProfile } from "@/features/profile/hooks/useProfile";
 import type {
   Booking,
   BookingStatus,
-  NotificationSettings,
   PaymentMethod,
-  UserProfile,
 } from "@/features/profile/profile.types";
 import { useTheparam } from "@/hooks/useTheparam";
 import { useRouter } from "next/navigation";
 import type React from "react";
 import { useState, useRef, useEffect } from "react";
+import { usePathname } from "next/navigation";
 
-
-interface PayoutMethodFormProps {
-  isOpen: boolean;
-  onClose: () => void;
-}
 
 type ProfileState = ReturnType<typeof useProfile>;
 
@@ -263,7 +257,7 @@ function PaymentDrawer({
       />
       {/* Sheet — slides up on mobile, centered modal on md+ */}
       <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center pointer-events-none">
-        <div className="pointer-events-auto w-full md:w-[480px] bg-white rounded-t-3xl md:rounded-3xl shadow-2xl overflow-hidden">
+        <div className="pointer-events-auto w-full md:w-120 bg-white rounded-t-3xl md:rounded-3xl shadow-2xl overflow-hidden">
           {/* Mobile drag handle */}
           <div className="flex justify-center pt-3 pb-1 md:hidden">
             <div className="w-10 h-1 bg-stone-200 rounded-full" />
@@ -328,14 +322,14 @@ function PaymentDrawer({
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
                   {pm.isDefault ? (
-                    <span className="text-[10px] bg-amber-100 text-amber-700 font-bold px-2 py-1 rounded-full">
+                    <span className="text-tiny bg-amber-100 text-amber-700 font-bold px-2 py-1 rounded-full">
                       Default
                     </span>
                   ) : (
                     <button
                       onClick={() => onSetDefault(pm.id)}
                       disabled={isUpdating}
-                      className="text-[10px] text-stone-400 font-semibold hover:text-[#D65C3A] transition-colors"
+                      className="text-tiny text-stone-400 font-semibold hover:text-[#D65C3A] transition-colors"
                     >
                       Set default
                     </button>
@@ -422,7 +416,7 @@ function BookingCard({ booking }: { booking: Booking }) {
               {booking.eventTitle}
             </h4>
             <span
-              className={`shrink-0 text-[10px] font-bold px-2 py-1 rounded-full ${cfg.bg} ${cfg.text}`}
+              className={`shrink-0 text-tiny font-bold px-2 py-1 rounded-full ${cfg.bg} ${cfg.text}`}
             >
               {cfg.label}
             </span>
@@ -523,7 +517,7 @@ function BookingsSection({ bookings }: { bookings: Booking[] }) {
           >
             {t === "pending" ? "Pending" : "Past Bookings"}
             {t === "pending" && pending.length > 0 && (
-              <span className="ml-1.5 bg-[#D65C3A] text-white text-[10px] font-black px-1.5 py-0.5 rounded-full">
+              <span className="ml-1.5 bg-[#D65C3A] text-white text-tiny font-black px-1.5 py-0.5 rounded-full">
                 {pending.length}
               </span>
             )}
@@ -570,6 +564,9 @@ function ProfileContent({
   profileState: ProfileState;
 }) {
   const router = useRouter();
+  const pathname = usePathname();
+  const isVendor = pathname.startsWith("/vendor")
+
   const clearAuth = useAuthStore((state) => state.clearAuth);
   const [paymentDrawerOpen, setPaymentDrawerOpen] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
@@ -589,7 +586,6 @@ function ProfileContent({
     notifications,
     isProfileLoading,
     isBookingsLoading,
-    isPaymentsLoading,
     updateField,
     isUpdatingField,
     uploadAvatar,
@@ -636,7 +632,7 @@ function ProfileContent({
     router.push("/login");
   };
 
-  const defaultCard = payments.find((p) => p.isDefault);
+
 
   if (isProfileLoading || !profile) {
     return (
@@ -752,62 +748,6 @@ function ProfileContent({
         </div>
       </section>
 
-      {/* ── Payment Methods ───────────────────────────────────────────── */}
-      <section>
-        <SectionHeader
-          icon={
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-            </svg>
-          }
-          title="Payment Methods"
-        />
-        <button
-          onClick={() => setPaymentDrawerOpen(true)}
-          className="w-full bg-white rounded-3xl p-5 shadow-sm border border-stone-100 hover:border-stone-200 hover:shadow-md transition-all text-left group"
-        >
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              {defaultCard?.type === "card" ? (
-                <div className="w-14 h-9 bg-[#1a1f36] rounded-xl flex items-center justify-center shrink-0">
-                  <span className="text-white text-[10px] font-black tracking-wider">
-                    {defaultCard.label.toUpperCase()}
-                  </span>
-                </div>
-              ) : (
-                <div className="w-14 h-9 bg-stone-100 rounded-xl flex items-center justify-center shrink-0">
-                  <svg className="w-5 h-5 text-stone-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 6l9-3 9 3M3 6v12a2 2 0 002 2h14a2 2 0 002-2V6M3 6h18" />
-                  </svg>
-                </div>
-              )}
-              <div>
-                <p className="text-sm font-bold text-stone-800">
-                  {defaultCard
-                    ? defaultCard.type === "card"
-                      ? `${defaultCard.label} •••• ${defaultCard.last4}`
-                      : defaultCard.label
-                    : "No payment method"}
-                </p>
-                <p className="text-xs text-stone-400">
-                  {isPaymentsLoading
-                    ? "Loading saved methods"
-                    : `${payments.length} method${payments.length !== 1 ? "s" : ""} saved - tap to manage`}
-                </p>
-              </div>
-            </div>
-            <svg
-              className="w-5 h-5 text-stone-300 group-hover:text-[#D65C3A] transition-colors shrink-0"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-            </svg>
-          </div>
-        </button>
-      </section>
-
 
       {/* //payout method */}
 
@@ -838,7 +778,7 @@ function ProfileContent({
               </div>
               
               {/* Status Badge */}
-              <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full ${
+              <span className={`text-tiny font-bold px-2.5 py-1 rounded-full ${
                 payoutStatus.status === "verified" ? "bg-emerald-100 text-emerald-700" :
                 payoutStatus.status === "pending" ? "bg-amber-100 text-amber-700" :
                 "bg-red-100 text-red-600"
@@ -1063,35 +1003,42 @@ function ProfileContent({
       </section>
 
       {/* ── Become a Vendor ──────────────────────────────────────────── */}
-      <section onClick={() => router.push("/vendor/create-listing")}>
-        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#D65C3A] to-[#8c2a09] p-7 shadow-lg shadow-[#D65C3A]/20 cursor-pointer hover:shadow-xl hover:shadow-[#D65C3A]/30 transition-all group">
+      <section onClick={() => router.push(isVendor ? "/" : "/vendor/create-listing")}>
+        <div className={`relative overflow-hidden rounded-3xl p-7 shadow-lg transition-all group cursor-pointer ${
+          isVendor 
+            ? "bg-linear-to-br from-stone-800 to-stone-900 shadow-stone-900/20 hover:shadow-stone-900/30" 
+            : "bg-linear-to-br from-[#D65C3A] to-[#8c2a09] shadow-[#D65C3A]/20 hover:shadow-[#D65C3A]/30"
+        }`}>
           {/* Decorative circles */}
           <div className="absolute -right-8 -top-8 w-36 h-36 rounded-full bg-white/10 pointer-events-none" />
           <div className="absolute right-4 bottom-2 w-20 h-20 rounded-full bg-white/5 pointer-events-none" />
           <div className="relative">
             <div className="flex items-start justify-between mb-4">
               <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center">
-                <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                </svg>
+                {isVendor ? (
+                  <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                  </svg>
+                ) : (
+                  <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                  </svg>
+                )}
               </div>
               <span className="flex items-center gap-1 text-white/70 text-xs font-semibold group-hover:text-white transition-colors">
-                Go to Vendor Portal
-                <svg
-                  className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
+                {isVendor ? "Go to Client Home" : "Go to Vendor Portal"}
+                <svg className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
                 </svg>
               </span>
             </div>
             <h3 className="text-xl font-extrabold text-white mb-1 tracking-tight">
-              Become a Vendor
+              {isVendor ? "Back to Client" : "Become a Vendor"}
             </h3>
             <p className="text-sm text-white/70 leading-relaxed">
-              List your events, sell tickets, and grow your audience on the platform.
+              {isVendor 
+                ? "View halls, services and book the one that suits your needs." 
+                : "List your halls, and services on our platform and reach thousands of customers looking for event spaces and services."}
             </p>
           </div>
         </div>
@@ -1315,8 +1262,8 @@ function MobileProfileView({ profileState }: { profileState: ProfileState }) {
       home: <MobileDock />
     }
   return (
-    <section className="flex flex-col md:hidden min-h-screen bg-[#f9f6ef] pb-32">
-      <header className="sticky top-0 z-40 flex items-center justify-between px-5 py-4 bg-[#f9f6ef]/90 backdrop-blur-sm border-b border-stone-100">
+    <section className="flex flex-col md:hidden min-h-screen bg-bg-primary pb-32">
+      <header className="sticky top-0 z-40 flex items-center justify-between px-5 py-4 bg-bg-primary/90 backdrop-blur-sm border-b border-stone-100">
         <button onClick={() => router.back()} className="w-9 h-9 flex items-center justify-center rounded-full bg-white border border-stone-100 shadow-sm">
           <BackArrow />
         </button>
@@ -1341,8 +1288,8 @@ function TabletProfileView({ profileState }: { profileState: ProfileState }) {
     home: <MobileDock />
   }
   return (
-    <section className="hidden md:flex xl:hidden flex-col min-h-screen bg-[#f9f6ef] pb-32">
-      <header className="sticky top-0 z-40 flex items-center px-8 py-5 bg-[#f9f6ef]/90 backdrop-blur-sm border-b border-stone-100 gap-4">
+    <section className="hidden md:flex xl:hidden flex-col min-h-screen bg-bg-primary pb-32">
+      <header className="sticky top-0 z-40 flex items-center px-8 py-5 bg-bg-primary/90 backdrop-blur-sm border-b border-stone-100 gap-4">
         <button onClick={() => router.back()} className="w-9 h-9 flex items-center justify-center rounded-full bg-white border border-stone-100 shadow-sm">
           <BackArrow />
         </button>
@@ -1365,7 +1312,7 @@ function DesktopProfileView({ profileState }: { profileState: ProfileState }) {
           home: <SideNavBar />
         }
   return (
-    <section className="hidden xl:flex min-h-screen bg-[#f9f6ef]">
+    <section className="hidden xl:flex min-h-screen bg-bg-primary">
       
       {pathMapping[path]}
 

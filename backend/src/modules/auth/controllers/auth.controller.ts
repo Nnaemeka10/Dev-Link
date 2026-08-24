@@ -6,10 +6,10 @@ import { EmailVerificationModel } from '../models/userVerification.js';
 import { PasswordResetModel } from '../models/passwordReset.js';
 import { emailService } from '../../../emails/emailHandler.js';
 import { User, UserWithoutPassword } from '../types/user.js';
-import { OAuth2Client } from 'google-auth-library';
+// import { OAuth2Client } from 'google-auth-library';
 import type { AllowedUpdates } from '../types/user.js';
 
-const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+// const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 
 //signup controller
@@ -568,20 +568,23 @@ export const resetPassword = async (req: Request<{}, {}, ResetPasswordBody>, res
 };
 
 export const googleAuth = async (req: Request, res: Response) => {
-    const { credential } = req.body;
+    const { accessToken } = req.body;
 
-    if (!credential) {
-        return res.status(400).json({ message: 'Google credential is required' });
+    if (!accessToken) {
+        return res.status(400).json({ message: 'Google access token is required' });
     }
 
     try {
-        // 1. Verify the Google ID Token securely on the backend
-        const ticket = await googleClient.verifyIdToken({
-            idToken: credential,
-            audience: process.env.GOOGLE_CLIENT_ID,
+        // 1. Fetch user profile securely from Google using the access token
+        const userInfoResponse = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+            headers: { Authorization: `Bearer ${accessToken}` }
         });
 
-        const payload = ticket.getPayload();
+        if (!userInfoResponse.ok) {
+            return res.status(401).json({ message: 'Failed to verify Google access token' });
+        }
+
+        const payload = await userInfoResponse.json();
 
         if (!payload || !payload.email) {
             return res.status(400).json({ message: 'Failed to retrieve email from Google' });
