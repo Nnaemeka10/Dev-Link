@@ -1,4 +1,5 @@
 import { getDB } from "../../../lib/db.js";
+import { randomBytes } from 'crypto';
 import bcrypt from 'bcryptjs';
 import type { User, CreateUserInput, AllowedUpdates } from "../types/user.js";
 
@@ -26,12 +27,6 @@ export const UserModel = {
         const salt = await bcrypt.genSalt(10);
         const password_hash = await bcrypt.hash(userData.password, salt);
 
-        // const query = `
-        //     INSERT INTO users (role_id, email, username, password_hash, full_name, headline, phone)
-        //     VALUES ($1, $2, $3, $4, $5, $6, $7)
-        //     RETURNING id, role_id, email, username, full_name, headline, phone, is_email_verified, is_active, created_at, updated_at
-        // `;
-
         const query = `
             INSERT INTO users (email, username, password_hash, first_name, last_name, date_of_birth, headline, phone)
             VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
@@ -53,6 +48,32 @@ export const UserModel = {
         return result.rows[0];
     },
 
+    async createGoogleUser(userData: { email: string; first_name?: string; last_name?: string; avatar_url?: string }): Promise<User> {
+        const db = getDB();
+
+        // Generate a random secure password to satisfy the NOT NULL DB constraint
+        const randomPassword = randomBytes(32).toString('hex');
+        const salt = await bcrypt.genSalt(10);
+        const password_hash = await bcrypt.hash(randomPassword, salt);
+
+        const query = `
+            INSERT INTO users (email, username, password_hash, first_name, last_name, avatar_url, is_email_verified)
+            VALUES ($1, $2, $3, $4, $5, $6, TRUE)
+            RETURNING id, email, username, first_name, last_name, date_of_birth, headline, phone, avatar_url, is_email_verified, is_active, created_at, updated_at
+        `;
+
+        const values = [
+            userData.email,
+            null, // Let user set username later in profile settings
+            password_hash,
+            userData.first_name || null,
+            userData.last_name || null,
+            userData.avatar_url || null
+        ];
+
+        const result = await db.query(query, values);
+        return result.rows[0];
+    },
   
     async findByEmail(email: string): Promise<User | null> {
         const db = getDB();
@@ -63,12 +84,6 @@ export const UserModel = {
     },
 
     //find use by username
-    // async findByUsername(username: string): Promise<User | null> {
-    //     const db = getDB();
-    //     const query = `SELECT * FROM users WHERE username = $1`;
-    //     const result = await db.query(query, [username]);
-    //     return result.rows[0] || null;
-    // },
     async findByUsername(username: string): Promise<User | null> {
         const db = getDB();
         const query = `SELECT ${userPublicFields} FROM users WHERE username = $1`;

@@ -6,6 +6,10 @@ import { EmailVerificationModel } from '../models/userVerification.js';
 import { PasswordResetModel } from '../models/passwordReset.js';
 import { emailService } from '../../../emails/emailHandler.js';
 import { User, UserWithoutPassword } from '../types/user.js';
+import { OAuth2Client } from 'google-auth-library';
+import type { AllowedUpdates } from '../types/user.js';
+
+const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 
 //signup controller
@@ -220,22 +224,7 @@ export const login = async (_req: Request<{}, {}, LoginBody>, res: Response) => 
     }
 }
 
-//logout controller
-// export const logout = async (_req: Request, res: Response) => {
 
-//     try {
-//         //clear the token cookei
-//         res.clearCookie('token', {
-//             httpOnly: true,
-//             secure: process.env.NODE_ENV === 'development' ? false : true,
-//         });
-
-//         res.status(200).json({ message: 'Logout successful' });
-//     } catch (error: any) {
-//         console.error('Logout error:', error);
-//         res.status(500).json({ error: 'Internal server error' });
-//     }
-// };
 export const logout = async (_req: Request, res: Response) => {
     try {
         res.clearCookie('token', {
@@ -404,91 +393,7 @@ export const verifyEmail = async (req: Request, res: Response) => {
     }
 };
 
-//request Passwod reset
-// export const forgotPassword = async (req: Request<{}, {}, { email: string }>, res: Response) => {
-//     try {
-//         const { email } = req.body;
 
-//         if(!email) {
-//             return res.status(400).json({ error: 'Email is required' });
-//         }
-
-//         const user = await UserModel.findByEmail(email);
-
-//         //Always return success to prevent email enumeration
-//         if(!user) {
-//             res.status(200).json({
-//                 message: 'If an account exist with this email, you will receive a password reset link'
-//             });
-//             return;
-//         }
-
-//         // Create reset token
-//         const resetToken = await PasswordResetModel.create(user.id!);
-
-//         //send reset email
-//         await emailService.sendPasswordResetEmail(user.email, resetToken.token, resetToken.link);
-
-//         res.status(200).json({
-//             message: 'If an account exists with this email, you will receive a passwrod reset link'
-//         });
-//     } catch (error: any) {
-//         console.error('Forgot password error:', error);
-//         res.status(500).json({error: 'Failed to process password reset request'});
-//     }
-// };
-
-
-// //reset password wih token
-// export const resetPassword = async (req: Request<{}, {}, resetPasswordBody>, res: Response) => {
-//      const { token, inewPassword, iconfirmPassword} = req.body;
-//      const newPassword = typeof inewPassword === 'string' ? inewPassword : '';
-//      const confirmPassword = typeof iconfirmPassword === 'string' ? iconfirmPassword : '';
-    
-//      try {   
-//         if(!token || !newPassword || !confirmPassword) {
-//            return res.status(400).json({error: 'All fields are required'});
-//         }
-
-//         if(newPassword !== confirmPassword) {
-//             return res.status(400).json({error: 'Passwords do not match' });
-//         }
-
-//         if(newPassword.length < 6) {
-//             return res.status(400).json({ error: 'Password must be at least 6 characters' });
-//         }
-
-//         //find valid tokens
-//         const resetToken = await PasswordResetModel.findValidToken(token);
-
-//         if(!resetToken) {
-//             return res.status(400).json({ error: 'Invalid or expired reset token'});
-//         }
-
-//         //update password
-//         const user = await UserModel.updatePassword(resetToken.user_id, newPassword);
-
-//         if(!user) {
-//             return res.status(404).json({error: 'User not found'});
-//         }
-
-//         //mark token as used 
-//         await PasswordResetModel.markAsUsed(resetToken.id!);
-
-//         //send confirmation email
-//         await emailService.sendPasswordResetSuccessEmail(user.email);
-
-//         return res.status(200).json({message: 'Password reset successfully'})
-//     } catch (error: any) {
-//         console.error('Reset password error:', error);
-//         res.status(500).json({ error: 'Failed to reset password', details:error.message });
-//     }
-// };
-
-// --- Add these imports at the top of auth.controller.ts (merge with existing) ---
-// import { PasswordResetModel } from '../models/passwordReset.js';
-// import { UserModel } from '../models/User.js';
-// import { emailService } from '../../../emails/emailHandler.js';
 
 // ============================================================================
 // Request Passwod reset  (unchanged behaviour, included for context only)
@@ -659,5 +564,70 @@ export const resetPassword = async (req: Request<{}, {}, ResetPasswordBody>, res
     } catch (error: any) {
         console.error('Reset password error:', error);
         res.status(500).json({ error: 'Failed to reset password', details: error.message });
+    }
+};
+
+export const googleAuth = async (req: Request, res: Response) => {
+    const { credential } = req.body;
+
+    if (!credential) {
+        return res.status(400).json({ message: 'Google credential is required' });
+    }
+
+    try {
+        // 1. Verify the Google ID Token securely on the backend
+        const ticket = await googleClient.verifyIdToken({
+            idToken: credential,
+            audience: process.env.GOOGLE_CLIENT_ID,
+        });
+
+        const payload = ticket.getPayload();
+
+        if (!payload || !payload.email) {
+            return res.status(400).json({ message: 'Failed to retrieve email from Google' });
+        }
+
+        const { email, given_name, family_name, picture } = payload;
+
+        // 2. Check if user exists
+        let user = await UserModel.findByEmail(email);
+
+        // 3. If user doesn't exist, create them via Google Auth
+        if (!user) {
+            user = await UserModel.createGoogleUser({
+                email,
+                first_name: given_name || '',
+                last_name: family_name || '',
+                avatar_url: picture || undefined,
+            });
+        } else {
+            // 4. If user exists, update their avatar and verification status if missing
+            const updates: AllowedUpdates = {};
+            if (!user.is_email_verified) updates.is_email_verified = true;
+            if (!user.avatar_url && picture) updates.avatar_url = picture;
+
+            if (Object.keys(updates).length > 0) {
+                await UserModel.update(user.id!, updates);
+                user = { ...user, ...updates } as User;
+            }
+        }
+
+        // 5. Generate our standard app JWT and set httpOnly cookie
+        generateToken({
+            userId: user.id!,
+            email: user.email,
+        }, res);
+
+        // 6. Remove password hash before sending response
+        const { password_hash, ...userWithoutPassword } = user as User;
+
+        res.status(200).json({
+            message: 'Google authentication successful.',
+            user: userWithoutPassword,
+        });
+
+    } catch (error: any) {
+        console.error('Google auth error:', error);
+        res.status(500).json({ message: 'Google authentication failed.' });
     }
 };

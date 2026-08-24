@@ -84,7 +84,7 @@ export default function VendorSideNavBar() {
             variant="primary"
             className="w-full py-4 text-xs font-bold uppercase tracking-wider"
           >
-            Switch to Traveler
+            Switch to Client
           </Button>
         </Link>
       </div>
