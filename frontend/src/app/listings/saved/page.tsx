@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import type { Metadata } from "next";
 import SavedListings from "@/features/listings/pages/SavedListings";
+import AuthGuard from "@/features/auth/AuthGuard";
 
 export const metadata: Metadata = {
   title: "Listings Details | Eventvnv",
@@ -10,7 +11,9 @@ export const metadata: Metadata = {
 export default function ListingsDetailsRoute() {
   return (
     <Suspense fallback={<main className="min-h-screen bg-bg-primary" />}>
-      <SavedListings />
+      <AuthGuard >
+        <SavedListings />
+      </AuthGuard>
     </Suspense>
   );
 }

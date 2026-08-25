@@ -1,13 +1,21 @@
-import { Eye, ShieldCheck } from "lucide-react";
+import type { InputHTMLAttributes } from "react";
+import { Eye, EyeOff, ShieldCheck } from "lucide-react";
 import Link from "next/link";
+import { useState } from "react";
 
-interface AuthInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
+interface AuthInputProps extends InputHTMLAttributes<HTMLInputElement> {
   error?: string;
   label: string;
   rightIcon?: "password";
 }
 
-export function AuthInput({ error, label, rightIcon, ...props }: AuthInputProps) {
+export function AuthInput({ error, label, rightIcon, type, ...props }: AuthInputProps) {
+  const [showPassword, setShowPassword] = useState(false)
+  const togglePasswordVisibility = () => {
+    setShowPassword((prev) => !prev);
+  }
+  const isPassword = rightIcon === "password";
+
   return (
     <label className="block">
       {label ? <div className="mb-3 flex items-center justify-between">
@@ -21,11 +29,25 @@ export function AuthInput({ error, label, rightIcon, ...props }: AuthInputProps)
       
 
       <span className="mt-3 flex h-14 items-center rounded-full bg-[#E0DDD6] md:px-5 px-3">
-        <input
-          {...props}
-          className="min-w-0 flex-1 bg-transparent text-tiny md:text-base font-semibold text-[#252423] placeholder:text-[#B69F98] focus:outline-none"
-        />
-        {rightIcon === "password" ? <Eye className="h-5 w-5 text-[#555B7F]" /> : null}
+       <input
+        {...props}
+        className="min-w-0 flex-1 text-small md:text-base font-semibold text-[#252423] placeholder:text-[#B69F98] focus:outline-none"
+        type={isPassword && showPassword ? "text" : type}
+      />
+        {isPassword ? (
+          <button
+            type="button"
+            onClick={togglePasswordVisibility}
+            className="text-[#555B7F]"
+            aria-label={showPassword ? "Hide password" : "Show password"}
+          >
+            {showPassword ? (
+              <EyeOff className="h-5 w-5" />
+            ) : (
+              <Eye className="h-5 w-5" />
+            )}
+          </button>
+        ) : null}
       </span>
       {error ? <span className="mt-2 block text-tiny md:text-sm font-semibold text-[#B9401D]">{error}</span> : null}
     </label>

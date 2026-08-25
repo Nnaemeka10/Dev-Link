@@ -74,23 +74,14 @@ export async function dispatchIdentityVerification(
 ): Promise<void> {
     await paystackRequest<any>(`/customer/${customerCode}/identification`, 'POST', {
         country: 'NG',
-        type: 'bank_account',
-        account_number: accountNumber,
-        bvn: bvn,
-        bank_code: bankCode,
+        type: 'bvn',
+        value: bvn,
         first_name: firstName,
-        last_name: lastName
+        last_name: lastName,
+        account_number: accountNumber,
+        bank_code: bankCode,
     });
 }
-// /** Step 3: Dispatch Government ID check (BVN/NIN) - Fire and forget */
-// export async function dispatchIdentityVerification(customerCode: string, idType: IdType, idNumber: string): Promise<void> {
-//     await paystackRequest<any>('/customer/validate', 'POST', {
-//         customer: customerCode,
-//         country: 'NG',
-//         type: idType,
-//         value: idNumber,
-//     });
-// }
 
 
 
