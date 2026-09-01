@@ -1,7 +1,34 @@
-// src/features/create-listing/api/listingDraft.api.ts
 import { apiFetch } from "@/lib/api";
 import type { ListingFormState } from "../types/listing";
 
+export interface FetchedDraft {
+  id: string;
+  kind: "hall" | "service";
+  status: string;
+  draftPayload: ListingFormState | null;
+}
+
+
+export async function fetchDraft(listingId: string): Promise<FetchedDraft> {
+  const data = await apiFetch<{
+    id: string;
+    kind: "hall" | "service";
+    status: string;
+    draftPayload: ListingFormState | null;
+  }>(`/api/vendor/listings/${listingId}/draft`, { method: "GET" });
+
+  const payload = data.draftPayload;
+
+  if (payload?.pricing) {
+    payload.pricing = {
+      ...payload.pricing,
+      basePrice: payload.pricing.basePrice ? payload.pricing.basePrice / 100 : null,
+      packages: payload.pricing.packages.map((p) => ({ ...p, price: p.price / 100 })),
+    };
+  }
+
+  return { ...data, draftPayload: payload };
+}
 
 export async function createDraft(kind: "hall" | "service"): Promise<{ id: string }> {
   return apiFetch<{ id: string }>("/api/vendor/listings", {

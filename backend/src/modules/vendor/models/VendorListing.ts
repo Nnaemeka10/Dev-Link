@@ -44,6 +44,21 @@ export const VendorListingModel = {
 
 
   /**
+   * Fetches a single listing with its saved wizard payload, for reopening
+   * a draft in the create-listing flow. Ownership enforced via vendor_id.
+   */
+  async getDraftById(listingId: string, userId: number) {
+    const db = getDB();
+    const res = await db.query(
+      `SELECT id, kind, status, draft_payload
+       FROM listings
+       WHERE id = $1 AND vendor_id = $2 AND deleted_at IS NULL`,
+      [listingId, userId]
+    );
+    return res.rows[0] || null;
+  },
+
+  /**
    * Creates a minimal draft listing. 
    * Called immediately when the wizard opens to establish a UUID for image uploads.
    */
@@ -57,14 +72,16 @@ export const VendorListingModel = {
     return res.rows[0];
   },
 
+
+
   /**
    * Debounced autosave target. Merges the JSONB payload without overwriting status.
    */
-  async updateDraft(listingId: string, userId: number, payload: any): Promise<void> {
+   async updateDraft(listingId: string, userId: number, payload: any): Promise<void> {
     const db = getDB();
     await db.query(
       `UPDATE listings SET draft_payload = $3, updated_at = NOW() 
-       WHERE id = $1 AND vendor_id = $2 AND status = 'draft'`,
+       WHERE id = $1 AND vendor_id = $2 AND status IN ('draft', 'rejected')`,
       [listingId, userId, JSON.stringify(payload)]
     );
   },

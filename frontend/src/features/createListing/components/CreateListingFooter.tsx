@@ -5,6 +5,7 @@ import { TOTAL_STEPS } from "../types/listing";
 
 interface CreateListingFooterProps {
   currentStep: StepNumber;
+  isPublishing?: boolean;
   onPrev: () => void;
   onNext: () => void;
   onSaveDraft: () => void;
@@ -16,6 +17,7 @@ export default function CreateListingFooter({
   onPrev,
   onNext,
   onSaveDraft,
+  isPublishing,
   onPublish,
 }: CreateListingFooterProps) {
   const isFirstStep = currentStep === 1;
@@ -36,12 +38,19 @@ export default function CreateListingFooter({
             <button
               type="button"
               onClick={onPublish}
+              disabled={isPublishing}
               className="flex items-center gap-2 rounded-full bg-accent-primary px-7 py-3.5 text-sm font-bold text-white shadow-card transition-all hover:scale-[1.02] hover:shadow-card-hover active:scale-95"
             >
+              {isPublishing ? (
+                <>Publishing <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" /></>
+              ) : (
+              <>
               Publish Listing
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                 <path d="M12 2L14.5 8.5L21 9.3L16.2 13.9L17.5 20.5L12 17.2L6.5 20.5L7.8 13.9L3 9.3L9.5 8.5L12 2Z" fill="currentColor" />
               </svg>
+              </>
+              )}
             </button>
           </>
         ) : (

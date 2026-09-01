@@ -20,6 +20,7 @@ interface CreateListingShellProps {
   onSaveDraft: () => void;
   onPublish: () => void;
   children: ReactNode;
+  isPublishing?: boolean;
 }
 
 export default function CreateListingShell({
@@ -32,6 +33,7 @@ export default function CreateListingShell({
   onNext,
   onSaveDraft,
   onPublish,
+  isPublishing,
   children,
 }: CreateListingShellProps) {
   return (
@@ -55,6 +57,7 @@ export default function CreateListingShell({
           onNext={onNext}
           onSaveDraft={onSaveDraft}
           onPublish={onPublish}
+          isPublishing={isPublishing}
         />
       </div>
 

@@ -4,12 +4,12 @@ import { VendorListingModel } from '../models/VendorListing.js';
 import { VendorModel } from '../../payments/models/VendorModel.js';
 import { listingSubmitSchema } from '../schema/listingSchema.js'; // Assume Zod schema is shared/isomorphic
 
-const LISTING_STATUS_DISPLAY_MAP: Record<string, 'active' | 'draft' | 'offline'> = {
+const LISTING_STATUS_DISPLAY_MAP: Record<string, 'active' | 'draft' | 'in_review' | 'rejected' | 'offline'> = {
   published: 'active',
   draft: 'draft',
-  pending_review: 'draft',
+  pending_review: 'in_review',
   suspended: 'offline',
-  rejected: 'offline',
+  rejected: 'rejected',
   archived: 'offline',
 };
 
@@ -37,21 +37,40 @@ export const getMyListings = async (req: Request, res: Response) => {
   }
 };
 
+export const getListingDraft = async (req: Request, res: Response) => {
+  try {
+    if (!req.user?.userId) return res.status(401).json({ message: 'Unauthorized' });
+
+    // Fetch the draft by ID and user ID
+    const listing = await VendorListingModel.getDraftById(req.params.id, req.user.userId);
+    if (!listing) return res.status(404).json({ message: 'Listing not found' });
+
+    // Only true drafts (and rejected listings) can be reopened in the wizard
+    if (listing.status !== 'draft' && listing.status !== 'rejected') {
+      return res.status(409).json({ message: `This listing can't be edited (status: ${listing.status}).` });
+    }
+
+    res.status(200).json({
+      id: listing.id,
+      kind: listing.kind,
+      status: listing.status,
+      draftPayload: listing.draft_payload ?? null,
+    });
+  } catch (error: any) {
+    console.error('Get draft error:', error);
+    res.status(500).json({ message: 'Failed to fetch draft' });
+  }
+};
+
 export const createListingDraft = async (req: Request, res: Response) => {
   try {
     if (!req.user?.userId) return res.status(401).json({ message: 'Unauthorized' });
 
-    //  Ensure Vendor exists before listing creation
-    let vendor = await VendorModel.findByUserId(req.user.userId);
-    if (!vendor) {
-      const { businessName, bankCode, accountNumber } = req.body;
-      if (!businessName || !bankCode || !accountNumber) {
-        return res.status(400).json({ message: 'Vendor bank details required for first listing.' });
-      }
-      vendor = await VendorModel.onboardVendor(req.user.userId, businessName, req.user.email, bankCode, accountNumber);
+    const { kind } = req.body;
+    if (kind !== 'hall' && kind !== 'service') {
+      return res.status(400).json({ message: 'kind must be "hall" or "service"' });
     }
 
-    const { kind } = req.body;
     const draft = await VendorListingModel.createDraft(req.user.userId, kind);
     res.status(201).json(draft);
   } catch (error: any) {
@@ -74,6 +93,15 @@ export const publishListing = async (req: Request, res: Response) => {
     if (!req.user?.userId) return res.status(401).json({ message: 'Unauthorized' });
 
     // Server-side validation using the shared Zod schema
+    const vendor = await VendorModel.findByUserId(req.user.userId);
+    if (!vendor || vendor.verification_status !== 'verified') {
+      return res.status(403).json({
+        code: 'VERIFICATION_REQUIRED',
+        status: vendor?.verification_status ?? 'unregistered',
+        message: 'Your bank account must be verified before you can publish. Save this listing as a draft and publish later.',
+      });
+    }
+
     const parsed = listingSubmitSchema.safeParse(req.body.draft_payload);
     if (!parsed.success) {
       return res.status(422).json({ errors: parsed.error.flatten() });

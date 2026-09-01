@@ -4,13 +4,28 @@
 import Image from "next/image";
 import VendorSideNavBar from "../../../components/layout/VendorSideNavBar";
 import VendorMobileDock from "../../../components/layout/VendorMobileDock";
-import { MOCK_VENDOR_LISTINGS } from "../vendor.data";
-import { Plus } from "lucide-react";
+import { Plus, Pencil } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useMyListingsStats, useVendorListings } from "../hooks/useVendorDashboard";
+import type { VendorListing } from "../types";
 
 function formatNaira(amount: number) {
   return new Intl.NumberFormat("en-NG", { style: "currency", currency: "NGN" }).format(amount);
+}
+
+function StatusBadge({ status }: { status: VendorListing["status"] }) {
+  switch (status) {
+    case "active":
+      return <span className="bg-white/90 backdrop-blur-sm text-text-green px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider animate-badge-pop stagger-6">Active</span>;
+    case "in_review":
+      return <span className="bg-amber-400/95 backdrop-blur-sm text-amber-950 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider animate-badge-pop stagger-6">In Review</span>;
+    case "rejected":
+      return <span className="bg-red-500/95 backdrop-blur-sm text-white px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider animate-badge-pop stagger-6">Needs Changes</span>;
+    case "draft":
+      return <span className="bg-surface-dim/90 backdrop-blur-sm text-text-on-muted px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider animate-badge-pop stagger-6">Draft</span>;
+    default:
+      return <span className="bg-surface-dim/90 backdrop-blur-sm text-text-on-muted px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider animate-badge-pop stagger-6">Offline</span>;
+  }
 }
 
 function MyListingsContent() {
@@ -80,31 +95,63 @@ function MyListingsContent() {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {listings.map((listing) => (
-            <div
-              key={listing.id}
-              className="group relative bg-surface-base rounded-2xl overflow-hidden hover:-translate-y-2 transition-all duration-500 hover:shadow-2xl animate-fade-slide-up stagger-5"
-            >
-              <div className="relative aspect-[4/3] bg-surface-dim overflow-hidden">
-                <Image
-                  src={listing.thumbnailUrl}
-                  alt={listing.title}
-                  fill
-                  sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                  className="object-cover group-hover:scale-105 transition-transform duration-700"
-                />
-                <div className="absolute top-4 left-4 flex gap-2">
-                  {listing.status === "active" ? (
-                    <span className="bg-white/90 backdrop-blur-sm text-text-green px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider animate-badge-pop stagger-6">
-                      Active
-                    </span>
-                  ) : (
-                    <span className="bg-surface-dim/90 backdrop-blur-sm text-text-on-muted px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider animate-badge-pop stagger-6">
-                      Draft
-                    </span>
+          {listings.map((listing) => {
+            const openEditor = () => router.push(`/vendor/create-listing?edit=${listing.id}`);
+
+            return (
+              <div
+                key={listing.id}
+                onClick={listing.canEdit ? openEditor : undefined}
+                role={listing.canEdit ? "button" : undefined}
+                tabIndex={listing.canEdit ? 0 : undefined}
+                onKeyDown={(e) => {
+                  if (listing.canEdit && (e.key === "Enter" || e.key === " ")) {
+                    e.preventDefault();
+                    openEditor();
+                  }
+                }}
+                className={`group relative bg-surface-base rounded-2xl overflow-hidden transition-all duration-500 animate-fade-slide-up stagger-5 ${
+                  listing.canEdit
+                    ? "cursor-pointer hover:-translate-y-2 hover:shadow-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary"
+                    : "hover:shadow-xl"
+                }`}
+              >
+                <div className="relative aspect-[4/3] bg-surface-dim overflow-hidden">
+                  <Image
+                    src={listing.thumbnailUrl}
+                    alt={listing.title}
+                    fill
+                    sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                    className="object-cover group-hover:scale-105 transition-transform duration-700"
+                  />
+
+                  <div className="absolute top-4 left-4 flex gap-2">
+                    <StatusBadge status={listing.status} />
+                  </div>
+
+                  {listing.canEdit && (
+                    <>
+                      {/* Always-visible edit button (works on touch, no hover needed) */}
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); openEditor(); }}
+                        aria-label={`Edit ${listing.title}`}
+                        title="Edit draft"
+                        className="absolute top-4 right-4 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-white/95 text-text-primary shadow-card backdrop-blur-sm transition-transform duration-300 hover:scale-110 active:scale-95"
+                      >
+                        <Pencil className="w-4 h-4" />
+                      </button>
+
+                      {/* Hover CTA on the image */}
+                      <div className="pointer-events-none absolute inset-x-0 bottom-0 flex justify-center bg-gradient-to-t from-black/70 via-black/25 to-transparent p-4 pt-10 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+                        <span className="flex items-center gap-2 rounded-full bg-white px-4 py-2 text-xs font-bold text-text-primary shadow-card">
+                          <Pencil className="w-3.5 h-3.5" />
+                          {listing.status === "rejected" ? "Edit & Resubmit" : "Continue Draft"}
+                        </span>
+                      </div>
+                    </>
                   )}
                 </div>
-              </div>
 
               <div className="p-6">
                 <h3 className="text-lg font-bold font-headline text-text-primary leading-tight mb-1 line-clamp-1 transition-colors duration-300 group-hover:text-accent-primary">
@@ -129,7 +176,8 @@ function MyListingsContent() {
                 </div>
               </div>
             </div>
-          ))}
+          );
+        })}
 
           {/* ── Create New Card ──────────────────────────────────────────── */}
           <div className="border-2 border-dashed border-border-light rounded-2xl flex flex-col items-center justify-center p-12 hover:bg-surface-low transition-all duration-500 group cursor-pointer animate-fade-slide-up stagger-7 hover:border-accent-primary/50">

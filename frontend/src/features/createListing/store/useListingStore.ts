@@ -106,6 +106,8 @@ interface ListingStore {
   removePackage: (id: string) => void;
   toggleBlockedDate: (isoDate: string) => void;
 
+  hydrateFromDraft: (listingId: string, draft: ListingFormState | null, fallbackCategory?: ListingCategory) => void;
+
   // Root
   resetForm: () => void;
 }
@@ -460,6 +462,16 @@ export const useListingStore = create<ListingStore>()(
             false,
             "toggleBlockedDate"
           ),
+
+        hydrateFromDraft: (listingId, draft, fallbackCategory) =>
+          set((state) => ({
+            listingId,
+            // Spread over the fresh form so fields added to ListingFormState later
+            // still get their defaults when loading older drafts
+            form: draft
+              ? { ...state.form, ...draft }
+              : { ...state.form, category: fallbackCategory ?? state.form.category },
+        })),
 
         // ── Root ────────────────────────────────────────────────────────────
         resetForm: () => set({ listingId: null, currentStep: 1, form: initialFormState }, false, "resetForm"),

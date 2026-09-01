@@ -118,7 +118,8 @@ export interface VendorListing {
   id: string;
   title: string;
   location: string;
-  status: "active" | "draft" | "offline";
+  status: "active" | "draft" | "in_review" | "rejected" | "offline";
+  canEdit: boolean;
   pricePerUnit: number;
   unit: string;
   thumbnailUrl: string;

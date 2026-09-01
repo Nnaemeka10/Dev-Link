@@ -7,7 +7,7 @@ import {
   getBookings, 
   getMyListingsStats ,
 } from '../controllers/vendorDashboard.controller.js';
-import { autosaveDraft, createListingDraft, getMyListings, publishListing, signUpload } from '../controllers/vendorListing.controller.js';
+import { autosaveDraft, createListingDraft, getMyListings, getListingDraft, publishListing, signUpload } from '../controllers/vendorListing.controller.js';
 
 const router = express.Router();
 
@@ -19,6 +19,7 @@ router.get('/dashboard/summary', getSummary);
 router.get('/dashboard/transactions', getTransactions);
 router.get('/bookings', getBookings);
 router.get('/listings/stats', getMyListingsStats);
+router.get('/listings/:id/draft', getListingDraft);
 
 router.post('/uploads/cloudinary/sign', signUpload); 
 router.post('/listings', createListingDraft);               // create a draft listing
