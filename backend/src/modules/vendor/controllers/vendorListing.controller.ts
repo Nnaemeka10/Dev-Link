@@ -24,6 +24,7 @@ export const getMyListings = async (req: Request, res: Response) => {
       title: l.title,
       location: l.location || 'Location not set',
       status: LISTING_STATUS_DISPLAY_MAP[l.status] ?? 'offline',
+      canEdit: l.status === 'draft' || l.status === 'rejected',
       pricePerUnit: Number(l.base_price_kobo) / 100, // kobo → naira for the UI
       unit: (l.price_unit || 'per event').replace(/^per\s+/i, ''),
       thumbnailUrl: l.thumbnail_url || '/placeholder-listing.jpg',

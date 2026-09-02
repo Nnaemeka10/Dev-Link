@@ -1,3 +1,5 @@
+import { VerificationStatus } from "./verification.js";
+
 export interface PaystackInitializeResponse {
     status: boolean;
     message: string;
@@ -34,6 +36,7 @@ export interface Vendor {
     account_number_encrypted: Buffer;
     account_number_last4: string;
     paystack_recipient_code: string;
+    verification_status: VerificationStatus;
 }
 
 export interface LedgerAccount {
