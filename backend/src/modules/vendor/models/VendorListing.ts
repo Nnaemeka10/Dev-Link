@@ -77,12 +77,20 @@ export const VendorListingModel = {
   /**
    * Debounced autosave target. Merges the JSONB payload without overwriting status.
    */
-   async updateDraft(listingId: string, userId: number, payload: any): Promise<void> {
+  async updateDraft(listingId: string, userId: number, payload: any): Promise<void> {
     const db = getDB();
+    const name = String(payload?.details?.name ?? '').trim();
+    const priceKobo = Number.isFinite(payload?.pricing?.basePrice)
+        ? Math.round(payload.pricing.basePrice) // already kobo — do NOT ×100 again
+        : null;
     await db.query(
-      `UPDATE listings SET draft_payload = $3, updated_at = NOW() 
+      `UPDATE listings SET
+          draft_payload = $3,
+          title = COALESCE(NULLIF($4, ''), title),
+          base_price_kobo = COALESCE($5, base_price_kobo),
+          updated_at = NOW()
        WHERE id = $1 AND vendor_id = $2 AND status IN ('draft', 'rejected')`,
-      [listingId, userId, JSON.stringify(payload)]
+      [listingId, userId, JSON.stringify(payload), name, priceKobo]
     );
   },
 
@@ -90,17 +98,19 @@ export const VendorListingModel = {
    * Flips status to pending_review. The frontend schema is trusted here only if 
    * the backend re-validates it (handled in controller).
    */
-  async publishDraft(listingId: string, userId: number, payload?:any): Promise<void> {
-    const db = getDB();
-    if (payload) {
-        await this.processDraftPayload(listingId, payload);
-    }
-    await db.query(
-      `UPDATE listings SET status = 'pending_review', updated_at = NOW() 
-       WHERE id = $1 AND vendor_id = $2`,
-      [listingId, userId]
-    );
-  },
+  async publishDraft(listingId: string, userId: number, payload?: any): Promise<{ status: string }> {
+  const db = getDB();
+  if (payload) {
+    await this.processDraftPayload(listingId, payload);
+  }
+  const nextStatus = ENV.ENABLE_LISTING_REVIEW ? 'pending_review' : 'published';
+  const res = await db.query(
+    `UPDATE listings SET status = $3, updated_at = NOW()
+     WHERE id = $1 AND vendor_id = $2 RETURNING status`,
+    [listingId, userId, nextStatus]
+  );
+  return res.rows[0];
+},
 
   /**
    * Generates a secure, short-lived signature for Cloudinary direct uploads.
@@ -227,7 +237,33 @@ async processDraftPayload(listingId: string, payload: any): Promise<void> {
             }
         }
 
-        await client.query('COMMIT');
+        // 3. Gallery - listing_assets (delete + reinsert = idempotent on republish)
+        const photos = (payload.gallery ?? []).filter(
+          (p: any) => p.uploadStatus === 'uploaded' && p.url
+        );
+        if (photos.length > 0) {
+          await client.query(`DELETE FROM listing_assets WHERE listing_id = $1`, [listingId]);
+
+          // findIndex - -1 when no cover set; Math.max makes photo[0] the primary
+          const coverIdx = Math.max(0, photos.findIndex((p: any) => p.isCover));
+
+          const values: string[] = [];
+          const params: any[] = [listingId];
+          photos.forEach((p: any, i: number) => {
+            const b = i * 4;
+            values.push(`($1, $${b + 2}, $${b + 3}, $${b + 4}, $${b + 5})`);
+            // publicId ?? url satisfies cloudinary_public_id's NOT NULL for legacy rows
+            params.push(p.publicId ?? p.url, p.url, i === coverIdx, i);
+          });
+
+          await client.query(
+            `INSERT INTO listing_assets (listing_id, cloudinary_public_id, url, is_primary, sort_order)
+            VALUES ${values.join(', ')}`,
+            params
+          );
+        }
+
+      await client.query('COMMIT');
     } catch (error) {
         await client.query('ROLLBACK');
         throw error;
@@ -236,7 +272,7 @@ async processDraftPayload(listingId: string, payload: any): Promise<void> {
     }
   },
 
-   async _resolveStateName(client: any, stateId: string | null): Promise<string | null> {
+  async _resolveStateName(client: any, stateId: string | null): Promise<string | null> {
       if (!stateId) return null;
       const res = await client.query(`SELECT name FROM nigeria_states WHERE id = $1`, [stateId]);
       return res.rows[0]?.name ?? null;

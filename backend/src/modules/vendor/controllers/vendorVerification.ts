@@ -4,6 +4,11 @@ import { resolveBankAccount, dispatchIdentityVerification, getOrCreatePaystackCu
 import { createTransferRecipient } from '../../payments/utils/paystack.js';
 import { matchIdentity } from '../../payments/utils/nameMatch.js';
 import { getDB } from '../../../lib/db.js';
+import { ENV } from '../../../lib/env.js';
+
+const BVN_CHECKS_ENABLED = ENV.ENABLE_BVN_VERIFICATION;
+
+
 
 export const submitPayoutMethod = async (req: Request, res: Response) => {
   try {
@@ -68,7 +73,7 @@ export const submitPayoutMethod = async (req: Request, res: Response) => {
 
 
     // Determine preliminary status based on name match
-    const preliminaryStatus = nameMatched ? 'pending' : 'manual_review';
+    const preliminaryStatus = nameMatched ? (BVN_CHECKS_ENABLED ? 'pending' : 'verified'): 'manual_review';
 
     // Save all details to DB securely
     await VendorVerificationModel.updateVerificationDetails(req.user.userId, {
@@ -83,6 +88,14 @@ export const submitPayoutMethod = async (req: Request, res: Response) => {
         message: 'We need to manually confirm your account details. Payouts are held until verified.'
       });
     }
+
+    if (!BVN_CHECKS_ENABLED) {
+      return res.status(200).json({
+        status: 'verified',
+        message: 'Account verified. BVN check is disabled in this environment.',
+      });
+    }
+   
 
     // We dispatch the request to Paystack but DO NOT await it.
     // The API responds to the frontend instantly with "pending".

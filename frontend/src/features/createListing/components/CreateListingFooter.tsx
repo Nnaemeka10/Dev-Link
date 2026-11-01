@@ -24,8 +24,8 @@ export default function CreateListingFooter({
   const isReviewStep = currentStep === TOTAL_STEPS;
 
   return (
-    <footer className="fixed inset-x-0 bottom-[76px] z-30 border-t border-black/5 bg-bg-primary/90 px-4 py-4 backdrop-blur-xl xs:px-6 xl:bottom-0 xl:left-64 xl:px-8">
-      <div className="mx-auto flex max-w-[1600px] items-center justify-between">
+    <footer className="fixed inset-x-0 bottom-19 z-30 border-t border-black/5 bg-bg-primary/90 px-4 py-4 backdrop-blur-xl xs:px-6 xl:bottom-0 xl:left-64 xl:px-8">
+      <div className="mx-auto flex max-w-400 items-center justify-between">
         {isReviewStep ? (
           <>
             <button

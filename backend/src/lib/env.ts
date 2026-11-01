@@ -29,9 +29,11 @@ export const ENV = {
     REDIS_URL: process.env.REDIS_URL,
     PGCRYPTO_KEY: required('PGCRYPTO_KEY'),
     GOOGLE_CLIENT_ID: required('GOOGLE_CLIENT_ID'),
+    ENABLE_BVN_VERIFICATION: process.env.ENABLE_BVN_VERIFICATION !== 'false',
+    ENABLE_LISTING_REVIEW: process.env.ENABLE_LISTING_REVIEW !== 'false',
 }
 
 // Add this safety check to catch configuration errors instantly
 if (!ENV.RESEND_API_KEY) {
-    console.error("❌ CRITICAL: RESEND_API_KEY is missing from environment variables!");
+    console.error("RESEND_API_KEY is missing from environment variables!");
 }

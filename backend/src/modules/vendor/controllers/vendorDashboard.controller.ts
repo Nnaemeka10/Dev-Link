@@ -1,4 +1,3 @@
-// src/modules/vendor/controllers/vendorDashboard.controller.ts
 import { Request, Response } from 'express';
 import { VendorDashboardModel } from '../models/VendorDashboard.js';
 

@@ -38,6 +38,18 @@ const serviceLocationSchema = z
     { message: "Each covered state needs at least one local government selected" }
   );
 
+const hallLocationLax = z.object({
+  stateId: z.string(),
+  lgaId: z.string(),
+  streetAddress: z.string(),
+});
+const serviceLocationLax = z.object({
+  businessAddress: z.string(),
+  coverageMode: z.enum(["statewide", "lga"]),
+  coverageStateIds: z.array(z.string()),
+  deselectedLgaIdsByState: z.record(z.string(), z.array(z.string())),
+});
+
 export const detailsStepSchema = z.object({
   name: z.string().trim().min(3, "Listing name must be at least 3 characters").max(80),
   description: z.string().trim().min(30, "Tell clients a bit more — at least 30 characters").max(2000),
@@ -111,14 +123,56 @@ export const pricingStepSchema = z
   });
 
 /** Full-form check, run once on the review step before publishing. */
-export const listingSubmitSchema = z.object({
-  category: categoryStepSchema.shape.category,
-  details: detailsStepSchema,
-  amenities: z.array(selectedAmenitySchema),
-  requirements: z.array(selectedRequirementSchema),
-  customRequirements: z.array(customRequirementSchema),
-  gallery: galleryStepSchema.shape.gallery,
-  pricing: pricingStepSchema,
-});
+/** Full-form check, run once on the review step before publishing. */
+export const listingSubmitSchema = z
+  .object({
+    category: categoryStepSchema.shape.category,
+    details: detailsStepSchema.extend({
+      hallLocation: hallLocationLax.optional(),
+      serviceLocation: serviceLocationLax.optional(),
+    }),
+    amenities: z.array(selectedAmenitySchema),
+    requirements: z.array(selectedRequirementSchema),
+    customRequirements: z.array(customRequirementSchema),
+    gallery: galleryStepSchema.shape.gallery,
+    pricing: pricingStepSchema,
+  })
+  .superRefine((payload, ctx) => {
+    if (payload.category === "hall") {
+      const loc = payload.details.hallLocation;
+      if (!loc || !loc.stateId || !loc.lgaId || loc.streetAddress.trim().length < 5) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["details", "hallLocation"],
+          message: "Complete the venue address (state, LGA and street address)",
+        });
+      }
+      return; // halls owe no business address / coverage areas
+    }
+    // category === "service"
+    const loc = payload.details.serviceLocation;
+    if (!loc) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["details", "serviceLocation"],
+        message: "Complete your service location details",
+      });
+      return;
+    }
+    if (loc.businessAddress.trim().length < 5) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["details", "serviceLocation", "businessAddress"],
+        message: "Enter a business address",
+      });
+    }
+    if (loc.coverageStateIds.length === 0) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["details", "serviceLocation", "coverageStateIds"],
+        message: "Select at least one area you cover",
+      });
+    }
+  });
 
 export type ListingSubmitInput = z.infer<typeof listingSubmitSchema>;

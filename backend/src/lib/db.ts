@@ -74,7 +74,7 @@ async function runMigrations() {
             );
 
             if (checkResult.rows.length > 0) {
-                console.log(`⏭️  Skipping ${file} (already executed)`);
+                console.log(`Skipping ${file} (already executed)`);
                 continue;
             }
 
@@ -82,7 +82,7 @@ async function runMigrations() {
             const migrationPath = path.join(migrationsDir, file);
             const migration = fs.readFileSync(migrationPath, 'utf-8');
 
-            console.log(`🔄 Running migration: ${file}`);
+            console.log(`Running migration: ${file}`);
             
             // Execute migration in a transaction
             const client = await pool.connect();
@@ -97,17 +97,17 @@ async function runMigrations() {
                 );
                 
                 await client.query('COMMIT');
-                console.log(`✅ Successfully executed: ${file}`);
+                console.log(`Successfully executed: ${file}`);
             } catch (error: any) {
                 await client.query('ROLLBACK');
-                console.error(`❌ Error executing ${file}:`, error.message);
+                console.error(` Error executing ${file}:`, error.message);
                 throw error; // Stop migration process on error
             } finally {
                 client.release();
             }
         }
 
-        console.log('✅ All migrations completed successfully');
+        console.log('All migrations completed successfully');
 
     } catch (error:any) {
         console.log(`Migration error: ${error.message}`);
