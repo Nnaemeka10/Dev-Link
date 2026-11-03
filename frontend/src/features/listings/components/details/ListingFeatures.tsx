@@ -1,13 +1,21 @@
-import { Armchair, Snowflake, UsersRound, Utensils, Zap } from "lucide-react";
+import {
+  Armchair, Bath, ChefHat, Drama, Lightbulb, ShieldCheck, Sofa, Snowflake,
+  Speaker, SquareParking, Tv, UsersRound, Utensils, UtensilsCrossed, Wifi, Zap,
+} from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import type { ListingFeature } from "../../details.types";
 
-function FeatureIcon({ icon, label }: { icon: ListingFeature["icon"], label: string }) {
-  if (icon === "capacity") return <UsersRound className="h-5 w-5" />;
-  if (icon === "power") return <Zap className="h-5 w-5" />;
-  if (icon === "climate") return <Snowflake className="h-5 w-5" />;
-  if (icon === "suite") return <Armchair className="h-5 w-5" />;
-  if (icon === "catering") return <Utensils className="h-5 w-5" />;
+const FEATURE_ICONS: Record<string, LucideIcon> = {
+  capacity: UsersRound, power: Zap, climate: Snowflake, suite: Armchair, catering: Utensils,
+  parking: SquareParking, wifi: Wifi, "security-247": ShieldCheck,
+  "sound-system": Speaker, "elevated-stage": Drama, "custom-lighting": Lightbulb,
+  "led-screens": Tv, "premium-restrooms": Bath, "furniture-included": Sofa,
+  "prep-kitchen": ChefHat, "in-house-catering": UtensilsCrossed,
+};
 
+function FeatureIcon({ icon, label }: { icon: ListingFeature["icon"]; label: string }) {
+  const Icon = FEATURE_ICONS[icon];
+  if (Icon) return <Icon className="h-5 w-5" />;
   return <span className="text-xl font-extrabold">{label.charAt(0).toUpperCase()}</span>;
 }
 

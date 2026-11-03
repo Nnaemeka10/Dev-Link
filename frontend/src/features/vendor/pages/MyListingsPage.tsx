@@ -4,7 +4,10 @@
 import Image from "next/image";
 import VendorSideNavBar from "../../../components/layout/VendorSideNavBar";
 import VendorMobileDock from "../../../components/layout/VendorMobileDock";
-import { Plus, Pencil } from "lucide-react";
+import { Plus, Pencil, Trash2, AlertTriangle } from "lucide-react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { deleteListingDraft } from "../../createListing/api/listingDraft.api";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useMyListingsStats, useVendorListings } from "../hooks/useVendorDashboard";
 import type { VendorListing } from "../types";
@@ -32,8 +35,22 @@ function MyListingsContent() {
   const router = useRouter();
   const { data: stats } = useMyListingsStats();
   const { data: listings } = useVendorListings();
+
+  const queryClient = useQueryClient();
+  const [listingToDelete, setListingToDelete] = useState<VendorListing | null>(null);
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => deleteListingDraft(id),
+    onSuccess: () => {
+      setListingToDelete(null);
+      queryClient.invalidateQueries({ queryKey: ["vendor", "listings"] });
+      queryClient.invalidateQueries({ queryKey: ["vendor", "listings", "stats"] });
+    },
+    onError: (error) => console.error("Failed to delete draft", error),
+  });
   
   return (
+    <>
     <div className="max-w-6xl mx-auto py-8">
       {/* ── Page Header ─────────────────────────────────────────────────── */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-12 animate-fade-slide-up">
@@ -142,6 +159,16 @@ function MyListingsContent() {
                         <Pencil className="w-4 h-4" />
                       </button>
 
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); setListingToDelete(listing); }}
+                        aria-label={`Delete ${listing.title}`}
+                        title="Delete draft"
+                        className="absolute top-4 right-16 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-white/95 text-red-600 shadow-card backdrop-blur-sm transition-transform duration-300 hover:scale-110 active:scale-95"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+
                       {/* Hover CTA on the image */}
                       <div className="pointer-events-none absolute inset-x-0 bottom-0 flex justify-center bg-gradient-to-t from-black/70 via-black/25 to-transparent p-4 pt-10 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
                         <span className="flex items-center gap-2 rounded-full bg-white px-4 py-2 text-xs font-bold text-text-primary shadow-card">
@@ -197,6 +224,32 @@ function MyListingsContent() {
         </div>
       )}
     </div>
+
+    {listingToDelete && (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setListingToDelete(null)}>
+        <div className="w-full max-w-md rounded-3xl bg-surface-base p-8 shadow-modal" onClick={(e) => e.stopPropagation()}>
+          <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-full bg-red-50">
+            <AlertTriangle className="h-7 w-7 text-red-600" />
+          </div>
+          <h3 className="text-center text-xl font-bold font-headline text-text-primary">Delete this draft?</h3>
+          <p className="mt-3 text-center text-sm text-text-muted">
+            &ldquo;{listingToDelete.title}&rdquo; and everything you&rsquo;ve filled in so far will be removed. This can&rsquo;t be undone.
+          </p>
+          <div className="mt-8 flex gap-3">
+            <button type="button" onClick={() => setListingToDelete(null)} disabled={deleteMutation.isPending}
+              className="flex-1 rounded-full border border-border-light py-3.5 text-sm font-bold text-text-primary transition-all hover:bg-surface-low active:scale-95 disabled:opacity-50">
+              Cancel
+            </button>
+            <button type="button" onClick={() => deleteMutation.mutate(listingToDelete.id)} disabled={deleteMutation.isPending}
+              className="flex-1 rounded-full bg-red-600 py-3.5 text-sm font-bold text-white shadow-lg transition-all hover:bg-red-700 active:scale-95 disabled:opacity-50">
+              {deleteMutation.isPending ? "Deleting…" : "Delete Draft"}
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
+  </>
+    
   );
 }
 

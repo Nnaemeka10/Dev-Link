@@ -13,13 +13,13 @@ export const categoryStepSchema = z.object({
   }),
 });
 
-const hallLocationSchema = z.object({
+export const hallLocationSchema = z.object({
   stateId: z.string().min(1, "Select a state"),
   lgaId: z.string().min(1, "Select a local government"),
   streetAddress: z.string().trim().min(5, "Enter a street address"),
 });
 
-const serviceLocationSchema = z
+export const serviceLocationSchema = z
   .object({
     businessAddress: z.string().trim().min(5, "Enter a business address"),
     coverageMode: z.enum(["statewide", "lga"]),
@@ -40,7 +40,7 @@ const serviceLocationSchema = z
 
 export const detailsStepSchema = z.object({
   name: z.string().trim().min(3, "Listing name must be at least 3 characters").max(80),
-  description: z.string().trim().min(30, "Tell clients a bit more — at least 30 characters").max(2000),
+  description: z.string().trim().min(30, "Tell clients a bit more - at least 30 characters").max(2000),
   selectedTypeIds: z.array(z.string()).min(1, "Select at least one type"),
   tags: z.array(z.string().trim().min(1).max(24)).max(5, "Up to 5 tags only"),
   hallLocation: hallLocationSchema.optional(),

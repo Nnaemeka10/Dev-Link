@@ -14,6 +14,7 @@ import { createDraft, autosaveDraft, publishListing, fetchDraft } from "./api/li
 import { usePayoutMethodStatus } from "../profile/hooks/usePayoutVerification";
 import Modal from "./components/shared/Modal";
 import VerificationRequiredModal from "./components/VerificationRequiredModal";
+import { hallLocationSchema, serviceLocationSchema } from "./schema/listingSchema";
 
 const VENDOR_LISTINGS_PATH = "/vendor/mylistings";
 
@@ -39,6 +40,9 @@ export default function CreateListingPage() {
   const [showVerificationModal, setShowVerificationModal] = useState(false);
 
   const { data: payoutStatus, refetch: refetchPayoutStatus } = usePayoutMethodStatus();
+
+  const markStepAttempted = useListingStore((s) => s.markStepAttempted);
+  const clearStepAttempted = useListingStore((s) => s.clearStepAttempted);
 
 
    //Create draft immediately on mount if no listingId exists
@@ -98,7 +102,27 @@ export default function CreateListingPage() {
 }, [editId, goToStep]);
 
 
+  const isLocationValid = () => {
+    const schema = category === "hall" ? hallLocationSchema : serviceLocationSchema;
+    const data = category === "hall" ? form.details.hallLocation : form.details.serviceLocation;
+    return schema.safeParse(data).success;
+  };
 
+  const scrollToLocation = () =>
+    document.getElementById("location-fields")?.scrollIntoView({ behavior: "smooth", block: "center" });
+
+  // Replaces the raw `nextStep` on the footer - blocks leaving step 2 with no location.
+  const handleNext = () => {
+    if (currentStep === 2 && category) {
+      if (!isLocationValid()) {
+        markStepAttempted(2); // reveals the inline errors in LocationSection
+        scrollToLocation();
+        return; // stay on the step
+      }
+      clearStepAttempted(2);
+    }
+    nextStep();
+  };
 
   const handleExit = () => {
     resetForm();
@@ -128,12 +152,23 @@ export default function CreateListingPage() {
   };
 
   const handlePublish = async () => {
+    // Guard 1 — never send a listing without its compulsory location
+    if (category && !isLocationValid()) {
+      markStepAttempted(2);
+      goToStep(2);
+      setTimeout(scrollToLocation, 50); // let step 2 mount first
+      return;
+    }
+
+    // Guard 2 — payout account must be verified
     const { data: payout } = await refetchPayoutStatus();
     if (payout?.status && payout.status !== "verified") {
       setShowVerificationModal(true); // stay on the page — nothing is lost
       return;
     }
     if (!listingId) return;
+
+    setIsPublishing(true);
     try {
       await publishListing(listingId, form);
       resetForm();
@@ -158,7 +193,7 @@ export default function CreateListingPage() {
       onExit={handleExit}
       onSaveAndExit={handleSaveAndExit}
       onPrev={prevStep}
-      onNext={nextStep}
+      onNext={handleNext}
       onSaveDraft={handleSaveDraft}
       onPublish={handlePublish}
       isPublishing={isPublishing}

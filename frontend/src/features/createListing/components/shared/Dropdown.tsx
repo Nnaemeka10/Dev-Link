@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 
 export interface DropdownOption {
   id: string;
@@ -15,6 +15,8 @@ interface DropdownProps {
   onSelect: (id: string) => void;
   disabled?: boolean;
   disabledHint?: string;
+  required?: boolean;
+  error?: string;
 }
 
 export default function Dropdown({
@@ -25,9 +27,12 @@ export default function Dropdown({
   onSelect,
   disabled,
   disabledHint,
+  required,
+  error,
 }: DropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
+  const errorId = `${useId()}-error`;
   const selected = options.find((o) => o.id === selectedId);
 
   useEffect(() => {
@@ -40,13 +45,24 @@ export default function Dropdown({
 
   return (
     <div className="space-y-2.5" ref={rootRef}>
-      <label className="block text-sm font-semibold text-text-primary">{label}</label>
+      <label className="block text-sm font-semibold text-text-primary">
+        {label}
+        {required && (
+          <span className="ml-0.5 text-red-600" aria-hidden="true">
+            *
+          </span>
+        )}
+      </label>
       <div className="relative">
         <button
           type="button"
           disabled={disabled}
+          aria-invalid={error ? true : undefined}
+          aria-describedby={error ? errorId : undefined}
           onClick={() => setIsOpen((v) => !v)}
-          className="flex w-full items-center justify-between rounded-input bg-bg-tertiary px-5 py-4 text-left text-base text-text-primary outline-none transition-shadow focus:ring-2 focus:ring-accent-primary/25 disabled:cursor-not-allowed disabled:opacity-50"
+          className={`flex w-full items-center justify-between rounded-input bg-bg-tertiary px-5 py-4 text-left text-base text-text-primary outline-none transition-shadow focus:ring-2 disabled:cursor-not-allowed disabled:opacity-50 ${
+            error ? "ring-2 ring-red-500/60 focus:ring-red-500/40" : "focus:ring-accent-primary/25"
+          }`}
         >
           <span className={selected ? "text-text-primary" : "text-text-primary/40"}>
             {selected ? selected.label : disabled && disabledHint ? disabledHint : placeholder}
@@ -88,6 +104,12 @@ export default function Dropdown({
           </div>
         )}
       </div>
+
+      {error && (
+        <p id={errorId} className="text-xs font-medium text-red-600">
+          {error}
+        </p>
+      )}
     </div>
   );
 }

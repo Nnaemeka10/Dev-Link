@@ -61,11 +61,14 @@ interface ListingStore {
   listingId: string | null;
   currentStep: StepNumber;
   form: ListingFormState;
+  attemptedSteps: Partial<Record<StepNumber, boolean>>;
 
   // Navigation
   goToStep: (step: StepNumber) => void;
   nextStep: () => void;
   prevStep: () => void;
+  markStepAttempted: (step: StepNumber) => void;
+  clearStepAttempted: (step: StepNumber) => void;
 
   // Step 1 — Category
   setCategory: (category: ListingCategory) => void;
@@ -119,6 +122,7 @@ export const useListingStore = create<ListingStore>()(
         listingId: null,
         currentStep: 1,
         form: initialFormState,
+        attemptedSteps: {},
         setListingId: (id) => set({ listingId: id }, false, "setListingId"),
 
         // ── Navigation ──────────────────────────────────────────────────────
@@ -132,9 +136,38 @@ export const useListingStore = create<ListingStore>()(
         prevStep: () =>
           set((s) => ({ currentStep: Math.max(1, s.currentStep - 1) as StepNumber }), false, "prevStep"),
 
+        markStepAttempted: (step) =>
+          set((s) => ({ attemptedSteps: { ...s.attemptedSteps, [step]: true } }), false, "markStepAttempted"),
+        clearStepAttempted: (step) =>
+          set((s) => ({ attemptedSteps: { ...s.attemptedSteps, [step]: false } }), false, "clearStepAttempted"),
+
         // ── Step 1 ──────────────────────────────────────────────────────────
         setCategory: (category) =>
-          set((s) => ({ form: { ...s.form, category } }), false, "setCategory"),
+          set(
+            (s) => {
+              if (s.form.category === category) {
+                return { form: { ...s.form, category } };
+              }
+              return {
+                form: {
+                  ...s.form,
+                  category,
+                  details: {
+                    ...s.form.details,
+                    selectedTypeIds: [],                         // hall types != service types
+                    hallLocation: initialDetails.hallLocation,
+                    serviceLocation: initialDetails.serviceLocation,
+                  },
+                  amenities: [],                                 // Step 3, hall flow
+                  requirements: [],                              // Step 3, service flow
+                  customRequirements: [],
+                  pricing: { ...s.form.pricing, usesPackages: false, packages: [] },
+                },
+              };
+            },
+            false,
+            "setCategory"
+          ),
 
         // ── Step 2 ──────────────────────────────────────────────────────────
         setListingName: (name) =>
@@ -474,7 +507,7 @@ export const useListingStore = create<ListingStore>()(
         })),
 
         // ── Root ────────────────────────────────────────────────────────────
-        resetForm: () => set({ listingId: null, currentStep: 1, form: initialFormState }, false, "resetForm"),
+        resetForm: () => set({ listingId: null, currentStep: 1, form: initialFormState, attemptedSteps: {} }, false, "resetForm"),
       }),
       { name: "eventvnv-create-listing",
         partialize: (state) => ({ listingId: state.listingId, form: state.form }),

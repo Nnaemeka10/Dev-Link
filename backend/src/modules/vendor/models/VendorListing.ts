@@ -2,6 +2,41 @@ import { getDB } from '../../../lib/db.js';
 import cloudinary from '../../../lib/cloudinary.js';
 import { ENV } from '../../../lib/env.js';
 
+// Mirror of the wizard's HALL_AMENITY_DEFINITIONS - label shown on the details
+// page, icon keys match ListingFeatures.tsx. Extend BOTH sides together.
+const HALL_AMENITY_META: Record<string, { label: string; icon: string; unit?: string }> = {
+  'capacity':           { label: 'Capacity',          icon: 'capacity', unit: 'guests' },
+  'parking':            { label: 'Parking',           icon: 'parking',  unit: 'spaces' },
+  'wifi':               { label: 'High-Speed WiFi',   icon: 'wifi' },
+  'climate-control':    { label: 'Central AC',        icon: 'climate' },
+  'backup-generator':   { label: 'Backup Generator',  icon: 'power' },
+  'security-247':       { label: '24/7 Security',     icon: 'security-247' },
+  'sound-system':       { label: 'Pro Sound System',  icon: 'sound-system' },
+  'elevated-stage':     { label: 'Elevated Stage',    icon: 'elevated-stage' },
+  'custom-lighting':    { label: 'Custom Lighting',   icon: 'custom-lighting' },
+  'led-screens':        { label: 'LED Screens',       icon: 'led-screens' },
+  'bridal-suite':       { label: 'Bridal Suite',      icon: 'suite' },
+  'premium-restrooms':  { label: 'Premium Restrooms', icon: 'premium-restrooms' },
+  'furniture-included': { label: 'Furniture Included',icon: 'furniture-included' },
+  'prep-kitchen':       { label: 'Prep Kitchen',      icon: 'catering' },
+  'in-house-catering':  { label: 'In-House Catering', icon: 'catering' },
+};
+
+// Auto-badge policy: which wizard selections earn which badge_dictionary name.
+// The wizard has no badge picker - this map IS the policy. Edit freely.
+const AMENITY_BADGE_RULES: Record<string, string> = {
+  'sound-system':      'Premium Sound System',
+  'led-screens':       'AV Equipment Included',
+  'custom-lighting':   'AV Equipment Included',
+  'elevated-stage':    'AV Equipment Included',
+  'parking':           'Free Parking',
+  'in-house-catering': 'Catering Included',
+  'bridal-suite':      'Luxury Venue',
+};
+const HALL_TYPE_BADGE_RULES: Record<string, string> = {
+  'outdoor-garden': 'Outdoor Space',
+};
+
 export const VendorListingModel = {
 
     /**
@@ -73,6 +108,25 @@ export const VendorListingModel = {
   },
 
 
+    /**
+   * Soft-deletes a draft/rejected listing. status='archived' guarantees the
+   * autosave/publish guards (status IN ('draft','rejected')) can never touch
+   * the row again; deleted_at hides it from every read path.
+   */
+  async deleteDraft(listingId: string, userId: number): Promise<boolean> {
+    const db = getDB();
+    const res = await db.query(
+      `UPDATE listings
+          SET deleted_at = NOW(), status = 'archived', updated_at = NOW()
+        WHERE id = $1 AND vendor_id = $2
+          AND status IN ('draft', 'rejected')
+          AND deleted_at IS NULL
+        RETURNING id`,
+      [listingId, userId]
+    );
+    return (res.rowCount ?? 0) > 0;
+  },
+
 
   /**
    * Debounced autosave target. Merges the JSONB payload without overwriting status.
@@ -106,9 +160,13 @@ export const VendorListingModel = {
   const nextStatus = ENV.ENABLE_LISTING_REVIEW ? 'pending_review' : 'published';
   const res = await db.query(
     `UPDATE listings SET status = $3, updated_at = NOW()
-     WHERE id = $1 AND vendor_id = $2 RETURNING status`,
+     WHERE id = $1 AND vendor_id = $2
+       AND status IN ('draft', 'rejected')
+       AND deleted_at IS NULL
+     RETURNING status`,
     [listingId, userId, nextStatus]
   );
+  if (res.rows.length === 0) throw new Error('NOT_EDITABLE');
   return res.rows[0];
 },
 
@@ -156,11 +214,20 @@ async processDraftPayload(listingId: string, payload: any): Promise<void> {
     try {
         await client.query('BEGIN');
 
-        // 1. Update listing core fields from draft
         const details = payload.details;
         const category = payload.category;
         const pricing = payload.pricing;
 
+        // 0. Keep `kind` in lockstep with the wizard category. createDraft sets it
+        //    once; if the vendor switched hall - service mid-wizard, search (which
+        //    filters on kind) would file this listing under the wrong tab forever.
+        await client.query(
+            `UPDATE listings SET kind = $2::listing_kind, updated_at = NOW()
+             WHERE id = $1 AND kind IS DISTINCT FROM $2::listing_kind`,
+            [listingId, category]
+        );
+
+        // 1. Core columns per category + clear the OTHER category's stale columns
         if (category === 'hall' && details?.hallLocation) {
             const stateName = await this._resolveStateName(client, details.hallLocation.stateId);
             const lgaName = await this._resolveLgaName(client, details.hallLocation.lgaId);
@@ -176,12 +243,13 @@ async processDraftPayload(listingId: string, payload: any): Promise<void> {
                     capacity = $8,
                     base_price_kobo = $9,
                     price_unit = COALESCE($10, price_unit),
+                    service_metadata = NULL,   -- switched from service: wipe its leftovers
                     updated_at = NOW()
                  WHERE id = $1`,
                 [
                     listingId,
                     details.name || null,
-                    details.name ? `${details.name} — Premium Event Venue` : null, // auto-headline
+                    details.name ? `${details.name} — Premium Event Venue` : null,
                     details.description || null,
                     details.hallLocation.streetAddress || null,
                     lgaName,
@@ -201,6 +269,9 @@ async processDraftPayload(listingId: string, payload: any): Promise<void> {
                     base_price_kobo = $6,
                     price_unit = COALESCE($7, price_unit),
                     service_metadata = $8,
+                    capacity = NULL,           -- switched from hall: wipe its leftovers
+                    city = NULL,
+                    state = NULL,
                     updated_at = NOW()
                  WHERE id = $1`,
                 [
@@ -219,9 +290,8 @@ async processDraftPayload(listingId: string, payload: any): Promise<void> {
             );
         }
 
-        // 2. Insert hall types (halls and services)
+        // 2. Hall/service types (delete + reinsert - survives category switches)
         if (details?.selectedTypeIds?.length) {
-            // Clear existing, then insert fresh
             await client.query(`DELETE FROM listing_hall_types WHERE listing_id = $1`, [listingId]);
 
             const values = details.selectedTypeIds
@@ -237,14 +307,117 @@ async processDraftPayload(listingId: string, payload: any): Promise<void> {
             }
         }
 
-        // 3. Gallery - listing_assets (delete + reinsert = idempotent on republish)
+        // 3. Amenities - listing_features (hall-only; services clear stale rows)
+        await client.query(`DELETE FROM listing_features WHERE listing_id = $1`, [listingId]);
+        if (category === 'hall') {
+            const rows = (payload.amenities ?? [])
+                .map((a: any) => {
+                    const meta = HALL_AMENITY_META[a.amenityId];
+                    const value = String(a.value ?? '').trim();
+                    if (!meta || !value) return null;
+                    return { icon: meta.icon, label: meta.label, value: meta.unit ? `${value} ${meta.unit}` : value };
+                })
+                .filter(Boolean);
+
+            if (rows.length > 0) {
+                // 4 params per row + $1 - offset is i * 4 
+                const values = rows.map((_: any, i: number) => {
+                    const b = i * 4;
+                    return `($1, $${b + 2}, $${b + 3}, $${b + 4}, $${b + 5})`;
+                });
+                const params: any[] = [listingId];
+                rows.forEach((r: any, i: number) => params.push(r.icon, r.label, r.value, i));
+
+                await client.query(
+                    `INSERT INTO listing_features (listing_id, icon, label, value, sort_order)
+                     VALUES ${values.join(', ')}`,
+                    params
+                );
+            }
+        }
+
+        // 4. Auto-badges - listing_badges (derived from amenities + hall types)
+        await client.query(`DELETE FROM listing_badges WHERE listing_id = $1`, [listingId]);
+        if (category === 'hall') {
+            const names = new Set<string>();
+            for (const a of payload.amenities ?? []) {
+                const badge = AMENITY_BADGE_RULES[a.amenityId];
+                if (badge) names.add(badge);
+            }
+            for (const typeId of details?.selectedTypeIds ?? []) {
+                const badge = HALL_TYPE_BADGE_RULES[typeId];
+                if (badge) names.add(badge);
+            }
+            if (names.size > 0) {
+                await client.query(
+                    `INSERT INTO listing_badges (listing_id, badge_id)
+                     SELECT $1, id FROM badge_dictionary WHERE name = ANY($2::text[])
+                     ON CONFLICT DO NOTHING`,
+                    [listingId, [...names]]
+                );
+            }
+        }
+
+        // 5. Service packages - service_packages + package_features (service-only)
+        //    Cascades wipe package_features on republish.
+        await client.query(`DELETE FROM service_packages WHERE listing_id = $1`, [listingId]);
+        if (category === 'service' && pricing?.packages?.length) {
+            for (let i = 0; i < pricing.packages.length; i++) {
+                const pkg = pricing.packages[i];
+                // pkg.price arrives in KOBO (frontend ×100); service_packages.price is NAIRA
+                const res = await client.query(
+                    `INSERT INTO service_packages
+                        (listing_id, name, price, description, is_popular, sort_order)
+                     VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
+                    [listingId, pkg.name, Math.round(pkg.price / 100), pkg.description ?? null, !!pkg.isPopular, i]
+                );
+                const packageId = res.rows[0].id;
+
+                const perks = (pkg.perks ?? []).filter((p: any) => p?.label?.trim());
+                if (perks.length > 0) {
+                    // 2 params per row + $1 - offset is j * 2
+                    const perkValues = perks.map((_: any, j: number) => `($1, $${j * 2 + 2}, $${j * 2 + 3})`);
+                    const perkParams: any[] = [packageId];
+                    perks.forEach((p: any, j: number) => perkParams.push(p.label, j));
+                    await client.query(
+                        `INSERT INTO package_features (package_id, text, sort_order)
+                         VALUES ${perkValues.join(', ')}`,
+                        perkParams
+                    );
+                }
+            }
+        }
+
+        // 6. Blocked dates - listing_unavailable_dates (only vendor_blocked rows,
+        //    so future booking-driven 'booked' rows survive a republish)
+        await client.query(
+            `DELETE FROM listing_unavailable_dates WHERE listing_id = $1 AND reason = 'vendor_blocked'`,
+            [listingId]
+        );
+        const blocked = pricing?.availability?.blockedDates ?? [];
+        if (blocked.length > 0) {
+            // 3 params per row + $1 - offset is i * 3
+            const dateValues = blocked.map((_: string, i: number) => {
+                const b = i * 3;
+                return `($1, $${b + 2}::date, $${b + 3}::date, $${b + 4})`;
+            });
+            const dateParams: any[] = [listingId];
+            blocked.forEach((d: string) => dateParams.push(d, d, 'vendor_blocked'));
+
+            await client.query(
+                `INSERT INTO listing_unavailable_dates (listing_id, start_date, end_date, reason)
+                 VALUES ${dateValues.join(', ')}`,
+                dateParams
+            );
+        }
+
+        // 7. Gallery - listing_assets (delete + reinsert = idempotent on republish)
         const photos = (payload.gallery ?? []).filter(
           (p: any) => p.uploadStatus === 'uploaded' && p.url
         );
         if (photos.length > 0) {
           await client.query(`DELETE FROM listing_assets WHERE listing_id = $1`, [listingId]);
 
-          // findIndex - -1 when no cover set; Math.max makes photo[0] the primary
           const coverIdx = Math.max(0, photos.findIndex((p: any) => p.isCover));
 
           const values: string[] = [];
@@ -252,7 +425,6 @@ async processDraftPayload(listingId: string, payload: any): Promise<void> {
           photos.forEach((p: any, i: number) => {
             const b = i * 4;
             values.push(`($1, $${b + 2}, $${b + 3}, $${b + 4}, $${b + 5})`);
-            // publicId ?? url satisfies cloudinary_public_id's NOT NULL for legacy rows
             params.push(p.publicId ?? p.url, p.url, i === coverIdx, i);
           });
 

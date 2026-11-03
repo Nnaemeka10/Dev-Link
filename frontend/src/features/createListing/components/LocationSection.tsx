@@ -2,24 +2,46 @@
 
 import { useListingStore } from "../store/useListingStore";
 import { NIGERIA_STATES, getLgasByState } from "../data";
+import { hallLocationSchema, serviceLocationSchema } from "../schema/listingSchema";
 import Dropdown from "./shared/Dropdown";
 import FloatingInput from "./shared/FloatingInput";
 import SelectableChip from "./shared/SelectableChip";
+import type { ZodType } from "zod";
 
 const STATE_OPTIONS = NIGERIA_STATES.map((s) => ({ id: s.id, label: s.name }));
+
+/** Field  message map from a zod schema. First issue per field wins. */
+function getFieldErrors(schema: ZodType, data: unknown): Record<string, string> {
+  const result = schema.safeParse(data);
+  if (result.success) return {};
+  const errors: Record<string, string> = {};
+  for (const issue of result.error.issues) {
+    const key = issue.path[0];
+    if (typeof key === "string" && !errors[key]) errors[key] = issue.message;
+  }
+  return errors;
+}
+
+/** Inline errors appear only after the user tries to leave step 2. */
+function useShowLocationErrors() {
+  return useListingStore((s) => Boolean(s.attemptedSteps[2]));
+}
 
 function HallLocationFields() {
   const hallLocation = useListingStore((s) => s.form.details.hallLocation);
   const setHallState = useListingStore((s) => s.setHallState);
   const setHallLga = useListingStore((s) => s.setHallLga);
   const setHallStreetAddress = useListingStore((s) => s.setHallStreetAddress);
+  const showErrors = useShowLocationErrors();
 
   const lgaOptions = hallLocation.stateId
     ? getLgasByState(hallLocation.stateId).map((l) => ({ id: l.id, label: l.name }))
     : [];
 
+  const errors = getFieldErrors(hallLocationSchema, hallLocation);
+
   return (
-    <div className="space-y-6">
+    <div id="location-fields" className="space-y-6">
       <div className="grid grid-cols-1 gap-6 xs:grid-cols-2">
         <Dropdown
           label="State"
@@ -27,6 +49,8 @@ function HallLocationFields() {
           options={STATE_OPTIONS}
           selectedId={hallLocation.stateId}
           onSelect={setHallState}
+          required
+          error={showErrors ? errors.stateId : undefined}
         />
         <Dropdown
           label="Local Government"
@@ -36,6 +60,8 @@ function HallLocationFields() {
           selectedId={hallLocation.lgaId}
           onSelect={setHallLga}
           disabled={!hallLocation.stateId}
+          required
+          error={showErrors ? errors.lgaId : undefined}
         />
       </div>
       <FloatingInput
@@ -44,6 +70,8 @@ function HallLocationFields() {
         placeholder="Put your street address"
         value={hallLocation.streetAddress}
         onChange={(e) => setHallStreetAddress(e.target.value)}
+        required
+        error={showErrors ? errors.streetAddress : undefined}
         leadingIcon={
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
             <path
@@ -65,20 +93,30 @@ function ServiceLocationFields() {
   const setServiceCoverageMode = useListingStore((s) => s.setServiceCoverageMode);
   const toggleServiceCoverageState = useListingStore((s) => s.toggleServiceCoverageState);
   const toggleServiceCoverageLga = useListingStore((s) => s.toggleServiceCoverageLga);
+  const showErrors = useShowLocationErrors();
+
+  const errors = getFieldErrors(serviceLocationSchema, serviceLocation);
 
   return (
-    <div className="space-y-8">
+    <div id="location-fields" className="space-y-8">
       <FloatingInput
         id="business-address"
         label="Primary Business Address"
         placeholder="Put your street address"
         value={serviceLocation.businessAddress}
         onChange={(e) => setServiceBusinessAddress(e.target.value)}
+        required
+        error={showErrors ? errors.businessAddress : undefined}
       />
 
       <div className="space-y-4">
         <div>
-          <label className="block text-sm font-semibold text-text-primary">Areas of Coverage</label>
+          <label className="block text-sm font-semibold text-text-primary">
+            Areas of Coverage
+            <span className="ml-0.5 text-red-600" aria-hidden="true">
+              *
+            </span>
+          </label>
           <p className="mt-1 text-xs text-text-primary/50">
             Since your service travels, tell clients which areas you cover.
           </p>
@@ -107,6 +145,10 @@ function ServiceLocationFields() {
             />
           ))}
         </div>
+
+        {showErrors && errors.coverageStateIds && (
+          <p className="text-xs font-medium text-red-600">{errors.coverageStateIds}</p>
+        )}
 
         {serviceLocation.coverageMode === "lga" && serviceLocation.coverageStateIds.length > 0 && (
           <div className="space-y-5 rounded-card bg-bg-tertiary p-5">

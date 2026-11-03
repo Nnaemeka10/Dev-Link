@@ -7,7 +7,7 @@ import {
   getBookings, 
   getMyListingsStats ,
 } from '../controllers/vendorDashboard.controller.js';
-import { autosaveDraft, createListingDraft, getMyListings, getListingDraft, publishListing, signUpload } from '../controllers/vendorListing.controller.js';
+import { autosaveDraft, createListingDraft, getMyListings, getListingDraft, publishListing, signUpload, deleteListingDraft } from '../controllers/vendorListing.controller.js';
 
 const router = express.Router();
 
@@ -25,5 +25,7 @@ router.post('/uploads/cloudinary/sign', signUpload);
 router.post('/listings', createListingDraft);               // create a draft listing
 router.patch('/listings/:id/draft', autosaveDraft);        // debounced autosave
 router.post('/listings/:id/publish', publishListing);  // publish a listing 
+
+router.delete('/listings/:id', deleteListingDraft);  // soft-delete a draft
 
 export default router;

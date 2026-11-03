@@ -8,6 +8,24 @@ import FloatingTextarea from "./shared/FloatingTextarea";
 import TypePickerModal from "./TypePickerModal";
 import TagsInput from "./TagsInput";
 import LocationSection from "./LocationSection";
+import type { ZodType } from "zod";
+import { detailsStepSchema } from "../schema/listingSchema";
+
+function getFieldErrors(schema: ZodType, data: unknown): Record<string, string> {
+  const result = schema.safeParse(data);
+  if (result.success) return {};
+  const errors: Record<string, string> = {};
+  for (const issue of result.error.issues) {
+    const key = issue.path[0];
+    if (typeof key === "string" && !errors[key]) errors[key] = issue.message;
+  }
+  return errors;
+}
+
+/** Inline errors appear only after the user tries to leave step 2. */
+function useShowLocationErrors() {
+  return useListingStore((s) => Boolean(s.attemptedSteps[2]));
+}
 
 export default function DetailsStep() {
   const category = useListingStore((s) => s.form.category);
@@ -21,6 +39,9 @@ export default function DetailsStep() {
   const typeOptions = category === "service" ? SERVICE_TYPES : EVENT_HALL_TYPES;
   const typeLabelLookup = new Map(typeOptions.map((t) => [t.id, t.label]));
   const selectedTypeLabels = details.selectedTypeIds.map((id) => typeLabelLookup.get(id)).filter(Boolean);
+
+  const showErrors = useShowLocationErrors();
+  const errors = getFieldErrors(detailsStepSchema, details);
 
   const modalCopy =
     category === "service"
@@ -50,7 +71,9 @@ export default function DetailsStep() {
           label="Listing Name"
           placeholder="e.g. The Grand Orchid Hall"
           value={details.name}
+          required
           onChange={(e) => setListingName(e.target.value)}
+          error={showErrors ? errors.name : undefined}
         />
 
         {category && (
@@ -83,8 +106,10 @@ export default function DetailsStep() {
           id="description"
           label="Detailed Description"
           placeholder="Describe the ambiance, key features, and what makes this listing truly special..."
-          value={details.description}
+          value={details.description} 
+          required
           onChange={(e) => setDescription(e.target.value)}
+          error={showErrors ? errors.description : undefined}
         />
 
         <TagsInput />

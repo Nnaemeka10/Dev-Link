@@ -1,7 +1,9 @@
 "use client";
 
+import { useState } from "react";
 import { useListingStore } from "../store/useListingStore";
 import type { ListingCategory } from "../types/listing";
+import Modal from "./shared/Modal";
 
 const OPTIONS: {
   value: ListingCategory;
@@ -29,6 +31,28 @@ const OPTIONS: {
 export default function CategoryStep() {
   const category = useListingStore((s) => s.form.category);
   const setCategory = useListingStore((s) => s.setCategory);
+  const form = useListingStore((s) => s.form);
+  const [pendingCategory, setPendingCategory] = useState<ListingCategory | null>(null);
+
+  const hasCategoryData =
+    form.details.selectedTypeIds.length > 0 ||
+    form.amenities.length > 0 ||
+    form.requirements.length > 0 ||
+    form.customRequirements.length > 0 ||
+    form.pricing.packages.length > 0 ||
+    form.pricing.usesPackages ||
+    (form.category === "hall" &&
+      (!!form.details.hallLocation.stateId || !!form.details.hallLocation.lgaId || !!form.details.hallLocation.streetAddress)) ||
+    (form.category === "service" &&
+      (!!form.details.serviceLocation.businessAddress || form.details.serviceLocation.coverageStateIds.length > 0));
+
+  const handleSelect = (value: ListingCategory) => {
+    if (category && category !== value && hasCategoryData) {
+      setPendingCategory(value); // something to lose — confirm first
+      return;
+    }
+    setCategory(value);
+  };
 
   return (
     <div className="mx-auto flex max-w-4xl flex-col items-center py-6 text-center md:py-16">
@@ -46,14 +70,14 @@ export default function CategoryStep() {
             <button
               key={opt.value}
               type="button"
-              onClick={() => setCategory(opt.value)}
+              onClick={() => handleSelect(opt.value)}
               className={`group relative overflow-hidden rounded-card bg-white p-2 text-left shadow-card transition-all duration-300 hover:-translate-y-1 hover:shadow-card-hover ${
                 isSelected ? "ring-2 ring-accent-primary" : "ring-1 ring-black/5"
               }`}
             >
               <div className="relative mb-5 h-48 w-full overflow-hidden rounded-[calc(theme(borderRadius.card)-0.5rem)] bg-bg-tertiary md:h-56">
                 <div
-                  className="h-full w-full bg-gradient-to-br from-accent-primary/20 to-accent-secondary/20 transition-transform duration-700 group-hover:scale-105"
+                  className="h-full w-full bg-linear-to-br from-accent-primary/20 to-accent-secondary/20 transition-transform duration-700 group-hover:scale-105"
                   role="img"
                   aria-label={opt.imageAlt}
                 />
@@ -91,6 +115,32 @@ export default function CategoryStep() {
           );
         })}
       </div>
+
+      <Modal
+        isOpen={pendingCategory !== null}
+        onClose={() => setPendingCategory(null)}
+        title="Change listing type?"
+        description="Switching clears the details owned by the other type — venue address or coverage area, hall/service types, amenities or requirements, and packages. Your name, description, tags, photos and base price are kept."
+        maxWidthClassName="max-w-md"
+        footer={
+          <div className="flex gap-3">
+            <button type="button" onClick={() => setPendingCategory(null)}
+              className="flex-1 rounded-full border border-border-light py-3.5 text-sm font-bold text-text-primary transition-all hover:bg-surface-low active:scale-95">
+              Keep current
+            </button>
+            <button type="button"
+              onClick={() => { setCategory(pendingCategory!); setPendingCategory(null); }}
+              className="flex-1 rounded-full bg-accent-primary py-3.5 text-sm font-bold text-white shadow-card transition-all hover:opacity-90 active:scale-95">
+              Switch &amp; clear
+            </button>
+          </div>
+        }
+      >
+        <p className="text-sm text-text-primary/70">
+          This keeps hall details out of service listings (and vice versa) before anything reaches your draft.
+        </p>
+      </Modal>
+
     </div>
   );
 }

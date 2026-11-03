@@ -37,6 +37,10 @@ export async function createDraft(kind: "hall" | "service"): Promise<{ id: strin
   });
 }
 
+export async function deleteListingDraft(listingId: string): Promise<void> {
+  await apiFetch(`/api/vendor/listings/${listingId}`, { method: "DELETE" });
+}
+
 export async function autosaveDraft(listingId: string, payload: ListingFormState): Promise<void> {
   // Convert Naira to Kobo before sending to backend
   const pricingPayload = {

@@ -79,6 +79,20 @@ export const createListingDraft = async (req: Request, res: Response) => {
   }
 };
 
+export const deleteListingDraft = async (req: Request, res: Response) => {
+  try {
+    if (!req.user?.userId) return res.status(401).json({ message: 'Unauthorized' });
+
+    const deleted = await VendorListingModel.deleteDraft(req.params.id, req.user.userId);
+    if (!deleted) {
+      return res.status(404).json({ message: 'Draft not found, already published, or already deleted.' });
+    }
+    res.status(200).json({ status: 'deleted' });
+  } catch (error: any) {
+    res.status(500).json({ message: error.message || 'Failed to delete draft' });
+  }
+};
+
 export const autosaveDraft = async (req: Request, res: Response) => {
   try {
     if (!req.user?.userId) return res.status(401).json({ message: 'Unauthorized' });
@@ -111,6 +125,9 @@ export const publishListing = async (req: Request, res: Response) => {
     const { status } = await VendorListingModel.publishDraft(req.params.id, req.user.userId, parsed.data);
     res.status(200).json({ status });
   } catch (error: any) {
+     if (error.message === 'NOT_EDITABLE') {
+      return res.status(409).json({ message: "This listing can't be published in its current state." });
+    }
     res.status(500).json({ message: error.message || 'Failed to publish listing' });
   }
 };

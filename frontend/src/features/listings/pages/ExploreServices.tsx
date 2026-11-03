@@ -12,11 +12,12 @@ import { useExploreListings } from "../hooks/useExploreListings";
 import { DesktopCompareBar, MobileCompareBar } from "../components/explore/CompareBars";
 import { DesktopExploreCard, MobileExploreCard } from "../components/explore/ExploreListingCards";
 import { DesktopExploreHeader, DesktopResultsHeader } from "../components/explore/DesktopExploreHeader";
-import MobileBottomNav from "../components/explore/MobileBottomNav";
+
 import MobileExploreHeader, { MobileResultsHeader } from "../components/explore/MobileExploreHeader";
 import { toggleSelection } from "../utils/compareSelection";
 import HomeFooter from "@/components/layout/Footer";
 import SideNavBar from "@/components/layout/SideNavBar";
+import MobileDock from "@/components/layout/MobileDock";
 
 function formatDateLabel(date: Date) {
   return date.toLocaleDateString("en-NG", { day: "numeric", month: "short" });
@@ -130,7 +131,7 @@ export default function ExploreServices() {
           ))}
         </div>
         <MobileCompareBar selectedListings={mobileSelectedListings} onClear={() => setMobileSelectedIds(new Set())} />
-        <MobileBottomNav />
+        <MobileDock />
         <HomeFooter />
       </section>
 
@@ -172,7 +173,7 @@ export default function ExploreServices() {
           </div>
           <DesktopCompareBar selectedListings={desktopSelectedListings} onClear={() => setDesktopSelectedIds(new Set())} />
         </div>
-        <MobileBottomNav />
+        <MobileDock />
         <HomeFooter />
       </section>
 
