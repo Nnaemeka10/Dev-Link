@@ -37,35 +37,26 @@ export const initializePayment = async (req: Request, res: Response) => {
             return;
         }
 
-        // Check if a payment reference already exists
-        // let paymentReference = booking.payment_reference;
-        // if(paymentReference) {
-        //     if(booking.payment_status === 'pending') {
-        //         // Call Paystack Verify API
-        //         const paystackRes = await verifyPaystackTransaction(paymentReference);
+        // Safety: booking's payment window must still be open
+        const expiresAt = (booking as any).expires_at;
+        if (expiresAt && new Date(expiresAt) < new Date()) {
+            res.status(400).json({ message: 'This booking session has expired. Please start a new booking.' });
+            return;
+        }
 
-        //         if(paystackRes.data.status === 'success') {
-        //             // If the payment is not successful, we can allow re-initialization
-        //             return res.status(400).json({ message: 'Payment already processed - paystack' });
-        //         } 
-        //         else {
-        //              return paymentReference
-        //         }
-        //     } else if (booking.payment_status === 'failed') {
-        //         // Failed payment – generate a new reference so Paystack doesn't reject it
-        //         paymentReference = `PSK-${booking.booking_reference}-${Date.now()}`;
-        //         await BookingModel.updatePaymentReference(booking.id, paymentReference);
-        //     } else {
-        //         // Already paid or other unexpected state
-        //         return res.status(400).json({ message: 'Payment already processed' });
-        //     }
-        // } else {
-        //      // Generate unique payment reference
-        //     paymentReference = `PSK-${booking.booking_reference}`;
-
-        //     // Update booking with payment reference
-        //     await BookingModel.updatePaymentReference(booking.id, paymentReference);
-        // }
+        const toDateString = (d: string | Date) => {
+            const dt = new Date(d);
+            return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
+        };
+        const stillAvailable = await BookingModel.checkAvailability(
+            booking.listing_id,
+            toDateString(booking.start_date),
+            toDateString(booking.end_date)
+        );
+        if (!stillAvailable) {
+            res.status(409).json({ message: 'Selected dates are no longer available' });
+            return;
+        }
        
         let paymentReference = booking.payment_reference;
 

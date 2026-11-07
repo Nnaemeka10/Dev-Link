@@ -9,11 +9,10 @@ export const VendorDashboardModel = {
     async getFinancialSummary(userId: number) {
     const db = getDB();
     const res = await db.query(
-      `SELECT 
-        -- FIX: FILTER goes directly on SUM, inside COALESCE
+            `SELECT 
         COALESCE(SUM(b.total_amount) FILTER (WHERE b.status = 'payout_released'), 0) AS total_revenue,
-        COUNT(*) FILTER (WHERE b.status IN ('confirmed', 'funds_held', 'paid', 'processing_payout', 'payout_released')) AS confirmed_bookings,
-        COUNT(*) FILTER (WHERE b.status = 'pending') AS pending_bookings
+        COUNT(*) FILTER (WHERE b.status IN ('confirmed', 'processing_payout', 'payout_released')) AS confirmed_bookings,
+        COUNT(*) FILTER (WHERE b.status IN ('paid', 'funds_held')) AS pending_bookings
        FROM bookings b
        JOIN listings l ON l.id = b.listing_id
        WHERE l.vendor_id = $1`,
@@ -89,12 +88,16 @@ export const VendorDashboardModel = {
     let statusCondition = '';
     const params: any[] = [userId, perPage, offset];
 
-    if (filter === 'upcoming') {
+        if (filter === 'upcoming') {
       statusCondition = `AND b.status IN ('confirmed', 'funds_held', 'paid')`;
     } else if (filter === 'completed') {
       statusCondition = `AND b.status IN ('completed', 'payout_released')`;
     } else if (filter === 'cancelled') {
       statusCondition = `AND b.status = 'cancelled'`;
+    } else {
+      // Default ("all"): a booking only reaches the vendor once the client
+      // has actually paid. Unpaid/failed/expired attempts are invisible.
+      statusCondition = `AND b.status NOT IN ('pending', 'failed', 'expired')`;
     }
 
     const res = await db.query(

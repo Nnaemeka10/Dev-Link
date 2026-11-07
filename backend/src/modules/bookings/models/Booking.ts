@@ -28,18 +28,15 @@ export const BookingModel = {
         const db = getDB();
         const client = await db.connect();
         try {
-            // 1. Lock these exact dates for this listing at the DB level for a few milliseconds
-            // This prevents User B from inserting while User A is inserting
             await client.query(`SELECT pg_advisory_xact_lock(hashtext($1 || $2 || $3))`, [listingId, startDate, endDate]);
 
             const query = `
                 SELECT 1 FROM bookings 
                 WHERE listing_id = $1 
-                AND status IN ('pending', 'confirmed', 'paid')
-                AND (status != 'pending' OR expires_at > NOW()) -- Ignore expired pending
+                AND status IN ('paid', 'confirmed', 'funds_held', 'processing_payout', 'payout_released', 'completed')
                 AND (start_date <= $2 AND end_date >= $3)
             `;
-            
+
             const params: any[] = [listingId, endDate, startDate];
 
             const result = await client.query(query, params);
@@ -61,7 +58,7 @@ export const BookingModel = {
 
         // 1. Fetch listing to securely calculate price
         const listingRes = await db.query(
-            `SELECT base_price_kobo FROM listings WHERE id = $1 AND status = 'published'`,
+            `SELECT base_price_kobo, kind FROM listings WHERE id = $1 AND status = 'published'`,
             [listingId]
         );
         
@@ -217,15 +214,21 @@ export const BookingModel = {
 
             const booking = res.rows[0];
 
+            const ALREADY_PAID: readonly string[] = [
+                'paid', 'confirmed', 'funds_held',
+                'processing_payout', 'payout_released', 'completed', 'refunded'
+            ];
+
+
             // Idempotency check: If already paid, just return it
-            if (booking.status === 'paid' || booking.status === 'confirmed') {
+            if (ALREADY_PAID.includes(booking.status)) {
                 await client.query('ROLLBACK'); // Unlock row
                 return booking;
             }
 
             const listingRes = await client.query('SELECT auto_approve FROM listings WHERE id = $1', [booking.listing_id]);
-            const isAutoApproved = listingRes.rows[0]?.auto_approve ?? false;
-            const finalStatus = isAutoApproved ? 'confirmed' : 'pending'; // 'pending' means awaiting vendor approval
+            const isApproved = listingRes.rows[0]?.auto_approve ?? false;
+            const finalStatus = isApproved ? 'confirmed' : 'paid';
 
             // Update booking to paid
             const updated = await client.query<BookingRow>(
@@ -278,6 +281,65 @@ export const BookingModel = {
         );
 
         //make this do a refund later
+    },
+
+        /**
+     * Vendor confirms a PAID booking. Ownership and status guards run inside
+     * the transaction so two vendors (or a double-click) can't race it.
+     * Throws Error('FORBIDDEN') / Error('INVALID_STATUS: ...') for the
+     * controller to map to HTTP codes. Returns null if booking not found.
+     */
+    async confirmVendorBooking(bookingId: string, vendorUserId: number): Promise<BookingRow | null> {
+        const db = getDB();
+        const client = await db.connect();
+        try {
+            await client.query('BEGIN');
+
+            const res = await client.query(
+                `SELECT b.*, l.vendor_id
+                   FROM bookings b
+                   JOIN listings l ON l.id = b.listing_id
+                  WHERE b.id = $1
+                  FOR UPDATE OF b`,
+                [bookingId]
+            );
+
+            const row = res.rows[0] as (BookingRow & { vendor_id: number }) | undefined;
+            if (!row) {
+                await client.query('ROLLBACK');
+                return null;
+            }
+            if (row.vendor_id !== vendorUserId) {
+                await client.query('ROLLBACK');
+                throw new Error('FORBIDDEN');
+            }
+            if (row.status !== 'paid' && row.status !== 'funds_held') {
+                await client.query('ROLLBACK');
+                throw new Error(`INVALID_STATUS: Booking cannot be confirmed (current status: ${row.status})`);
+            }
+
+            const updated = await client.query<BookingRow>(
+                `UPDATE bookings SET status = 'confirmed' WHERE id = $1 RETURNING *`,
+                [bookingId]
+            );
+
+            // Ensure the calendar block exists — covers the DVA/funds_held
+            // payment path, which doesn't go through markAsPaid.
+            await client.query(
+                `INSERT INTO listing_unavailable_dates (listing_id, start_date, end_date, reason) 
+                 VALUES ($1, $2, $3, 'booked') 
+                 ON CONFLICT DO NOTHING`,
+                [row.listing_id, row.start_date, row.end_date]
+            );
+
+            await client.query('COMMIT');
+            return updated.rows[0];
+        } catch (error) {
+            await client.query('ROLLBACK');
+            throw error;
+        } finally {
+            client.release();
+        }
     },
 
     async getQuote(listingId: string, startDate: string, endDate: string, packageId?: string): Promise<{ days: number; subtotal: number; vat: number; total: number; currency: string }> {

@@ -1,10 +1,25 @@
+export type BookingStatus =
+    | 'pending'           // created, awaiting payment
+    | 'paid'              // paid (card/Paystack), awaiting vendor confirmation
+    | 'funds_held'        // paid via DVA/escrow transfer, awaiting vendor confirmation
+    | 'confirmed'         // vendor confirmed
+    | 'declined'          // vendor/admin rejected
+    | 'cancelled'
+    | 'completed'
+    | 'processing_payout'
+    | 'payout_released'
+    | 'refunded'
+    | 'failed'
+    | 'expired';
+
+
 export interface BookingRow {
     id: string;
     listing_id: string;
     user_id: number;
     start_date: string;
     end_date: string;
-    status: 'pending' | 'confirmed' | 'declined' | 'cancelled' | 'completed' | 'paid' | 'failed' | 'expired';
+    status: BookingStatus;
     total_amount: number;
     guests: number;
     created_at: string;

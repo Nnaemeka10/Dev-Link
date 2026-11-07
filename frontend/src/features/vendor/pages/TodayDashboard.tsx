@@ -10,7 +10,7 @@ import BookingsTable from "../components/BookingsTable";
 import VendorSideNavBar from "../../../components/layout/VendorSideNavBar";
 import VendorMobileDock from "../../../components/layout/VendorMobileDock";
 import { useAuth } from "@/features/auth/useAuth";
-import { useVendorSummary, useVendorTransactions, useVendorBookings } from "../hooks/useVendorDashboard";
+import { useVendorSummary, useVendorTransactions, useVendorBookings, useConfirmBooking } from "../hooks/useVendorDashboard";
 import type { BookingFilterKey, BookingFilterTab } from "../types";
 
 
@@ -40,7 +40,7 @@ export default function VendorDashboardPage() {
     confirmedBookings: summary.confirmedBookings,
     // confirmedBookingsChangePercent: 8,
     pendingBookings: summary.pendingBookings,
-    pendingBookingsNote: "Awaiting client confirmation",
+    pendingBookingsNote: "Paid — awaiting your confirmation",
   } : null;
 
   const bookingFilters: BookingFilterTab[] = [
@@ -62,6 +62,7 @@ export default function VendorDashboardPage() {
   const bookings = bookingsData?.bookings || [];
 
   const bookingsPagination = bookingsData?.pagination || { currentPage: 1, totalPages: 1, totalItems: 0, itemsPerPage: 4 };
+  const confirmBooking = useConfirmBooking();
 
   return (
     <div className="min-h-screen bg-bg-primary">
@@ -111,6 +112,8 @@ export default function VendorDashboardPage() {
             pagination={bookingsPagination}
             onFilterChange={(key) => { setActiveFilter(key); setCurrentPage(1); }}
             onPageChange={setCurrentPage}
+            onConfirmBooking={(id) => confirmBooking.mutate(id)}
+            confirmingBookingId={confirmBooking.isPending ? confirmBooking.variables ?? null : null}
           />
         </main>
       </div>

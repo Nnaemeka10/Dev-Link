@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { VendorDashboardModel } from '../models/VendorDashboard.js';
+import { BookingModel } from '../../bookings/models/Booking.js';
 
 export const getSummary = async (req: Request, res: Response) => {
   try {
@@ -99,5 +100,35 @@ export const getMyListingsStats = async (req: Request, res: Response) => {
     });
   } catch (error: any) {
     res.status(500).json({ message: 'Failed to fetch listing stats' });
+  }
+};
+
+export const confirmBooking = async (req: Request, res: Response) => {
+  try {
+    if (!req.user?.userId) return res.status(401).json({ message: 'Unauthorized' });
+
+    const booking = await BookingModel.confirmVendorBooking(req.params.id, req.user.userId);
+
+    if (!booking) {
+      res.status(404).json({ message: 'Booking not found' });
+      return;
+    }
+
+    res.status(200).json({
+      bookingId: booking.id,
+      status: booking.status,
+      message: 'Booking confirmed',
+    });
+  } catch (error: any) {
+    if (error.message === 'FORBIDDEN') {
+      res.status(403).json({ message: 'You do not own this listing' });
+      return;
+    }
+    if (error.message.startsWith('INVALID_STATUS')) {
+      res.status(409).json({ message: error.message.split(': ')[1] });
+      return;
+    }
+    console.error('Confirm booking error:', error);
+    res.status(500).json({ message: error.message || 'Failed to confirm booking' });
   }
 };

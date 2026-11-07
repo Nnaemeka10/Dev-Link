@@ -5,7 +5,8 @@ import {
   getSummary, 
   getTransactions, 
   getBookings, 
-  getMyListingsStats ,
+  getMyListingsStats, 
+  confirmBooking,
 } from '../controllers/vendorDashboard.controller.js';
 import { autosaveDraft, createListingDraft, getMyListings, getListingDraft, publishListing, signUpload, deleteListingDraft } from '../controllers/vendorListing.controller.js';
 
@@ -23,6 +24,7 @@ router.get('/listings/:id/draft', getListingDraft);
 
 router.post('/uploads/cloudinary/sign', signUpload); 
 router.post('/listings', createListingDraft);               // create a draft listing
+router.patch('/bookings/:id/confirm', confirmBooking);
 router.patch('/listings/:id/draft', autosaveDraft);        // debounced autosave
 router.post('/listings/:id/publish', publishListing);  // publish a listing 
 

@@ -10,6 +10,8 @@ interface BookingsTableProps {
   pagination: PaginationState;
   onFilterChange?: (key: BookingFilterTab["key"]) => void;
   onPageChange?: (page: number) => void;
+  onConfirmBooking?: (bookingId: string) => void;
+  confirmingBookingId?: string | null;
 }
 
 function formatDateRange(dateRange: BookingRecord["dateRange"]) {
@@ -24,6 +26,8 @@ export default function BookingsTable({
   pagination,
   onFilterChange,
   onPageChange,
+  onConfirmBooking,
+  confirmingBookingId,
 }: BookingsTableProps) {
   // const rangeStart = (pagination.currentPage - 1) * pagination.itemsPerPage + 1;
   // const rangeEnd = Math.min(pagination.currentPage * pagination.itemsPerPage, pagination.totalItems);
@@ -115,6 +119,7 @@ export default function BookingsTable({
             ) : (
               bookings.map((booking, index) => {
                 const isCancelled = booking.status === "cancelled";
+                const canConfirm = booking.status === "paid" || booking.status === "funds_held";
                 return (
                   <tr
                     key={booking.id}
@@ -179,12 +184,23 @@ export default function BookingsTable({
                             />
                           </svg>
                         </button>
-                        <button
-                          type="button"
-                          className="rounded-full bg-bg-tertiary px-4 py-2 text-xs font-bold text-text-primary shadow-card transition-all duration-300 hover:scale-105 hover:bg-accent-primary hover:text-white active:scale-95"
-                        >
-                          View Details
-                        </button>
+                        {canConfirm && (
+                          <button
+                            type="button"
+                            onClick={() => onConfirmBooking?.(booking.id)}
+                            disabled={confirmingBookingId === booking.id}
+                            className="flex items-center gap-1.5 rounded-full bg-accent-primary px-4 py-2 text-xs font-bold text-white shadow-card transition-all duration-300 hover:scale-105 hover:shadow-card-hover active:scale-95 disabled:opacity-60"
+                          >
+                            {confirmingBookingId === booking.id ? (
+                              <>
+                                Confirming
+                                <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+                              </>
+                            ) : (
+                              "Confirm Booking"
+                            )}
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -202,6 +218,7 @@ export default function BookingsTable({
         ) : (
           bookings.map((booking) => {
             const isCancelled = booking.status === "cancelled";
+            const canConfirm = booking.status === "paid" || booking.status === "funds_held";
             return (
               <li key={booking.id} className="p-5 xs:p-6">
                 <div className="flex items-start justify-between gap-3">
@@ -255,12 +272,16 @@ export default function BookingsTable({
                 </div>
 
                 <div className="mt-4 flex items-center gap-2">
-                  <button
-                    type="button"
-                    className="flex flex-1 items-center justify-center gap-2 rounded-full bg-bg-tertiary px-4 py-2.5 text-xs font-bold text-text-primary active:scale-95"
-                  >
-                    View Details
-                  </button>
+                  {canConfirm && (
+                    <button
+                      type="button"
+                      onClick={() => onConfirmBooking?.(booking.id)}
+                      disabled={confirmingBookingId === booking.id}
+                      className="flex flex-1 items-center justify-center gap-2 rounded-full bg-accent-primary px-4 py-2.5 text-xs font-bold text-white shadow-card active:scale-95 disabled:opacity-60"
+                    >
+                      {confirmingBookingId === booking.id ? "Confirming…" : "Confirm Booking"}
+                    </button>
+                  )}
                   <button
                     type="button"
                     title="Chat with client"
