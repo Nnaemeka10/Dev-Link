@@ -274,7 +274,7 @@
   }
 
   /* ─── Trigger ─────────────────────────────────────────────────────────────────
-    Mirrors the visual style of the "Where" input cell — icon + label + value.
+    Mirrors the visual style of the "Where" input cell - icon + label + value.
     No native button chrome; we paint our own focus ring.
   ────────────────────────────────────────────────────────────────────────────── */
 
@@ -462,7 +462,7 @@
   }
 
   /* ─── Hint text ───────────────────────────────────────────────────────────────
-    Instruction line above the calendar — updates as the user picks dates.
+    Instruction line above the calendar - updates as the user picks dates.
   ────────────────────────────────────────────────────────────────────────────── */
 
   .date-picker-hint {
@@ -475,7 +475,7 @@
 
   /* ─── react-day-picker overrides ──────────────────────────────────────────────
     We pass custom classNames into DayPicker so every element is ours to style.
-    No third-party stylesheet needed — zero specificity battles.
+    No third-party stylesheet needed - zero specificity battles.
   ────────────────────────────────────────────────────────────────────────────── */
 
   /* Root wrapper */
@@ -702,7 +702,7 @@
   }
 
   /* ─── Footer ─────────────────────────────────────────────────────────────────
-    Clear + Apply buttons at the bottom of the popover — Airbnb pattern.
+    Clear + Apply buttons at the bottom of the popover - Airbnb pattern.
   ────────────────────────────────────────────────────────────────────────────── */
 
   .date-picker-footer {
@@ -763,7 +763,7 @@
    WHY translateX(-50%) works perfectly:
    The track contains [set-A][set-B]. Both sets are identical, so the track's
    total width is exactly 2× one set. Animating to -50% scrolls exactly one
-   set width — landing on the frame where set-B looks exactly like set-A did
+   set width - landing on the frame where set-B looks exactly like set-A did
    at 0%. The browser resets to 0% invisibly. One category exits left,
    the next enters from the right of set-B. No jump.
 
@@ -772,7 +772,7 @@
 ────────────────────────────────────────────────────────────────────────────── */
 
   .category-marquee-track {
-    /* GPU-composited transform — no layout or paint cost per frame */
+    /* GPU-composited transform - no layout or paint cost per frame */
     will-change: transform;
     animation: category-marquee 22s linear infinite;
   }
@@ -858,7 +858,7 @@
   /* Home feature: hero spotlights */
   /* ─── Shared spotlight base ───────────────────────────────────────────────────
     Circles are ~3× the previous size. Center sits on or just outside the hero
-    boundary so overflow: hidden clips them into a crescent at the edges —
+    boundary so overflow: hidden clips them into a crescent at the edges -
     this is what creates the "hugging" effect.
     will-change: transform = GPU compositor layer, zero paint cost per frame.
   ────────────────────────────────────────────────────────────────────────────── */
@@ -905,7 +905,7 @@
       top: 0, right: 0 would put the top-left corner of the div at the hero corner.
       We need the circle's center there, so offset by half the element's size.
       Since width = 110vw, half = 55vw. We use negative positioning to push center
-      to the corner — overflow: hidden clips the rest
+      to the corner - overflow: hidden clips the rest
     */
     top: -50%;
     right: -10%;
@@ -976,7 +976,7 @@
 
   /* ─── Keyframes ───────────────────────────────────────────────────────────────
 
-    GOLD — right edge, top to bottom and back.
+    GOLD - right edge, top to bottom and back.
     
     The element's center starts at the top-right corner (top:-50%, right:-50%).
     translate() values move it from that anchor:
@@ -1031,7 +1031,7 @@
 
   /* ─────────────────────────────────────────────────────────────────────────────
 
-    EMBER — left edge, bottom to top and back
+    EMBER - left edge, bottom to top and back
     
     The element's center starts at the bottom-left corner (bottom:-50%, left:-50%).
     translate() values move it from that anchor:

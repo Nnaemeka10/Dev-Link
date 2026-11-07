@@ -18,7 +18,7 @@ const CODE_LENGTH = 6;
 
 // interface OtpVerifyModalProps {
 //   email: string;
-//   /** ISO timestamp for when the current code expires — drives the countdown. */
+//   /** ISO timestamp for when the current code expires - drives the countdown. */
 //   expiresAt: string;
 //   open: boolean;
 //   onClose: () => void;

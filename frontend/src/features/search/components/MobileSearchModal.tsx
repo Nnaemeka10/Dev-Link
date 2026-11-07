@@ -190,7 +190,7 @@ export default function MobileSearchModal({ form, onSubmit, isPending }: MobileS
                   </div>
                 </div>
 
-                {/* Location — halls only */}
+                {/* Location - halls only */}
                 {category === "halls" && (
                   <div className="rounded-3xl border border-text-primary/10 bg-white px-4 py-4 shadow-[0_12px_30px_rgba(26,31,60,0.08)]">
                     <div className="flex items-center gap-3">
@@ -251,7 +251,7 @@ export default function MobileSearchModal({ form, onSubmit, isPending }: MobileS
                             <div className="flex flex-col">
                               <span className="font-semibold">{s.name}</span>
                               <span className="text-[10px] text-text-primary/45">
-                                {s.type === "state" ? "State" : `LGA — ${s.state}`}
+                                {s.type === "state" ? "State" : `LGA - ${s.state}`}
                               </span>
                             </div>
                           </button>
@@ -261,7 +261,7 @@ export default function MobileSearchModal({ form, onSubmit, isPending }: MobileS
                   </div>
                 )}
 
-                {/* Capacity — halls only */}
+                {/* Capacity - halls only */}
                 {category === "halls" && (
                   <div className="rounded-3xl border border-text-primary/10 bg-white px-4 py-4 shadow-[0_12px_30px_rgba(26,31,60,0.08)]">
                     <div className="flex items-center gap-3">
@@ -275,7 +275,7 @@ export default function MobileSearchModal({ form, onSubmit, isPending }: MobileS
                   </div>
                 )}
 
-                {/* Role — services only */}
+                {/* Role - services only */}
                 {category === "services" && (
                   <div className="rounded-3xl border border-text-primary/10 bg-white px-4 py-4 shadow-[0_12px_30px_rgba(26,31,60,0.08)]">
                     <div className="flex items-center gap-3">

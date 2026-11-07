@@ -9,7 +9,7 @@ import { PACKAGE_NAME_PRESETS, PACKAGE_PERK_PRESETS, PACKAGE_TEMPLATES } from ".
 interface PackageBuilderModalProps {
   isOpen: boolean;
   onClose: () => void;
-  /** First selected service type drives which presets show — falls back to an empty set. */
+  /** First selected service type drives which presets show - falls back to an empty set. */
   serviceTypeId: string | null;
   editingPackage: PricingPackage | null;
   onSave: (pkg: PricingPackage) => void;

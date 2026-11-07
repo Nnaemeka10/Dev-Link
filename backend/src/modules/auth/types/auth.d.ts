@@ -34,7 +34,7 @@ export interface ResetPasswordBody {
 }
 
 // NOTE: renamed from `resetPasswordBody` (lowercase) to `ResetPasswordBody` for
-// convention consistency — update the import in auth.controller.ts accordingly,
+// convention consistency - update the import in auth.controller.ts accordingly,
 // or keep the old name as an alias if you'd rather not touch other call sites:
 // export type resetPasswordBody = ResetPasswordBody;
 

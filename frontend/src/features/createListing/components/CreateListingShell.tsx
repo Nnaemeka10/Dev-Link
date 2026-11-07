@@ -38,7 +38,7 @@ export default function CreateListingShell({
 }: CreateListingShellProps) {
   return (
     <div className="min-h-screen bg-bg-primary">
-      {/* App-wide desktop sidebar slot — xl and up, same pattern as the vendor dashboard */}
+      {/* App-wide desktop sidebar slot - xl and up, same pattern as the vendor dashboard */}
       <aside className="fixed inset-y-0 left-0 z-50 hidden w-64 xl:block">
         <VendorDesktopSidebar />
       </aside>

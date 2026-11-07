@@ -153,7 +153,7 @@ function ServiceLocationFields() {
         {serviceLocation.coverageMode === "lga" && serviceLocation.coverageStateIds.length > 0 && (
           <div className="space-y-5 rounded-card bg-bg-tertiary p-5">
             <p className="text-xs font-medium text-text-primary/55">
-              Every local government starts covered — tap one to remove it from your coverage.
+              Every local government starts covered - tap one to remove it from your coverage.
             </p>
             {serviceLocation.coverageStateIds.map((stateId) => {
               const stateName = NIGERIA_STATES.find((s) => s.id === stateId)?.name ?? stateId;

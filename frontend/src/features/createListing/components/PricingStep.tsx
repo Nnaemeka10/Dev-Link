@@ -103,7 +103,7 @@ export default function PricingStep() {
                   Add packages for more control over your pricing
                 </span>
                 <span className="mt-1 block text-sm text-text-primary/55">
-                  Give clients tiered options — from a lean starter package to your full luxury experience.
+                  Give clients tiered options - from a lean starter package to your full luxury experience.
                 </span>
               </span>
             </button>

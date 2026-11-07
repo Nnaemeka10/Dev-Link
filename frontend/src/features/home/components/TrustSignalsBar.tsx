@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { BadgeCheck, LockKeyhole, ThumbsUp } from "lucide-react";
 
 // ─── Types & Data ─────────────────────────────────────────────────────────────
@@ -13,37 +13,80 @@ interface TrustSignal {
 
 const TRUST_SIGNALS: TrustSignal[] = [
   { id: "verified", label: "Verified luxury vendors", icon: "verified" },
-  { id: "escrow",   label: "Secure escrow payments",  icon: "escrow"   },
-  { id: "trusted",  label: "Trusted by 10k+ hosts",   icon: "trusted"  },
+  { id: "escrow", label: "Secure escrow payments", icon: "escrow" },
+  { id: "trusted", label: "Trusted by 10k+ hosts", icon: "trusted" },
 ];
 
 function TrustIcon({ type }: { type: TrustSignal["icon"] }) {
   const cls = "h-4 w-4 flex-shrink-0 text-white";
   if (type === "verified") return <BadgeCheck className={cls} />;
-  if (type === "escrow")   return <LockKeyhole className={cls} />;
+  if (type === "escrow") return <LockKeyhole className={cls} />;
   return <ThumbsUp className={cls} />;
 }
+
+// ─── Media queries as external stores ─────────────────────────────────────────
+// Viewport size and the user's motion preference live outside React — they're
+// browser state, so we subscribe to them with useSyncExternalStore instead of
+// copying them into state from inside an effect.
+//
+// The subscribe/getSnapshot functions live at module level so their identities
+// are stable. Inlining them in the component would create a new subscribe
+// function every render and resubscribe the store each time.
+
+function subscribeToMediaQuery(query: string, onChange: () => void) {
+  const mql = window.matchMedia(query);
+  mql.addEventListener("change", onChange);
+  return () => mql.removeEventListener("change", onChange);
+}
+
+const subscribeMobile = (onChange: () => void) =>
+  subscribeToMediaQuery("(max-width: 767px)", onChange);
+const subscribeReducedMotion = (onChange: () => void) =>
+  subscribeToMediaQuery("(prefers-reduced-motion: reduce)", onChange);
+
+const getIsMobile = () => window.matchMedia("(max-width: 767px)").matches;
+const getPrefersReducedMotion = () =>
+  window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+// The server can't know the viewport or the motion preference. `false` matches
+// what the SSR markup implies anyway (the carousel is CSS-gated with md:hidden),
+// so the hydration render is byte-identical, and React re-renders with the real
+// value right after hydration.
+const getServerMediaSnapshot = () => false;
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function TrustSignalsBar() {
   const [currentIndex, setCurrentIndex] = useState(0);
 
+  // Reactive environment flags — read from the browser store, not effect-copied.
+  const isMobile = useSyncExternalStore(
+    subscribeMobile,
+    getIsMobile,
+    getServerMediaSnapshot
+  );
+  const prefersReducedMotion = useSyncExternalStore(
+    subscribeReducedMotion,
+    getPrefersReducedMotion,
+    getServerMediaSnapshot
+  );
+
   // ── Pause control ────────────────────────────────────────────────────────────
   // Ref — not state — so pausing/resuming never triggers a re-render.
   // The interval callback reads the ref value directly.
-  const isPausedRef   = useRef(false);
+  const isPausedRef = useRef(false);
   const resumeTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
-  const containerRef   = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   // ── Auto-rotation ─────────────────────────────────────────────────────────
-  // We check prefers-reduced-motion once at effect time (not in a lazy
-  // initialiser) because it's only used to gate a side-effect, not render output.
-  // setState is called inside the interval callback — not synchronously in
-  // the effect body — so no cascading render lint error.
+  // The gates are reactive values now, not one-shot reads at mount time:
+  // rotation starts/stops live when the viewport crosses the md boundary or
+  // the user toggles their OS reduced-motion preference. The interval restarts
+  // (deps change → cleanup → setup), which also resets the 3s beat cleanly.
+  // setState is still only ever called from inside the interval callback —
+  // never synchronously in the effect body.
   useEffect(() => {
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    if (!window.matchMedia("(max-width: 767px)").matches) return;
+    if (prefersReducedMotion || !isMobile) return;
 
     const id = setInterval(() => {
       if (!isPausedRef.current) {
@@ -52,7 +95,7 @@ export default function TrustSignalsBar() {
     }, 3000);
 
     return () => clearInterval(id);
-  }, []); // runs once — isPausedRef is a ref so it doesn't need to be a dep
+  }, [prefersReducedMotion, isMobile]);
 
   // ── Touch / mouse pause ────────────────────────────────────────────────────
   // Pause when user interacts, resume 5s after last interaction.
@@ -70,16 +113,16 @@ export default function TrustSignalsBar() {
     }
 
     container.addEventListener("touchstart", pause, { passive: true });
-    container.addEventListener("mousedown",  pause);
+    container.addEventListener("mousedown", pause);
 
     return () => {
       container.removeEventListener("touchstart", pause);
-      container.removeEventListener("mousedown",  pause);
+      container.removeEventListener("mousedown", pause);
       clearTimeout(resumeTimerRef.current);
     };
   }, []);
 
-  // ─── Render ───────────────────────────────────────────────────────────────
+  // ── Render ─────────────────────────────────────────────────────────────────
 
   return (
     <section className="bg-bg-tertiary px-4 py-8 md:px-8 md:py-10">
@@ -141,7 +184,7 @@ export default function TrustSignalsBar() {
       </div>
 
       {/* ── Desktop: static grid ─────────────────────────────────────────── */}
-      <div className="hidden md:flex no-scrollbar mx-auto max-w-7xl gap-0 overflow-x-auto rounded-[1.6rem] bg-transparent motion-safe:animate-[var(--animate-fade-up)]">
+      <div className="hidden md:flex no-scrollbar mx-auto max-w-7xl gap-0 overflow-x-auto rounded-[1.6rem] bg-transparent motion-safe:animate-fade-up">
         {TRUST_SIGNALS.map((signal, index) => (
           <div
             key={signal.id}
@@ -152,9 +195,9 @@ export default function TrustSignalsBar() {
             ].join(" ")}
           >
             {/* Desktop icons use accent colour, not white */}
-            {signal.icon === "verified" && <BadgeCheck className="h-4 w-4 flex-shrink-0 text-accent-primary" />}
-            {signal.icon === "escrow"   && <LockKeyhole className="h-4 w-4 flex-shrink-0 text-accent-primary" />}
-            {signal.icon === "trusted"  && <ThumbsUp    className="h-4 w-4 flex-shrink-0 text-accent-primary" />}
+            {signal.icon === "verified" && <BadgeCheck className="h-4 w-4 shrink-0 text-accent-primary" />}
+            {signal.icon === "escrow"   && <LockKeyhole className="h-4 w-4 shrink-0 text-accent-primary" />}
+            {signal.icon === "trusted"  && <ThumbsUp    className="h-4 w-4 shrink-0 text-accent-primary" />}
             {signal.label}
           </div>
         ))}

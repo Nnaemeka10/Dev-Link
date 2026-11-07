@@ -1,5 +1,5 @@
 
--- MIGRATION: Profile Feature — Schema Additions
+-- MIGRATION: Profile Feature - Schema Additions
 
 
 -- 1. Add profile fields to users

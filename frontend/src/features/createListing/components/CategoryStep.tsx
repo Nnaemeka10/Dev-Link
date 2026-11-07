@@ -48,7 +48,7 @@ export default function CategoryStep() {
 
   const handleSelect = (value: ListingCategory) => {
     if (category && category !== value && hasCategoryData) {
-      setPendingCategory(value); // something to lose — confirm first
+      setPendingCategory(value); // something to lose - confirm first
       return;
     }
     setCategory(value);
@@ -120,7 +120,7 @@ export default function CategoryStep() {
         isOpen={pendingCategory !== null}
         onClose={() => setPendingCategory(null)}
         title="Change listing type?"
-        description="Switching clears the details owned by the other type — venue address or coverage area, hall/service types, amenities or requirements, and packages. Your name, description, tags, photos and base price are kept."
+        description="Switching clears the details owned by the other type - venue address or coverage area, hall/service types, amenities or requirements, and packages. Your name, description, tags, photos and base price are kept."
         maxWidthClassName="max-w-md"
         footer={
           <div className="flex gap-3">

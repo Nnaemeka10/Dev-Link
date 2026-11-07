@@ -52,7 +52,7 @@ const serviceLocationLax = z.object({
 
 export const detailsStepSchema = z.object({
   name: z.string().trim().min(3, "Listing name must be at least 3 characters").max(80),
-  description: z.string().trim().min(30, "Tell clients a bit more — at least 30 characters").max(2000),
+  description: z.string().trim().min(30, "Tell clients a bit more - at least 30 characters").max(2000),
   selectedTypeIds: z.array(z.string()).min(1, "Select at least one type"),
   tags: z.array(z.string().trim().min(1).max(24)).max(5, "Up to 5 tags only"),
   hallLocation: hallLocationSchema.optional(),

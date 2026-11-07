@@ -12,7 +12,7 @@ export function useListingAvailability(listingId: string | undefined, enabled: b
       return data.unavailableDates;
     },
     enabled: enabled && !!listingId,
-    staleTime: 0,        // volatile data — always treat as stale
+    staleTime: 0,        // volatile data - always treat as stale
     refetchOnMount: true,
   });
 }

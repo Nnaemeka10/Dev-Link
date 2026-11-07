@@ -42,7 +42,7 @@ const VENUE_TYPES = [
   "Boutique Hotel", "Loft / Studio", "Restaurant", "Rooftop",
 ];
 
-// "Parking" is intentionally last — selecting it reveals the parking capacity stepper
+// "Parking" is intentionally last - selecting it reveals the parking capacity stepper
 const AMENITIES = [
   "WiFi", "Projector / Screen", "Sound System", "Air Conditioning",
   "Natural Lighting", "Catering Allowed", "Breakout Rooms",
@@ -150,7 +150,7 @@ function fmt(n: number) {
 // ─── Piecewise scale (non-linear slider) ──────────────────────────────────────
 //
 // Problem: ₦0–₦1M is where 90%+ of bookings fall, but with a linear 0–100M
-// scale it only occupies 1% of the slider width — nearly impossible to use.
+// scale it only occupies 1% of the slider width - nearly impossible to use.
 //
 // Solution: piecewise mapping, the same technique used by Airbnb / Zillow:
 //
@@ -160,10 +160,10 @@ function fmt(n: number) {
 // valueToPos:  price  → slider position [0,1]   (for rendering handle position)
 // posToValue:  slider position [0,1] → price    (for converting pointer to price)
 //
-// The two segments are joined at the BREAKPOINT — both functions must agree
+// The two segments are joined at the BREAKPOINT - both functions must agree
 // on exactly what value lives at BREAKPOINT_POS so handles don't jump.
 
-const BREAKPOINT_VAL = 1_000_000;   // ₦1M — the join point
+const BREAKPOINT_VAL = 1_000_000;   // ₦1M - the join point
 const BREAKPOINT_POS = 0.75;        // 75% of slider width
 
 function valueToPos(value: number, min: number, max: number): number {
@@ -247,7 +247,7 @@ function DualSlider({ min, max, valueMin, valueMax, onChange, step = 10_000 }: D
       {/* Track */}
       <div ref={rangeRef} className="relative h-1 rounded-full bg-text-primary/10">
 
-        {/* Subtle breakpoint tick — visual hint that scale changes here */}
+        {/* Subtle breakpoint tick - visual hint that scale changes here */}
         <div
           className="absolute top-1/2 -translate-y-1/2 h-2.5 w-px bg-text-primary/20 rounded-full"
           style={{ left: `${BREAKPOINT_POS * 100}%` }}
@@ -283,7 +283,7 @@ function DualSlider({ min, max, valueMin, valueMax, onChange, step = 10_000 }: D
         />
       </div>
 
-      {/* Scale labels — anchored to breakpoint so user understands the split */}
+      {/* Scale labels - anchored to breakpoint so user understands the split */}
       <div className="relative mt-3 flex text-tiny text-text-primary/35 font-medium select-none">
         <span className="absolute left-0">₦0</span>
         <span
@@ -310,7 +310,7 @@ interface StepperProps {
   min?: number;
   max?: number;
   zeroLabel?: string;
-  // Called after blur commit with the committed value — use for cross-field nudging
+  // Called after blur commit with the committed value - use for cross-field nudging
   onBlurValidate?: (committed: number) => void;
 }
 
@@ -354,7 +354,7 @@ function Stepper({ label, value, onChange, min = 0, max = 999, zeroLabel = "Any"
           <Minus className="h-3.5 w-3.5" />
         </button>
 
-        {/* Tappable value — switches to input on click */}
+        {/* Tappable value - switches to input on click */}
         {editing ? (
           <input
             ref={inputRef}
@@ -520,7 +520,7 @@ export default function FilterModal({
 
   // ─── Render ──────────────────────────────────────────────────────────────────
 
-  // Shared scrollable content — rendered inside both mobile sheet and desktop modal
+  // Shared scrollable content - rendered inside both mobile sheet and desktop modal
   const content = (
     <>
       {/* ── Price Range ──────────────────────────────────────────────────── */}
@@ -557,8 +557,8 @@ export default function FilterModal({
               className="mt-0.5 w-full bg-transparent text-sm font-semibold text-text-primary focus:outline-none"
             />
           </div>
-          <div className="flex items-center text-text-primary/30 text-sm">—</div>
-          {/* Max input — clamped at 100M; values above silently floor to 100M */}
+          <div className="flex items-center text-text-primary/30 text-sm">-</div>
+          {/* Max input - clamped at 100M; values above silently floor to 100M */}
           <div className="flex-1 rounded-xl border border-text-primary/15 bg-white px-3 py-2.5">
             <p className="text-tiny font-semibold uppercase tracking-widest text-text-primary/40">Max</p>
             <input
@@ -568,7 +568,7 @@ export default function FilterModal({
               max={PRICE_MAX_BOUND}
               step={10_000}
               onChange={(e) => {
-                // Silently clamp — no error shown, slider just stays at 100M mark
+                // Silently clamp - no error shown, slider just stays at 100M mark
                 const v = Math.min(Number(e.target.value), PRICE_MAX_BOUND);
                 setFilters((p) => ({ ...p, priceMax: v }));
               }}
@@ -617,7 +617,7 @@ export default function FilterModal({
             onChange={(v) => setFilters((p) => ({ ...p, capacityMin: v }))}
             onBlurValidate={(committed) => {
               // If min was set and max is non-zero but less than or equal to min,
-              // nudge max to min + 1. If max is 0 (Any), leave it — "Any" means
+              // nudge max to min + 1. If max is 0 (Any), leave it - "Any" means
               // no upper bound, which is always valid against any min.
               setFilters((p) => {
                 if (p.capacityMax !== 0 && p.capacityMax <= committed) {
@@ -663,7 +663,7 @@ export default function FilterModal({
             ))}
           </div>
 
-          {/* Conditional parking capacity stepper — only when Parking is selected */}
+          {/* Conditional parking capacity stepper - only when Parking is selected */}
           <AnimatePresence>
             {filters.amenities.includes("Parking") && (
               <motion.div

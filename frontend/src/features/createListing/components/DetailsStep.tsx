@@ -47,7 +47,7 @@ export default function DetailsStep() {
     category === "service"
       ? {
           title: "What services do you offer?",
-          description: "Select every service that applies — clients can filter by these.",
+          description: "Select every service that applies - clients can filter by these.",
         }
       : {
           title: "What type of event hall is this?",

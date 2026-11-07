@@ -1,7 +1,7 @@
 import type { VendorDashboardData } from "./types";
 
 // ────────────────────────────────────────────────────────────────────────────
-// Mock data — replace with a real fetch/React Query hook. Shapes match
+// Mock data - replace with a real fetch/React Query hook. Shapes match
 // `VendorDashboardData` in `types.ts` so swapping the source is a no-op
 // for every component in `components/`.
 // ────────────────────────────────────────────────────────────────────────────
@@ -44,7 +44,7 @@ export const vendorDashboardData: VendorDashboardData = {
   transactions: [
     {
       id: "txn_45920",
-      title: "Eko Convention Center — Wedding Booking",
+      title: "Eko Convention Center - Wedding Booking",
       referenceId: "#45920",
       date: "Jul 24, 2026",
       icon: "venue",
@@ -54,7 +54,7 @@ export const vendorDashboardData: VendorDashboardData = {
     },
     {
       id: "txn_45915",
-      title: "MC/DJ Bundle — Corporate Gala",
+      title: "MC/DJ Bundle - Corporate Gala",
       referenceId: "#45915",
       date: "Jul 21, 2026",
       icon: "hosting",
@@ -64,7 +64,7 @@ export const vendorDashboardData: VendorDashboardData = {
     },
     {
       id: "txn_45903",
-      title: "Editorial Photography — Adewale & Chioma",
+      title: "Editorial Photography - Adewale & Chioma",
       referenceId: "#45903",
       date: "Jul 18, 2026",
       icon: "photography",
@@ -84,7 +84,7 @@ export const vendorDashboardData: VendorDashboardData = {
     },
     {
       id: "txn_45861",
-      title: "Set Design — Fashion Show",
+      title: "Set Design - Fashion Show",
       referenceId: "#45861",
       date: "Jul 10, 2026",
       icon: "design",

@@ -37,7 +37,7 @@ function daysBetween(a: Date, b: Date): number {
   return Math.max(1, Math.round(Math.abs(b.getTime() - a.getTime()) / 86_400_000));
 }
 
-// ─── Inline calendar (no trigger button — just the DayPicker + footer) ────────
+// ─── Inline calendar (no trigger button - just the DayPicker + footer) ────────
 
 interface InlineCalendarProps {
   value: DayPickerRange | undefined;
@@ -56,7 +56,7 @@ function InlineCalendar({ value, onChange, onApply, onClear }: InlineCalendarPro
         {!value?.from
           ? "Select a start date"
           : !value?.to
-          ? "Select an end date — or tap again for a single day"
+          ? "Select an end date - or tap again for a single day"
           : `${formatShort(value.from)} – ${formatShort(value.to)}`}
       </p>
 
@@ -263,7 +263,7 @@ export function MobileBookingDock({
 }: MobileBookingDockProps) {
   const [sheet, setSheet] = useState<Sheet>("none");
 
-  // Draft range lives here — only committed to parent on Apply
+  // Draft range lives here - only committed to parent on Apply
   const [draftRange, setDraftRange] = useState<DayPickerRange | undefined>(
     dateRange ? { from: dateRange.from, to: dateRange.to } : undefined
   );
@@ -321,7 +321,7 @@ export function MobileBookingDock({
       <div className="fixed inset-x-0 bottom-20 z-40 rounded-t-4xl border-t border-[#EFE8DE] bg-white px-5 py-4 shadow-[0_-8px_32px_rgba(36,28,18,0.10)]">
         <div className="flex items-center justify-between gap-4">
 
-          {/* Price + duration — tappable, opens price detail sheet */}
+          {/* Price + duration - tappable, opens price detail sheet */}
           <button
             type="button"
             onClick={openPrice}
@@ -353,7 +353,7 @@ export function MobileBookingDock({
         </div>
       </div>
 
-      {/* ── Sheets — portalled to body ───────────────────────────────────────── */}
+      {/* ── Sheets - portalled to body ───────────────────────────────────────── */}
       {portalTarget && createPortal(
         <AnimatePresence>
           {sheet !== "none" && (
@@ -429,7 +429,7 @@ export function MobileBookingDock({
                       </button>
                     </div>
 
-                    {/* Inline calendar — no trigger button, just the picker */}
+                    {/* Inline calendar - no trigger button, just the picker */}
                     <div className="overflow-y-auto pb-[env(safe-area-inset-bottom,1rem)]">
                       <InlineCalendar
                         value={draftRange}

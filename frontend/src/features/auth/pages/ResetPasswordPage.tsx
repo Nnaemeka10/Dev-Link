@@ -149,7 +149,7 @@ function ResetPasswordForm() {
         </p>
       </div>
 
-      {/* Path badge — subtle hint of which flow they're on */}
+      {/* Path badge - subtle hint of which flow they're on */}
       <div className="mt-6 flex justify-center">
         <span className="inline-flex items-center gap-1.5 rounded-full bg-[#F7F2EA] px-3 py-1 text-xs font-semibold text-[#6B5F57]">
           <span

@@ -323,7 +323,7 @@ export const BookingModel = {
                 [bookingId]
             );
 
-            // Ensure the calendar block exists — covers the DVA/funds_held
+            // Ensure the calendar block exists - covers the DVA/funds_held
             // payment path, which doesn't go through markAsPaid.
             await client.query(
                 `INSERT INTO listing_unavailable_dates (listing_id, start_date, end_date, reason) 

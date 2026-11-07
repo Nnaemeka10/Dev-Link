@@ -48,10 +48,10 @@ function iconByType(type: CategoryItem["icon"]) {
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const ITEM_WIDTH = 84;  // px — matches min-w-[5.25rem] (5.25 * 16 = 84)
-const GAP        = 16;  // px — gap-4
+const ITEM_WIDTH = 84;  // px - matches min-w-[5.25rem] (5.25 * 16 = 84)
+const GAP        = 16;  // px - gap-4
 const STRIDE     = ITEM_WIDTH + GAP; // distance between item origins
-const PX_PER_FRAME = 0.45; // ~27px/s at 60fps — slow and premium
+const PX_PER_FRAME = 0.45; // ~27px/s at 60fps - slow and premium
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
@@ -59,7 +59,7 @@ export default function CategoryStrip() {
   const containerRef = useRef<HTMLDivElement>(null);
 
   // SSR-safe mobile detection.
-  // Lazy initialiser runs only on the client's first render —
+  // Lazy initialiser runs only on the client's first render -
   // typeof window guard keeps it safe during SSR.
   // The effect only subscribes to changes; setState is called inside
   // the callback (not synchronously in the effect body) so no cascading render.
@@ -76,7 +76,7 @@ export default function CategoryStrip() {
     return () => mq.removeEventListener("change", handler);
   }, []);
 
-  // Pause ref — mutated by touch handlers and RAF, never causes re-render
+  // Pause ref - mutated by touch handlers and RAF, never causes re-render
   const pausedRef = useRef(false);
   const rafRef    = useRef<number>(0);
 
@@ -85,12 +85,12 @@ export default function CategoryStrip() {
   // WHY THIS LOOKS SEAMLESS (and CSS translateX doesn't):
   //
   // CSS translateX(-50%) moves the ENTIRE track as one block. When it resets
-  // from -50% → 0, all items jump simultaneously — you see the whole strip
+  // from -50% → 0, all items jump simultaneously - you see the whole strip
   // snap back even if it's instantaneous.
   //
   // GSAP's horizontalLoop (and this implementation) positions each item
   // INDIVIDUALLY. When item 0 exits the left edge, only item 0 teleports to
-  // the right end — while items 1-9 keep moving uninterrupted. The eye sees
+  // the right end - while items 1-9 keep moving uninterrupted. The eye sees
   // a continuous stream of individual items, never a block reset.
   //
   // This is the exact mechanic in the GSAP pen you shared. We replicate it
@@ -106,7 +106,7 @@ export default function CategoryStrip() {
     );
     if (!items.length) return;
 
-    // Initial x positions — item i starts at i * STRIDE
+    // Initial x positions - item i starts at i * STRIDE
     const xPos = items.map((_, i) => i * STRIDE);
 
     // Set container height and make items absolute
@@ -120,7 +120,7 @@ export default function CategoryStrip() {
     });
 
     // Right boundary = width of the viewport (items beyond this are "offscreen right")
-    // We seed items from 0 → n*STRIDE, some may already be off-screen right — that's fine,
+    // We seed items from 0 → n*STRIDE, some may already be off-screen right - that's fine,
     // they'll scroll into view naturally.
 
     function tick() {

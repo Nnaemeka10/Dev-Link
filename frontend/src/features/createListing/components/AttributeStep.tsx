@@ -29,7 +29,7 @@ export default function AttributesStep() {
     ? "What do you need from clients?"
     : "What amenities do you offer?";
   const subheading = isService
-    ? "Set expectations up front — clients see these requirements before they book."
+    ? "Set expectations up front - clients see these requirements before they book."
     : "Curate the distinctive features of your space. Select all that apply.";
 
   return (

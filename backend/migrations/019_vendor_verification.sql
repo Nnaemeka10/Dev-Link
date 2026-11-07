@@ -21,7 +21,7 @@ DO $$ BEGIN
 EXCEPTION WHEN duplicate_object THEN NULL;
 END $$;
 
--- 3. Bank master list — cached, never fetched from Paystack at render time
+-- 3. Bank master list - cached, never fetched from Paystack at render time
 CREATE TABLE IF NOT EXISTS bank_directory (
     id SERIAL PRIMARY KEY,
     name TEXT NOT NULL,

@@ -9,7 +9,7 @@ import Image from "next/image";
 const links = [
   { href: "/", label: "Explore" },
   { href: "/vendor", label: "Become a Vendor" },
-  { href: "/profile", label: "Help" },
+  { href: "/help", label: "Help" },
 ];
 
 export default function Navbar() {

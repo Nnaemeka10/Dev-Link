@@ -32,7 +32,7 @@ export default function AvailabilitySection() {
         <div>
           <h3 className="font-man text-xl font-bold text-text-primary">Manage Availability</h3>
           <p className="mt-1 max-w-xl text-sm text-text-primary/55">
-            Block dates you&apos;re already booked or unavailable — clients won&apos;t be able to request those days.
+            Block dates you&apos;re already booked or unavailable - clients won&apos;t be able to request those days.
           </p>
         </div>
         {blockedDates.length > 0 && (

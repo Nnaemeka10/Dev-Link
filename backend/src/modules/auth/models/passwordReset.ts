@@ -79,7 +79,7 @@ import { PasswordResetToken } from "../types/passwordReset.js";
 
 const MAX_ATTEMPTS = 5;
 const LOCK_DURATION_MS = 15 * 60 * 1000; // 15 minutes
-const SESSION_DURATION_MS = 10 * 60 * 1000; // 10 minutes — window to actually set the new password
+const SESSION_DURATION_MS = 10 * 60 * 1000; // 10 minutes - window to actually set the new password
 
 export const PasswordResetModel = {
     // generate a secure random link slug
@@ -210,7 +210,7 @@ export const PasswordResetModel = {
         return { sessionToken, sessionExpiresAt };
     },
 
-    // mark token as used (terminal — password has been reset)
+    // mark token as used (terminal - password has been reset)
     async markAsUsed(id: number): Promise<void> {
         const db = getDB();
         const query = `

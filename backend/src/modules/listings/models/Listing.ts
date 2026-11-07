@@ -120,7 +120,7 @@ function buildFilterParts(options: ListingPageOptions): QueryParts {
 
     if (filters.location) {
         // Structured location search: match against state, city (LGA), or address.
-        // The autocomplete provides state names or LGA names — both land here.
+        // The autocomplete provides state names or LGA names - both land here.
         const locPattern = addValue(values, `%${filters.location}%`);
         clauses.push(
             `(l.state ILIKE ${locPattern} OR l.city ILIKE ${locPattern} OR l.address_line ILIKE ${locPattern}

@@ -38,7 +38,7 @@ INSERT INTO nigeria_states (id, name) VALUES
 ON CONFLICT (id) DO NOTHING;
 
 -- ============================================================
--- 3. SEED LGAS (matches create-listing data.ts — representative subset)
+-- 3. SEED LGAS (matches create-listing data.ts - representative subset)
 -- ============================================================
 INSERT INTO nigeria_lgas (id, state_id, name) VALUES
   -- Lagos

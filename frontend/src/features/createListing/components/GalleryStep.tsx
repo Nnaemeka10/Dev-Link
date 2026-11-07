@@ -22,7 +22,7 @@ export default function GalleryStep() {
       ? "Upload at least 5 photos from different events or activities. High-quality imagery is the first thing clients notice."
       : "Upload at least 5 photos from different angles (Interior, Exterior, Amenities, Action shots). High-quality imagery is the first thing clients notice.";
 
-  // NOTE(meks): local preview only — wire this to your Cloudinary signed
+  // NOTE(meks): local preview only - wire this to your Cloudinary signed
   // upload flow (get signature from the backend, upload client-side, then
   // call updatePhoto with the returned secure_url/public_id).
   // const handleFilesSelected = (files: FileList | null) => {
@@ -94,7 +94,7 @@ export default function GalleryStep() {
             </svg>
           </span>
           <p className="font-man text-lg font-bold text-text-primary">Tap to browse files</p>
-          <p className="mt-1 text-sm text-text-primary/50">or drag and drop — JPG, PNG, HEIC up to 10MB</p>
+          <p className="mt-1 text-sm text-text-primary/50">or drag and drop - JPG, PNG, HEIC up to 10MB</p>
           <input
             ref={fileInputRef}
             type="file"

@@ -89,10 +89,10 @@ export default function CreateListingPage() {
       const draft = await fetchDraft(editId);
       if (cancelled) return;
       useListingStore.getState().hydrateFromDraft(draft.id, draft.draftPayload, draft.kind);
-      // Category is already decided — land on the Details step
+      // Category is already decided - land on the Details step
       if (draft.draftPayload?.category ?? draft.kind) goToStep(2);
     } catch {
-      // Draft was published/deleted/owned by someone else — start fresh
+      // Draft was published/deleted/owned by someone else - start fresh
     } finally {
       if (!cancelled) setIsHydrating(false);
     }
@@ -152,7 +152,7 @@ export default function CreateListingPage() {
   };
 
   const handlePublish = async () => {
-    // Guard 1 — never send a listing without its compulsory location
+    // Guard 1 - never send a listing without its compulsory location
     if (category && !isLocationValid()) {
       markStepAttempted(2);
       goToStep(2);
@@ -160,10 +160,10 @@ export default function CreateListingPage() {
       return;
     }
 
-    // Guard 2 — payout account must be verified
+    // Guard 2 - payout account must be verified
     const { data: payout } = await refetchPayoutStatus();
     if (payout?.status && payout.status !== "verified") {
-      setShowVerificationModal(true); // stay on the page — nothing is lost
+      setShowVerificationModal(true); // stay on the page - nothing is lost
       return;
     }
     if (!listingId) return;

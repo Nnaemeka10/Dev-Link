@@ -1,5 +1,5 @@
 // ────────────────────────────────────────────────────────────────────────────
-// Vendor Dashboard — shared types
+// Vendor Dashboard - shared types
 // These mirror the shape the backend is expected to return. Swap `data.ts`
 // for a real fetch/hook layer later without touching the UI components.
 // ────────────────────────────────────────────────────────────────────────────
@@ -29,7 +29,7 @@ export interface VendorProfile {
   name: string;
   firstName: string;
   avatarUrl: string;
-  /** true if this is the vendor's first session in the app — flips the greeting copy */
+  /** true if this is the vendor's first session in the app - flips the greeting copy */
   isFirstVisit: boolean;
   unreadMessages: number;
 }

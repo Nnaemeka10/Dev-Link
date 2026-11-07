@@ -8,7 +8,7 @@ interface FinancialSummaryCardsProps {
 export default function FinancialSummaryCards({ summary }: FinancialSummaryCardsProps) {
   return (
     <section className="grid grid-cols-1 gap-4 xs:gap-5 lg:grid-cols-7 lg:gap-6">
-      {/* Total revenue — the anchor card, 3/7 of the row on large screens */}
+      {/* Total revenue - the anchor card, 3/7 of the row on large screens */}
       <div className="animate-fade-up rounded-card bg-text-primary p-6 text-white shadow-card lg:col-span-3 xl:p-8">
         <div className="flex items-center justify-between">
           <p className="text-xs font-bold uppercase tracking-widest text-white/60">Total Revenue</p>
@@ -25,7 +25,7 @@ export default function FinancialSummaryCards({ summary }: FinancialSummaryCards
         </p>
       </div>
 
-      {/* Confirmed + pending — share the remaining 4/7 of the row */}
+      {/* Confirmed + pending - share the remaining 4/7 of the row */}
       <div className="grid grid-cols-2 gap-4 xs:gap-5 lg:col-span-4 lg:gap-6">
         <div className="animate-fade-up rounded-card bg-bg-tertiary p-5 shadow-card [animation-delay:80ms] xl:p-7">
           <div className="flex h-9 w-9 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">

@@ -255,7 +255,7 @@ function PaymentDrawer({
         className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50"
         onClick={onClose}
       />
-      {/* Sheet — slides up on mobile, centered modal on md+ */}
+      {/* Sheet - slides up on mobile, centered modal on md+ */}
       <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center pointer-events-none">
         <div className="pointer-events-auto w-full md:w-120 bg-white rounded-t-3xl md:rounded-3xl shadow-2xl overflow-hidden">
           {/* Mobile drag handle */}

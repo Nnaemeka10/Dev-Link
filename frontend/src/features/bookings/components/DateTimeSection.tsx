@@ -91,7 +91,7 @@ export function DateTimeSection({
 
       <div className="space-y-5">
 
-        {/* ── Event Date — full width ─────────────────────────────────────── */}
+        {/* ── Event Date - full width ─────────────────────────────────────── */}
         <div>
           <FieldLabel>Event Date</FieldLabel>
           <FieldPill>
@@ -107,7 +107,7 @@ export function DateTimeSection({
           </FieldPill>
         </div>
 
-        {/*Start Time + End Time — side by side*/}
+        {/*Start Time + End Time - side by side*/}
         {/*
           We use the feature-agnostic Dropdown in a custom pill wrapper
           rather than the "cell" variant so we can match the pill shape.

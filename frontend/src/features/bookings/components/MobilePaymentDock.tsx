@@ -212,14 +212,14 @@ export function MobilePaymentDock({ summary, onPay, isProcessing }: MobilePaymen
       <div className="fixed inset-x-0 bottom-20 z-40 border-t border-[#EFE8DE] bg-bg-primary px-5 py-4 shadow-[0_-8px_32px_rgba(34,27,18,0.08)]">
         <div className="flex items-center justify-between gap-4">
 
-          {/* Venue + price — tappable trigger */}
+          {/* Venue + price - tappable trigger */}
           <button
             type="button"
             onClick={() => setOpen(true)}
             aria-label="View booking summary"
             className="flex min-w-0 flex-col items-start gap-0.5 text-left"
           >
-            {/* Venue name — truncated */}
+            {/* Venue name - truncated */}
             <span className="flex items-center gap-1.5 text-small font-extrabold uppercase tracking-widest text-[#555B7F]">
               <span className="max-w-45 truncate">{summary.venueName}</span>
               <ChevronUp className="h-3 w-3 shrink-0 text-[#B9401D]" />
@@ -245,7 +245,7 @@ export function MobilePaymentDock({ summary, onPay, isProcessing }: MobilePaymen
         </div>
       </div>
 
-      {/* ── Summary sheet — portalled ────────────────────────────────────── */}
+      {/* ── Summary sheet - portalled ────────────────────────────────────── */}
       {portalTarget && createPortal(
         <AnimatePresence>
           {open && (

@@ -440,7 +440,7 @@ export const forgotPassword = async (req: Request<{}, {}, { email: string }>, re
 // ============================================================================
 // Verify the 6-digit OTP from the email -> exchange for a short-lived session token
 // This is the endpoint the OTP modal calls. On success, the *session token*
-// (not the OTP) is what's allowed to actually set a new password — so the
+// (not the OTP) is what's allowed to actually set a new password - so the
 // OTP can't be replayed/reused against /reset-password directly, and a
 // brute-forced or shoulder-surfed code is useless without also controlling
 // the response of this exact request.
@@ -462,7 +462,7 @@ export const verifyResetOtp = async (req: Request<{}, {}, { email: string; code:
         const user = await UserModel.findByEmail(email);
 
         // Generic error so we don't leak whether the email exists, separate from
-        // whether the code is wrong — both render the same to the client.
+        // whether the code is wrong - both render the same to the client.
         const genericError = { error: 'Invalid or expired code' };
 
         if (!user) {
@@ -552,7 +552,7 @@ export const resetPassword = async (req: Request<{}, {}, ResetPasswordBody>, res
             return res.status(404).json({ error: 'User not found' });
         }
 
-        // mark token as used (terminal — both the OTP and the email link are now dead)
+        // mark token as used (terminal - both the OTP and the email link are now dead)
         await PasswordResetModel.markAsUsed(resetToken.id!);
 
         // send confirmation email

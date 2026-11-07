@@ -32,16 +32,16 @@ export interface DropdownProps<T extends string = string> {
   triggerClassName?: string;         // override trigger button classes
   size?: "sm" | "md" | "lg";        // controls trigger padding + font size
   variant?: "outline" | "ghost" | "cell";
-  // outline — bordered button (default)
-  // ghost  — no border, just the text + chevron (e.g. sort dropdowns in headers)
-  // cell   — flush, for use inside a bordered grid cell (BookingCard pattern)
+  // outline - bordered button (default)
+  // ghost  - no border, just the text + chevron (e.g. sort dropdowns in headers)
+  // cell   - flush, for use inside a bordered grid cell (BookingCard pattern)
 
   // Popover placement
   align?: "left" | "right";         // which edge of trigger the popover aligns to
   width?: "trigger" | "content" | number;
-  // trigger  — popover matches trigger width (default)
-  // content  — popover sizes to its content
-  // number   — fixed px width
+  // trigger  - popover matches trigger width (default)
+  // content  - popover sizes to its content
+  // number   - fixed px width
 
   // Extra structural
   className?: string;                // wrapper div
@@ -116,7 +116,7 @@ export function Dropdown<T extends string = string>({
 }: DropdownProps<T>) {
   const [open, setOpen]         = useState(false);
   const [focusedIdx, setFocused] = useState(-1);
-  // DOMRect of the trigger button — used to position the portalled popover
+  // DOMRect of the trigger button - used to position the portalled popover
   const [triggerRect, setTriggerRect] = useState<DOMRect | null>(null);
   const triggerRef  = useRef<HTMLButtonElement>(null);
   const listRef     = useRef<HTMLUListElement>(null);
@@ -133,7 +133,7 @@ export function Dropdown<T extends string = string>({
   // ── Measure trigger on open, and keep it current on scroll/resize ───────────
   useEffect(() => {
     if (!open) {
-      // Reset so next open always measures fresh — prevents stale rect
+      // Reset so next open always measures fresh - prevents stale rect
       // from a previous open being used before the new measurement fires.
       setTriggerRect(null);
       return;
@@ -172,7 +172,7 @@ export function Dropdown<T extends string = string>({
     const w =
       typeof width === "number"   ? width :
       width === "trigger"         ? triggerRect.width :
-      undefined; // "content" — let CSS size it naturally
+      undefined; // "content" - let CSS size it naturally
 
     return {
       position: "fixed",
@@ -199,8 +199,8 @@ export function Dropdown<T extends string = string>({
 
   // ── Sync focused index when opening ────────────────────────────────────────
   // Initial focused index is set in the click/keyboard handler at open time.
-  // This effect only handles the initial scroll-into-view — a genuine DOM
-  // side effect, not a state initialisation — so it's clean for the linter.
+  // This effect only handles the initial scroll-into-view - a genuine DOM
+  // side effect, not a state initialisation - so it's clean for the linter.
   //
   // IMPORTANT: we gate on triggerRect being set so we never call scrollIntoView
   // while the portalled popover is unpositioned. An unpositioned fixed element
@@ -212,7 +212,7 @@ export function Dropdown<T extends string = string>({
       ?.querySelectorAll<HTMLElement>("[role='option']")
       [focusedIdx]
       ?.scrollIntoView({ block: "nearest" });
-  // focusedIdx intentionally excluded — this only runs on open transition.
+  // focusedIdx intentionally excluded - this only runs on open transition.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, !!triggerRect]);
 
@@ -322,7 +322,7 @@ export function Dropdown<T extends string = string>({
         onClick={() => {
           if (disabled) return;
           if (!open) {
-            // Set the initial focused index synchronously at open time —
+            // Set the initial focused index synchronously at open time -
             // this is a user-initiated state update, not a reactive effect,
             // so it batches correctly with the setOpen call.
             const idx = options.findIndex((o) => o.value === value);
@@ -367,7 +367,7 @@ export function Dropdown<T extends string = string>({
         </span>
       </button>
 
-      {/* ── Popover — portalled to document.body ─────────────────────────────
+      {/* ── Popover - portalled to document.body ─────────────────────────────
            Rendering outside the React tree via createPortal means no
            overflow:hidden, clip-path, or stacking context from any ancestor
            can clip the popover. Position is derived from triggerRect (fixed

@@ -34,7 +34,7 @@ const STATUS_META: Record<
   },
   manual_review: {
     title: "Account under review",
-    body: "We need to manually confirm your account details, which can take a little longer. Save this listing as a draft — you can publish the moment we confirm everything.",
+    body: "We need to manually confirm your account details, which can take a little longer. Save this listing as a draft - you can publish the moment we confirm everything.",
     Icon: ShieldAlert,
     iconWrap: "bg-amber-100 text-amber-600",
   },
@@ -50,7 +50,7 @@ const FALLBACK_META = {
 interface VerificationRequiredModalProps {
   isOpen: boolean;
   status: PayoutStatus | undefined;
-  /** Your existing save-draft logic — called before navigating away. */
+  /** Your existing save-draft logic - called before navigating away. */
   onSaveDraft: () => Promise<void> | void;
   onClose: () => void;
 }
@@ -72,7 +72,7 @@ export default function VerificationRequiredModal({
     try {
       await onSaveDraft();
     } catch {
-      // The debounced autosave already has the latest state — don't block the user.
+      // The debounced autosave already has the latest state - don't block the user.
     }
     router.push(PROFILE_PATH);
   };

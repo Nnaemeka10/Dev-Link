@@ -591,7 +591,7 @@
 // //                         <hr class="divider" />
 
 // //                         <div class="notice-box">
-// //                             <p><strong>This link expires in 1 hour.</strong><br />If you didn't request a password reset, you can safely ignore this email — your account is secure.</p>
+// //                             <p><strong>This link expires in 1 hour.</strong><br />If you didn't request a password reset, you can safely ignore this email - your account is secure.</p>
 // //                         </div>
 // //                     </div>
 
@@ -787,7 +787,7 @@
 // //                                     <span class="step-icon"><span>3</span></span>
 // //                                     <span class="step-title">Connect with people</span>
 // //                                 </div>
-// //                                 <p class="step-desc">Meet attendees, speakers, and organizers — build real relationships.</p>
+// //                                 <p class="step-desc">Meet attendees, speakers, and organizers - build real relationships.</p>
 // //                             </div>
 
 // //                             <div class="cta-wrapper">
@@ -975,7 +975,7 @@
 //                         <hr class="divider" />
 
 //                         <div class="notice-box">
-//                             <p><strong>This link expires in 1 hour.</strong><br />If you didn't request a password reset, you can safely ignore this email — your account is secure.</p>
+//                             <p><strong>This link expires in 1 hour.</strong><br />If you didn't request a password reset, you can safely ignore this email - your account is secure.</p>
 //                         </div>
 //                     </div>
 
@@ -1167,7 +1167,7 @@
 //                                     <span class="step-icon"><span>3</span></span>
 //                                     <span class="step-title">Connect with people</span>
 //                                 </div>
-//                                 <p class="step-desc">Meet attendees, speakers, and organizers — build real relationships.</p>
+//                                 <p class="step-desc">Meet attendees, speakers, and organizers - build real relationships.</p>
 //                             </div>
 
 //                             <div class="cta-wrapper">
@@ -1355,7 +1355,7 @@ export const getPasswordResetEmailTemplate = (resetUrl: string, userEmail: strin
                         <hr class="divider" />
 
                         <div class="notice-box">
-                            <p><strong>This link expires in 1 hour.</strong><br />If you didn't request a password reset, you can safely ignore this email — your account is secure.</p>
+                            <p><strong>This link expires in 1 hour.</strong><br />If you didn't request a password reset, you can safely ignore this email - your account is secure.</p>
                         </div>
                     </div>
 

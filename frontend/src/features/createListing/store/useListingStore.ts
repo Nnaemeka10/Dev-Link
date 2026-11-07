@@ -14,7 +14,7 @@ import type {
 import { TOTAL_STEPS } from "../types/listing";
 
 // ────────────────────────────────────────────────────────────────────────────
-// Initial state — one object per domain slice, composed into the full form.
+// Initial state - one object per domain slice, composed into the full form.
 // Keeping each slice's shape here (rather than scattered defaults inline)
 // is what makes `resetForm` a one-liner instead of a maintenance trap.
 // ────────────────────────────────────────────────────────────────────────────
@@ -54,7 +54,7 @@ const initialFormState: ListingFormState = {
 };
 
 // ────────────────────────────────────────────────────────────────────────────
-// Store shape — state + actions, grouped by the step that owns them.
+// Store shape - state + actions, grouped by the step that owns them.
 // ────────────────────────────────────────────────────────────────────────────
 
 interface ListingStore {
@@ -70,10 +70,10 @@ interface ListingStore {
   markStepAttempted: (step: StepNumber) => void;
   clearStepAttempted: (step: StepNumber) => void;
 
-  // Step 1 — Category
+  // Step 1 - Category
   setCategory: (category: ListingCategory) => void;
 
-  // Step 2 — Details
+  // Step 2 - Details
   setListingId: (id: string | null) => void;
   setListingName: (name: string) => void;
   setDescription: (description: string) => void;
@@ -87,7 +87,7 @@ interface ListingStore {
   toggleServiceCoverageState: (stateId: string) => void;
   toggleServiceCoverageLga: (stateId: string, lgaId: string) => void;
 
-  // Step 3 — Amenities (halls) / Requirements (services)
+  // Step 3 - Amenities (halls) / Requirements (services)
   setAmenityValue: (amenityId: string, value: string) => void;
   removeAmenity: (amenityId: string) => void;
   setRequirementValue: (requirementId: string, value: string) => void;
@@ -95,13 +95,13 @@ interface ListingStore {
   addCustomRequirement: (text: string) => void;
   removeCustomRequirement: (id: string) => void;
 
-  // Step 4 — Gallery
+  // Step 4 - Gallery
   addPhotos: (photos: GalleryPhoto[]) => void;
   updatePhoto: (id: string, patch: Partial<GalleryPhoto>) => void;
   removePhoto: (id: string) => void;
   setCoverPhoto: (id: string) => void;
 
-  // Step 5 — Pricing & availability
+  // Step 5 - Pricing & availability
   setBasePrice: (price: number | null) => void;
   setUsesPackages: (uses: boolean) => void;
   addPackage: (pkg: PricingPackage) => void;
@@ -298,7 +298,7 @@ export const useListingStore = create<ListingStore>()(
             "toggleServiceCoverageState"
           ),
 
-        /** LGAs start selected (covered) by default — toggling adds/removes them from the deselected list. */
+        /** LGAs start selected (covered) by default - toggling adds/removes them from the deselected list. */
         toggleServiceCoverageLga: (stateId, lgaId) =>
           set(
             (s) => {

@@ -1,14 +1,14 @@
 import type { LocalGovernment, NigeriaState } from "./types/listing";
 
 // ────────────────────────────────────────────────────────────────────────────
-// MOCK — backend contract
+// MOCK - backend contract
 //
 //   GET /locations/states              → NigeriaState[]
 //   GET /locations/states/:stateId/lgas → LocalGovernment[]
 //
 // The list below is a representative subset (3–6 LGAs per state) so the UI
 // has something real to render. The backend should return the authoritative
-// full list (all 774 LGAs nationwide) — the frontend doesn't hardcode counts
+// full list (all 774 LGAs nationwide) - the frontend doesn't hardcode counts
 // or assume completeness anywhere.
 // ────────────────────────────────────────────────────────────────────────────
 
@@ -118,7 +118,7 @@ export function getLgasByState(stateId: string): LocalGovernment[] {
 import type { EventHallType, ServiceType } from "./types/listing";
 
 // ────────────────────────────────────────────────────────────────────────────
-// MOCK — backend contract
+// MOCK - backend contract
 //   GET /listings/hall-types    → EventHallType[]
 //   GET /listings/service-types → ServiceType[]
 // Shown in Step 2 as a multi-select "what kind of X do you host/offer" modal.
@@ -157,7 +157,7 @@ export const SERVICE_TYPES: ServiceType[] = [
 import type { AmenityDefinition } from "./types/listing";
 
 // ────────────────────────────────────────────────────────────────────────────
-// MOCK — backend contract: GET /listings/amenities?category=hall → AmenityDefinition[]
+// MOCK - backend contract: GET /listings/amenities?category=hall → AmenityDefinition[]
 //
 // Grouped by `category` for rendering as sectioned grids (Step 3, hall flow).
 // `valueKind` tells the UI which input to show in the value-entry modal:
@@ -201,12 +201,12 @@ export const HALL_AMENITY_CATEGORIES = Array.from(
 import type { RequirementDefinition } from "./types/listing";
 
 // ────────────────────────────────────────────────────────────────────────────
-// MOCK — backend contract
+// MOCK - backend contract
 //   GET /listings/requirements?serviceTypeIds=dj,photographer → RequirementDefinition[]
 //
 // `applicableServiceTypeIds: []` means "applies to every service type" (e.g.
 // setup time, vendor briefing). Non-empty means the requirement should only
-// render when the vendor has selected one of those service types in Step 2 —
+// render when the vendor has selected one of those service types in Step 2 -
 // the client does this filtering locally against the full list below so the
 // UI stays responsive; the backend is the source of truth for the filter and
 // can narrow the query itself via the `serviceTypeIds` param.
@@ -215,7 +215,7 @@ import type { RequirementDefinition } from "./types/listing";
 // ────────────────────────────────────────────────────────────────────────────
 
 export const SERVICE_REQUIREMENT_DEFINITIONS: RequirementDefinition[] = [
-  // Setup & Access — mostly universal, setup time is compulsory
+  // Setup & Access - mostly universal, setup time is compulsory
   {
     id: "setup-time",
     label: "Minimum setup time required",
@@ -363,9 +363,9 @@ export function getApplicableRequirements(selectedServiceTypeIds: string[]): Req
 import type { PackagePreset } from "./types/listing";
 
 // ────────────────────────────────────────────────────────────────────────────
-// MOCK — backend contract: GET /listings/package-presets?serviceTypeId=dj
+// MOCK - backend contract: GET /listings/package-presets?serviceTypeId=dj
 //
-// Keyed by service type id (see data/mockCategories.ts) for an O(1) lookup —
+// Keyed by service type id (see data/mockCategories.ts) for an O(1) lookup -
 // `PACKAGE_TEMPLATES[serviceTypeId]` gives the package builder its starting
 // templates. `PACKAGE_NAME_PRESETS` / `PACKAGE_PERK_PRESETS` are looser
 // suggestion lists so a vendor can mix a preset name with custom perks (or

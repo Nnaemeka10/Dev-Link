@@ -44,7 +44,7 @@ export function useLocationSuggestions(rawQuery: string) {
       ),
     // Don't fire until the user has typed at least 2 chars
     enabled: query.length >= 2,
-    // Suggestions can stay fresh for 2 minutes — they rarely change
+    // Suggestions can stay fresh for 2 minutes - they rarely change
     staleTime: 1000 * 60 * 2,
     // Keep previous results visible while the new fetch is in-flight
     // so the dropdown doesn't flash empty

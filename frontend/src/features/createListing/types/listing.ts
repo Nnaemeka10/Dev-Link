@@ -1,5 +1,5 @@
 // ────────────────────────────────────────────────────────────────────────────
-// Create Listing — domain types
+// Create Listing - domain types
 // Single source of truth for the shape of a listing draft as it's built up
 // across the 6-step wizard. Mirrors what the backend will eventually receive
 // on submit, plus a few UI-only fields (marked below) that never leave the
@@ -48,11 +48,11 @@ export interface HallLocation {
 }
 
 /**
- * Service providers don't operate from one address — they cover an area.
+ * Service providers don't operate from one address - they cover an area.
  * `coverageMode` decides whether `coverageStateIds` is treated as "the vendor
  * covers these whole states" or "the vendor covers specific LGAs within
  * these states". When a state is added under LGA mode, every LGA in it is
- * considered covered by default — `deselectedLgaIdsByState` tracks the ones
+ * considered covered by default - `deselectedLgaIdsByState` tracks the ones
  * the vendor has explicitly opted out of, so the payload only grows when
  * someone narrows their coverage.
  */
@@ -122,7 +122,7 @@ export interface GalleryPhoto {
   id: string;
   /** Cloudinary secure_url once uploaded; blob preview URL while pending. */
   url: string;
-  /** Cloudinary public_id — null until the signed upload resolves. */
+  /** Cloudinary public_id - null until the signed upload resolves. */
   publicId: string | null;
   isCover: boolean;
   label?: string;
@@ -163,7 +163,7 @@ export interface AvailabilityState {
 export interface PricingState {
   basePrice: number | null;
   billingCycle: BillingCycle;
-  /** Services only — vendor opts into tiered packages instead of/alongside a base price. */
+  /** Services only - vendor opts into tiered packages instead of/alongside a base price. */
   usesPackages: boolean;
   packages: PricingPackage[];
   availability: AvailabilityState;

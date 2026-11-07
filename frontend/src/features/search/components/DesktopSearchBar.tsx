@@ -121,7 +121,7 @@ export default function DesktopSearchBar({ form, onSubmit, isPending, showShadow
           })}
         </div>
 
-        {/* Location — halls only */}
+        {/* Location - halls only */}
         {category === "halls" && (
           <div
             ref={locationRef}
@@ -199,7 +199,7 @@ export default function DesktopSearchBar({ form, onSubmit, isPending, showShadow
                         <div className="flex flex-col">
                             <span className="font-semibold">{s.name}</span>
                             <span className="text-[10px] text-text-primary/45">
-                                {s.type === "state" ? "State" : `LGA — ${s.state}`}
+                                {s.type === "state" ? "State" : `LGA - ${s.state}`}
                             </span>
                         </div>
                       </button>
@@ -211,7 +211,7 @@ export default function DesktopSearchBar({ form, onSubmit, isPending, showShadow
           </div>
         )}
 
-        {/* Capacity — halls only */}
+        {/* Capacity - halls only */}
         {category === "halls" && (
           <CapacityDropdown
             value={capacity}
@@ -220,7 +220,7 @@ export default function DesktopSearchBar({ form, onSubmit, isPending, showShadow
           />
         )}
 
-        {/* Role — services only */}
+        {/* Role - services only */}
         {category === "services" && (
           <RoleDropdown
             value={role}

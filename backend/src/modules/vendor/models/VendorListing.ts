@@ -135,7 +135,7 @@ export const VendorListingModel = {
     const db = getDB();
     const name = String(payload?.details?.name ?? '').trim();
     const priceKobo = Number.isFinite(payload?.pricing?.basePrice)
-        ? Math.round(payload.pricing.basePrice) // already kobo — do NOT ×100 again
+        ? Math.round(payload.pricing.basePrice) // already kobo - do NOT ×100 again
         : null;
     await db.query(
       `UPDATE listings SET
@@ -206,7 +206,7 @@ export const VendorListingModel = {
   /**
  * Processes the draft_payload JSONB and writes structured data to
  * relational tables (hall types, location, capacity, features, etc.).
- * Called by publishDraft — keeps the DB "smart" while the draft stays flexible.
+ * Called by publishDraft - keeps the DB "smart" while the draft stays flexible.
  */
 async processDraftPayload(listingId: string, payload: any): Promise<void> {
     const db = getDB();
@@ -249,7 +249,7 @@ async processDraftPayload(listingId: string, payload: any): Promise<void> {
                 [
                     listingId,
                     details.name || null,
-                    details.name ? `${details.name} — Premium Event Venue` : null,
+                    details.name ? `${details.name} - Premium Event Venue` : null,
                     details.description || null,
                     details.hallLocation.streetAddress || null,
                     lgaName,
