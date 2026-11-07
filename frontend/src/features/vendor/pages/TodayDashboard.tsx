@@ -40,7 +40,7 @@ export default function VendorDashboardPage() {
     confirmedBookings: summary.confirmedBookings,
     // confirmedBookingsChangePercent: 8,
     pendingBookings: summary.pendingBookings,
-    pendingBookingsNote: "Paid — awaiting your confirmation",
+    pendingBookingsNote: "Paid, awaiting your confirmation",
   } : null;
 
   const bookingFilters: BookingFilterTab[] = [
@@ -73,7 +73,7 @@ export default function VendorDashboardPage() {
       <div className="xl:pl-64">
         <VendorHeader vendor={vendor} />
 
-        <main className="mx-auto flex max-w-[1600px] flex-col gap-8 px-4 pb-28 pt-6 xs:px-6 md:gap-10 md:px-8 md:pb-12 md:pt-8">
+        <main className="mx-auto flex max-w-400 flex-col gap-8 px-4 pb-28 pt-6 xs:px-6 md:gap-10 md:px-8 md:pb-12 md:pt-8">
           <DashboardHeading vendor={vendor} />
 
           {/* Animated Escrow Payout Notice */}

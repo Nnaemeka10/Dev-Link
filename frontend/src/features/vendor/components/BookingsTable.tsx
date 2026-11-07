@@ -37,8 +37,8 @@ export default function BookingsTable({
   return (
     <section className="animate-fade-up overflow-hidden rounded-card border border-black/5 bg-white shadow-card">
       {/* Filter bar */}
-      <div className="flex flex-col gap-4 border-b border-black/5 px-0 py-5 sm:flex-row sm:items-center sm:justify-between md:px-8">
-        <div className="flex flex-wrap md:gap-1 rounded-full bg-bg-tertiary p-1 justify-between">
+      <div className="flex flex-col gap-4 border-b border-black/5 px-0 py-3 sm:flex-row sm:items-center sm:justify-between md:px-8">
+        <div className="flex flex-wrap md:gap-1 rounded-md bg-bg-tertiary justify-between py-2 px-2">
           {filters.map((tab) => {
             const isActive = tab.key === activeFilterKey;
             return (
@@ -46,7 +46,7 @@ export default function BookingsTable({
                 key={tab.key}
                 type="button"
                 onClick={() => onFilterChange?.(tab.key)}
-                className={`rounded-full md:px-4 px-2.5 py-2 md:text-sm text-micro font-bold transition-all duration-300 xs:px-5 ${
+                className={`rounded-full md:px-4 px-2.5 py-2 md:text-sm text-xs font-bold transition-all duration-300 xs:px-5 ${
                   isActive
                     ? "bg-white text-accent-primary shadow-card"
                     : "text-text-primary/55 hover:bg-white/60 hover:text-text-primary"
@@ -214,7 +214,7 @@ export default function BookingsTable({
       {/* Mobile card list */}
       <ul className="divide-y divide-black/5 md:hidden">
         {bookings.length === 0 ? (
-          <li className="p-8 text-center md:text-sm text-micro text-text-primary/50">No bookings found.</li>
+          <li className="p-8 text-center md:text-sm text-xs text-text-primary/50">No bookings found.</li>
         ) : (
           bookings.map((booking) => {
             const isCancelled = booking.status === "cancelled";
