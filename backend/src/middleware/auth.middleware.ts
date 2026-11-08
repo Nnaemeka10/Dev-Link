@@ -10,7 +10,7 @@ declare global {
     }
 }
 
-export const authenticateUser = (req: Request, res: Response, next: NextFunction) => {
+export const authenticateUser = async (req: Request, res: Response, next: NextFunction) => {
     try {
         //get token from cookie
         const token = req.cookies.token;
@@ -19,8 +19,8 @@ export const authenticateUser = (req: Request, res: Response, next: NextFunction
             return res.status(401).json({ message: 'Authorization required, Please login' });
         }
 
-        //verify token
-        const decoded = verifyToken(token);
+        //verify token (async: also checks users.token_version for revocation)
+        const decoded = await verifyToken(token);
         if (!decoded) {
             return res.status(401).json({ message: 'Invalid or expired token, Please login again' });
         }

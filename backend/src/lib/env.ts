@@ -26,6 +26,11 @@ export const ENV = {
     EMAIL_FROM: process.env.EMAIL_FROM,
     EMAIL_FROM_NAME: process.env.EMAIL_FROM_NAME,
     PAYSTACK_SECRET_KEY: required('PAYSTACK_SECRET_KEY'),
+    //omma-separated allow-list of Paystack source IPs for the
+    // transfer-approval endpoint (defense-in-depth on top of the HMAC check).
+    // Optional - payment.controller.ts falls back to Paystack's documented IPs.
+    // For local testing, set it to "127.0.0.1".
+    PAYSTACK_WEBHOOK_IPS: process.env.PAYSTACK_WEBHOOK_IPS,
     REDIS_URL: process.env.REDIS_URL,
     PGCRYPTO_KEY: required('PGCRYPTO_KEY'),
     GOOGLE_CLIENT_ID: required('GOOGLE_CLIENT_ID'),

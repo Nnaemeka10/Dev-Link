@@ -195,14 +195,7 @@ export const login = async (_req: Request<{}, {}, LoginBody>, res: Response) => 
             return;
         }
 
-        //generate token and set cookie
-        // generateToken({
-        //     userId: user.id!,
-        //     email: user.email,
-        //     role_id: user.role_id,
-        // }, res
-        // );
-        generateToken({
+        await generateToken({
             userId: user.id!,
             email: user.email,
         }, res
@@ -359,20 +352,12 @@ export const verifyEmail = async (req: Request, res: Response) => {
         await UserModel.update(user.id!, {is_email_verified: true});
 
         // //generate token and set cookie
-        generateToken({
+        // SECURITY FIX: generateToken is now async (embeds users.token_version)
+        await generateToken({
                 userId: user.id!,
                 email: user.email,
             }, res);  
 
-        // //send welcome email asynchronously
-        //     emailService.sendWelcomeEmail(
-        //         user.email,
-        //         user.full_name || user.username || 'Esteemed User'
-        //     ).catch (error => {
-        //         console.error('Failed to send welcome email:', error);
-        //         //log but dont fail the signup
-        //     });
-        //send welcome email asynchronously
         emailService.sendWelcomeEmail(
             user.email,
             user.username || user.first_name || 'Esteemed User'
@@ -438,7 +423,7 @@ export const forgotPassword = async (req: Request<{}, {}, { email: string }>, re
 };
 
 // ============================================================================
-// Verify the 6-digit OTP from the email -> exchange for a short-lived session token
+// Verify the 6-digit OTP from the email - exchange for a short-lived session token
 // This is the endpoint the OTP modal calls. On success, the *session token*
 // (not the OTP) is what's allowed to actually set a new password - so the
 // OTP can't be replayed/reused against /reset-password directly, and a
@@ -499,7 +484,7 @@ export const verifyResetOtp = async (req: Request<{}, {}, { email: string; code:
             });
         }
 
-        // Code is correct -> issue a short-lived session token for the set-new-password step
+        // Code is correct - issue a short-lived session token for the set-new-password step
         const { sessionToken, sessionExpiresAt } = await PasswordResetModel.markVerifiedAndIssueSession(resetRecord.id);
 
         return res.status(200).json({
@@ -616,7 +601,8 @@ export const googleAuth = async (req: Request, res: Response) => {
         }
 
         // 5. Generate our standard app JWT and set httpOnly cookie
-        generateToken({
+        // generateToken is now async (embeds users.token_version)
+        await generateToken({
             userId: user.id!,
             email: user.email,
         }, res);

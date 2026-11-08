@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { ProfileService } from "../models/Profile.js";
 import cloudinary from "../../../lib/cloudinary.js";
 import { ENV } from "../../../lib/env.js";
+import { generateToken } from "../../../lib/utils.js";
 import type {
   UpdateProfileBody,
   ChangePasswordBody,
@@ -219,6 +220,15 @@ export const changePassword = async (req: Request, res: Response) => {
     }
 
     await ProfileService.changePassword(req.user.userId, body);
+
+    // changePassword bumped users.token_version, which also killed
+    // THIS device's cookie. Mint a fresh cookie carrying the NEW version so the
+    // user stays logged in here , every other device gets logged out.
+    await generateToken(
+      { userId: req.user.userId, email: req.user.email },
+      res
+    );
+
     res.status(200).json({ message: "Password updated successfully" });
   } catch (error: any) {
     console.error("Change password error:", error);

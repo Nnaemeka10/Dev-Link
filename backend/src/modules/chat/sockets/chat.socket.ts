@@ -4,7 +4,7 @@ import { ChatModel } from "../models/Chat.js";
 import type { Message } from "../types/chat.js";
 
 export function registerChatHandlers(io: SocketIOServer) {
-  //  Authentication Middleware for Socket.IO 
+  //Authentication Middleware for Socket.IO 
   io.use(async (socket: Socket, next) => {
     try {
       // Extract token from handshake auth or cookie
@@ -15,7 +15,8 @@ export function registerChatHandlers(io: SocketIOServer) {
         return next(new Error("Authentication token required."));
       }
 
-      const decoded = verifyToken(token);
+      //verifyToken is now async (DB token_version check) - must be awaited
+      const decoded = await verifyToken(token);
       if (!decoded) {
         return next(new Error("Invalid or expired token."));
       }
@@ -33,7 +34,7 @@ export function registerChatHandlers(io: SocketIOServer) {
     const user = (socket as any).user;
     console.log(` User connected: ${user.userId} (Socket: ${socket.id})`);
 
-    //  Join Conversation Room 
+    // Join Conversation Room 
     socket.on("conversation:join", async (conversationId: string, callback: (success: boolean) => void) => {
       try {
         // Security: Validate user is a participant before joining
@@ -58,7 +59,7 @@ export function registerChatHandlers(io: SocketIOServer) {
       }
     });
 
-    //  Send Message 
+    //Send Message 
     socket.on("message:send", async (payload: {
       conversationId: string;
       clientId: string; // Idempotency key from frontend
@@ -101,7 +102,7 @@ export function registerChatHandlers(io: SocketIOServer) {
       }
     });
 
-    //  Read Receipts 
+    // Read Receipts 
     socket.on("conversation:read", async (payload: { conversationId: string, messageSeq: number }) => {
       try {
         await ChatModel.markAsRead(payload.conversationId, user.userId, payload.messageSeq);
@@ -117,7 +118,7 @@ export function registerChatHandlers(io: SocketIOServer) {
       }
     });
 
-    //  Typing Indicators 
+    //Typing Indicators 
     socket.on("typing:start", (conversationId: string) => {
       socket.to(`conversation:${conversationId}`).emit("typing:start", {
         userId: user.userId,
@@ -132,10 +133,10 @@ export function registerChatHandlers(io: SocketIOServer) {
       });
     });
 
-    //  Disconnect 
+    // Disconnect 
     socket.on("disconnect", () => {
       console.log(` User disconnected: ${user.userId} (Socket: ${socket.id})`);
-      // Note: In a multi-instance environment, we would update Redis presence here.
+      //important Note: In a multi-instance environment, we would update Redis presence here.
       // For now, we rely on the user's other sockets or next connection to re-establish presence.
     });
   });

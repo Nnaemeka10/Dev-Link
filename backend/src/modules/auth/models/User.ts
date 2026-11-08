@@ -104,57 +104,12 @@ export const UserModel = {
         return await bcrypt.compare(plainPassword, hashedPassword);
     },
 
-    // //update user
-    // async update(id: number, updates: AllowedUpdates): Promise<User | null> {
-    //     const fieldMap = {
-    //         first_name: "first_name",
-    //         last_name: "last_name",
-    //         headline: "headline",
-    //         phone: "phone",
-    //         username: "username",
-    //         is_email_verified: "is_email_verified",
-    //         is_active: "is_active"
-    //     } as const;
-        
-
-    //     const db = getDB();
-
-    //     const allowedUpdates: (keyof AllowedUpdates)[] = ['first_name', 'last_name', 'headline', 'phone', 'username', 'is_email_verified', 'is_active'];
-    //     const updateFields: string[] = [];
-    //     const values: unknown[] = [];
-    //     const assignments: { column: string; value: unknown; placeholder: string }[] = [];
-    //     let paramCount = 1;
-
-    //     (Object.keys(updates) as (keyof AllowedUpdates)[]).forEach((key) => {
-    //         if (allowedUpdates.includes(key)) {
-    //             updateFields.push(`${fieldMap[key]} = $${paramCount}`);
-    //             values.push((updates[key]));
-    //             paramCount++;
-    //         }
-    //     });
-
-    //     if (updateFields.length === 0) {
-    //         return await this.findById(id); // No valid fields to update
-    //     }
-
-    //     updateFields.push(`updated_at = NOW()`);
-    //     values.push(id);
-
-    //     const query = `
-    //         UPDATE users
-    //         SET ${updateFields.join(', ')}
-    //         WHERE id = $${paramCount}
-    //         RETURNING *
-    //     `;
-
-    //     const result = await db.query(query, values);
-    //     return result.rows[0] || null;
-    // },
+    
     
     async update(id: number, updates: AllowedUpdates): Promise<User | null> {
         const db = getDB();
 
-        // Single source of truth: safe column mapping (fixes Bug 5)
+        // Single source of truth: safe column mapping 
         const fieldMap = {
             first_name: "first_name",
             last_name: "last_name",
@@ -227,9 +182,12 @@ export const UserModel = {
         const salt = await bcrypt.genSalt(10);
         const password_hash = await bcrypt.hash(newPassword, salt);
 
+        // bump token_version so every JWT issued with the OLD
+        // password (including cookies on other devices / stolen cookies) is
+        // rejected by verifyToken on their next request.
         const query = `
             UPDATE users
-            SET password_hash = $1, updated_at = NOW()
+            SET password_hash = $1, token_version = COALESCE(token_version, 0) + 1, updated_at = NOW()
             WHERE id = $2
             RETURNING *
         `;

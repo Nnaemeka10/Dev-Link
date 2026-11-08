@@ -6,6 +6,62 @@ import { createDedicatedVirtualAccount, initializePaystackTransaction, verifyPay
 import { ENV } from '../../../lib/env.js';
 import { WebhookModel } from '../models/WebhookModel.js';
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Paystack source-verification helpers (shared by the webhook
+// ingestor and /transfer-approval)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Paystack's documented source IPs for server-to-server calls. Used as
+ * defense-in-depth on top of the HMAC signature check.
+ * Override without redeploying via the PAYSTACK_WEBHOOK_IPS env var, e.g.:
+ *   PAYSTACK_WEBHOOK_IPS="52.31.139.55,52.31.139.157,52.31.10.183"
+ * For local testing set it to "127.0.0.1" so your simulated Paystack calls pass.
+ * Keep this list in sync with https://paystack.com/docs/payments/webhooks/
+ */
+const PAYSTACK_IP_ALLOWLIST = (
+  ENV.PAYSTACK_WEBHOOK_IPS || '52.31.139.75,52.49.173.169,52.214.14.220'
+)
+  .split(',')
+  .map((ip) => ip.trim())
+  .filter(Boolean);
+
+/** Real client IP */
+function getClientIp(req: Request): string {
+  const ip = (req.ip || req.socket.remoteAddress || '').toString();
+  // Normalize IPv6-mapped IPv4, e.g. "::ffff:52.31.139.55" - "52.31.139.55"
+  return ip.startsWith('::ffff:') ? ip.slice(7) : ip;
+}
+
+function isPaystackIp(req: Request): boolean {
+  return PAYSTACK_IP_ALLOWLIST.includes(getClientIp(req));
+}
+
+/**
+ * Timing-safe verification of Paystack's x-paystack-signature header:
+ * HMAC-SHA512 of the RAW request body, keyed with the Paystack secret key.
+ * The raw body is captured in app.ts for /api/payments/webhook and
+ * /api/payments/transfer-approval.
+ */
+function isValidPaystackSignature(req: Request): boolean {
+  const secret = ENV.PAYSTACK_SECRET_KEY;
+  const rawBody = (req as any).rawBody as string | undefined;
+
+  const signatureHeader = req.headers['x-paystack-signature'];
+  const signature = Array.isArray(signatureHeader) ? signatureHeader[0] : signatureHeader;
+
+  if (!secret || !rawBody || !signature || typeof signature !== 'string') {
+    return false;
+  }
+
+  const expected = crypto.createHmac('sha512', secret).update(rawBody, 'utf8').digest('hex');
+  const a = Buffer.from(expected, 'utf8');
+  const b = Buffer.from(signature, 'utf8');
+
+  // timingSafeEqual throws when lengths differ, so compare lengths first
+  return a.length === b.length && crypto.timingSafeEqual(a, b);
+}
+
 export const initializePayment = async (req: Request, res: Response) => {
     try {
         if (!req.user?.userId) {
@@ -133,7 +189,7 @@ export const verifyPayment = async (req: Request, res: Response) => {
                 return;
             }
 
-            // SECURITY CHECK: Prevent partial payment exploits
+            // Prevent partial payment exploits
             const expectedKobo = Math.round(parseFloat(booking.total_amount.toString()) * 100);
             if (paystackRes.data.amount !== expectedKobo) {
                 console.error(`SECURITY: Amount mismatch! Expected ${expectedKobo}, Got ${paystackRes.data.amount}`);
@@ -161,69 +217,14 @@ export const verifyPayment = async (req: Request, res: Response) => {
     }
 };
 
-// export const paystackWebhook = async (req: Request, res: Response) => {
-//     try {
-//         // Verify Paystack Webhook Signature using the raw body
-//         const secret = ENV.PAYSTACK_SECRET_KEY;
-
-//         //use req.rawBody captured in app.ts for signature verification
-//         const rawBody = (req as any).rawBody || JSON.stringify(req.body);
-//         const hash = crypto.createHmac('sha512', secret).update(rawBody).digest('hex');
-
-//         if (hash !== req.headers['x-paystack-signature']) {
-//             res.status(401).send('Invalid signature');
-//             return;
-//         }
-
-//         const event = req.body;
-
-//         // Only process successful charge events
-//         if (event.event === 'charge.success') {
-//             const reference = event.data.reference;
-//             const expectedAmount = event.data.amount; // In kobo
-
-//             // Double verify via API to prevent spoofing (Webhook payload is NOT proof of payment)
-//             const verifyRes = await verifyPaystackTransaction(reference);
-            
-//             if (verifyRes.data.status === 'success') {
-//                 // Idempotent update
-//                 const booking = await BookingModel.markAsPaid(reference);
-                
-//                 if (booking) {
-//                     // Security check: Ensure the amount paid matches the booking amount
-//                     const expectedKobo = Math.round(parseFloat(booking.total_amount.toString()) * 100);
-//                     if (verifyRes.data.amount === expectedKobo) {
-//                         console.log(`✅ Booking ${booking.id} successfully paid via webhook.`);
-//                         // TODO: Send confirmation email, notify vendor, etc.
-//                     } else {
-//                         console.error(`⚠️ Amount mismatch for booking ${booking.id}. Expected: ${expectedKobo}, Got: ${verifyRes.data.amount}`);
-//                         await BookingModel.markAsFailed(reference);
-//                     }
-//                 }
-//             }
-//         }
-
-//         // Always return 200 to Paystack immediately to acknowledge receipt
-//         res.status(200).send('Webhook received');
-
-//     } catch (error: any) {
-//         console.error('Webhook error:', error);
-//         res.status(500).send('Webhook processing failed');
-//     }
-// };
-
 /**
  * INGESTOR: The only endpoint Paystack talks to directly.
  * Verifies signature, durably stores the raw payload, and returns 200 instantly.
  * Business logic is handled asynchronously by the webhookProcessor.
  */
 export const paystackWebhookIngestor = async (req: Request, res: Response) => {
-  const secret = ENV.PAYSTACK_SECRET_KEY;
-  const rawBody = (req as any).rawBody || JSON.stringify(req.body);
-  const hash = crypto.createHmac('sha512', secret).update(rawBody).digest('hex');
-
-  // 1. Verify signature securely
-  if (hash !== req.headers['x-paystack-signature']) {
+  // 1. Verify signature securely (timing-safe HMAC over the raw body)
+  if (!isValidPaystackSignature(req)) {
     return res.status(401).send('Invalid signature');
   }
 
@@ -247,8 +248,29 @@ export const paystackWebhookIngestor = async (req: Request, res: Response) => {
  * TRANSFER APPROVAL: Security-critical endpoint for automated payouts.
  * Paystack calls this before executing a transfer. We verify that we actually
  * initiated the payout attempt in our database.
+ *
+ * this endpoint previously trusted the request body alone 
+ * anyone who learned or guessed a dispatch_reference could authenticate payout
+ * intents and flip payout_attempts to 'awaiting_webhook'. It now requires BOTH:
+ *   1. Paystack's x-paystack-signature: HMAC-SHA512 of the raw body keyed with
+ *      PAYSTACK_SECRET_KEY - verified exactly like the webhook ingestor, and
+ *   2. the request originating from Paystack's documented IP range
+ *      (defense-in-depth; configurable via PAYSTACK_WEBHOOK_IPS).
+ * The HMAC is the primary control  never remove it.
  */
 export const paystackTransferApproval = async (req: Request, res: Response) => {
+  // 1. Verify the Paystack HMAC signature over the RAW request body
+  if (!isValidPaystackSignature(req)) {
+    console.warn('[transfer-approval] Rejected: invalid or missing x-paystack-signature');
+    return res.status(401).json({ status: 'failed', message: 'Invalid or missing signature' });
+  }
+
+  // 2. Defense-in-depth: only accept requests from Paystack's servers
+  if (!isPaystackIp(req)) {
+    console.warn(`[transfer-approval] Rejected: source IP ${getClientIp(req)} is not in the Paystack allow-list`);
+    return res.status(403).json({ status: 'failed', message: 'Forbidden' });
+  }
+
   const { reference, amount, recipient_code } = req.body;
   const db = getDB();
 
@@ -283,7 +305,7 @@ export const paystackTransferApproval = async (req: Request, res: Response) => {
 };
 
 /**
- * PROVISION DVA: Creates a Dedicated Virtual Account for a booking.
+ * Creates a Dedicated Virtual Account for a booking.
  * Called internally right after a booking is created.
  */
 export const provisionDvaForBooking = async (bookingId: string, userId: number, userEmail: string) => {

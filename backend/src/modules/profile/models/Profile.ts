@@ -395,14 +395,19 @@ export const ProfileService = {
     }
 
     // Hash and save
+    // bump token_version so every JWT issued with the OLD
+    // password (including cookies on other devices / stolen cookies) is
+    // rejected by verifyToken on their next request.
     const newHash = await bcrypt.hash(body.newPassword, 12);
     await db.query(
-      `UPDATE users SET password_hash = $1, updated_at = NOW() WHERE id = $2`,
+      `UPDATE users
+       SET password_hash = $1, token_version = COALESCE(token_version, 0) + 1, updated_at = NOW()
+       WHERE id = $2`,
       [newHash, userId]
     );
   },
 
-  //  DELETE /api/profile 
+  // DELETE /api/profile
   async deactivateAccount(userId: number): Promise<void> {
     const db = getDB();
     await db.query(
