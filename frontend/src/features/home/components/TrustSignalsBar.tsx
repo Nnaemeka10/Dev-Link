@@ -24,8 +24,8 @@ function TrustIcon({ type }: { type: TrustSignal["icon"] }) {
   return <ThumbsUp className={cls} />;
 }
 
-// ─── Media queries as external stores ─────────────────────────────────────────
-// Viewport size and the user's motion preference live outside React — they're
+//  Media queries as external stores 
+// Viewport size and the user's motion preference live outside React - they're
 // browser state, so we subscribe to them with useSyncExternalStore instead of
 // copying them into state from inside an effect.
 //
@@ -54,12 +54,11 @@ const getPrefersReducedMotion = () =>
 // value right after hydration.
 const getServerMediaSnapshot = () => false;
 
-// ─── Component ────────────────────────────────────────────────────────────────
-
+//  Component 
 export default function TrustSignalsBar() {
   const [currentIndex, setCurrentIndex] = useState(0);
 
-  // Reactive environment flags — read from the browser store, not effect-copied.
+  // Reactive environment flags - read from the browser store, not effect-copied.
   const isMobile = useSyncExternalStore(
     subscribeMobile,
     getIsMobile,
@@ -72,7 +71,7 @@ export default function TrustSignalsBar() {
   );
 
   // ── Pause control ────────────────────────────────────────────────────────────
-  // Ref — not state — so pausing/resuming never triggers a re-render.
+  // Ref - not state - so pausing/resuming never triggers a re-render.
   // The interval callback reads the ref value directly.
   const isPausedRef = useRef(false);
   const resumeTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
@@ -82,8 +81,8 @@ export default function TrustSignalsBar() {
   // The gates are reactive values now, not one-shot reads at mount time:
   // rotation starts/stops live when the viewport crosses the md boundary or
   // the user toggles their OS reduced-motion preference. The interval restarts
-  // (deps change → cleanup → setup), which also resets the 3s beat cleanly.
-  // setState is still only ever called from inside the interval callback —
+  // (deps change - cleanup - setup), which also resets the 3s beat cleanly.
+  // setState is still only ever called from inside the interval callback -
   // never synchronously in the effect body.
   useEffect(() => {
     if (prefersReducedMotion || !isMobile) return;
@@ -99,7 +98,7 @@ export default function TrustSignalsBar() {
 
   // ── Touch / mouse pause ────────────────────────────────────────────────────
   // Pause when user interacts, resume 5s after last interaction.
-  // All mutation is to refs — zero re-renders.
+  // All mutation is to refs - zero re-renders.
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
@@ -131,7 +130,7 @@ export default function TrustSignalsBar() {
       {/*
         Each signal is absolutely positioned and fills the container.
         We toggle opacity + pointer-events based on currentIndex.
-        No translateX, no sliding — pure opacity cross-fade.
+        No translateX, no sliding - pure opacity cross-fade.
         transition-opacity with duration-400 gives the 300-500ms feel requested.
       */}
       <div
