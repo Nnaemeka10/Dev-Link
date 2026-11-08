@@ -51,6 +51,7 @@ export function parseSearchQuery(query: ListingSearchQuery) {
     const priceMin = Number(query.priceMin);
     const priceMax = Number(query.priceMax);
     const minRating = Number(query.minRating);
+    const flexible = Number(query.flexible);
 
     return {
         kind: parseListingKind(query.kind ?? query.category),
@@ -65,9 +66,11 @@ export function parseSearchQuery(query: ListingSearchQuery) {
         verified: query.verified === 'true',
         venueTypes: query.venueTypes?.split(',').filter(Boolean),
         amenities: query.amenities?.split(',').filter(Boolean),
-        role: query.role?.trim() || undefined, 
+        role: query.role?.trim() || undefined,
+        coverage: query.coverage?.trim() || undefined,           
         dateFrom: query.dateFrom,
         dateTo: query.dateTo,
+        flexible: [1, 2].includes(flexible) ? flexible : 0,      
     };
 }
 

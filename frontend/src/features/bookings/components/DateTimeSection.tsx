@@ -5,7 +5,7 @@ import { Dropdown, type DropdownOption } from "@/components/ui/Dropdown";
 import { DateRangePicker } from "@/features/search/components/DateRange";
 import type { DateRange } from "@/features/search/utils/searchSchema";
 
-// ─── Time options ─────────────────────────────────────────────────────────────
+//  Time options 
 
 const START_TIMES: DropdownOption[] = [
   { value: "08:00", label: "08:00 AM" },
@@ -40,7 +40,7 @@ const END_TIMES: DropdownOption[] = [
   { value: "23:00", label: "11:00 PM" },
 ];
 
-// ─── Props ────────────────────────────────────────────────────────────────────
+//  Props 
 
 interface DateTimeSectionProps {
   dateRange: DateRange | undefined;
@@ -71,7 +71,7 @@ function FieldLabel({ children }: { children: React.ReactNode }) {
   );
 }
 
-// ─── Component ────────────────────────────────────────────────────────────────
+//  Component 
 
 export function DateTimeSection({
   dateRange,
@@ -91,7 +91,7 @@ export function DateTimeSection({
 
       <div className="space-y-5">
 
-        {/* ── Event Date - full width ─────────────────────────────────────── */}
+        {/*  Event Date - full width  */}
         <div>
           <FieldLabel>Event Date</FieldLabel>
           <FieldPill>

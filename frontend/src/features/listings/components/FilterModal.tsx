@@ -3,9 +3,9 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { X, Minus, Plus, Star, BadgeCheck, MapPin } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useLocationSuggestions } from "@/features/home/hooks/useHeroSearch";
+import { useLocationSuggestions } from "@/features/search/hooks/useLocationSuggestions";
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+//  Types 
 
 export interface FilterState {
   priceMin: number;
@@ -32,7 +32,7 @@ interface FilterModalProps {
   category: "halls" | "services";
 }
 
-// ─── Static data ──────────────────────────────────────────────────────────────
+//  Static data 
 
 const PRICE_MIN_BOUND = 0;
 const PRICE_MAX_BOUND = 100_000_000;
@@ -137,7 +137,7 @@ function CoverageAreaInput({ value, onChange }: { value: string; onChange: (val:
 
 
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+//  Helpers 
 
 function fmt(n: number) {
   if (n >= 1_000_000) return `₦${(n / 1_000_000).toFixed(1).replace(/\.0$/, "")}M`;
@@ -145,9 +145,9 @@ function fmt(n: number) {
   return `₦${n}`;
 }
 
-// ─── Dual range slider ────────────────────────────────────────────────────────
+//  Dual range slider 
 
-// ─── Piecewise scale (non-linear slider) ──────────────────────────────────────
+//  Piecewise scale (non-linear slider) 
 //
 // Problem: ₦0–₦1M is where 90%+ of bookings fall, but with a linear 0–100M
 // scale it only occupies 1% of the slider width - nearly impossible to use.
@@ -192,7 +192,7 @@ function posToValue(pos: number, min: number, max: number): number {
   }
 }
 
-// ─── Dual range slider ────────────────────────────────────────────────────────
+//  Dual range slider 
 
 interface DualSliderProps {
   min: number; max: number;
@@ -299,7 +299,7 @@ function DualSlider({ min, max, valueMin, valueMax, onChange, step = 10_000 }: D
 }
 
 
-// ─── Stepper ──────────────────────────────────────────────────────────────────
+//  Stepper 
 // Tapping the value label switches to an inline input for manual entry.
 // Blur or Enter commits the value, clamped to [min, max].
 
@@ -392,7 +392,7 @@ function Stepper({ label, value, onChange, min = 0, max = 999, zeroLabel = "Any"
   );
 }
 
-// ─── Pill toggle ──────────────────────────────────────────────────────────────
+//  Pill toggle 
 
 function Pill({
   label, active, onClick,
@@ -414,7 +414,7 @@ function Pill({
   );
 }
 
-// ─── Section divider ──────────────────────────────────────────────────────────
+//  Section divider 
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -440,7 +440,7 @@ function mergeFilters(initial?: Partial<FilterState>): FilterState {
   };
 }
 
-// ─── Main modal ───────────────────────────────────────────────────────────────
+//  Main modal 
 
 export default function FilterModal({
   category,
@@ -473,7 +473,7 @@ export default function FilterModal({
     return () => { document.body.style.overflow = ""; };
   }, [isOpen]);
 
-  // ── Handlers ────────────────────────────────────────────────────────────────
+  //  Handlers 
 
   function togglePill(key: "amenities" | "accessibility" | "venueTypes", value: string) {
     setFilters((prev) => ({
@@ -499,7 +499,7 @@ export default function FilterModal({
     filters.priceMin !== DEFAULT_FILTERS.priceMin || filters.priceMax !== DEFAULT_FILTERS.priceMax,
   ].filter(Boolean).length;
 
-  // ── Motion variants ──────────────────────────────────────────────────────────
+  //  Motion variants 
 
   const overlayVariants = {
     hidden:  { opacity: 0 },
@@ -518,12 +518,12 @@ export default function FilterModal({
     visible: { y: 0      },
   };
 
-  // ─── Render ──────────────────────────────────────────────────────────────────
+  //  Render 
 
   // Shared scrollable content - rendered inside both mobile sheet and desktop modal
   const content = (
     <>
-      {/* ── Price Range ──────────────────────────────────────────────────── */}
+      {/*  Price Range  */}
       <Section title="Price Range">
         <DualSlider
           min={PRICE_MIN_BOUND}
@@ -596,7 +596,7 @@ export default function FilterModal({
       {category === "halls" && (
 
       <>
-        {/* ── Venue Type ───────────────────────────────────────────────────── */}
+        {/*  Venue Type  */}
         <Section title="Venue Type">
           <div className="flex flex-wrap gap-2">
             {VENUE_TYPES.map((t) => (
@@ -609,7 +609,7 @@ export default function FilterModal({
           </div>
         </Section>
 
-        {/* ── Guest Capacity ───────────────────────────────────────────────── */}
+        {/*  Guest Capacity  */}
         <Section title="Guest Capacity">
           <Stepper
             label="Minimum guests"
@@ -645,7 +645,7 @@ export default function FilterModal({
           />
         </Section>
 
-        {/* ── Amenities (includes Parking pill at end) ──────────────────────── */}
+        {/*  Amenities (includes Parking pill at end)  */}
         <Section title="Amenities">
           <div className="flex flex-wrap gap-2">
             {AMENITIES.map((a) => (
@@ -686,7 +686,7 @@ export default function FilterModal({
           </AnimatePresence>
         </Section>
 
-        {/* ── Accessibility ────────────────────────────────────────────────── */}
+        {/*  Accessibility  */}
         <Section title="Accessibility">
           <div className="flex flex-wrap gap-2">
             {ACCESSIBILITY.map((a) => (
@@ -718,7 +718,7 @@ export default function FilterModal({
 
       
 
-      {/* ── Rating ───────────────────────────────────────────────────────── */}
+      {/*  Rating  */}
       <Section title="Minimum Rating">
         <div className="flex gap-2 flex-wrap">
           {RATINGS.map((r) => (
@@ -741,7 +741,7 @@ export default function FilterModal({
         </div>
       </Section>
 
-      {/* ── Verified only ────────────────────────────────────────────────── */}
+      {/*  Verified only  */}
       <Section title="Host">
         <button
           type="button"
@@ -761,7 +761,7 @@ export default function FilterModal({
     </>
   );
 
-  // ── Shared header ─────────────────────────────────────────────────────────
+  //  Shared header 
 
   const header = (
     <div className="flex items-center justify-between px-6 py-4 border-b border-text-primary/8 shrink-0">
@@ -791,7 +791,7 @@ export default function FilterModal({
     </div>
   );
 
-  // ── Shared footer ─────────────────────────────────────────────────────────
+  //  Shared footer 
 
   const footer = (
     <div className="px-6 py-4 border-t border-text-primary/8 shrink-0">
@@ -809,7 +809,7 @@ export default function FilterModal({
     <AnimatePresence>
       {isOpen && (
         <>
-          {/* ── Backdrop ───────────────────────────────────────────────────── */}
+          {/*  Backdrop  */}
           <motion.div
             key="backdrop"
             variants={overlayVariants}
@@ -822,7 +822,7 @@ export default function FilterModal({
             aria-hidden="true"
           />
 
-          {/* ── Desktop: centered modal ────────────────────────────────────── */}
+          {/*  Desktop: centered modal  */}
           <motion.div
             key="desktop-modal"
             role="dialog"
@@ -847,7 +847,7 @@ export default function FilterModal({
             </div>
           </motion.div>
 
-          {/* ── Mobile: bottom sheet ───────────────────────────────────────── */}
+          {/*  Mobile: bottom sheet  */}
           <motion.div
             key="mobile-sheet"
             role="dialog"

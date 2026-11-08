@@ -13,7 +13,7 @@ import type {
   PaystackAuthorization,
 } from "../types/profile.types.js";
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
+//  Helpers 
 
 const PROFILE_TEXT_LIMITS: Record<keyof UpdateProfileBody, number> = {
   firstName: 80,
@@ -89,7 +89,7 @@ async function fetchPaystackAuthorizations(customerCode: string): Promise<Paysta
   return json.data || [];
 }
 
-// ─── Service ─────────────────────────────────────────────────────────────────
+//  Service 
 
 export const ProfileService = {
   async getProfile(userId: number): Promise<ProfileResponse> {
@@ -135,7 +135,7 @@ export const ProfileService = {
     };
   },
 
-  // ── PATCH /api/profile ──────────────────────────────────────────────────
+  //  PATCH /api/profile 
   async updateProfile(userId: number, body: UpdateProfileBody): Promise<ProfileResponse> {
     const db = getDB();
     const sets: string[] = [];
@@ -174,7 +174,7 @@ export const ProfileService = {
     return this.getProfile(userId);
   },
 
-  // ── GET /api/profile/bookings ───────────────────────────────────────────
+  //  GET /api/profile/bookings 
   async getBookings(userId: number): Promise<BookingHistoryResponse[]> {
     const db = getDB();
 
@@ -215,7 +215,7 @@ export const ProfileService = {
     }));
   },
 
-  // ── GET /api/profile/payment-methods ────────────────────────────────────
+  //  GET /api/profile/payment-methods 
   async getPaymentMethods(userId: number): Promise<PaymentMethodResponse[]> {
     const db = getDB();
 
@@ -270,7 +270,7 @@ export const ProfileService = {
     }));
   },
 
-  // ── PATCH /api/profile/payment-methods/:authCode/default ────────────────
+  //  PATCH /api/profile/payment-methods/:authCode/default 
   async setDefaultPaymentMethod(userId: number, authCode: string): Promise<void> {
     const db = getDB();
     const customerCode = await db
@@ -297,7 +297,7 @@ export const ProfileService = {
     );
   },
 
-  // ── DELETE /api/profile/payment-methods/:authCode ───────────────────────
+  //  DELETE /api/profile/payment-methods/:authCode 
   async removePaymentMethod(userId: number, authCode: string): Promise<void> {
     // Paystack has no delete authorization API.
     // We blacklist it locally so it stops appearing in our UI.
@@ -315,7 +315,7 @@ export const ProfileService = {
     );
   },
 
-  // ── GET /api/profile/notifications ──────────────────────────────────────
+  //  GET /api/profile/notifications 
   async getNotificationSettings(userId: number): Promise<NotificationSettingsResponse> {
     const db = getDB();
     await db.query(
@@ -336,7 +336,7 @@ export const ProfileService = {
     };
   },
 
-  // ── PATCH /api/profile/notifications ────────────────────────────────────
+  //  PATCH /api/profile/notifications 
   async updateNotificationSettings(
     userId: number,
     body: UpdateNotificationsBody
@@ -375,7 +375,7 @@ export const ProfileService = {
     return this.getNotificationSettings(userId);
   },
 
-  // ── POST /api/profile/change-password ───────────────────────────────────
+  //  POST /api/profile/change-password 
   async changePassword(userId: number, body: ChangePasswordBody): Promise<void> {
     const db = getDB();
 
@@ -402,7 +402,7 @@ export const ProfileService = {
     );
   },
 
-  // ── DELETE /api/profile ─────────────────────────────────────────────────
+  //  DELETE /api/profile 
   async deactivateAccount(userId: number): Promise<void> {
     const db = getDB();
     await db.query(

@@ -1,10 +1,10 @@
 import type { VendorDashboardData } from "./types";
 
-// ────────────────────────────────────────────────────────────────────────────
+// 
 // Mock data - replace with a real fetch/React Query hook. Shapes match
 // `VendorDashboardData` in `types.ts` so swapping the source is a no-op
 // for every component in `components/`.
-// ────────────────────────────────────────────────────────────────────────────
+// 
 
 export const vendorDashboardData: VendorDashboardData = {
   vendor: {

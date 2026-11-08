@@ -1,8 +1,8 @@
-// ────────────────────────────────────────────────────────────────────────────
+// 
 // Vendor Dashboard - shared types
 // These mirror the shape the backend is expected to return. Swap `data.ts`
 // for a real fetch/hook layer later without touching the UI components.
-// ────────────────────────────────────────────────────────────────────────────
+// 
 export type BookingStatus =
   | "confirmed"
   | "pending"

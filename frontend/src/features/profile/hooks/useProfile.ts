@@ -20,7 +20,7 @@ import type {
   UpdateProfilePayload,
 } from "../profile.types";
 
-// ─── Date Formatting ─────────────────────────────────────────────────────────
+//  Date Formatting 
 
 function formatDate(dateStr: string): string {
   const isDateOnly = /^\d{4}-\d{2}-\d{2}$/.test(dateStr);
@@ -43,12 +43,12 @@ function formatMemberSince(dateStr: string): string {
 const FALLBACK_AVATAR = "https://ui-avatars.com/api/?name=User&background=D65C3A&color=fff&size=200";
 const FALLBACK_IMAGE = "https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=400&q=80";
 
-// ─── Hook ────────────────────────────────────────────────────────────────────
+//  Hook 
 
 export function useProfile() {
   const queryClient = useQueryClient();
 
-  // ── Queries ────────────────────────────────────────────────────────────
+  //  Queries 
 
   const { data: raw, isLoading: isProfileLoading } = useQuery({
     queryKey: ["profile"],
@@ -68,7 +68,7 @@ export function useProfile() {
     staleTime: 1000 * 60,
   });
 
-  // ── Derived State ──────────────────────────────────────────────────────
+  //  Derived State 
 
   const profile: UserProfile | null = raw
     ? {
@@ -101,7 +101,7 @@ export function useProfile() {
     expiry: pm.expiryDate,
   }));
 
-  // ── Mutations ──────────────────────────────────────────────────────────
+  //  Mutations 
 
   const updateProfileMutation = useMutation({
     mutationFn: (payload: UpdateProfilePayload) => updateProfile(payload),
@@ -172,7 +172,7 @@ export function useProfile() {
     mutationFn: deactivateAccount,
   });
 
-  // ── Field Update Helper ───────────────────────────────────────────────
+  //  Field Update Helper 
 
   const updateField = async (field: string, value: string) => {
     const payload: UpdateProfilePayload = {};
@@ -192,13 +192,13 @@ export function useProfile() {
     await updateProfileMutation.mutateAsync(payload);
   };
 
-  // ── Notification Toggle Helper ────────────────────────────────────────
+  //  Notification Toggle Helper 
 
   const toggleNotification = async (key: keyof NotificationSettings) => {
     await updateNotificationsMutation.mutateAsync({ [key]: !notifications[key] });
   };
 
-  // ── Return ────────────────────────────────────────────────────────────
+  //  Return 
 
   return {
     // Data

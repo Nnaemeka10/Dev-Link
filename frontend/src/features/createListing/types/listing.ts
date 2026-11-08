@@ -1,10 +1,10 @@
-// ────────────────────────────────────────────────────────────────────────────
+// 
 // Create Listing - domain types
 // Single source of truth for the shape of a listing draft as it's built up
 // across the 6-step wizard. Mirrors what the backend will eventually receive
 // on submit, plus a few UI-only fields (marked below) that never leave the
 // client.
-// ────────────────────────────────────────────────────────────────────────────
+// 
 
 export type ListingCategory = "hall" | "service";
 
@@ -14,7 +14,7 @@ export type BillingCycle = "day";
 export const TOTAL_STEPS = 6 as const;
 export type StepNumber = 1 | 2 | 3 | 4 | 5 | 6;
 
-// ── Reference data (backend-owned, mocked in /data) ──────────────────────────
+//  Reference data (backend-owned, mocked in /data) 
 
 export interface EventHallType {
   id: string;
@@ -39,7 +39,7 @@ export interface LocalGovernment {
   name: string;
 }
 
-// ── Step 2: Details ───────────────────────────────────────────────────────
+//  Step 2: Details 
 
 export interface HallLocation {
   stateId: string | null;
@@ -74,7 +74,7 @@ export interface ListingDetails {
   serviceLocation: ServiceLocation;
 }
 
-// ── Step 3: Amenities (halls) / Requirements (services) ──────────────────
+//  Step 3: Amenities (halls) / Requirements (services) 
 
 export type AttributeValueKind = "number" | "text" | "duration";
 
@@ -116,7 +116,7 @@ export interface CustomRequirement {
   text: string;
 }
 
-// ── Step 4: Gallery ───────────────────────────────────────────────────────
+//  Step 4: Gallery 
 
 export interface GalleryPhoto {
   id: string;
@@ -130,7 +130,7 @@ export interface GalleryPhoto {
   uploadStatus: "pending" | "uploading" | "uploaded" | "error";
 }
 
-// ── Step 5: Pricing & availability ────────────────────────────────────────
+//  Step 5: Pricing & availability 
 
 export interface PricingPackagePerk {
   id: string;
@@ -169,7 +169,7 @@ export interface PricingState {
   availability: AvailabilityState;
 }
 
-// ── Root form state ───────────────────────────────────────────────────────
+//  Root form state 
 
 export interface ListingFormState {
   category: ListingCategory | null;

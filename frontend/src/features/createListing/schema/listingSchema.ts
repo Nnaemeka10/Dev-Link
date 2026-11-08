@@ -1,11 +1,11 @@
 import { z } from "zod";
 
-// ────────────────────────────────────────────────────────────────────────────
+// 
 // Per-step validation. Each schema validates the slice of `ListingFormState`
 // (see types/listing.ts) that its step is responsible for, so they can be
 // wired up independently with `zodResolver(stepXSchema)` per step, or merged
 // with `.merge()` for a final submit-time check on step 6.
-// ────────────────────────────────────────────────────────────────────────────
+// 
 
 export const categoryStepSchema = z.object({
   category: z.enum(["hall", "service"], {

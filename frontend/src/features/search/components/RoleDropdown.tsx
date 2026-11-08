@@ -1,33 +1,31 @@
 "use client";
 
-import { AnimatePresence, motion } from "framer-motion";
-import { Check } from "lucide-react";
-import { useCallback, useState, useRef, useEffect } from "react";
+import { useCallback, useState } from "react";
 import { createPortal } from "react-dom";
+import { Briefcase, Check } from "lucide-react";
 
 import { SERVICE_CATEGORIES } from "../lib/constants";
+import { usePopover } from "../hooks/usePopover";
 
 interface RoleDropdownProps {
   value: string | undefined;
   onChange: (role: string | undefined) => void;
   disabled?: boolean;
+  /** "segment" = desktop pill (portal + scrim); "modal" = inline in the mobile sheet. */
+  variant?: "segment" | "modal";
 }
 
-export function RoleDropdown({
-  value,
-  onChange,
-  disabled = false,
-}: RoleDropdownProps) {
+export function RoleDropdown({ value, onChange, disabled = false, variant = "segment" }: RoleDropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [dropdownTop, setDropdownTop] = useState<number | null>(null);
-  const [dropdownLeft, setDropdownLeft] = useState<number | null>(null);
-  const [dropdownWidth, setDropdownWidth] = useState<number | null>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
-  const dropdownRef = useRef<HTMLUListElement>(null);
-  const portalTarget = typeof document !== "undefined" ? document.body : null;
+  const close = useCallback(() => setIsOpen(false), []);
+  const { anchorRef, popoverRef, pos } = usePopover<HTMLUListElement>({
+    open: isOpen,
+    onClose: close,
+    minWidth: 240,
+  });
 
-  const selectedLabel =
-    SERVICE_CATEGORIES.find((cat) => cat.id === value)?.label ?? "Select role";
+  const portalTarget = typeof document !== "undefined" ? document.body : null;
+  const selectedLabel = SERVICE_CATEGORIES.find((cat) => cat.id === value)?.label ?? "Select role";
 
   const handleSelect = useCallback(
     (id: string) => {
@@ -37,116 +35,103 @@ export function RoleDropdown({
     [value, onChange]
   );
 
-  // Close on outside click
-  useEffect(() => {
-    if (!isOpen) return;
-
-    function handlePointerDown(e: PointerEvent) {
-      const target = e.target as Node;
-      const clickedContainer = containerRef.current?.contains(target);
-      const clickedDropdown = dropdownRef.current?.contains(target);
-
-      if (!clickedContainer && !clickedDropdown) {
-        setIsOpen(false);
+  const list = (
+    <ul
+      ref={variant === "segment" ? popoverRef : undefined}
+      role="listbox"
+      aria-label="Service category"
+      className={
+        variant === "segment"
+          ? "search-popover z-50 max-h-72 overflow-y-auto overscroll-contain rounded-2xl bg-white py-2 shadow-[0_18px_40px_rgba(26,31,60,0.16)]"
+          : "search-popover mt-3 max-h-72 overflow-y-auto overscroll-contain rounded-2xl border border-text-primary/10 bg-bg-primary/40 p-2"
       }
-    }
-
-    document.addEventListener("pointerdown", handlePointerDown);
-    return () => document.removeEventListener("pointerdown", handlePointerDown);
-  }, [isOpen]);
-
-  // Update dropdown position when open
-  useEffect(() => {
-    if (!isOpen) return;
-
-    function updatePosition() {
-      const rect = containerRef.current?.getBoundingClientRect();
-      if (!rect) return;
-      setDropdownTop(rect.bottom + 8);
-      setDropdownLeft(rect.left);
-      setDropdownWidth(rect.width);
-    }
-
-    updatePosition();
-    window.addEventListener("resize", updatePosition);
-    window.addEventListener("scroll", updatePosition, true);
-
-    return () => {
-      window.removeEventListener("resize", updatePosition);
-      window.removeEventListener("scroll", updatePosition, true);
-    };
-  }, [isOpen]);
-
-  const dropdownContent = (
-    <AnimatePresence>
-      {isOpen && (
-        <>
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.15 }}
-            onClick={() => setIsOpen(false)}
-            className="fixed inset-0 z-40"
-          />
-          <motion.ul
-            ref={dropdownRef}
-            initial={{ opacity: 0, y: 6 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 4 }}
-            transition={{ duration: 0.15 }}
-            role="listbox"
-            aria-label="Service roles"
-            style={{
-              position: "fixed",
-              top: dropdownTop ? `${dropdownTop}px` : 0,
-              left: dropdownLeft ? `${dropdownLeft}px` : 0,
-              width: dropdownWidth ? `${dropdownWidth}px` : "auto",
-            }}
-            className="z-50 min-w-48 max-h-80 overflow-y-auto rounded-2xl bg-white py-1.5 xl:py-2 shadow-[0_8px_24px_rgba(26,31,60,0.14)]"
-          >
-            {SERVICE_CATEGORIES.map((category) => (
-              <li key={category.id} role="option" aria-selected={value === category.id}>
-                <button
-                  type="button"
-                  onClick={() => handleSelect(category.id)}
-                  className="flex w-full items-center justify-between gap-3 px-3 py-2 xl:px-4 xl:py-2.5 text-left text-xs xl:text-sm text-text-primary hover:bg-bg-primary transition-colors"
-                >
-                  <span>{category.label}</span>
-                  {value === category.id && (
-                    <Check className="h-3.5 w-3.5 xl:h-4 xl:w-4 shrink-0 text-accent-primary" />
-                  )}
-                </button>
-              </li>
-            ))}
-          </motion.ul>
-        </>
-      )}
-    </AnimatePresence>
+    >
+      {SERVICE_CATEGORIES.map((cat) => {
+        const isSelected = cat.id === value;
+        return (
+          <li key={cat.id} role="option" aria-selected={isSelected}>
+            <button
+              type="button"
+              onClick={() => handleSelect(cat.id)}
+              className={`flex w-full items-center justify-between rounded-xl px-4 text-left text-sm transition-colors ${
+                variant === "modal" ? "py-3" : "py-2.5"
+              } ${isSelected ? "font-semibold text-accent-primary" : "text-text-primary hover:bg-bg-tertiary/60"}`}
+            >
+              {cat.label}
+              {isSelected && <Check className="h-4 w-4" />}
+            </button>
+          </li>
+        );
+      })}
+    </ul>
   );
 
+  //Modal variant: inline inside the mobile sheet
+  if (variant === "modal") {
+    return (
+      <div ref={anchorRef} className="w-full">
+        <div className="flex items-center gap-3">
+          <Briefcase className="mt-4 h-5 w-5 shrink-0 text-text-primary/50" />
+          <div className="min-w-0 flex-1">
+            <p className="block text-[10px] font-semibold uppercase tracking-[0.12em] text-text-primary/45">
+              Service
+            </p>
+            <button
+              type="button"
+              onClick={() => (disabled ? undefined : setIsOpen((o) => !o))}
+              disabled={disabled}
+              aria-haspopup="listbox"
+              aria-expanded={isOpen}
+              className={`w-full bg-transparent text-left text-sm focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 ${
+                value ? "text-text-primary" : "text-text-primary/45"
+              }`}
+            >
+              {selectedLabel}
+            </button>
+          </div>
+        </div>
+        {isOpen && list}
+      </div>
+    );
+  }
+
+  //Segment variant: pill segment + scrim + portal list
   return (
     <>
-      <div
-        ref={containerRef}
-        className="relative flex flex-1 items-center gap-2 xl:gap-3 md:border-l md:border-text-primary/10 px-4 xl:px-5"
-      >
-        <div className="flex-1">
-          <p className="text-[10px] xl:text-[11px] font-semibold uppercase tracking-[0.12em] text-text-primary/45">
-            Role
+      <div ref={anchorRef} className="searchbar-segment flex flex-1 items-center gap-2 px-4 py-2 xl:gap-3 xl:px-5 xl:py-3">
+        <div className="min-w-0 flex-1">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-text-primary/45 xl:text-[11px]">
+            Service
           </p>
           <button
             type="button"
-            onClick={() => setIsOpen(!isOpen)}
+            onClick={() => (disabled ? undefined : setIsOpen((o) => !o))}
             disabled={disabled}
-            className={`w-full bg-transparent text-left text-xs xl:text-sm focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed transition-colors ${value ? "text-text-primary" : "text-text-primary/45"}`}
+            aria-haspopup="listbox"
+            aria-expanded={isOpen}
+            className={`w-full bg-transparent text-left text-xs focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 xl:text-sm ${
+              value ? "text-text-primary" : "text-text-primary/45"
+            }`}
           >
             {selectedLabel}
           </button>
         </div>
       </div>
 
-      {portalTarget ? createPortal(dropdownContent, portalTarget) : null}
+      {portalTarget && isOpen && pos
+        ? createPortal(
+            <>
+              <button type="button" aria-label="Close service list" className="search-scrim" onClick={close} />
+              <div
+                style={{ position: "fixed", top: pos.top, left: pos.left, width: pos.width }}
+                className="z-50"
+              >
+                {list}
+              </div>
+            </>,
+            portalTarget
+          )
+        : null}
     </>
   );
 }

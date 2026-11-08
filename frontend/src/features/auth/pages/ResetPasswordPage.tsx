@@ -81,7 +81,7 @@ function ResetPasswordForm() {
     }
   });
 
-  // ── Invalid / missing token ──────────────────────────────────────
+  //  Invalid / missing token 
   if (tokenInvalid) {
     return (
       <section className="w-full max-w-140 rounded-[2.25rem] bg-white px-6 py-10 shadow-[0_24px_70px_rgba(34,27,18,0.08)] md:px-14 md:py-16">
@@ -112,7 +112,7 @@ function ResetPasswordForm() {
     );
   }
 
-  // ── Success state ────────────────────────────────────────────────
+  //  Success state 
   if (success) {
     return (
       <section className="w-full max-w-140 rounded-[2.25rem] bg-white px-6 py-10 shadow-[0_24px_70px_rgba(34,27,18,0.08)] md:px-14 md:py-16">
@@ -137,7 +137,7 @@ function ResetPasswordForm() {
     );
   }
 
-  // ── Main form ────────────────────────────────────────────────────
+  //  Main form 
   return (
     <section className="w-full max-w-140 rounded-[2.25rem] bg-white px-6 py-10 shadow-[0_24px_70px_rgba(34,27,18,0.08)] md:px-14 md:py-16">
       <div className="text-center">
@@ -215,7 +215,7 @@ function ResetPasswordForm() {
   );
 }
 
-// ── Password strength bar ──────────────────────────────────────────
+//  Password strength bar 
 function getStrength(pw: string): { level: 0 | 1 | 2 | 3; label: string } {
   let score = 0;
   if (pw.length >= 8) score += 1;
@@ -256,7 +256,7 @@ function StrengthBar({ password }: { password: string }) {
   );
 }
 
-// ── Page export (Suspense boundary for useSearchParams) ────────────
+//  Page export (Suspense boundary for useSearchParams) 
 export default function ResetPasswordPage() {
   return (
     <AuthShell>

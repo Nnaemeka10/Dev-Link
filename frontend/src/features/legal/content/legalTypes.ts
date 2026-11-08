@@ -1,8 +1,8 @@
-// ────────────────────────────────────────────────────────────────────────────
+// 
 // Legal pages - shared content types
 // Legal documents are pure data so the pages stay thin and the copy
 // lives in one editable place.
-// ────────────────────────────────────────────────────────────────────────────
+// 
 
 export type LegalBlock =
   | { type: "p"; text: string }

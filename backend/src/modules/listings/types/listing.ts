@@ -92,7 +92,9 @@ export interface ListingSearchQuery {
     limit?: string;
     page?: string;
     cursor?: string;
-    role?: string
+    role?: string;
+    coverage?: string;
+    flexible?: string;
 }
 
 export interface ListingRankInput {
@@ -200,6 +202,8 @@ export interface ListingFilters {
     venueTypes?: string[];
     amenities?: string[];
     role?: string;
+    coverage?: string;
+    flexible?: number;
 }
 
 export interface ListingPageOptions {

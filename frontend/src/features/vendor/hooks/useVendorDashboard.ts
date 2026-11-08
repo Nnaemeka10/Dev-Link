@@ -48,7 +48,7 @@ async function confirmBooking(bookingId: string) {
   );
 }
 
-// ─── React Query Hooks ─────────────────────────────────────────────────────
+//  React Query Hooks 
 export function useVendorSummary() {
   return useQuery({ queryKey: ["vendor", "summary"], queryFn: fetchSummary });
 }

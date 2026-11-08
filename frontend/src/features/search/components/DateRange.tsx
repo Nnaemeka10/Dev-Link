@@ -3,13 +3,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent } from "react";
 import { createPortal } from "react-dom";
 import { DayPicker, type DateRange as DayPickerRange } from "react-day-picker";
-import { motion, AnimatePresence } from "framer-motion";
 import { CalendarDays, ChevronLeft, ChevronRight, X } from "lucide-react";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import type { DateRange } from "@/features/search";
 import { useListingAvailability } from "@/features/listings/hooks/useListingsAvailability";
+import { FLEX_OPTIONS } from "../lib/constants";
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+//  Helpers 
 
 function formatDate(date: Date): string {
   return date.toLocaleDateString("en-NG", { day: "numeric", month: "short" });
@@ -21,7 +21,7 @@ export function formatTriggerLabel(range: DateRange | undefined): string {
   return `${formatDate(range.from)} – ${formatDate(range.to)}`;
 }
 
-// ─── Props ────────────────────────────────────────────────────────────────────
+// Props 
 
 interface DateRangePickerProps {
   value: DateRange | undefined;
@@ -32,20 +32,35 @@ interface DateRangePickerProps {
   issearch?: boolean;
   unavailableDates?: { from: string; to: string }[];
   listingId?: string;
+  /** Flexible dates (search only). */
+  flexible?: number;
+  onFlexibleChange?: (value: 0 | 1 | 2) => void;
+  showFlexible?: boolean;
 }
 
-// ─── Component ────────────────────────────────────────────────────────────────
+// Component 
 
-export function DateRangePicker({ value, onChange, error, variant = "default", triggerClassName, issearch = true, unavailableDates = [], listingId }: DateRangePickerProps) {
+export function DateRangePicker({
+  value,
+  onChange,
+  error,
+  variant = "default",
+  triggerClassName,
+  issearch = true,
+  unavailableDates = [],
+  listingId,
+  flexible = 0,
+  onFlexibleChange,
+  showFlexible = false,
+}: DateRangePickerProps) {
   const [open, setOpen] = useState(false);
+  // Position updates run inside rAF/listener callbacks , lint-clean.
   const [popoverTop, setPopoverTop] = useState<number | null>(null);
   const [draftRange, setDraftRange] = useState<DayPickerRange | undefined>(value);
   const containerRef = useRef<HTMLDivElement>(null);
   const popoverRef = useRef<HTMLDivElement>(null);
   const portalTarget = typeof document !== "undefined" ? document.body : null;
   const isMobile = useMediaQuery("(max-width: 720px)");
-
-  
 
   function openPicker() {
     setDraftRange(value ? { from: value.from, to: value.to } : undefined);
@@ -55,19 +70,14 @@ export function DateRangePicker({ value, onChange, error, variant = "default", t
   const closePicker = useCallback(
     ({ apply }: { apply: boolean }) => {
       if (apply) {
-        onChange(
-          draftRange?.from
-            ? { from: draftRange.from, to: draftRange.to }
-            : undefined
-        );
+        onChange(draftRange?.from ? { from: draftRange.from, to: draftRange.to } : undefined);
       }
-
       setOpen(false);
     },
     [draftRange, onChange]
   );
 
-  // ── Close on outside click ──────────────────────────────────────────────────
+  //Close on outside click 
   useEffect(() => {
     if (!open) return;
 
@@ -75,16 +85,14 @@ export function DateRangePicker({ value, onChange, error, variant = "default", t
       const target = e.target as Node;
       const clickedTrigger = containerRef.current?.contains(target);
       const clickedPopover = popoverRef.current?.contains(target);
-
-      if (!clickedTrigger && !clickedPopover) {
-        closePicker({ apply: true });
-      }
+      if (!clickedTrigger && !clickedPopover) closePicker({ apply: true });
     }
 
     document.addEventListener("pointerdown", handlePointerDown);
     return () => document.removeEventListener("pointerdown", handlePointerDown);
   }, [closePicker, open]);
 
+  // Position (rAF-first: no setState in effect body)
   useEffect(() => {
     if (!open) return;
 
@@ -94,17 +102,18 @@ export function DateRangePicker({ value, onChange, error, variant = "default", t
       setPopoverTop(rect.bottom + 14);
     }
 
-    updatePopoverPosition();
+    const raf = requestAnimationFrame(updatePopoverPosition);
     window.addEventListener("resize", updatePopoverPosition);
     window.addEventListener("scroll", updatePopoverPosition, true);
 
     return () => {
+      cancelAnimationFrame(raf);
       window.removeEventListener("resize", updatePopoverPosition);
       window.removeEventListener("scroll", updatePopoverPosition, true);
     };
   }, [open]);
 
-  // ── Keyboard: close on Escape ───────────────────────────────────────────────
+  // Escape 
   useEffect(() => {
     if (!open) return;
     function handleKey(e: KeyboardEvent) {
@@ -114,214 +123,219 @@ export function DateRangePicker({ value, onChange, error, variant = "default", t
     return () => document.removeEventListener("keydown", handleKey);
   }, [closePicker, open]);
 
+  // Lock body scroll while open 
   useEffect(() => {
     if (!open) return;
-
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
-
     return () => {
       document.body.style.overflow = previousOverflow;
     };
   }, [open]);
 
-  // ── Handle day selection from react-day-picker ──────────────────────────────
   function handleSelect(range: DayPickerRange | undefined) {
     setDraftRange(range);
   }
 
-  // ── Clear selection ─────────────────────────────────────────────────────────
   function handleClear(e?: MouseEvent<HTMLButtonElement>) {
     e?.stopPropagation();
-
     if (open) {
       setDraftRange(undefined);
       return;
     }
-
     onChange(undefined);
   }
 
   const label = formatTriggerLabel(value);
+  const displayLabel = label && flexible ? `${label} · ±${flexible}d` : label;
   const today = new Date(new Date().toDateString());
 
-  
+  const { data: liveUnavailableDates } = useListingAvailability(listingId, open);
 
-  const { data: liveUnavailableDates, isFetching: isLoadingAvailability } =
-  useListingAvailability(listingId, open)
+  const blockedRanges = useMemo(
+    () =>
+      (liveUnavailableDates ?? unavailableDates).map((d) => ({
+        from: new Date(d.from + "T00:00:00"),
+        to: new Date(d.to + "T00:00:00"),
+      })),
+    [liveUnavailableDates, unavailableDates]
+  );
 
-  const blockedRanges = useMemo(() =>
-    (liveUnavailableDates ?? unavailableDates).map(d => ({
-      from: new Date(d.from + "T00:00:00"),
-      to: new Date(d.to + "T00:00:00"),
-    })),
-  [liveUnavailableDates, unavailableDates]);
-
-  // ─── Render ──────────────────────────────────────────────────────────────────
+  // Render
 
   return (
-    <div ref={containerRef} className={variant === "ghost" ? "flex flex-1" : issearch ? "date-picker-shell md:px-4 xl:px-5" : "date-picker-shell" }>
+    <div
+      ref={containerRef}
+      className={variant === "ghost" ? "flex flex-1" : issearch ? "date-picker-shell searchbar-segment" : "date-picker-shell"}
+    >
       {variant === "ghost" ? (
         <button
           type="button"
           onClick={() => (open ? closePicker({ apply: false }) : openPicker())}
           aria-haspopup="dialog"
           aria-expanded={open}
-          className={triggerClassName || "text-sm text-left w-full"}
+          className={triggerClassName || "w-full text-left text-sm"}
         >
-          {label || "Select date"}
+          {displayLabel || "Select date"}
         </button>
       ) : (
-      <div className={`flex items-center w-full border-[rgba(26,31,60,0.1)] transition-[background,0.15s,ease] ${open ? "date-picker-trigger-row--open" : ""} ${issearch ? "border-l" : "border-l-0"}`}>
-        {/* ── Trigger ────────────────────────────────────────────────────────── */}
-        <button
-          type="button"
-          onClick={() => (open ? closePicker({ apply: false }) : openPicker())}
-          aria-haspopup="dialog"
-          aria-expanded={open}
-          aria-label={label ? `Date: ${label}` : "Select date"}
-          className="date-picker-trigger md:py-2 md:px-4 xl:py-3 xl:px-5 md:gap-2 xl:gap-3"
-        >
-          <CalendarDays className="date-picker-icon md:w-4 md:h-4 xl:w-5 xl:h-5" aria-hidden="true" />
-          <div className="date-picker-trigger-text">
-            <span className="date-picker-label md:text-[10px] xl:text-[11px] md:mb-0 xl:mb-[0.2rem]">When</span>
-            <span className={`date-picker-value md:text-xs xl:text-sm ${!label ? "date-picker-value--placeholder" : ""}`}>
-              {label || "Add dates"}
-            </span>
-          </div>
-        </button>
-
-        {value && (
+        <div className="flex w-full items-center">
           <button
             type="button"
-            onClick={handleClear}
-            aria-label="Clear dates"
-            className="date-picker-clear md:w-4 md:h-4 xl:w-5 xl:h-5 md:mr-2 xl:mr-5"
+            onClick={() => (open ? closePicker({ apply: false }) : openPicker())}
+            aria-haspopup="dialog"
+            aria-expanded={open}
+            aria-label={displayLabel ? `Date: ${displayLabel}` : "Select date"}
+            className="date-picker-trigger w-full md:gap-2 md:px-1 md:py-2 xl:gap-3 xl:py-3"
           >
-            <X className="h-3.5 w-3.5 md:w-3 md:h-3 xl:w-3.5 xl:h-3.5" />
+            <CalendarDays className="date-picker-icon md:h-4 md:w-4 xl:h-5 xl:w-5" aria-hidden="true" />
+            <div className="date-picker-trigger-text">
+              <span className="date-picker-label md:text-[10px] xl:mb-[0.2rem] xl:text-[11px]">When</span>
+              <span className={`date-picker-value md:text-xs xl:text-sm ${!displayLabel ? "date-picker-value--placeholder" : ""}`}>
+                {displayLabel || "Add dates"}
+              </span>
+            </div>
           </button>
-        )}
-      </div>
+
+          {value && (
+            <button
+              type="button"
+              onClick={handleClear}
+              aria-label="Clear dates"
+              className="date-picker-clear md:mr-2 md:h-4 md:w-4 xl:mr-5 xl:h-5 xl:w-5"
+            >
+              <X className="h-3.5 w-3.5 md:h-3 md:w-3 xl:h-3.5 xl:w-3.5" />
+            </button>
+          )}
+        </div>
       )}
 
-      {/* ── Validation error ──────────────────────────────────────────────────── */}
       {error && variant !== "ghost" && (
         <p role="alert" className="date-picker-error">
           {error}
         </p>
       )}
 
-      {/* ── Popover ───────────────────────────────────────────────────────────── */}
       {portalTarget
         ? createPortal(
-            <AnimatePresence>
-              {open && (
-                <>
-                  <motion.button
+            open && (
+              <>
+                <button
+                  type="button"
+                  aria-label="Close date picker"
+                  className="date-picker-scrim"
+                  onClick={() => closePicker({ apply: true })}
+                />
+                <div
+                  ref={popoverRef}
+                  role="dialog"
+                  aria-label="Date picker"
+                  aria-modal="true"
+                  className="date-picker-popover search-popover relative"
+                  style={popoverTop ? { top: popoverTop } : undefined}
+                >
+                  <button
                     type="button"
+                    onClick={() => closePicker({ apply: false })}
                     aria-label="Close date picker"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ duration: 0.18 }}
-                    className="date-picker-scrim"
-                    onClick={() => closePicker({ apply: true })}
+                    className="absolute right-4 top-4 rounded-full p-1.5 text-[#555B7F] transition-colors hover:bg-black/5 xl:right-6 xl:top-6 xl:p-2"
+                  >
+                    <X className="h-4 w-4 xl:h-5 xl:w-5" />
+                  </button>
+
+                  <p className="date-picker-hint">
+                    {!draftRange?.from
+                      ? "Select a start date"
+                      : !draftRange?.to
+                        ? "Select an end date, or click the same date for a single day"
+                        : `${formatDate(draftRange.from)} – ${formatDate(draftRange.to)}`}
+                  </p>
+
+                  <DayPicker
+                    mode="range"
+                    selected={draftRange}
+                    onSelect={handleSelect}
+                    numberOfMonths={isMobile ? 1 : 2}
+                    disabled={[{ before: today }, ...blockedRanges]}
+                    showOutsideDays={false}
+                    classNames={{
+                      root: "rdp-root",
+                      months: "rdp-months",
+                      month: "rdp-month",
+                      month_caption: "rdp-month-caption",
+                      caption_label: "rdp-caption-label",
+                      nav: "rdp-nav",
+                      button_previous: "rdp-nav-btn rdp-nav-btn--prev",
+                      button_next: "rdp-nav-btn rdp-nav-btn--next",
+                      month_grid: "rdp-grid",
+                      weekdays: "rdp-weekdays",
+                      weekday: "rdp-weekday",
+                      week: "rdp-week",
+                      day: "rdp-day",
+                      day_button: "rdp-day-btn",
+                      today: "rdp-day--today",
+                      outside: "rdp-day--outside",
+                      disabled: "rdp-day--disabled",
+                      range_start: "rdp-day--range-start",
+                      range_end: "rdp-day--range-end",
+                      range_middle: "rdp-day--range-middle",
+                      selected: "rdp-day--selected",
+                      hidden: "rdp-day--hidden",
+                    }}
+                    components={{
+                      Chevron: ({ orientation }) =>
+                        orientation === "left" ? (
+                          <ChevronLeft className="h-4 w-4" />
+                        ) : (
+                          <ChevronRight className="h-4 w-4" />
+                        ),
+                    }}
                   />
 
-                  <motion.div
-                    ref={popoverRef}
-                    role="dialog"
-                    aria-label="Date picker"
-                    aria-modal="true"
-                    initial={{ opacity: 0, y: 12, scale: 0.98 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: 8, scale: 0.98 }}
-                    transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
-                    className="date-picker-popover relative"
-                    style={popoverTop ? { top: popoverTop } : undefined}
-                  >
+                  {showFlexible && (
+                    <div
+                      className="date-picker-flexible"
+                      role="radiogroup"
+                      aria-label="Date flexibility"
+                    >
+                      {FLEX_OPTIONS.map((option) => {
+                        const isActive = flexible === option.value;
+                        return (
+                          <button
+                            key={option.value}
+                            type="button"
+                            role="radio"
+                            aria-checked={isActive}
+                            onClick={() => onFlexibleChange?.(option.value)}
+                            className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${
+                              isActive
+                                ? "border-accent-primary bg-accent-primary text-white"
+                                : "border-text-primary/15 text-text-primary/65 hover:border-accent-primary/50 hover:text-accent-primary"
+                            }`}
+                          >
+                            {option.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  <div className="date-picker-footer">
+                    <button type="button" onClick={handleClear} className="date-picker-footer-clear">
+                      Clear
+                    </button>
                     <button
                       type="button"
-                      onClick={() => closePicker({ apply: false })}
-                      aria-label="Close date picker"
-                      className="absolute right-4 top-4 xl:right-6 xl:top-6 p-1.5 xl:p-2 rounded-full hover:bg-black/5 text-[#555B7F] transition-colors"
+                      onClick={() => closePicker({ apply: true })}
+                      className="date-picker-footer-apply"
+                      disabled={!draftRange}
                     >
-                      <X className="h-4 w-4 xl:h-5 xl:w-5" />
+                      Apply
                     </button>
-
-                    <p className="date-picker-hint">
-                      {!draftRange?.from
-                        ? "Select a start date"
-                        : !draftRange?.to
-                          ? "Select an end date, or click the same date for a single day"
-                          : `${formatDate(draftRange.from)} – ${formatDate(draftRange.to)}`}
-                    </p>
-
-                    <DayPicker
-                      mode="range"
-                      selected={draftRange}
-                      onSelect={handleSelect}
-                      numberOfMonths={isMobile ? 1 : 2}
-                      disabled={[
-                        { before: today }, 
-                        ...blockedRanges
-                      ]}
-                      showOutsideDays={false}
-                      classNames={{
-                        root: "rdp-root",
-                        months: "rdp-months",
-                        month: "rdp-month",
-                        month_caption: "rdp-month-caption",
-                        caption_label: "rdp-caption-label",
-                        nav: "rdp-nav",
-                        button_previous: "rdp-nav-btn rdp-nav-btn--prev",
-                        button_next: "rdp-nav-btn rdp-nav-btn--next",
-                        month_grid: "rdp-grid",
-                        weekdays: "rdp-weekdays",
-                        weekday: "rdp-weekday",
-                        week: "rdp-week",
-                        day: "rdp-day",
-                        day_button: "rdp-day-btn",
-                        today: "rdp-day--today",
-                        outside: "rdp-day--outside",
-                        disabled: "rdp-day--disabled",
-                        range_start: "rdp-day--range-start",
-                        range_end: "rdp-day--range-end",
-                        range_middle: "rdp-day--range-middle",
-                        selected: "rdp-day--selected",
-                        hidden: "rdp-day--hidden",
-                      }}
-                      components={{
-                        Chevron: ({ orientation }) =>
-                          orientation === "left" ? (
-                            <ChevronLeft className="h-4 w-4" />
-                          ) : (
-                            <ChevronRight className="h-4 w-4" />
-                          ),
-                      }}
-                    />
-
-                    <div className="date-picker-footer">
-                      <button
-                        type="button"
-                        onClick={handleClear}
-                        className="date-picker-footer-clear"
-                      >
-                        Clear
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => closePicker({ apply: true })}
-                        className="date-picker-footer-apply"
-                        disabled={!draftRange}
-                      >
-                        Apply
-                      </button>
-                    </div>
-                  </motion.div>
-                </>
-              )}
-            </AnimatePresence>,
+                  </div>
+                </div>
+              </>
+            ),
             portalTarget
           )
         : null}

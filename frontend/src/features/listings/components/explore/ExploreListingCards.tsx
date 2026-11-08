@@ -296,7 +296,7 @@ function HallTypeBadges({ hallTypes }: { hallTypes: ExploreListing["hallTypes"] 
     );
 }
 
-// ── Capacity display ─────────────────────────────────────────────
+//  Capacity display 
 function CapacityBadge({ capacity }: { capacity: number | null }) {
     const label = formatCapacity(capacity);
     if (!label) return null;

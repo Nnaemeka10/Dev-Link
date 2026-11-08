@@ -1,6 +1,5 @@
 import { z } from "zod";
 
-// ─── Date range shape ──────────────────────────────────────────────────────────
 export const dateRangeSchema = z
   .object({
     from: z.date(),
@@ -12,46 +11,44 @@ export const dateRangeSchema = z
   })
   .refine(
     (v) => v.from >= new Date(new Date().toDateString()),
-    {
-      message: "Start date must be today or in the future",
-      path: ["from"],
-    }
+    { message: "Start date must be today or in the future", path: ["from"] }
   );
 
 export type DateRange = z.infer<typeof dateRangeSchema>;
 
-// ─── Main search schema ────────────────────────────────────────────────────────
+const cleanText = (v: string) => v.replace(/[<>"'`]/g, "").trim();
+const minTwo = (v: string) => v.length === 0 || v.length >= 2;
+
 export const searchSchema = z
   .object({
     category: z.enum(["halls", "services"]),
 
-    location: z
-      .string()
-      .transform((v) => v.replace(/[<>"'`]/g, "").trim())
-      .refine((v) => v.length === 0 || v.length >= 2, "Enter at least 2 characters"),
+    location: z.string().transform(cleanText).refine(minTwo, "Enter at least 2 characters"),
+    coverageArea: z.string().transform(cleanText).refine(minTwo, "Enter at least 2 characters"),
 
-    // undefined = no date filter applied
     dateRange: dateRangeSchema.optional(),
 
-    // Halls only: guest capacity
     capacity: z.number().min(1).optional(),
-
-    // Services only: specific service role
     role: z.string().optional(),
+
+    flexible: z.number().int().min(0).max(2),
   })
   .refine(
     (v) => {
-      // If category is halls, capacity can exist but role should be empty
-      if (v.category === "halls") {
-        return !v.role;
-      }
-      // If category is services, role can exist but capacity should be empty
-      if (v.category === "services") {
-        return !v.capacity;
-      }
-      return true;
+      if (v.category === "halls") return !v.role && !v.coverageArea;
+      return !v.capacity && !v.location;
     },
-    "Invalid field combination for category"
+    { message: "Invalid field combination for category" }
   );
 
 export type SearchFormData = z.infer<typeof searchSchema>;
+
+export const SEARCH_FORM_DEFAULTS: SearchFormData = {
+  category: "halls",
+  location: "",
+  coverageArea: "",
+  dateRange: undefined,
+  capacity: undefined,
+  role: undefined,
+  flexible: 0,
+};

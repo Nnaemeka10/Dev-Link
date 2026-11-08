@@ -1,6 +1,6 @@
 import type { LocalGovernment, NigeriaState } from "./types/listing";
 
-// ────────────────────────────────────────────────────────────────────────────
+// 
 // MOCK - backend contract
 //
 //   GET /locations/states              → NigeriaState[]
@@ -10,7 +10,7 @@ import type { LocalGovernment, NigeriaState } from "./types/listing";
 // has something real to render. The backend should return the authoritative
 // full list (all 774 LGAs nationwide) - the frontend doesn't hardcode counts
 // or assume completeness anywhere.
-// ────────────────────────────────────────────────────────────────────────────
+// 
 
 export const NIGERIA_STATES: NigeriaState[] = [
   { id: "abia", name: "Abia" },
@@ -117,12 +117,12 @@ export function getLgasByState(stateId: string): LocalGovernment[] {
 
 import type { EventHallType, ServiceType } from "./types/listing";
 
-// ────────────────────────────────────────────────────────────────────────────
+// 
 // MOCK - backend contract
 //   GET /listings/hall-types    → EventHallType[]
 //   GET /listings/service-types → ServiceType[]
 // Shown in Step 2 as a multi-select "what kind of X do you host/offer" modal.
-// ────────────────────────────────────────────────────────────────────────────
+// 
 
 export const EVENT_HALL_TYPES: EventHallType[] = [
   { id: "wedding-reception", label: "Wedding Reception", icon: "favorite" },
@@ -156,7 +156,7 @@ export const SERVICE_TYPES: ServiceType[] = [
 
 import type { AmenityDefinition } from "./types/listing";
 
-// ────────────────────────────────────────────────────────────────────────────
+// 
 // MOCK - backend contract: GET /listings/amenities?category=hall → AmenityDefinition[]
 //
 // Grouped by `category` for rendering as sectioned grids (Step 3, hall flow).
@@ -165,7 +165,7 @@ import type { AmenityDefinition } from "./types/listing";
 //   "text"     → short free-text description, capped at ~5 words in the UI
 //   "duration" → not used for hall amenities today, kept for parity with
 //                requirement definitions
-// ────────────────────────────────────────────────────────────────────────────
+// 
 
 export const HALL_AMENITY_DEFINITIONS: AmenityDefinition[] = [
   // Essentials
@@ -200,7 +200,7 @@ export const HALL_AMENITY_CATEGORIES = Array.from(
 
 import type { RequirementDefinition } from "./types/listing";
 
-// ────────────────────────────────────────────────────────────────────────────
+// 
 // MOCK - backend contract
 //   GET /listings/requirements?serviceTypeIds=dj,photographer → RequirementDefinition[]
 //
@@ -212,7 +212,7 @@ import type { RequirementDefinition } from "./types/listing";
 // can narrow the query itself via the `serviceTypeIds` param.
 //
 // Service type ids referenced below match data/mockCategories.ts.
-// ────────────────────────────────────────────────────────────────────────────
+// 
 
 export const SERVICE_REQUIREMENT_DEFINITIONS: RequirementDefinition[] = [
   // Setup & Access - mostly universal, setup time is compulsory
@@ -362,7 +362,7 @@ export function getApplicableRequirements(selectedServiceTypeIds: string[]): Req
 
 import type { PackagePreset } from "./types/listing";
 
-// ────────────────────────────────────────────────────────────────────────────
+// 
 // MOCK - backend contract: GET /listings/package-presets?serviceTypeId=dj
 //
 // Keyed by service type id (see data/mockCategories.ts) for an O(1) lookup -
@@ -370,7 +370,7 @@ import type { PackagePreset } from "./types/listing";
 // templates. `PACKAGE_NAME_PRESETS` / `PACKAGE_PERK_PRESETS` are looser
 // suggestion lists so a vendor can mix a preset name with custom perks (or
 // vice versa) instead of only accepting a whole template.
-// ────────────────────────────────────────────────────────────────────────────
+// 
 
 export const PACKAGE_TEMPLATES: Record<string, PackagePreset[]> = {
   dj: [

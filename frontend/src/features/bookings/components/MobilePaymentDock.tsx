@@ -8,7 +8,7 @@ import {
   X, ChevronUp, MapPin, Users, CalendarDays, BadgeCheck,
 } from "lucide-react";
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+//  Types 
 
 interface Fee {
   label: string;
@@ -36,7 +36,7 @@ interface MobilePaymentDockProps {
   isProcessing: boolean;
 }
 
-// ─── Sheet variants ───────────────────────────────────────────────────────────
+//  Sheet variants 
 
 const sheetVariants = {
   hidden:  { y: "100%" },
@@ -49,7 +49,7 @@ const sheetTransition = {
   duration: 0.42,
 };
 
-// ─── Summary sheet ────────────────────────────────────────────────────────────
+//  Summary sheet 
 
 function SummarySheet({
   summary,
@@ -84,7 +84,7 @@ function SummarySheet({
       {/* Scrollable body */}
       <div className="flex-1 overflow-y-auto px-5 pb-2">
 
-        {/* ── Venue card ────────────────────────────────────────────────── */}
+        {/*  Venue card  */}
         <div className="overflow-hidden rounded-2xl">
           <div className="relative h-36">
             <Image
@@ -110,7 +110,7 @@ function SummarySheet({
           </div>
         </div>
 
-        {/* ── Event details ──────────────────────────────────────────────── */}
+        {/*  Event details  */}
         <div className="mt-4 grid grid-cols-5 gap-2">
           {/* Event name */}
           <div className="col-span-5 flex items-center gap-2.5 rounded-2xl bg-[#F4F1EA] px-4 py-3">
@@ -149,7 +149,7 @@ function SummarySheet({
           )}
         </div>
 
-        {/* ── Price breakdown ────────────────────────────────────────────── */}
+        {/*  Price breakdown  */}
         <div className="mt-4 space-y-3.5 rounded-2xl border border-[#EFE8DE] bg-white px-4 py-4">
           {summary.fees.map((fee) => (
             <div key={fee.label} className="flex items-start justify-between gap-2 text-small">
@@ -163,7 +163,7 @@ function SummarySheet({
           ))}
         </div>
 
-        {/* ── Total ─────────────────────────────────────────────────────── */}
+        {/*  Total  */}
         <div className="mt-3 rounded-2xl bg-[#E8E4DC] px-4 py-4">
           <div className="flex items-center justify-between">
             <p className="text-base font-extrabold uppercase tracking-widest text-[#555B7F]">
@@ -182,7 +182,7 @@ function SummarySheet({
 
       </div>
 
-      {/* ── Footer ──────────────────────────────────────────────────────────── */}
+      {/*  Footer  */}
       <div className="shrink-0 px-5 pb-[env(safe-area-inset-bottom,1rem)] pt-4">
         <button
           type="button"
@@ -199,7 +199,7 @@ function SummarySheet({
   );
 }
 
-// ─── Main component ───────────────────────────────────────────────────────────
+//  Main component 
 
 export function MobilePaymentDock({ summary, onPay, isProcessing }: MobilePaymentDockProps) {
   const [open, setOpen] = useState(false);
@@ -208,7 +208,7 @@ export function MobilePaymentDock({ summary, onPay, isProcessing }: MobilePaymen
 
   return (
     <>
-      {/* ── Dock bar ─────────────────────────────────────────────────────── */}
+      {/*  Dock bar  */}
       <div className="fixed inset-x-0 bottom-20 z-40 border-t border-[#EFE8DE] bg-bg-primary px-5 py-4 shadow-[0_-8px_32px_rgba(34,27,18,0.08)]">
         <div className="flex items-center justify-between gap-4">
 
@@ -245,7 +245,7 @@ export function MobilePaymentDock({ summary, onPay, isProcessing }: MobilePaymen
         </div>
       </div>
 
-      {/* ── Summary sheet - portalled ────────────────────────────────────── */}
+      {/*  Summary sheet - portalled  */}
       {portalTarget && createPortal(
         <AnimatePresence>
           {open && (

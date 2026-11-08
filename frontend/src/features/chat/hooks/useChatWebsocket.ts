@@ -28,7 +28,7 @@ export function useChatSocket({ userId, activeThreadId, onMessageReceived, onTyp
     socket.on("connect", () => {
       console.log(" Socket connected");
       
-      // ─── Reconnection Catch-Up Logic ─────────────────────────────────────
+      //  Reconnection Catch-Up Logic 
       // When connecting, check all known conversations for missed messages
       Object.keys(lastSeqRef.current).forEach(async (convId) => {
         const lastSeq = lastSeqRef.current[convId];
@@ -83,7 +83,7 @@ export function useChatSocket({ userId, activeThreadId, onMessageReceived, onTyp
     };
   }, [userId, queryClient, onMessageReceived, onTyping]);
 
-  // ─── Join/Leave Room when active thread changes ───────────────────────────
+  //  Join/Leave Room when active thread changes 
   useEffect(() => {
     const socket = socketRef.current;
     if (!socket || !activeThreadId) return;

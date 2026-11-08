@@ -13,11 +13,11 @@ import type {
 } from "../types/listing";
 import { TOTAL_STEPS } from "../types/listing";
 
-// ────────────────────────────────────────────────────────────────────────────
+// 
 // Initial state - one object per domain slice, composed into the full form.
 // Keeping each slice's shape here (rather than scattered defaults inline)
 // is what makes `resetForm` a one-liner instead of a maintenance trap.
-// ────────────────────────────────────────────────────────────────────────────
+// 
 
 const initialDetails: ListingFormState["details"] = {
   name: "",
@@ -53,9 +53,9 @@ const initialFormState: ListingFormState = {
   pricing: initialPricing,
 };
 
-// ────────────────────────────────────────────────────────────────────────────
+// 
 // Store shape - state + actions, grouped by the step that owns them.
-// ────────────────────────────────────────────────────────────────────────────
+// 
 
 interface ListingStore {
   listingId: string | null;
@@ -125,7 +125,7 @@ export const useListingStore = create<ListingStore>()(
         attemptedSteps: {},
         setListingId: (id) => set({ listingId: id }, false, "setListingId"),
 
-        // ── Navigation ──────────────────────────────────────────────────────
+        //  Navigation 
         goToStep: (step) => set({ currentStep: step }, false, "goToStep"),
         nextStep: () =>
           set(
@@ -141,7 +141,7 @@ export const useListingStore = create<ListingStore>()(
         clearStepAttempted: (step) =>
           set((s) => ({ attemptedSteps: { ...s.attemptedSteps, [step]: false } }), false, "clearStepAttempted"),
 
-        // ── Step 1 ──────────────────────────────────────────────────────────
+        //  Step 1 
         setCategory: (category) =>
           set(
             (s) => {
@@ -169,7 +169,7 @@ export const useListingStore = create<ListingStore>()(
             "setCategory"
           ),
 
-        // ── Step 2 ──────────────────────────────────────────────────────────
+        //  Step 2 
         setListingName: (name) =>
           set((s) => ({ form: { ...s.form, details: { ...s.form.details, name } } }), false, "setListingName"),
 
@@ -325,7 +325,7 @@ export const useListingStore = create<ListingStore>()(
             "toggleServiceCoverageLga"
           ),
 
-        // ── Step 3 ──────────────────────────────────────────────────────────
+        //  Step 3 
         setAmenityValue: (amenityId, value) =>
           set(
             (s) => {
@@ -390,7 +390,7 @@ export const useListingStore = create<ListingStore>()(
             "removeCustomRequirement"
           ),
 
-        // ── Step 4 ──────────────────────────────────────────────────────────
+        //  Step 4 
         addPhotos: (photos) =>
           set(
             (s) => {
@@ -434,7 +434,7 @@ export const useListingStore = create<ListingStore>()(
             "setCoverPhoto"
           ),
 
-        // ── Step 5 ──────────────────────────────────────────────────────────
+        //  Step 5 
         setBasePrice: (basePrice) =>
           set((s) => ({ form: { ...s.form, pricing: { ...s.form.pricing, basePrice } } }), false, "setBasePrice"),
 
@@ -506,7 +506,7 @@ export const useListingStore = create<ListingStore>()(
               : { ...state.form, category: fallbackCategory ?? state.form.category },
         })),
 
-        // ── Root ────────────────────────────────────────────────────────────
+        //  Root 
         resetForm: () => set({ listingId: null, currentStep: 1, form: initialFormState, attemptedSteps: {} }, false, "resetForm"),
       }),
       { name: "eventvnv-create-listing",

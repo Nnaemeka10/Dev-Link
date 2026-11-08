@@ -191,21 +191,44 @@ function buildFilterParts(options: ListingPageOptions): QueryParts {
         )`);
     }
 
-    if (filters.dateFrom || filters.dateTo) {
-    const dateFrom = filters.dateFrom || filters.dateTo!;
-    const dateTo = filters.dateTo || filters.dateFrom!;
-    const fromParam = addValue(values, dateFrom);
-    const toParam = addValue(values, dateTo);
-    clauses.push(`
-        NOT EXISTS (
+        if (filters.coverage) {
+        // Services: does this vendor cover the user's state? Exact
+        // case-insensitive match , the combobox sends canonical state names
+        // (LGAs resolve to their state client-side); free text is a
+        // best-effort fallback. Served by idx_service_area_state_lookup.
+        clauses.push(`EXISTS (
             SELECT 1
-            FROM listing_unavailable_dates lud
-            WHERE lud.listing_id = l.id
-                AND lud.start_date <= ${toParam}::date
-                AND lud.end_date >= ${fromParam}::date
-        )
-    `);
-}
+            FROM listing_service_areas lsa
+            WHERE lsa.listing_id = l.id
+                AND LOWER(lsa.state) = LOWER(${addValue(values, filters.coverage)})
+        )`);
+    }
+
+    if (filters.dateFrom || filters.dateTo) {
+        const dateFrom = filters.dateFrom || filters.dateTo!;
+        const dateTo = filters.dateTo || filters.dateFrom!;
+        const fromParam = addValue(values, dateFrom);
+        const toParam = addValue(values, dateTo);
+        const flex = filters.flexible ?? 0;
+        const flexParam = addValue(values, flex);
+        // Flexible availability: the event must fit SOMEWHERE within
+        // [from - flex, to + flex]. flex = 0 collapses the series to a single
+        // shift of 0 ,  bit-for-bit the old exact-range overlap check, and the
+        // same overlap semantics as Booking.checkAvailability.
+        clauses.push(`
+            EXISTS (
+                SELECT 1
+                FROM generate_series(-${flexParam}::int, ${flexParam}::int) AS g(shift)
+                WHERE NOT EXISTS (
+                    SELECT 1
+                    FROM listing_unavailable_dates lud
+                    WHERE lud.listing_id = l.id
+                        AND lud.start_date <= (${toParam}::date + g.shift)
+                        AND lud.end_date >= (${fromParam}::date + g.shift)
+                )
+            )
+        `);
+    }
 
     addCursorClause(clauses, values, options.cursor, options.sort, options.sortDirection);
 
@@ -534,7 +557,7 @@ async function recalculateListingPrice(listingId: string): Promise<void> {
     await db.query(`
         UPDATE listings
         SET base_price_kobo = COALESCE(
-            (SELECT MIN(price) FROM service_packages WHERE listing_id = $1), 
+            (SELECT MIN(price_kobo) FROM service_packages WHERE listing_id = $1), 
             0
         )
         WHERE id = $1;

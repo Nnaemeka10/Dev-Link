@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { BadgeCheck, LockKeyhole, ThumbsUp } from "lucide-react";
 
-// ─── Types & Data ─────────────────────────────────────────────────────────────
+//  Types & Data 
 
 interface TrustSignal {
   id: string;
@@ -70,14 +70,14 @@ export default function TrustSignalsBar() {
     getServerMediaSnapshot
   );
 
-  // ── Pause control ────────────────────────────────────────────────────────────
+  //  Pause control 
   // Ref - not state - so pausing/resuming never triggers a re-render.
   // The interval callback reads the ref value directly.
   const isPausedRef = useRef(false);
   const resumeTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // ── Auto-rotation ─────────────────────────────────────────────────────────
+  //  Auto-rotation 
   // The gates are reactive values now, not one-shot reads at mount time:
   // rotation starts/stops live when the viewport crosses the md boundary or
   // the user toggles their OS reduced-motion preference. The interval restarts
@@ -96,7 +96,7 @@ export default function TrustSignalsBar() {
     return () => clearInterval(id);
   }, [prefersReducedMotion, isMobile]);
 
-  // ── Touch / mouse pause ────────────────────────────────────────────────────
+  //  Touch / mouse pause 
   // Pause when user interacts, resume 5s after last interaction.
   // All mutation is to refs - zero re-renders.
   useEffect(() => {
@@ -121,12 +121,12 @@ export default function TrustSignalsBar() {
     };
   }, []);
 
-  // ── Render ─────────────────────────────────────────────────────────────────
+  //  Render 
 
   return (
     <section className="bg-bg-tertiary px-4 py-8 md:px-8 md:py-10">
 
-      {/* ── Mobile: fade carousel ─────────────────────────────────────────── */}
+      {/*  Mobile: fade carousel  */}
       {/*
         Each signal is absolutely positioned and fills the container.
         We toggle opacity + pointer-events based on currentIndex.
@@ -182,7 +182,7 @@ export default function TrustSignalsBar() {
         </div>
       </div>
 
-      {/* ── Desktop: static grid ─────────────────────────────────────────── */}
+      {/*  Desktop: static grid  */}
       <div className="hidden md:flex no-scrollbar mx-auto max-w-7xl gap-0 overflow-x-auto rounded-[1.6rem] bg-transparent motion-safe:animate-fade-up">
         {TRUST_SIGNALS.map((signal, index) => (
           <div

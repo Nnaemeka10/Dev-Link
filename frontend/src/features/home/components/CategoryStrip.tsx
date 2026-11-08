@@ -8,7 +8,7 @@ import {
   Sparkles, Users, WandSparkles, CarIcon, House,
 } from "lucide-react";
 
-// ─── Types & Data ─────────────────────────────────────────────────────────────
+//  Types & Data 
 
 interface CategoryItem {
   id: string;
@@ -46,14 +46,14 @@ function iconByType(type: CategoryItem["icon"]) {
   }
 }
 
-// ─── Constants ────────────────────────────────────────────────────────────────
+//  Constants 
 
 const ITEM_WIDTH = 84;  // px - matches min-w-[5.25rem] (5.25 * 16 = 84)
 const GAP        = 16;  // px - gap-4
 const STRIDE     = ITEM_WIDTH + GAP; // distance between item origins
 const PX_PER_FRAME = 0.45; // ~27px/s at 60fps - slow and premium
 
-// ─── Component ────────────────────────────────────────────────────────────────
+//  Component 
 
 export default function CategoryStrip() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -80,7 +80,7 @@ export default function CategoryStrip() {
   const pausedRef = useRef(false);
   const rafRef    = useRef<number>(0);
 
-  // ── RAF ticker ───────────────────────────────────────────────────────────────
+  //  RAF ticker 
   //
   // WHY THIS LOOKS SEAMLESS (and CSS translateX doesn't):
   //
@@ -163,7 +163,7 @@ export default function CategoryStrip() {
     };
   }, [isMobile]);
 
-  // ── Touch: pause while finger is on screen, resume after lift ───────────────
+  //  Touch: pause while finger is on screen, resume after lift 
   useEffect(() => {
     if (!isMobile) return;
     const container = containerRef.current;
@@ -199,20 +199,20 @@ export default function CategoryStrip() {
     };
   }, [isMobile]);
 
-  // ─── Render ──────────────────────────────────────────────────────────────────
+  //  Render 
 
   return (
     <section className="bg-bg-primary px-4 py-8 md:px-8 md:py-10">
       <div className="mx-auto max-w-7xl">
 
-        {/* ── Mobile: per-item RAF ticker ───────────────────────────────────── */}
+        {/*  Mobile: per-item RAF ticker  */}
         {/*
           overflow-hidden clips items outside the viewport.
           mask-image fades the left/right edges so items don't hard-cut.
           The inner div gets position:relative + height injected by the effect.
         */}
         <div
-          className="md:hidden overflow-hidden pb-2 [mask-image:linear-gradient(to_right,transparent,black_8%,black_92%,transparent)]"
+          className="md:hidden overflow-hidden pb-2 [mask:linear-gradient(to_right,transparent,black_8%,black_92%,transparent)]"
           // prefers-reduced-motion: if the user has this set, we skip the RAF
           // loop entirely (isMobile stays true but the paused ref keeps it frozen)
           // For a cleaner solution, add a matchMedia check in the RAF effect above.
@@ -231,7 +231,7 @@ export default function CategoryStrip() {
                   <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white text-text-primary shadow-sm">
                     <Icon className="h-5 w-5" />
                   </div>
-                  <p className="w-full text-center text-[0.5rem] md:text-[11px] font-semibold uppercase tracking-[0.05em] text-text-primary/72 leading-tight">
+                  <p className="w-full text-center text-micro md:text-[11px] font-semibold uppercase tracking-[0.05em] text-text-primary/72 leading-tight">
                     {item.label}
                   </p>
                 </div>
@@ -240,14 +240,14 @@ export default function CategoryStrip() {
           </div>
         </div>
 
-        {/* ── Desktop: static grid ─────────────────────────────────────────── */}
+        {/*  Desktop: static grid  */}
         <div className="hidden md:grid md:grid-cols-10 md:gap-4">
           {CATEGORIES.map((item, index) => {
             const Icon = iconByType(item.icon);
             return (
               <article
                 key={item.id}
-                className="flex flex-col items-center gap-2 motion-safe:animate-[var(--animate-fade-up)]"
+                className="flex flex-col items-center gap-2 motion-safe:animate-fade-up"
                 style={{ animationDelay: `${index * 40}ms` }}
               >
                 <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-white text-text-primary shadow-sm">

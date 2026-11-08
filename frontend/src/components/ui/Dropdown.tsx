@@ -5,7 +5,7 @@ import { createPortal } from "react-dom";
 import { Check, ChevronDown } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+//  Types 
 
 export interface DropdownOption<T extends string = string> {
   value: T;
@@ -52,7 +52,7 @@ export interface DropdownProps<T extends string = string> {
   'aria-label'?: string;
 }
 
-// ─── Size tokens ──────────────────────────────────────────────────────────────
+//  Size tokens 
 
 const SIZE = {
   sm: {
@@ -78,7 +78,7 @@ const SIZE = {
   },
 } as const;
 
-// ─── Variant tokens ───────────────────────────────────────────────────────────
+//  Variant tokens 
 
 const VARIANT = {
   outline: {
@@ -95,7 +95,7 @@ const VARIANT = {
   },
 } as const;
 
-// ─── Component ────────────────────────────────────────────────────────────────
+//  Component 
 
 export function Dropdown<T extends string = string>({
   options,
@@ -130,7 +130,7 @@ export function Dropdown<T extends string = string>({
   const selected = options.find((o) => o.value === value);
   const displayLabel = selected?.label ?? placeholder;
 
-  // ── Measure trigger on open, and keep it current on scroll/resize ───────────
+  //  Measure trigger on open, and keep it current on scroll/resize 
   useEffect(() => {
     if (!open) {
       // Reset so next open always measures fresh - prevents stale rect
@@ -157,7 +157,7 @@ export function Dropdown<T extends string = string>({
     };
   }, [open]);
 
-  // ── Derive portal popover position from triggerRect ─────────────────────────
+  //  Derive portal popover position from triggerRect 
   function getPopoverStyle(): React.CSSProperties {
     // Return visibility:hidden (not display:none) so the element still mounts
     // and the AnimatePresence exit animation can run, but nothing is visible
@@ -184,7 +184,7 @@ export function Dropdown<T extends string = string>({
     };
   }
 
-  // ── Close on outside click ──────────────────────────────────────────────────
+  //  Close on outside click 
   useEffect(() => {
     if (!open) return;
     function handler(e: MouseEvent) {
@@ -197,7 +197,7 @@ export function Dropdown<T extends string = string>({
     return () => document.removeEventListener("mousedown", handler);
   }, [open]);
 
-  // ── Sync focused index when opening ────────────────────────────────────────
+  //  Sync focused index when opening 
   // Initial focused index is set in the click/keyboard handler at open time.
   // This effect only handles the initial scroll-into-view - a genuine DOM
   // side effect, not a state initialisation - so it's clean for the linter.
@@ -216,7 +216,7 @@ export function Dropdown<T extends string = string>({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, !!triggerRect]);
 
-  // ── Scroll focused option into view on keyboard nav ────────────────────────
+  //  Scroll focused option into view on keyboard nav 
   useEffect(() => {
     if (!open || focusedIdx < 0 || !triggerRect) return;
     listRef.current
@@ -226,7 +226,7 @@ export function Dropdown<T extends string = string>({
   // eslint-disable-next-line react-hooks/exhaustive-deps      
   }, [focusedIdx, open, !!triggerRect]);
 
-  // ── Keyboard handler ───────────────────────────────────────────────────────
+  //  Keyboard handler 
   function onKeyDown(e: React.KeyboardEvent) {
     if (disabled) return;
 
@@ -295,7 +295,7 @@ export function Dropdown<T extends string = string>({
     triggerRef.current?.focus();
   }
 
-  // ─── Render ──────────────────────────────────────────────────────────────────
+  //  Render 
 
   return (
     <div
@@ -305,7 +305,7 @@ export function Dropdown<T extends string = string>({
         className ?? "",
       ].join(" ")}
     >
-      {/* ── Trigger ──────────────────────────────────────────────────────────── */}
+      {/*  Trigger  */}
       <button
         ref={triggerRef}
         id={id ?? wrapperId}
@@ -367,12 +367,12 @@ export function Dropdown<T extends string = string>({
         </span>
       </button>
 
-      {/* ── Popover - portalled to document.body ─────────────────────────────
+      {/*  Popover - portalled to document.body 
            Rendering outside the React tree via createPortal means no
            overflow:hidden, clip-path, or stacking context from any ancestor
            can clip the popover. Position is derived from triggerRect (fixed
            viewport coordinates) so it stays anchored to the trigger.
-      ────────────────────────────────────────────────────────────────────── */}
+       */}
       {typeof window !== "undefined" && createPortal(
         <AnimatePresence>
           {open && (

@@ -103,6 +103,36 @@
       opacity: 1;
     }
   }
+
+  /* Popovers / scrims / sheets (CSS replaces framer-motion)*/
+  @keyframes search-pop-in {
+    from {
+      opacity: 0;
+      transform: translateY(8px) scale(0.985);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  @keyframes search-scrim-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  @keyframes search-sheet-in {
+    from {
+      transform: translateY(100%);
+    }
+    to {
+      transform: translateY(0);
+    }
+  }
 }
 
 /* Shared base */
@@ -183,10 +213,105 @@
   .pad {
     @apply flex w-full px-4 py-4 md:px-8 lg:px-12;
   }
+
+  /*Search bar  */
+  .searchbar {
+    display: flex;
+    align-items: stretch;
+    border-radius: 9999px;
+    background: #ffffff;
+    padding: 0.375rem;
+    overflow: visible;
+  }
+
+  .searchbar-segment {
+    position: relative;
+    display: flex;
+    align-items: center;
+    min-width: 0;
+    flex: 1 1 0%;
+    border-radius: 9999px;
+    transition:
+      flex-grow 0.28s cubic-bezier(0.2, 0.8, 0.2, 1),
+      background-color 0.2s ease,
+      border-color 0.2s ease;
+  }
+
+  .searchbar-segment + .searchbar-segment {
+    border-left: 1px solid rgba(26, 31, 60, 0.1);
+  }
+
+  .searchbar:hover .searchbar-segment + .searchbar-segment {
+    border-left-color: rgba(26, 31, 60, 0.05);
+  }
+
+  .searchbar-segment:hover,
+  .searchbar-segment:focus-within {
+    flex-grow: 1.4;
+    background-color: rgba(246, 243, 236, 0.85);
+  }
+
+  .searchbar-segment:hover,
+  .searchbar-segment:focus-within,
+  .searchbar-segment:hover + .searchbar-segment,
+  .searchbar-segment:focus-within + .searchbar-segment {
+    border-left-color: transparent;
+  }
+
+  /* Category pill sliding indicator */
+  .cat-pill-indicator {
+    position: absolute;
+    top: 0.25rem;
+    bottom: 0.25rem;
+    left: 0.25rem;
+    width: calc(50% - 0.25rem);
+    border-radius: 9999px;
+    background: #ffffff;
+    box-shadow: 0 3px 8px rgba(26, 31, 60, 0.08);
+    transition: transform 0.34s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+
+  .search-scrim {
+    position: fixed;
+    inset: 0;
+    z-index: 40;
+    background: rgba(26, 31, 60, 0.22); /* our ink, not Airbnb's black */
+    animation: search-scrim-in 0.2s ease-out;
+  }
+
+  .search-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 40;
+    background: rgba(26, 31, 60, 0.4);
+    animation: search-scrim-in 0.18s ease-out;
+  }
+
+  .search-sheet {
+    animation: search-sheet-in 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  /* Flexible-dates chips row in the date popover */
+  .date-picker-flexible {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem 0;
+  }
+
+  @media (max-width: 720px) {
+    .date-picker-flexible {
+      padding: 0.75rem 0.25rem 0;
+    }
+  }
 }
 
 @layer utilities {
   /* Shared utilities */
+  .search-popover {
+    animation: search-pop-in 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
   .no-scrollbar {
     -ms-overflow-style: none;
     scrollbar-width: none;
@@ -218,7 +343,6 @@
     animation-delay: 0.4s;
   }
 
-  /* ── ADD THESE: Button hover lift ────────────────────────────────────── */
   .btn-hover-lift {
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
@@ -228,17 +352,6 @@
   }
   .btn-hover-lift:active {
     transform: translateY(0) scale(0.95);
-  }
-
-  /* ── ADD THESE: Icon micro-interactions ──────────────────────────────── */
-  .icon-hover-scale {
-    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  }
-  .icon-hover-scale:hover {
-    transform: scale(1.1);
-  }
-  .icon-hover-scale:active {
-    transform: scale(0.95);
   }
 
   /* Home feature */
@@ -259,11 +372,11 @@
   }
 
   /* Home feature: date picker */
-  /* ─── Shell (positioning context for the popover) ─────────────────────────────
+  /*  Shell (positioning context for the popover) 
    Sits inside the hero search bar's "When" cell, which is already
    `position: relative` via the flex layout. We make the shell relative
    so the popover can absolute-position itself below.
-  ────────────────────────────────────────────────────────────────────────────── */
+   */
 
   .date-picker-shell {
     position: relative;
@@ -273,23 +386,10 @@
     z-index: 40;
   }
 
-  /* ─── Trigger ─────────────────────────────────────────────────────────────────
+  /*  Trigger 
     Mirrors the visual style of the "Where" input cell - icon + label + value.
     No native button chrome; we paint our own focus ring.
-  ────────────────────────────────────────────────────────────────────────────── */
-
-  /* .date-picker-trigger-row {
-    display: flex;
-    align-items: center;
-    width: 100%;
-    border-left: 1px solid rgba(26, 31, 60, 0.1);
-    transition: background 0.15s ease;
-  } */
-
-  .date-picker-trigger-row--open {
-    background: rgba(26, 31, 60, 0.03);
-  }
-
+   */
   .date-picker-trigger {
     display: flex;
     align-items: center;
@@ -374,10 +474,10 @@
     margin: 0.25rem 0 0 1.25rem;
   }
 
-  /* ─── Popover ─────────────────────────────────────────────────────────────────
+  /*  Popover 
     Absolute-positioned below the trigger. On desktop it spans wide enough
     for two months. On mobile it collapses to a single month and is centered.
-  ────────────────────────────────────────────────────────────────────────────── */
+   */
 
   .date-picker-popover {
     position: fixed !important;
@@ -397,6 +497,8 @@
     width: 680px;
     max-width: calc(100vw - 2rem);
     top: 30vh !important; /* position relative to viewport, not the trigger */
+    max-height: calc(100vh - 30vh - 1.5rem);
+    overflow-y: auto;
   }
 
   @supports ((-webkit-backdrop-filter: blur(20px)) or (backdrop-filter: blur(20px))) {
@@ -455,15 +557,11 @@
 
       padding: 1rem 0 env(safe-area-inset-bottom, 0px);
     }
-
-    .date-picker-trigger-row {
-      border: none;
-    }
   }
 
-  /* ─── Hint text ───────────────────────────────────────────────────────────────
+  /*  Hint text 
     Instruction line above the calendar - updates as the user picks dates.
-  ────────────────────────────────────────────────────────────────────────────── */
+   */
 
   .date-picker-hint {
     font-size: 0.8125rem;
@@ -473,10 +571,17 @@
     line-height: 1.4;
   }
 
-  /* ─── react-day-picker overrides ──────────────────────────────────────────────
+  @media (max-width: 720px) {
+    .date-picker-hint {
+      padding: 0 2.25rem;
+      margin-bottom: 0.75rem;
+    }
+  }
+
+  /*  react-day-picker overrides 
     We pass custom classNames into DayPicker so every element is ours to style.
     No third-party stylesheet needed - zero specificity battles.
-  ────────────────────────────────────────────────────────────────────────────── */
+   */
 
   /* Root wrapper */
   .rdp-root {
@@ -592,12 +697,12 @@
     grid-template-columns: repeat(7, 1fr);
   }
 
-  /* ─── Day cell ────────────────────────────────────────────────────────────────
+  /*  Day cell 
     Each day is a cell that spans the full column width. The background color
     (range highlight) is applied to the cell, while the circle (selected state)
     is applied to the inner button. This is the Airbnb trick that makes the
     range span look like a continuous colored bar with rounded pill ends.
-  ────────────────────────────────────────────────────────────────────────────── */
+   */
 
   .rdp-day {
     position: relative;
@@ -627,14 +732,14 @@
     background: transparent;
   }
 
-  /* ─── Day button (the clickable circle) ───────────────────────────────────── */
+  /*  Day button (the clickable circle)  */
 
   .rdp-day-btn {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 2.25rem;
-    height: 2.25rem;
+    width: min(2.25rem, calc((100vw - 3.5rem) / 7));
+    height: min(2.25rem, calc((100vw - 3.5rem) / 7));
     margin: 0.125rem auto;
     border-radius: 50%;
     border: none;
@@ -701,9 +806,9 @@
     opacity: 0.9;
   }
 
-  /* ─── Footer ─────────────────────────────────────────────────────────────────
+  /*  Footer 
     Clear + Apply buttons at the bottom of the popover - Airbnb pattern.
-  ────────────────────────────────────────────────────────────────────────────── */
+   */
 
   .date-picker-footer {
     display: flex;
@@ -757,52 +862,24 @@
     cursor: not-allowed;
   }
 
-  /* ─── CategoryStrip: seamless marquee ────────────────────────────────────────
-   Add these into your existing @layer utilities block in globals.css.
-
-   WHY translateX(-50%) works perfectly:
-   The track contains [set-A][set-B]. Both sets are identical, so the track's
-   total width is exactly 2× one set. Animating to -50% scrolls exactly one
-   set width - landing on the frame where set-B looks exactly like set-A did
-   at 0%. The browser resets to 0% invisibly. One category exits left,
-   the next enters from the right of set-B. No jump.
-
-   The `gap` between items is 1rem (gap-4). Because both sets share the same
-   gap styling, the visual rhythm is continuous across the seam.
-────────────────────────────────────────────────────────────────────────────── */
-
-  .category-marquee-track {
-    /* GPU-composited transform - no layout or paint cost per frame */
-    will-change: transform;
-    animation: category-marquee 22s linear infinite;
-  }
-
-  @keyframes category-marquee {
-    0% {
-      transform: translateX(0);
+  @media (max-width: 720px) {
+    .date-picker-footer {
+      background: rgba(255, 255, 255, 0.92);
+      -webkit-backdrop-filter: blur(14px);
+      backdrop-filter: blur(14px);
+      border-top: 1px solid rgba(26, 31, 60, 0.06);
+      margin-top: 1rem;
     }
-    100% {
-      transform: translateX(-50%);
+
+    [data-theme="dark"] .date-picker-footer {
+      background: color-mix(in srgb, var(--color-bg-secondary) 92%, transparent);
+      border-top-color: rgba(245, 240, 230, 0.08);
     }
   }
 
-  /* Pause on hover (desktop fallback, low cost) */
-  .category-marquee-track:hover {
-    animation-play-state: paused;
-  }
-
-  /* ── Reduced motion: freeze the track, let user scroll manually ───────────── */
-  @media (prefers-reduced-motion: reduce) {
-    .category-marquee-track {
-      animation: none;
-      /* Allow manual touch-scroll on the outer overflow-hidden container instead */
-      /* The outer div would need overflow-x: auto for this to work */
-    }
-  }
-
-  /* ─── Dark mode ───────────────────────────────────────────────────────────────
+  /*  Dark mode 
     Respects your existing [data-theme="dark"] setup.
-  ────────────────────────────────────────────────────────────────────────────── */
+   */
 
   [data-theme="dark"] .date-picker-popover {
     background: color-mix(in srgb, var(--color-bg-secondary) 88%, transparent);
@@ -811,10 +888,6 @@
 
   [data-theme="dark"] .date-picker-trigger {
     border-left-color: transparent;
-  }
-
-  [data-theme="dark"] .date-picker-trigger-row {
-    border-left-color: rgba(245, 240, 230, 0.1);
   }
 
   [data-theme="dark"] .rdp-root {
@@ -856,12 +929,12 @@
   }
 
   /* Home feature: hero spotlights */
-  /* ─── Shared spotlight base ───────────────────────────────────────────────────
+  /*  Shared spotlight base 
     Circles are ~3× the previous size. Center sits on or just outside the hero
     boundary so overflow: hidden clips them into a crescent at the edges -
     this is what creates the "hugging" effect.
     will-change: transform = GPU compositor layer, zero paint cost per frame.
-  ────────────────────────────────────────────────────────────────────────────── */
+   */
 
   .hero-spotlight {
     position: absolute;
@@ -871,7 +944,7 @@
     filter: blur(80px);
   }
 
-  /* ─── Spotlight 1: Gold ───────────────────────────────────────────────────────
+  /*  Spotlight 1: Gold 
     Size: ~3× previous (38vw → 110vw), capped so it stays a "spotlight" not a flood.
     
     START: center sits just outside the top-right corner.
@@ -894,7 +967,7 @@
     animation-direction: alternate paired with a 50% keyframe at the far point
     would also work, but explicit mirrored keyframes give more control over easing
     at the turn-around point
-  ────────────────────────────────────────────────────────────────────────────── */
+   */
 
   .hero-spotlight--gold {
     width: clamp(300px, 110vw, 600px);
@@ -929,7 +1002,7 @@
     animation: orbit-gold 12s ease-in-out infinite;
   }
 
-  /* ─── Spotlight 2: Ember ──────────────────────────────────────────────────────
+  /*  Spotlight 2: Ember 
     START: slightly to the right of the bottom-left corner (inside the hero).
     
     PATH (then retraces):
@@ -941,7 +1014,7 @@
     
     animation-delay: -6s starts it mid-cycle so gold and ember are never
     at the same vertical position simultaneously from the very first frame.
-  ────────────────────────────────────────────────────────────────────────────── */
+   */
 
   .hero-spotlight--ember {
     width: clamp(300px, 110vw, 600px);
@@ -974,7 +1047,7 @@
     animation-delay: -5s;
   }
 
-  /* ─── Keyframes ───────────────────────────────────────────────────────────────
+  /*  Keyframes 
 
     GOLD - right edge, top to bottom and back.
     
@@ -991,7 +1064,7 @@
     75% → 50% → 25% → 0% creating the retrace effect within a single
     forward-playing animation loop
 
-  ────────────────────────────────────────────────────────────────────────────── */
+   */
 
   @keyframes orbit-gold {
     0% {
@@ -1029,7 +1102,7 @@
     }
   }
 
-  /* ─────────────────────────────────────────────────────────────────────────────
+  /* 
 
     EMBER - left edge, bottom to top and back
     
@@ -1042,7 +1115,7 @@
       75%  slightly right of top-left:    pull right a bit       → (8vw,  -100vh)
       100% = 0% to complete the retrace.
 
-  ────────────────────────────────────────────────────────────────────────────── */
+   */
 
   @keyframes orbit-ember {
     0% {
@@ -1080,7 +1153,7 @@
     }
   }
 
-  /* ─── Reduced motion ──────────────────────────────────────────────────────── */
+  /*  Reduced motion  */
 
   @media (prefers-reduced-motion: reduce) {
     .hero-spotlight {

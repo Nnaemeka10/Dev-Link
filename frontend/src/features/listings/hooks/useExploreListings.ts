@@ -5,6 +5,8 @@ import type { ExploreListing, ExploreListingKind } from "../explore.types";
 
 export interface ExploreListingsParams {
     kind: "hall" | "service";
+    coverage?: string;
+    flexible?: number;
     location?: string;
     capacity?: number;
     dateFrom?: string;
@@ -50,7 +52,8 @@ export function useExploreListings(params: ExploreListingsParams) {
       const search = new URLSearchParams();
       search.set("kind", kind);
       search.set("limit", "24");
-
+      if (searchParams.coverage) search.set("coverage", searchParams.coverage);
+      if (searchParams.flexible) search.set("flexible", String(searchParams.flexible));
       if (searchParams.location) search.set("location", searchParams.location);
       if (searchParams.capacity) search.set("capacity", String(searchParams.capacity));
       if (searchParams.dateFrom) search.set("dateFrom", searchParams.dateFrom);

@@ -15,7 +15,7 @@ import MobileDock from "@/components/layout/MobileDock";
 import { useSavedListings, useRemoveSavedListing } from "@/features/listings/hooks/useSavedListings";
 import type { SavedListingCard } from "@/features/listings/listings.types";
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+//  Types 
 
 export type SavedCategory = "halls" | "services";
 
@@ -33,7 +33,7 @@ export interface SavedListing {
   tags?: string[];
 }
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+//  Helpers 
 
 function formatNaira(n: number): string {
   if (n >= 1_000_000) return `₦${(n / 1_000_000).toFixed(1).replace(/\.0$/, "")}M`;
@@ -59,7 +59,7 @@ function mapToSavedListing(item: SavedListingCard): SavedListing {
   };
 }
 
-// ─── Listing card ─────────────────────────────────────────────────────────────
+//  Listing card 
 
 interface CardProps {
   listing: SavedListing;
@@ -178,7 +178,7 @@ function SavedCard({ listing, index, onRemove }: CardProps) {
   );
 }
 
-// ─── Empty state ──────────────────────────────────────────────────────────────
+//  Empty state 
 
 function EmptyState({ category }: { category: SavedCategory }) {
   return (
@@ -207,7 +207,7 @@ function EmptyState({ category }: { category: SavedCategory }) {
   );
 }
 
-// ─── Content ──────────────────────────────────────────────────────────────────
+//  Content 
 
 interface SavedContentProps {
   category: SavedCategory;

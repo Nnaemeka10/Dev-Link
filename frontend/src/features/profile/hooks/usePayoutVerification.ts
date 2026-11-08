@@ -25,7 +25,7 @@ export interface PayoutMethodPayload {
   idNumber: string;
 }
 
-// ─── API Fetchers ──────────────────────────────────────────────────────────
+//  API Fetchers 
 
 async function fetchBanks(): Promise<BankDirectoryItem[]> {
   return apiFetch<BankDirectoryItem[]>("/api/vendor/verification/banks", { method: "GET" });

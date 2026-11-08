@@ -52,7 +52,7 @@ function MyListingsContent() {
   return (
     <>
     <div className="max-w-6xl mx-auto py-8">
-      {/* ── Page Header ─────────────────────────────────────────────────── */}
+      {/*  Page Header  */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-12 animate-fade-slide-up">
         <div>
           <h1 className="text-4xl font-black font-headline text-text-primary tracking-tight">
@@ -71,7 +71,7 @@ function MyListingsContent() {
         </button>
       </div>
 
-      {/* ── Stats ───────────────────────────────────────────────────────── */}
+      {/*  Stats  */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 mb-12">
         <div className="bg-surface-low p-5 md:p-6 rounded-2xl animate-fade-slide-up stagger-1 hover:bg-surface-high transition-all duration-300 cursor-default">
           <p className="text-text-muted text-xs font-bold uppercase tracking-widest mb-1">Total Listings</p>
@@ -96,7 +96,7 @@ function MyListingsContent() {
         </div>
       </div>
 
-      {/* ── Listings Grid ───────────────────────────────────────────────── */}
+      {/*  Listings Grid  */}
       {!listings || listings.length === 0 ? (
         <div className="py-24 flex flex-col items-center justify-center bg-surface-base rounded-3xl border border-border-light text-center px-4 animate-fade-slide-up stagger-5">
           <h2 className="text-xl font-bold font-headline mb-2">No listings yet</h2>
@@ -206,7 +206,7 @@ function MyListingsContent() {
           );
         })}
 
-          {/* ── Create New Card ──────────────────────────────────────────── */}
+          {/*  Create New Card  */}
           <div className="border-2 border-dashed border-border-light rounded-2xl flex flex-col items-center justify-center p-12 hover:bg-surface-low transition-all duration-500 group cursor-pointer animate-fade-slide-up stagger-7 hover:border-accent-primary/50">
             <div className="w-16 h-16 rounded-full bg-accent-tint flex items-center justify-center mb-6 group-hover:scale-110 group-hover:bg-accent-glow transition-all duration-500">
               <Plus className="w-8 h-8 text-accent-primary transition-transform duration-500 group-hover:rotate-90" />

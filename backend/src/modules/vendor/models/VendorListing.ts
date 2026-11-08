@@ -367,9 +367,9 @@ async processDraftPayload(listingId: string, payload: any): Promise<void> {
                 // pkg.price arrives in KOBO (frontend ×100); service_packages.price is NAIRA
                 const res = await client.query(
                     `INSERT INTO service_packages
-                        (listing_id, name, price, description, is_popular, sort_order)
-                     VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
-                    [listingId, pkg.name, Math.round(pkg.price / 100), pkg.description ?? null, !!pkg.isPopular, i]
+                        (listing_id, name, price_kobo, description, is_popular, sort_order)
+                    VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
+                    [listingId, pkg.name, Math.round(pkg.price), pkg.description ?? null, !!pkg.isPopular, i]
                 );
                 const packageId = res.rows[0].id;
 
@@ -383,6 +383,37 @@ async processDraftPayload(listingId: string, payload: any): Promise<void> {
                         `INSERT INTO package_features (package_id, text, sort_order)
                          VALUES ${perkValues.join(', ')}`,
                         perkParams
+                    );
+                }
+            }
+        }
+
+        // 5.5 Service coverage areas - listing_service_areas
+        //     statewide  - one row per state (city = state name keeps NOT NULL happy
+        //                  and still matches both `lsa.state ILIKE` and `lsa.city ILIKE`)
+        //     lga mode   - one row per covered LGA (state's LGAs minus deselected)
+        await client.query(`DELETE FROM listing_service_areas WHERE listing_id = $1`, [listingId]);
+        if (category === 'service' && details?.serviceLocation) {
+            const sl = details.serviceLocation;
+            for (const stateId of sl.coverageStateIds ?? []) {
+                const stateName = await this._resolveStateName(client, stateId);
+                if (!stateName) continue;
+
+                if (sl.coverageMode === 'statewide') {
+                    await client.query(
+                        `INSERT INTO listing_service_areas (listing_id, city, state, country)
+                        VALUES ($1, $2, $2, 'Nigeria')`,
+                        [listingId, stateName]
+                    );
+                } else {
+                    const deselected = sl.deselectedLgaIdsByState?.[stateId] ?? [];
+                    await client.query(
+                        `INSERT INTO listing_service_areas (listing_id, city, state, country)
+                        SELECT $1, l.name, $2, 'Nigeria'
+                          FROM nigeria_lgas l
+                          WHERE l.state_id = $3
+                            AND NOT (l.id = ANY($4::text[]))`,
+                        [listingId, stateName, stateId, deselected]
                     );
                 }
             }

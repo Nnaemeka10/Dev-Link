@@ -12,6 +12,7 @@ import { useExploreListings } from "../hooks/useExploreListings";
 import { DesktopCompareBar, MobileCompareBar } from "../components/explore/CompareBars";
 import { DesktopExploreCard, MobileExploreCard } from "../components/explore/ExploreListingCards";
 import { DesktopExploreHeader, DesktopResultsHeader } from "../components/explore/DesktopExploreHeader";
+import { SERVICE_CATEGORIES } from "@/features/search";
 
 import MobileExploreHeader, { MobileResultsHeader } from "../components/explore/MobileExploreHeader";
 import { toggleSelection } from "../utils/compareSelection";
@@ -38,14 +39,16 @@ export default function ExploreServices() {
   const verified = searchParams.get("verified") === "true";
   const venueTypes = searchParams.get("venueTypes")?.split(",").filter(Boolean);
   const amenities = searchParams.get("amenities")?.split(",").filter(Boolean);
-
+  const coverage = searchParams.get("coverage") || undefined;
   const role = searchParams.get("role") || undefined;
+  const flexible = searchParams.get("flexible") ? Number(searchParams.get("flexible")) : undefined;
 
   // --- REAL DATA HOOK ---
   const { data, isPending, isError } = useExploreListings({
         kind: "service",
-        location,
+        coverage,
         role,
+        flexible,
         dateFrom,
         dateTo,
         sort,
@@ -79,30 +82,42 @@ export default function ExploreServices() {
 
   const handleSearch = (data: SearchFormData) => {
     startTransition(() => {
-      router.push(buildListingsHref({ category: data.category, location: data.location || undefined, dateFrom: data.dateRange?.from?.toISOString(), dateTo: data.dateRange?.to?.toISOString(), capacity: data.capacity, role: data.role }));
+      router.push(buildListingsHref({
+        category: "services",
+        coverage: data.coverageArea || undefined,
+        role: data.role || undefined,
+        dateFrom: data.dateRange?.from?.toISOString(),
+        dateTo: data.dateRange?.to?.toISOString(),
+        flexible: data.flexible || undefined,
+      }));
     });
   };
 
   const selectedDateRange = useWatch({ control: form.control, name: "dateRange" });
-  const selectedLocation = useWatch({ control: form.control, name: "location" });
-  const selectedCapacity = useWatch({ control: form.control, name: "capacity" });
+  const selectedCoverage = useWatch({ control: form.control, name: "coverageArea" });
+  const selectedRole = useWatch({ control: form.control, name: "role" });
+  const selectedFlexible = useWatch({ control: form.control, name: "flexible" });
+
+  const roleLabel = SERVICE_CATEGORIES.find((c) => c.id === selectedRole)?.label;
 
   const mobileDateLabel = (() => {
     if (!selectedDateRange?.from) return "";
-    if (!selectedDateRange.to) return formatDateLabel(selectedDateRange.from);
-    return `${formatDateLabel(selectedDateRange.from)} - ${formatDateLabel(selectedDateRange.to)}`;
+    const base = !selectedDateRange.to
+      ? formatDateLabel(selectedDateRange.from)
+      : `${formatDateLabel(selectedDateRange.from)} - ${formatDateLabel(selectedDateRange.to)}`;
+    return selectedFlexible ? `${base} ±${selectedFlexible}d` : base;
   })();
 
   const mobileSummaryLines = (() => {
     const lines: string[] = [];
-    if (selectedLocation?.trim()) lines.push(selectedLocation.trim());
-    if (selectedCapacity) lines.push(`${selectedCapacity} guests`);
+    if (selectedCoverage?.trim()) lines.push(selectedCoverage.trim());
+    if (roleLabel) lines.push(roleLabel);
     if (mobileDateLabel) lines.push(mobileDateLabel);
     return lines;
   })();
 
   const resultsCount = listings.length;
-  const locationLabel = location || "Nigeria";
+  const locationLabel = coverage || "Nigeria";
 
   return (
     <main className="min-h-screen bg-bg-primary text-[#252423]">
@@ -162,7 +177,7 @@ export default function ExploreServices() {
               )}
               {!isPending && !isError && listings.length === 0 && (
                 <div className="flex flex-col items-center py-20 text-center">
-                    <p className="text-lg font-bold text-[#2A2826]">No halls found</p>
+                    <p className="text-lg font-bold text-[#2A2826]">No services found</p>
                     <p className="mt-1 text-sm text-[#5E6588]">Try adjusting your search filters.</p>
                 </div>
               )}

@@ -19,6 +19,8 @@ export interface ListingSearchParams {
   verified?: boolean;
   venueTypes?: string[];
   amenities?: string[];
+  coverage?: string;
+  flexible?: number;
 }
 
 type RawSearchParams = Record<string, string | string[] | undefined>;
@@ -81,6 +83,10 @@ export function normalizeListingSearchParams(raw: RawSearchParams): ListingSearc
     verified: takeFirst(raw.verified) === "true",
     venueTypes: venueTypes ? venueTypes.split(",").filter(Boolean) : undefined,
     amenities: amenities ? amenities.split(",").filter(Boolean) : undefined,
+    coverage: category === "services" ? sanitizeText(takeFirst(raw.coverage)) : undefined,
+    flexible: [1, 2].includes(parseInt(takeFirst(raw.flexible) ?? "0", 10))
+      ? parseInt(takeFirst(raw.flexible)!, 10)
+      : undefined,
   };
 }
 
@@ -104,6 +110,8 @@ export function buildListingsHref(params: ListingSearchParams): string {
   if (params.verified) search.set("verified", "true");
   if (params.venueTypes && params.venueTypes.length > 0) search.set("venueTypes", params.venueTypes.join(","));
   if (params.amenities && params.amenities.length > 0) search.set("amenities", params.amenities.join(","));
+  if (params.coverage) search.set("coverage", params.coverage);
+  if (params.flexible) search.set("flexible", params.flexible.toString());
 
   return `/listings?${search.toString()}`;
 }

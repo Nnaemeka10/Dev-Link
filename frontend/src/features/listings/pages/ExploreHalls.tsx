@@ -39,10 +39,12 @@ export default function ExploreHalls() {
     const verified = searchParams.get("verified") === "true";
     const venueTypes = searchParams.get("venueTypes")?.split(",").filter(Boolean);
     const amenities = searchParams.get("amenities")?.split(",").filter(Boolean);
+    const flexible = searchParams.get("flexible") ? Number(searchParams.get("flexible")) : undefined;
 
-        // ── Fetch listings with search params ────────────────────────────
+        // Fetch listings with search params   
     const { data, isPending, isError } = useExploreListings({
         kind: "hall",
+        flexible,
         location,
         capacity: capacity && capacity > 0 ? capacity : undefined,
         dateFrom,
@@ -79,25 +81,28 @@ export default function ExploreHalls() {
 
   const handleSearch = (data: SearchFormData) => {
     startTransition(() => {
-      router.push(buildListingsHref({ 
-        category: data.category, 
-        location: data.location || undefined, 
-        dateFrom: data.dateRange?.from?.toISOString(), 
-        dateTo: data.dateRange?.to?.toISOString(), 
-        capacity: data.capacity, 
-        role: data.role
-       }));
+      router.push(buildListingsHref({
+        category: "halls",
+        location: data.location || undefined,
+        dateFrom: data.dateRange?.from?.toISOString(),
+        dateTo: data.dateRange?.to?.toISOString(),
+        flexible: data.flexible || undefined,
+        capacity: data.capacity,
+      }));
     });
   };
 
   const selectedDateRange = useWatch({ control: form.control, name: "dateRange" });
   const selectedLocation = useWatch({ control: form.control, name: "location" });
   const selectedCapacity = useWatch({ control: form.control, name: "capacity" });
+  const selectedFlexible = useWatch({ control: form.control, name: "flexible" });
 
   const mobileDateLabel = (() => {
     if (!selectedDateRange?.from) return "";
-    if (!selectedDateRange.to) return formatDateLabel(selectedDateRange.from);
-    return `${formatDateLabel(selectedDateRange.from)} - ${formatDateLabel(selectedDateRange.to)}`;
+    const base = !selectedDateRange.to
+      ? formatDateLabel(selectedDateRange.from)
+      : `${formatDateLabel(selectedDateRange.from)} - ${formatDateLabel(selectedDateRange.to)}`;
+    return selectedFlexible ? `${base} ±${selectedFlexible}d` : base;
   })();
 
   const mobileSummaryLines = (() => {

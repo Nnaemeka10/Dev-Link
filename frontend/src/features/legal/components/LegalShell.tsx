@@ -96,7 +96,7 @@ export default function LegalShell({ doc }: LegalShellProps) {
       className="bg-bg-primary motion-safe:animate-fade-in"
       aria-label={doc.title}
     >
-      {/* ── Hero band ──────────────────────────────────────────────────── */}
+      {/*  Hero band  */}
       <header className="bg-linear-to-b from-bg-tertiary to-bg-primary px-4 pb-10 pt-6 md:px-8 md:pt-10 lg:px-12">
         <div className="mx-auto max-w-6xl">
           <Link
@@ -122,7 +122,7 @@ export default function LegalShell({ doc }: LegalShellProps) {
         </div>
       </header>
 
-      {/* ── Body: sticky TOC + content column ──────────────────────────── */}
+      {/*  Body: sticky TOC + content column  */}
       <div className="px-4 pb-20 pt-4 md:px-8 lg:px-12">
         <div className="mx-auto grid max-w-6xl gap-10 lg:grid-cols-[220px_minmax(0,1fr)] lg:gap-14">
           {/* Desktop TOC */}
@@ -201,7 +201,7 @@ export default function LegalShell({ doc }: LegalShellProps) {
               </section>
             ))}
 
-            {/* ── Still need help ──────────────────────────────────────── */}
+            {/*  Still need help  */}
             <div className="mt-12 rounded-card border border-[#F1E5D5] bg-white p-6 shadow-card md:p-8">
               <div className="flex items-center gap-3">
                 <span className="flex h-10 w-10 items-center justify-center rounded-full bg-accent-tint text-accent-primary">

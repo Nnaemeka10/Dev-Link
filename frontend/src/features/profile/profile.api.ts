@@ -7,7 +7,7 @@ import type {
   UpdateProfilePayload,
 } from "./profile.types";
 
-// ─── Profile ──────────────────────────────────────────────────────────────────
+//  Profile 
 
 export async function fetchProfile(): Promise<ProfileResponse> {
   return apiFetch<ProfileResponse>("/api/profile", { method: "GET" });
@@ -20,7 +20,7 @@ export async function updateProfile(payload: UpdateProfilePayload): Promise<Prof
   });
 }
 
-// ─── Avatar Upload Signature ─────────────────────────────────────────────────
+//  Avatar Upload Signature 
 
 export async function fetchAvatarSignature(): Promise<{
   signature: string;
@@ -32,13 +32,13 @@ export async function fetchAvatarSignature(): Promise<{
   return apiFetch("/api/profile/avatar/signature", { method: "GET" });
 }
 
-// ─── Bookings ────────────────────────────────────────────────────────────────
+//  Bookings 
 
 export async function fetchBookings(): Promise<BookingResponse[]> {
   return apiFetch<BookingResponse[]>("/api/profile/bookings", { method: "GET" });
 }
 
-// ─── Payment Methods ─────────────────────────────────────────────────────────
+//  Payment Methods 
 
 export async function fetchPaymentMethods(): Promise<PaymentMethodResponse[]> {
   return apiFetch<PaymentMethodResponse[]>("/api/profile/payment-methods", { method: "GET" });
@@ -52,7 +52,7 @@ export async function removePaymentMethod(authCode: string): Promise<void> {
   return apiFetch(`/api/profile/payment-methods/${encodeURIComponent(authCode)}`, { method: "DELETE" });
 }
 
-// ─── Notifications ───────────────────────────────────────────────────────────
+//  Notifications 
 
 export async function updateNotifications(
   payload: Partial<NotificationSettings>
@@ -63,7 +63,7 @@ export async function updateNotifications(
   });
 }
 
-// ─── Security ────────────────────────────────────────────────────────────────
+//  Security 
 
 export async function changePassword(payload: {
   currentPassword: string;

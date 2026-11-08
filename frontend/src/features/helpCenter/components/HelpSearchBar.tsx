@@ -15,7 +15,7 @@ export default function HelpSearchBar({ value, onChange }: HelpSearchBarProps) {
         type="search"
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        placeholder="Search help articles — try “refund” or “escrow”"
+        placeholder="Search help articles , try “refund” or “escrow”"
         aria-label="Search help articles"
         className="w-full rounded-full border border-[#F1E5D5] bg-white py-4 pl-14 pr-12 text-sm text-text-primary shadow-card outline-none transition-shadow placeholder:text-text-primary/40 focus:shadow-card-hover focus:ring-2 focus:ring-accent-primary/40 [&::-webkit-search-cancel-button]:hidden"
       />

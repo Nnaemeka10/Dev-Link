@@ -22,7 +22,7 @@ import { usePathname } from "next/navigation";
 
 type ProfileState = ReturnType<typeof useProfile>;
 
-// ─── Icons (inline SVG helpers) ───────────────────────────────────────────────
+//  Icons (inline SVG helpers) 
 
 const ChevronRight = () => (
   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -36,7 +36,7 @@ const BackArrow = () => (
   </svg>
 );
 
-// ─── Shared Atoms ─────────────────────────────────────────────────────────────
+//  Shared Atoms 
 
 function SectionHeader({
   icon,
@@ -114,7 +114,7 @@ function Toggle({
   );
 }
 
-// ─── Inline Edit Field ────────────────────────────────────────────────────────
+//  Inline Edit Field 
 
 function InlineEditField({
   label,
@@ -220,7 +220,7 @@ function InlineEditField({
   );
 }
 
-// ─── Payment Drawer ───────────────────────────────────────────────────────────
+//  Payment Drawer 
 
 function PaymentDrawer({
   open,
@@ -374,7 +374,7 @@ function PaymentDrawer({
   );
 }
 
-// ─── Bookings Section ─────────────────────────────────────────────────────────
+//  Bookings Section 
 
 type BookingTab = "pending" | "past";
 
@@ -556,7 +556,7 @@ function BookingsSection({ bookings }: { bookings: Booking[] }) {
   );
 }
 
-// ─── Main Profile Content (shared across all breakpoints) ─────────────────────
+//  Main Profile Content (shared across all breakpoints) 
 
 function ProfileContent({
   profileState,
@@ -645,7 +645,7 @@ function ProfileContent({
 
   return (
     <div className="max-w-2xl xl:max-w-3xl space-y-10 pb-20">
-      {/* ── Profile Header ────────────────────────────────────────────── */}
+      {/*  Profile Header  */}
       <div className="flex items-center gap-5">
         <div className="relative shrink-0">
           <div className="w-16 h-16 md:w-24 md:h-24 rounded-full overflow-hidden ring-4 ring-white shadow-lg">
@@ -699,7 +699,7 @@ function ProfileContent({
         </div>
       </div>
 
-      {/* ── Personal Information ──────────────────────────────────────── */}
+      {/*  Personal Information  */}
       <section>
         <SectionHeader
           icon={
@@ -848,7 +848,7 @@ function ProfileContent({
       </section>
 
 
-      {/* ── Bookings ──────────────────────────────────────────────────── */}
+      {/*  Bookings  */}
       <section id="bookings">
         <SectionHeader
           icon={
@@ -870,7 +870,7 @@ function ProfileContent({
         </div>
       </section>
 
-      {/* ── Preferences ──────────────────────────────────────────────── */}
+      {/*  Preferences  */}
       <section>
         <SectionHeader
           icon={
@@ -968,7 +968,7 @@ function ProfileContent({
         </div>
       </section>
 
-      {/* ── Security ─────────────────────────────────────────────────── */}
+      {/*  Security  */}
       <section>
         <SectionHeader
           icon={
@@ -1002,7 +1002,7 @@ function ProfileContent({
         </div>
       </section>
 
-      {/* ── Become a Vendor ──────────────────────────────────────────── */}
+      {/*  Become a Vendor  */}
       <section onClick={() => router.push(isVendor ? "/" : "/vendor/create-listing")}>
         <div className={`relative overflow-hidden rounded-3xl p-7 shadow-lg transition-all group cursor-pointer ${
           isVendor 
@@ -1044,7 +1044,7 @@ function ProfileContent({
         </div>
       </section>
 
-      {/* ── Help & Support ────────────────────────────────────────────── */}
+      {/*  Help & Support  */}
       <section>
         <SectionHeader
           icon={
@@ -1078,7 +1078,7 @@ function ProfileContent({
         </div>
       </section>
 
-      {/* ── Legal ────────────────────────────────────────────────────── */}
+      {/*  Legal  */}
       <section>
         <SectionHeader
           icon={
@@ -1110,7 +1110,7 @@ function ProfileContent({
         </div>
       </section>
 
-      {/* ── Account Actions (Log out) ─────────────────────────────────── */}
+      {/*  Account Actions (Log out)  */}
       <section>
         <div className="bg-white rounded-3xl divide-y divide-stone-50 shadow-sm border border-stone-100">
           <button
@@ -1135,7 +1135,7 @@ function ProfileContent({
         </div>
       </section>
 
-      {/* ── Danger Zone ──────────────────────────────────────────────── */}
+      {/*  Danger Zone  */}
       <section className="pb-4">
         <div className="rounded-3xl border border-red-100 bg-red-50/50 p-6">
           <h4 className="text-sm font-bold text-red-500 mb-1">Danger Zone</h4>
@@ -1153,7 +1153,7 @@ function ProfileContent({
         </div>
       </section>
 
-      {/* ── Payment Drawer ────────────────────────────────────────────── */}
+      {/*  Payment Drawer  */}
       <PaymentDrawer
         open={paymentDrawerOpen}
         onClose={() => setPaymentDrawerOpen(false)}
@@ -1178,7 +1178,7 @@ function ProfileContent({
         isUpdating={isUpdatingPayment}
       />
 
-      {/* ── Logout Confirmation Modal ─────────────────────────────────── */}
+      {/*  Logout Confirmation Modal  */}
       {showLogoutConfirm && (
         <>
           <div
@@ -1212,7 +1212,7 @@ function ProfileContent({
         </>
       )}
 
-      {/* ── Deactivate Confirmation Modal ─────────────────────────────── */}
+      {/*  Deactivate Confirmation Modal  */}
       {showDeactivateConfirm && (
         <>
           <div
@@ -1333,7 +1333,7 @@ function DesktopProfileView({ profileState }: { profileState: ProfileState }) {
   );
 }
 
-// ─── Page Export ──────────────────────────────────────────────────────────────
+//  Page Export 
 
 export default function ProfilePage() {
   const profileState = useProfile();

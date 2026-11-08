@@ -23,7 +23,7 @@ function subscribeToHash(onChange: () => void) {
 
 const getHashSnapshot = () => window.location.hash;
 
-// Server has no location.hash — "" keeps the hydration render identical
+// Server has no location.hash , "" keeps the hydration render identical
 // to the server HTML, then React re-renders with the real value.
 const getServerHashSnapshot = () => "";
 
@@ -47,7 +47,7 @@ export default function HelpCategoryPage({ category }: HelpCategoryPageProps) {
     ? hashSlug
     : null;
 
-  // Derived — never stored: user intent > deep link > first article.
+  // Derived , never stored: user intent > deep link > first article.
   const openSlug =
     userSlug !== undefined
       ? userSlug

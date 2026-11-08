@@ -8,7 +8,7 @@ import type {
   UpdateNotificationsBody,
 } from "../types/profile.types.js";
 
-// ─── GET /api/profile ────────────────────────────────────────────────────────
+//  GET /api/profile 
 export const getProfile = async (req: Request, res: Response) => {
   try {
     if (!req.user?.userId) return res.status(401).json({ message: "Unauthorized" });
@@ -21,7 +21,7 @@ export const getProfile = async (req: Request, res: Response) => {
   }
 };
 
-// ─── PATCH /api/profile ──────────────────────────────────────────────────────
+//  PATCH /api/profile 
 export const updateProfile = async (req: Request, res: Response) => {
   try {
     if (!req.user?.userId) return res.status(401).json({ message: "Unauthorized" });
@@ -60,7 +60,7 @@ export const updateProfile = async (req: Request, res: Response) => {
   }
 };
 
-// ─── GET /api/profile/avatar/signature ───────────────────────────────────────
+//  GET /api/profile/avatar/signature 
 export const getAvatarUploadSignature = async (req: Request, res: Response) => {
   try {
     if (!req.user?.userId) return res.status(401).json({ message: "Unauthorized" });
@@ -89,7 +89,7 @@ export const getAvatarUploadSignature = async (req: Request, res: Response) => {
   }
 };
 
-// ─── GET /api/profile/bookings ───────────────────────────────────────────────
+//  GET /api/profile/bookings 
 export const getBookings = async (req: Request, res: Response) => {
   try {
     if (!req.user?.userId) return res.status(401).json({ message: "Unauthorized" });
@@ -102,7 +102,7 @@ export const getBookings = async (req: Request, res: Response) => {
   }
 };
 
-// ─── GET /api/profile/payment-methods ────────────────────────────────────────
+//  GET /api/profile/payment-methods 
 export const getPaymentMethods = async (req: Request, res: Response) => {
   try {
     if (!req.user?.userId) return res.status(401).json({ message: "Unauthorized" });
@@ -115,7 +115,7 @@ export const getPaymentMethods = async (req: Request, res: Response) => {
   }
 };
 
-// ─── PATCH /api/profile/payment-methods/:authCode/default ────────────────────
+//  PATCH /api/profile/payment-methods/:authCode/default 
 export const setDefaultPaymentMethod = async (req: Request, res: Response) => {
   try {
     if (!req.user?.userId) return res.status(401).json({ message: "Unauthorized" });
@@ -136,7 +136,7 @@ export const setDefaultPaymentMethod = async (req: Request, res: Response) => {
   }
 };
 
-// ─── DELETE /api/profile/payment-methods/:authCode ───────────────────────────
+//  DELETE /api/profile/payment-methods/:authCode 
 export const removePaymentMethod = async (req: Request, res: Response) => {
   try {
     if (!req.user?.userId) return res.status(401).json({ message: "Unauthorized" });
@@ -152,7 +152,7 @@ export const removePaymentMethod = async (req: Request, res: Response) => {
   }
 };
 
-// ─── GET /api/profile/notifications ──────────────────────────────────────────
+//  GET /api/profile/notifications 
 export const getNotificationSettings = async (req: Request, res: Response) => {
   try {
     if (!req.user?.userId) return res.status(401).json({ message: "Unauthorized" });
@@ -165,7 +165,7 @@ export const getNotificationSettings = async (req: Request, res: Response) => {
   }
 };
 
-// ─── PATCH /api/profile/notifications ────────────────────────────────────────
+//  PATCH /api/profile/notifications 
 export const updateNotificationSettings = async (req: Request, res: Response) => {
   try {
     if (!req.user?.userId) return res.status(401).json({ message: "Unauthorized" });
@@ -203,7 +203,7 @@ export const updateNotificationSettings = async (req: Request, res: Response) =>
   }
 };
 
-// ─── POST /api/profile/change-password ───────────────────────────────────────
+//  POST /api/profile/change-password 
 export const changePassword = async (req: Request, res: Response) => {
   try {
     if (!req.user?.userId) return res.status(401).json({ message: "Unauthorized" });
@@ -229,7 +229,7 @@ export const changePassword = async (req: Request, res: Response) => {
   }
 };
 
-// ─── DELETE /api/profile ────────────────────────────────────────────────────
+//  DELETE /api/profile 
 export const deactivateAccount = async (req: Request, res: Response) => {
   try {
     if (!req.user?.userId) return res.status(401).json({ message: "Unauthorized" });

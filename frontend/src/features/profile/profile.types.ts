@@ -39,7 +39,7 @@
 //   pushNotifications: boolean;
 //   bookingUpdates: boolean;
 // }
-// ─── Backend Response Shapes ──────────────────────────────────────────────────
+//  Backend Response Shapes 
 
 export interface NotificationSettings {
   emailPromotions: boolean;
@@ -85,7 +85,7 @@ export interface PaymentMethodResponse {
   isDefault: boolean;
 }
 
-// ─── UI-Layer Shapes (derived from responses) ────────────────────────────────
+//  UI-Layer Shapes (derived from responses) 
 
 export interface UserProfile {
   fullName: string;
@@ -120,7 +120,7 @@ export interface Booking {
   ticketCount: number;
 }
 
-// ─── Request Payloads ────────────────────────────────────────────────────────
+//  Request Payloads 
 
 export interface UpdateProfilePayload {
   firstName?: string;

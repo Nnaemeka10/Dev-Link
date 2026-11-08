@@ -12,14 +12,18 @@ export { parseSearchParams, buildSearchString, buildSearchParams, buildListingsU
 // Hooks
 export { useSearchForm } from "./hooks/useSearchForm";
 export { useSearchUrlSync } from "./hooks/useSearchUrlSync";
+export { useScrollCollapse } from "./hooks/useScrollCollapse";
 
 // Lib
-export { SERVICE_CATEGORIES } from "./lib/constants";
+export { SERVICE_CATEGORIES, SEARCH_TABS, POPULAR_STATES, FLEX_OPTIONS } from "./lib/constants";
+export { saveLastSearch, loadLastSearch } from "./lib/lastSearch";
 
 // Components
 export { default as DesktopSearchBar } from "./components/DesktopSearchBar";
 export { default as MobileSearchModal } from "./components/MobileSearchModal";
 export { default as MobileSearchTrigger } from "./components/MobileSearchTrigger";
+export { default as CollapsedSearchPill } from "./components/CollapsedSearchPill";
+export { default as WhereCombobox } from "./components/WhereCombobox";
 export { CapacityDropdown } from "./components/CapacityDropdown";
 export { RoleDropdown } from "./components/RoleDropdown";
-export { DateRangePicker } from "./components/DateRange";
+export { DateRangePicker, formatTriggerLabel } from "./components/DateRange";

@@ -21,7 +21,7 @@ export function initializeSocketIO(httpServer: HTTPServer) {
     transports: ["websocket", "polling"],
   });
 
-  // Redis Adapter Setup ─────────────────────────────────────
+  // Redis Adapter Setup 
   // We check if Redis is configured. If not, we fall back to in-memory.
   // This allows horizontal scaling later without code changes.
   if (ENV.REDIS_URL) {

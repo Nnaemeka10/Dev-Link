@@ -8,7 +8,7 @@ import { ChevronLeft, ChevronRight, X, ChevronUp, Calendar } from "lucide-react"
 import type { DateRange } from "@/features/search/utils/searchSchema"; 
 import { usePricingQuote } from "@/features/bookings/hooks/usePricingQuote";
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+//  Types 
 
 interface MobileBookingDockProps {
   listingId: string;
@@ -21,7 +21,7 @@ interface MobileBookingDockProps {
   packageId?: string
 }
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+//  Helpers 
 
 function fmt(n: number): string {
   return `₦${n.toLocaleString("en-NG")}`;
@@ -37,7 +37,7 @@ function daysBetween(a: Date, b: Date): number {
   return Math.max(1, Math.round(Math.abs(b.getTime() - a.getTime()) / 86_400_000));
 }
 
-// ─── Inline calendar (no trigger button - just the DayPicker + footer) ────────
+//  Inline calendar (no trigger button - just the DayPicker + footer) 
 
 interface InlineCalendarProps {
   value: DayPickerRange | undefined;
@@ -121,7 +121,7 @@ function InlineCalendar({ value, onChange, onApply, onClear }: InlineCalendarPro
   );
 }
 
-// ─── Price detail sheet ───────────────────────────────────────────────────────
+//  Price detail sheet 
 
 interface PriceDetailSheetProps {
   listingId: string;
@@ -247,7 +247,7 @@ function PriceDetailSheet({
   );
 }
 
-// ─── Main component ───────────────────────────────────────────────────────────
+//  Main component 
 
 type Sheet = "none" | "price" | "calendar";
 
@@ -272,7 +272,7 @@ export function MobileBookingDock({
     ? daysBetween(dateRange.from, dateRange.to)
     : null;
 
-  // ── Handlers ────────────────────────────────────────────────────────────────
+  //  Handlers 
 
   const openPrice    = () => setSheet("price");
   const openCalendar = () => setSheet("calendar");
@@ -298,7 +298,7 @@ export function MobileBookingDock({
     openCalendar();
   };
 
-  // ── Spring variants ──────────────────────────────────────────────────────────
+  //  Spring variants 
 
   const sheetVariants = {
     hidden:  { y: "100%" },
@@ -311,13 +311,13 @@ export function MobileBookingDock({
     duration: 0.42,
   };
 
-  // ─── Portal guard ─────────────────────────────────────────────────────────
+  //  Portal guard 
 
   const portalTarget = typeof document !== "undefined" ? document.body : null;
 
   return (
     <>
-      {/* ── Dock bar (always visible) ─────────────────────────────────────── */}
+      {/*  Dock bar (always visible)  */}
       <div className="fixed inset-x-0 bottom-20 z-40 rounded-t-4xl border-t border-[#EFE8DE] bg-white px-5 py-4 shadow-[0_-8px_32px_rgba(36,28,18,0.10)]">
         <div className="flex items-center justify-between gap-4">
 
@@ -353,7 +353,7 @@ export function MobileBookingDock({
         </div>
       </div>
 
-      {/* ── Sheets - portalled to body ───────────────────────────────────────── */}
+      {/*  Sheets - portalled to body  */}
       {portalTarget && createPortal(
         <AnimatePresence>
           {sheet !== "none" && (
@@ -390,7 +390,7 @@ export function MobileBookingDock({
                   <div className="h-1 w-10 rounded-full bg-[#E8DDD2]" />
                 </div> */}
 
-                {/* ── Price detail sheet ──────────────────────────────────── */}
+                {/*  Price detail sheet  */}
                 {sheet === "price" && (
                   <PriceDetailSheet
                     listingId={listingId}
@@ -405,7 +405,7 @@ export function MobileBookingDock({
                   />
                 )}
 
-                {/* ── Calendar sheet ──────────────────────────────────────── */}
+                {/*  Calendar sheet  */}
                 {sheet === "calendar" && (
                   <div className="flex flex-col">
                     {/* Calendar header */}

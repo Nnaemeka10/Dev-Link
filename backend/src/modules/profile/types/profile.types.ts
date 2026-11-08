@@ -1,4 +1,4 @@
-// ─── Request Payloads ────────────────────────────────────────────────────────
+//  Request Payloads 
 
 export interface UpdateProfileBody {
   firstName?: string;
@@ -21,7 +21,7 @@ export interface UpdateNotificationsBody {
   bookingUpdates?: boolean;
 }
 
-// ─── Response Shapes ─────────────────────────────────────────────────────────
+//  Response Shapes 
 
 export interface ProfileResponse {
   id: number;
@@ -43,7 +43,7 @@ export interface NotificationSettingsResponse {
   bookingUpdates: boolean;
 }
 
-// ─── Booking Response (mapped to frontend UI shape) ──────────────────────────
+//  Booking Response (mapped to frontend UI shape) 
 
 export type FrontendBookingStatus = "pending" | "confirmed" | "past" | "cancelled";
 
@@ -60,7 +60,7 @@ export interface BookingHistoryResponse {
   ticketCount: number;
 }
 
-// ─── Paystack Types ──────────────────────────────────────────────────────────
+//  Paystack Types 
 
 export interface PaystackAuthorization {
   authorization_code: string;

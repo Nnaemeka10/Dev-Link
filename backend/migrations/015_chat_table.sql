@@ -87,7 +87,7 @@ CREATE TABLE IF NOT EXISTS message_attachments (
 CREATE INDEX IF NOT EXISTS idx_message_attachments_message 
     ON message_attachments(message_id);
 
--- ─── FUNCTIONS & TRIGGERS ────────────────────────────────────────────────────
+--  FUNCTIONS & TRIGGERS 
 
 -- Function to safely get the next sequence for a conversation
 CREATE OR REPLACE FUNCTION get_next_conversation_seq(conv_id UUID) 
