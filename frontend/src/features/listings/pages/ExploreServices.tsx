@@ -26,7 +26,6 @@ function formatDateLabel(date: Date) {
 
 export default function ExploreServices() {
   const searchParams = useSearchParams();
-  const location = searchParams.get("location") || undefined;
   const dateFrom = searchParams.get("dateFrom") || undefined;
   const dateTo = searchParams.get("dateTo") || undefined;
   const sort = searchParams.get("sort") || undefined;
