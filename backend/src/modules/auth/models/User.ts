@@ -24,7 +24,7 @@ export const UserModel = {
         const db = getDB();
 
         // Hash the password before storing
-        const salt = await bcrypt.genSalt(10);
+        const salt = await bcrypt.genSalt(12);
         const password_hash = await bcrypt.hash(userData.password, salt);
 
         const query = `
@@ -53,7 +53,7 @@ export const UserModel = {
 
         // Generate a random secure password to satisfy the NOT NULL DB constraint
         const randomPassword = randomBytes(32).toString('hex');
-        const salt = await bcrypt.genSalt(10);
+        const salt = await bcrypt.genSalt(12);
         const password_hash = await bcrypt.hash(randomPassword, salt);
 
         const query = `
@@ -77,7 +77,11 @@ export const UserModel = {
   
     async findByEmail(email: string): Promise<User | null> {
         const db = getDB();
-        const query = `SELECT * FROM users WHERE email = $1`;
+        // Explicit column list (was SELECT *): login needs password_hash and the
+        // auth flows use the public fields (controllers strip password_hash before
+        // responding). Future sensitive columns added to the users table can no
+        // longer leak into auth responses by accident.
+        const query = `SELECT ${userPublicFields}, password_hash, created_at, updated_at FROM users WHERE email = $1`;
         const result = await db.query(query, [email]);
 
         return result.rows[0] || null;
@@ -179,7 +183,7 @@ export const UserModel = {
         const db = getDB();
 
         //hash new password
-        const salt = await bcrypt.genSalt(10);
+        const salt = await bcrypt.genSalt(12);
         const password_hash = await bcrypt.hash(newPassword, salt);
 
         // bump token_version so every JWT issued with the OLD

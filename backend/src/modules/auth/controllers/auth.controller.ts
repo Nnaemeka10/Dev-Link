@@ -39,8 +39,8 @@ export const signup = async (_req: Request<{}, {}, SignupBody>, res: Response) =
     }
 
     //password strength
-    if (password.length < 6) {
-        res.status(400).json({ message: 'Password must be at least 6 characters long.' });
+    if (password.length < 8) {
+        res.status(400).json({ message: 'Password must be at least 8 characters long.' });
         return;
     }
 
@@ -351,8 +351,7 @@ export const verifyEmail = async (req: Request, res: Response) => {
         //update Users email verification code
         await UserModel.update(user.id!, {is_email_verified: true});
 
-        // //generate token and set cookie
-        // SECURITY FIX: generateToken is now async (embeds users.token_version)
+        // generateToken is now async (embeds users.token_version)
         await generateToken({
                 userId: user.id!,
                 email: user.email,
@@ -517,8 +516,8 @@ export const resetPassword = async (req: Request<{}, {}, ResetPasswordBody>, res
             return res.status(400).json({ error: 'Passwords do not match' });
         }
 
-        if (newPassword.length < 6) {
-            return res.status(400).json({ error: 'Password must be at least 6 characters' });
+        if (newPassword.length < 8) {
+            return res.status(400).json({ error: 'Password must be at least 8 characters' });
         }
 
         // Resolve the reset record from whichever proof-of-identity was supplied

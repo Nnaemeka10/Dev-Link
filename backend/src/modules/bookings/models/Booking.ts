@@ -108,8 +108,11 @@ export const BookingModel = {
         // Payment deadline: 30 minutes from now
         const paymentDeadline = new Date(Date.now() + 30 * 60 * 1000).toISOString();
         const expiresAt = paymentDeadline; // remove this later and use paymentDeadline instead
-        // Dispute window: 24 hours after the event ends
-        const disputeWindowClosesAt = new Date(new Date(cleanEnd).getTime() + 24 * 60 * 60 * 1000).toISOString();
+        // Dispute window: 24 hours after the event ends.
+        // FIX: computed inside the INSERT from the same end-date value ($4)
+        // being inserted — date + interval is pure calendar arithmetic and
+        // AT TIME ZONE 'UTC' pins the instant, so the result never depends on
+        // the server/session timezone (dispute_window_closes_at is TIMESTAMPTZ).
 
         // 4. Create the booking record
         const result = await db.query<BookingRow>(
@@ -117,7 +120,8 @@ export const BookingModel = {
                 listing_id, user_id, start_date, end_date, status, total_amount, 
                 booking_reference, start_time, end_time, expires_at, currency, platform_fee, dispute_window_closes_at, package_id
             ) 
-            VALUES ($1, $2, $3, $4, 'pending', $5, $6, $7, $8, $9, $10, $11, $12, $13) 
+            VALUES ($1, $2, $3, $4, 'pending', $5, $6, $7, $8, $9, $10, $11,
+                    ($4::date + interval '24 hours') AT TIME ZONE 'UTC', $12) 
             RETURNING *`,
             [
                 listingId, 
@@ -133,7 +137,6 @@ export const BookingModel = {
                 currency,
                 // guestCount,
                 platformFee,
-                disputeWindowClosesAt,
                 packageId || null
             ]
         );

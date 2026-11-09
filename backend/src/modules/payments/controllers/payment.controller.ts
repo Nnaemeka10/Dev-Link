@@ -224,6 +224,11 @@ export const verifyPayment = async (req: Request, res: Response) => {
  */
 export const paystackWebhookIngestor = async (req: Request, res: Response) => {
   // 1. Verify signature securely (timing-safe HMAC over the raw body)
+  if (!(req as any).rawBody) {
+    console.error('paystackWebhookIngestor: rawBody missing - cannot verify signature. Check that the route path matches the express.json() verify capture in app.ts and the URL set in the Paystack dashboard.');
+    return res.status(400).send('Bad request: raw body unavailable for signature verification');
+  }
+
   if (!isValidPaystackSignature(req)) {
     return res.status(401).send('Invalid signature');
   }

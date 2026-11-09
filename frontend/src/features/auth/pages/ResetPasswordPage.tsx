@@ -166,12 +166,12 @@ function ResetPasswordForm() {
           <AuthInput
             label="New Password"
             type="password"
-            placeholder="At least 6 characters"
+            placeholder="At least 8 characters"
             autoComplete="new-password"
             error={formState.errors.inewPassword?.message}
             {...register("inewPassword", {
               required: "Password is required",
-              minLength: { value: 6, message: "Password must be at least 6 characters" },
+              minLength: { value: 8, message: "Password must be at least 8 characters" },
             })}
           />
           {/* Strength hint bar */}

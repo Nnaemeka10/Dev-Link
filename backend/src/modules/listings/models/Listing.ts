@@ -121,7 +121,11 @@ function buildFilterParts(options: ListingPageOptions): QueryParts {
     if (filters.location) {
         // Structured location search: match against state, city (LGA), or address.
         // The autocomplete provides state names or LGA names - both land here.
-        const locPattern = addValue(values, `%${filters.location}%`);
+        // Escape ILIKE wildcards so a literal %, _ or \ typed by a user is
+        // matched as-is instead of acting as a pattern wildcard
+        // (same treatment as searchTerm below).
+        const escapedLocation = escapeILike(filters.location);
+        const locPattern = addValue(values, `%${escapedLocation}%`);
         clauses.push(
             `(l.state ILIKE ${locPattern} OR l.city ILIKE ${locPattern} OR l.address_line ILIKE ${locPattern}
              OR EXISTS (
@@ -542,13 +546,8 @@ export const ListingModel = {
     }
 };
 
-
-
-
-
-
 /**
- * FAANG Pattern: Explicit Service-Layer Sync
+ * Explicit Service-Layer Sync
  * We recalculate the listing's cached price whenever packages change.
  * This keeps the DB "dumb" (no triggers) and logic in Node.js.
  */

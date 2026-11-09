@@ -8,8 +8,9 @@ export function registerChatHandlers(io: SocketIOServer) {
   io.use(async (socket: Socket, next) => {
     try {
       // Extract token from handshake auth or cookie
-      const token = socket.handshake.auth.token || 
-                    socket.handshake.headers.cookie?.split('token=')[1]?.split(';')[0];
+      const cookieHeader = socket.handshake.headers.cookie ?? '';
+      const token = socket.handshake.auth.token ||
+        /(?:^|;\s*)token=([^;]+)/.exec(cookieHeader)?.[1];
 
       if (!token) {
         return next(new Error("Authentication token required."));
