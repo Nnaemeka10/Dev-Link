@@ -26,7 +26,7 @@ function CategoryPill({ value, onChange }: { value: SearchCategory; onChange: (c
     <div
       role="tablist"
       aria-label="Search category"
-      className="relative grid h-full min-w-55 shrink-0 grid-cols-2 rounded-full bg-bg-primary p-1"
+      className="relative grid min-w-55 shrink-0 grid-cols-2 rounded-full bg-bg-primary p-1"
     >
       <span
         aria-hidden="true"
@@ -115,7 +115,7 @@ export default function DesktopSearchBar({ form, onSubmit, isPending, showShadow
           type="submit"
           disabled={isPending}
           aria-label="Search"
-          className="inline-flex shrink-0 items-center justify-center gap-2 self-center rounded-full bg-accent-primary px-5 py-2.5 text-sm font-semibold text-white transition-all duration-200 hover:scale-[1.02] hover:shadow-[0_10px_24px_rgba(214,92,58,0.35)] disabled:cursor-not-allowed disabled:scale-100 disabled:opacity-70 xl:px-7 xl:py-3 xl:text-base"
+          className="h-14 inline-flex shrink-0 items-center justify-center gap-2 self-center rounded-full bg-accent-primary px-5 py-2.5 text-sm font-semibold text-white transition-all duration-200 hover:scale-[1.02] hover:shadow-[0_10px_24px_rgba(214,92,58,0.35)] disabled:cursor-not-allowed disabled:scale-100 disabled:opacity-70 xl:px-7 xl:py-3 xl:text-base"
         >
           {isPending ? (
             <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent xl:h-5 xl:w-5" />

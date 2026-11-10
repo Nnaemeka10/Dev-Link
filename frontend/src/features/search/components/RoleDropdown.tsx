@@ -98,7 +98,7 @@ export function RoleDropdown({ value, onChange, disabled = false, variant = "seg
   //Segment variant: pill segment + scrim + portal list
   return (
     <>
-      <div ref={anchorRef} className="searchbar-segment flex flex-1 items-center gap-2 px-4 py-2 xl:gap-3 xl:px-5 xl:py-3">
+      <div ref={anchorRef} className="searchbar-segment flex max-w-36 items-center gap-2 px-3 py-2 xl:max-w-40 xl:gap-2.5 xl:px-4 xl:py-3">
         <div className="min-w-0 flex-1">
           <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-text-primary/45 xl:text-[11px]">
             Service
@@ -109,7 +109,7 @@ export function RoleDropdown({ value, onChange, disabled = false, variant = "seg
             disabled={disabled}
             aria-haspopup="listbox"
             aria-expanded={isOpen}
-            className={`w-full bg-transparent text-left text-xs focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 xl:text-sm ${
+            className={`w-full truncate bg-transparent text-left text-xs focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 xl:text-sm ${
               value ? "text-text-primary" : "text-text-primary/45"
             }`}
           >

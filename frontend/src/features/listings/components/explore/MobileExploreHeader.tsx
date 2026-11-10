@@ -19,7 +19,7 @@ interface MobileExploreHeaderProps {
   handleSearch: (data: SearchFormData) => void;
   form: ReturnType<typeof useSearchForm>;
   isPending: boolean;
-  mobileSummary: string[];
+  mobileSummary: {label: string; value: string}[];
   category: "halls" | "services";
 }
 

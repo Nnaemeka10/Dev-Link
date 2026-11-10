@@ -106,10 +106,10 @@ export default function ExploreHalls() {
   })();
 
   const mobileSummaryLines = (() => {
-    const lines: string[] = [];
-    if (selectedLocation?.trim()) lines.push(selectedLocation.trim());
-    if (selectedCapacity) lines.push(`${selectedCapacity} guests`);
-    if (mobileDateLabel) lines.push(mobileDateLabel);
+    const lines: {label: string; value: string}[] = [];
+    if (selectedLocation?.trim()) lines.push({label: "Where", value: selectedLocation.trim()});
+    if (selectedCapacity) lines.push({label: "Capacity", value: `${selectedCapacity} guests`});
+    if (mobileDateLabel) lines.push({label: "When", value: mobileDateLabel});
     return lines;
   })();
   const resultsCount = listings.length;

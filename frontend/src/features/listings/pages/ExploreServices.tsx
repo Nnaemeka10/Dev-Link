@@ -108,10 +108,10 @@ export default function ExploreServices() {
   })();
 
   const mobileSummaryLines = (() => {
-    const lines: string[] = [];
-    if (selectedCoverage?.trim()) lines.push(selectedCoverage.trim());
-    if (roleLabel) lines.push(roleLabel);
-    if (mobileDateLabel) lines.push(mobileDateLabel);
+    const lines: {label: string; value: string}[] = [];
+    if (selectedCoverage?.trim()) lines.push({label: "Where", value: selectedCoverage.trim()});
+    if (roleLabel) lines.push({label: "Who", value: roleLabel});
+    if (mobileDateLabel) lines.push({label: "When", value: mobileDateLabel});
     return lines;
   })();
 

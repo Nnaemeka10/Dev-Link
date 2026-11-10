@@ -292,7 +292,7 @@ export default function WhereCombobox({
   }, [activeIndex]);
 
   const input = (
-    <>
+    <div className = "flex justify-end">
       <div className="min-w-0 flex-1">
         <label
           htmlFor={`${rootId}-input`}
@@ -336,7 +336,7 @@ export default function WhereCombobox({
           <X className="h-4 w-4" />
         </button>
       )}
-    </>
+    </div>
   );
 
   const listbox = (

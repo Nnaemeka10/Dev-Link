@@ -9,7 +9,7 @@ import type { HomeListingCard } from "../types/listings.types";
 const CURATED_SERVICES_CONTENT = {
   heading: "Curated Event Services",
   subheading: "Top-rated professionals for your special day.",
-  ctaLabel: "Explore all services",
+  ctaLabel: "Explore all",
   ctaLink: "/listings?category=services",
 };
 

@@ -41,15 +41,15 @@ export default function HeroSection() {
   })();
 
   const mobileSummaryLines = (() => {
-    const lines: string[] = [];
+    const lines: {label: string; value: string} [] = [];
     if (selectedCategory === "halls") {
-      if (selectedLocation?.trim()) lines.push(selectedLocation.trim());
-      if (selectedCapacity) lines.push(`${selectedCapacity} guests`);
-      if (mobileDateLabel) lines.push(mobileDateLabel);
+      if (selectedLocation?.trim()) lines.push({label: "Where", value: selectedLocation.trim()});
+      if (selectedCapacity) lines.push({label: "Capacity", value: `${selectedCapacity} guests`});
+      if (mobileDateLabel) lines.push({label: "When", value: mobileDateLabel});
     } else {
-      if (selectedCoverage?.trim()) lines.push(selectedCoverage.trim());
-      if (selectedRole) lines.push(selectedRole);
-      if (mobileDateLabel) lines.push(mobileDateLabel);
+      if (selectedCoverage?.trim()) lines.push({label: "Where", value: selectedCoverage.trim()});
+      if (selectedRole) lines.push({label: "Who", value: selectedRole});
+      if (mobileDateLabel) lines.push({label: "When", value: mobileDateLabel});
     }
     return lines;
   })();

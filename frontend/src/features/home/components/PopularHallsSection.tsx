@@ -9,7 +9,7 @@ import type { HomeListingCard } from "../types/listings.types";
 const POPULAR_HALLS_CONTENT = {
   heading: "Popular Event Halls",
   subheading: "Experience Nigeria's most prestigious venues.",
-  ctaLabel: "View all halls",
+  ctaLabel: "View all",
   ctaLink: "/listings?category=halls",
 };
 

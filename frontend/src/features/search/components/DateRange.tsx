@@ -202,7 +202,7 @@ export function DateRangePicker({
               type="button"
               onClick={handleClear}
               aria-label="Clear dates"
-              className="date-picker-clear md:mr-2 md:h-4 md:w-4 xl:mr-5 xl:h-5 xl:w-5"
+              className="date-picker-clear md:mr-2 md:h-4 md:w-4 xl:mr-2 xl:h-5 xl:w-5"
             >
               <X className="h-3.5 w-3.5 md:h-3 md:w-3 xl:h-3.5 xl:w-3.5" />
             </button>
