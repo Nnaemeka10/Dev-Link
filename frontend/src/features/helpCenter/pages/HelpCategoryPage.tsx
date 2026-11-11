@@ -28,7 +28,7 @@ const getHashSnapshot = () => window.location.hash;
 const getServerHashSnapshot = () => "";
 
 export default function HelpCategoryPage({ category }: HelpCategoryPageProps) {
-  // undefined = the user hasn't toggled anything yet → the deep link decides.
+  // undefined = the user hasn't toggled anything yet - the deep link decides.
   // null = the user explicitly closed the accordion.
   // Once the user interacts, their choice wins over the deep link.
   const [userSlug, setUserSlug] = useState<string | null | undefined>(
@@ -55,7 +55,7 @@ export default function HelpCategoryPage({ category }: HelpCategoryPageProps) {
 
   // The only effect left is a pure external-system sync (scrolling the DOM).
   // The deep-linked accordion is already open in the committed DOM when this
-  // runs, so the scroll target has real height. No setState → rule satisfied.
+  // runs, so the scroll target has real height. No setState - rule satisfied.
   useEffect(() => {
     if (!deepLinkedSlug) return;
     const timer = setTimeout(() => {

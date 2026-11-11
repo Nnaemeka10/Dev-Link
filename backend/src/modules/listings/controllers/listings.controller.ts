@@ -45,7 +45,7 @@ async function getCursorPage(
     filters: { ...filters, kind: kind ?? filters.kind },
     limit,
     // Sort-aware decode: a cursor from a different ordering is rejected to
-    // null → clean restart at page one, never a 500 and never rows skipped
+    // null - clean restart at page one, never a 500 and never rows skipped
     // under the wrong keyset predicate.
     cursor: decodeCursor(req.query.cursor, sort),
     sort,

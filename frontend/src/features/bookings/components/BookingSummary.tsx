@@ -1,6 +1,5 @@
 import Image, { StaticImageData } from "next/image";
 import { MapPin, ShieldCheck } from "lucide-react";
-// import { BOOKING_FEES, BOOKING_TOTAL, BOOKING_VENUE, PAYMENT_FEES, PAYMENT_TOTAL } from "../booking.data";
 
 interface SummaryData {
   venueName: string;
@@ -22,35 +21,6 @@ interface Fee {
   sublabel?: string; // e.g. "underline" fees like "Venue hire × 2 days"
 }
 
-// export function EstimateSummary({ onContinue }: { onContinue: () => void }) {
-//   return (
-//     <aside className="rounded-[2.2rem] h-fit bg-white p-8 shadow-[0_24px_54px_rgba(34,27,18,0.08)]">
-//       <h2 className="text-2xl font-medium text-[#252423]">Estimated Cost</h2>
-//       <div className="mt-7 space-y-5 border-b border-[#E8DED2] pb-6">
-//         {BOOKING_FEES.map((fee) => (
-//           <div key={fee.label} className="flex justify-between gap-8 text-base">
-//             <span className="text-[#6B5F57]">{fee.label}</span>
-//             <strong>{fee.value}</strong>
-//           </div>
-//         ))}
-//       </div>
-//       <div className="mt-6 flex items-end justify-between">
-//         <div>
-//           <p className="font-extrabold text-[#252423]">Total Estimate</p>
-//           <p className="text-[11px] font-extrabold uppercase tracking-[0.16em] text-[#7B7E9B]">VAT inclusive where applicable</p>
-//         </div>
-//         <strong className="text-3xl font-extrabold text-[#B9401D]">{BOOKING_TOTAL}</strong>
-//       </div>
-//       <button type="button" onClick={onContinue} className="mt-8 w-full rounded-full bg-[#B9401D] px-8 py-5 text-lg font-extrabold text-white shadow-[0_16px_26px_rgba(185,64,29,0.2)]">
-//         Proceed to Payment
-//       </button>
-//       <p className="mx-auto mt-6 max-w-xs text-center text-xs leading-5 text-[#555B7F]">
-//         Your payment is secure. You won&apos;t be charged until the vendor confirms your booking request within 24 hours.
-//       </p>
-//     </aside>
-//   );
-// }
-
 export function PaymentSummary({ summary, onPay, isProcessing }: { summary: SummaryData; onPay: () => void; isProcessing: boolean }) {
   return (
     <aside className="overflow-hidden rounded-4xl bg-white shadow-[0_24px_54px_rgba(34,27,18,0.08)]">
@@ -63,7 +33,6 @@ export function PaymentSummary({ summary, onPay, isProcessing }: { summary: Summ
       </div>
       
       <div className="p-8">
-        {/* FIX: Conditionally render grid based on whether guests exists */}
         <div className={`grid gap-8 border-b border-[#E8DED2] pb-7 ${summary.guests ? 'lg:grid-cols-2 grid-cols-1' : 'grid-cols-1'}`}>
           <div className={summary.guests ? '' : 'lg:col-span-2'}>
             <p className="text-xs font-extrabold uppercase tracking-[0.14em] text-[#555B7F]">Event Date</p>
@@ -102,7 +71,7 @@ export function PaymentSummary({ summary, onPay, isProcessing }: { summary: Summ
           disabled={isProcessing}
           className="mt-8 w-full rounded-full bg-[#B9401D] px-8 py-5 text-sm font-extrabold uppercase tracking-[0.12em] text-white disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {isProcessing ? "Processing..." : "Pay Securely Now →"}
+          {isProcessing ? "Processing..." : "Pay Securely Now "}
         </button>
         
         <p className="mt-4 flex items-center justify-center gap-2 text-xs text-[#555B7F]">
@@ -113,22 +82,7 @@ export function PaymentSummary({ summary, onPay, isProcessing }: { summary: Summ
   );
 }
 
-// export function VenueSelectionCard() {
-//   return (
-//     <article className="flex items-center gap-6 rounded-[2.2rem] bg-white p-8 shadow-[0_24px_54px_rgba(34,27,18,0.06)]">
-//       <Image src={venue.} alt={BOOKING_VENUE.name} className="h-28 w-28 rounded-[1.4rem] object-cover" />
-//       <div>
-//         <p className="text-xs font-extrabold uppercase tracking-[0.18em] text-[#555B7F]">Current Selection</p>
-//         <h2 className="mt-2 text-2xl font-extrabold text-[#252423]">{BOOKING_VENUE.name}</h2>
-//         <p className="mt-1 flex items-center gap-1 text-sm font-semibold text-[#555B7F]">
-//           <MapPin className="h-4 w-4" />
-//           {BOOKING_VENUE.location}
-//         </p>
-//         <p className="mt-2 text-xs font-extrabold text-[#B9401D]">{BOOKING_VENUE.capacity}</p>
-//       </div>
-//     </article>
-//   );
-// }
+
 
 export function SecuritySignals() {
   return (

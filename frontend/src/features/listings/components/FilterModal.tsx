@@ -85,7 +85,7 @@ function fmt(n: number) {
 /**
  * Piecewise (non-linear) price scale, the Airbnb/Zillow technique.
  *   slider 0.00 - 0.75  maps to  ₦0 - ₦1,000,000          (dense zone)
- *   slider 0.75 - 1.00  maps to  ₦1,000,000 → ₦100,000,000 (sparse zone)
+ *   slider 0.75 - 1.00  maps to  ₦1,000,000 - ₦100,000,000 (sparse zone)
  * Both functions agree on the value at BREAKPOINT so handles never jump.
  */
 const BREAKPOINT_VAL = 1_000_000;

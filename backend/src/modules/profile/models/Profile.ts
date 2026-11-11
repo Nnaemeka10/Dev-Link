@@ -44,7 +44,7 @@ function normalizeOptionalText(
   return trimmed === "" ? null : trimmed;
 }
 
-/** Map DB booking_status → frontend-friendly status */
+/** Map DB booking_status - frontend-friendly status */
 function mapBookingStatus(dbStatus: string): FrontendBookingStatus {
   switch (dbStatus) {
     case "pending":

@@ -85,7 +85,7 @@ export default function CategoryStrip() {
   // WHY THIS LOOKS SEAMLESS (and CSS translateX doesn't):
   //
   // CSS translateX(-50%) moves the ENTIRE track as one block. When it resets
-  // from -50% → 0, all items jump simultaneously - you see the whole strip
+  // from -50% - 0, all items jump simultaneously - you see the whole strip
   // snap back even if it's instantaneous.
   //
   // GSAP's horizontalLoop (and this implementation) positions each item
@@ -120,7 +120,7 @@ export default function CategoryStrip() {
     });
 
     // Right boundary = width of the viewport (items beyond this are "offscreen right")
-    // We seed items from 0 → n*STRIDE, some may already be off-screen right - that's fine,
+    // We seed items from 0 - n*STRIDE, some may already be off-screen right - that's fine,
     // they'll scroll into view naturally.
 
     function tick() {

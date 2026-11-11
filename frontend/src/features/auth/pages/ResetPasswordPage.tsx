@@ -33,7 +33,7 @@ function ResetPasswordForm() {
 
   const password = watch("inewPassword");
 
-  // Guard: no token at all → reject immediately
+  // Guard: no token at all - reject immediately
   useEffect(() => {
     if (!sessionToken && !linkToken) {
       setTokenInvalid(true);

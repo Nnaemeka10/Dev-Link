@@ -357,7 +357,7 @@ export const VendorListingModel = {
         );
       }
 
-      // 5b. Service coverage areas → listing_service_areas (coverage filter).
+      // 5b. Service coverage areas - listing_service_areas (coverage filter).
       await client.query(`DELETE FROM listing_service_areas WHERE listing_id = $1`, [listingId]);
       if (category === 'service' && details?.serviceLocation) {
         const sl = details.serviceLocation;

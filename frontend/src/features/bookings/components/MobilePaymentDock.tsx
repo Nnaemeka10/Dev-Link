@@ -189,10 +189,10 @@ function SummarySheet({
           onClick={onPay}
           className="w-full rounded-full bg-[#D95A3D] py-4 text-sm font-extrabold uppercase tracking-[0.12em] text-white transition hover:brightness-95 active:scale-[0.98]"
         >
-          Pay Now →
+          Pay Now 
         </button>
         <p className="mt-3 text-center text-[11px] font-semibold text-[#7B7E9B]">
-          You won&apos;t be charged until the vendor confirms
+          You will be refunded if vendor does not confirm within 24 hours.
         </p>
       </div>
     </div>
@@ -240,7 +240,7 @@ export function MobilePaymentDock({ summary, onPay, isProcessing }: MobilePaymen
              disabled={isProcessing}
             className="shrink-0 rounded-full bg-[#B9401D] px-6 py-3 text-small font-extrabold text-white shadow-sm transition hover:brightness-95 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {isProcessing ? "Processing..." : "Pay Now →"}
+            {isProcessing ? "Processing..." : "Pay Now "}
           </button>
         </div>
       </div>

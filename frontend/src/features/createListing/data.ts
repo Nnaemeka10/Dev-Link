@@ -3,8 +3,8 @@ import type { LocalGovernment, NigeriaState } from "./types/listing";
 // 
 // MOCK - backend contract
 //
-//   GET /locations/states              → NigeriaState[]
-//   GET /locations/states/:stateId/lgas → LocalGovernment[]
+//   GET /locations/states              - NigeriaState[]
+//   GET /locations/states/:stateId/lgas - LocalGovernment[]
 //
 // The list below is a representative subset (3–6 LGAs per state) so the UI
 // has something real to render. The backend should return the authoritative
@@ -119,8 +119,8 @@ import type { EventHallType, ServiceType } from "./types/listing";
 
 // 
 // MOCK - backend contract
-//   GET /listings/hall-types    → EventHallType[]
-//   GET /listings/service-types → ServiceType[]
+//   GET /listings/hall-types    - EventHallType[]
+//   GET /listings/service-types - ServiceType[]
 // Shown in Step 2 as a multi-select "what kind of X do you host/offer" modal.
 // 
 
@@ -157,13 +157,13 @@ export const SERVICE_TYPES: ServiceType[] = [
 import type { AmenityDefinition } from "./types/listing";
 
 // 
-// MOCK - backend contract: GET /listings/amenities?category=hall → AmenityDefinition[]
+// MOCK - backend contract: GET /listings/amenities?category=hall - AmenityDefinition[]
 //
 // Grouped by `category` for rendering as sectioned grids (Step 3, hall flow).
 // `valueKind` tells the UI which input to show in the value-entry modal:
-//   "number"   → numeric stepper/input (e.g. capacity, parking spaces)
-//   "text"     → short free-text description, capped at ~5 words in the UI
-//   "duration" → not used for hall amenities today, kept for parity with
+//   "number"   - numeric stepper/input (e.g. capacity, parking spaces)
+//   "text"     - short free-text description, capped at ~5 words in the UI
+//   "duration" - not used for hall amenities today, kept for parity with
 //                requirement definitions
 // 
 
@@ -202,7 +202,7 @@ import type { RequirementDefinition } from "./types/listing";
 
 // 
 // MOCK - backend contract
-//   GET /listings/requirements?serviceTypeIds=dj,photographer → RequirementDefinition[]
+//   GET /listings/requirements?serviceTypeIds=dj,photographer - RequirementDefinition[]
 //
 // `applicableServiceTypeIds: []` means "applies to every service type" (e.g.
 // setup time, vendor briefing). Non-empty means the requirement should only

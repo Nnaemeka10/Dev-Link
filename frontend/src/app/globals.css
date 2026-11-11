@@ -946,17 +946,17 @@
   }
 
   /*  Spotlight 1: Gold 
-    Size: ~3× previous (38vw → 110vw), capped so it stays a "spotlight" not a flood.
+    Size: ~3× previous (38vw - 110vw), capped so it stays a "spotlight" not a flood.
     
     START: center sits just outside the top-right corner.
     The circle bleeds off the top and right edges simultaneously.
     
     PATH (then retraces):
-      0%  → slightly inside top-right    (start)
-      25% → flush top-right corner edge
-      50% → flush bottom-right corner edge  
-      75% → slightly left of bottom-right
-      100%→ retraces: back through 75→50→25→0
+      0%  - slightly inside top-right    (start)
+      25% - flush top-right corner edge
+      50% - flush bottom-right corner edge  
+      75% - slightly left of bottom-right
+      100%- retraces: back through 75-50-25-0
     
     We achieve the retrace by mirroring waypoints:
       0%   start
@@ -987,8 +987,8 @@
     background: linear-gradient(90deg, rgba(255, 201, 101, 0.28) 0%, rgba(255, 201, 101, 0.1) 50%);
 
     /*
-      Path: start slightly inside top-right → top-right edge → bottom-right edge
-      → slightly left of bottom-right → retrace back.
+      Path: start slightly inside top-right - top-right edge - bottom-right edge
+      - slightly left of bottom-right - retrace back.
       
       translate() moves relative to the element's own position.
       Since the element is anchored top-right with center at the corner:
@@ -1007,11 +1007,11 @@
     START: slightly to the right of the bottom-left corner (inside the hero).
     
     PATH (then retraces):
-      0%  → slightly right of bottom-left   (start)
-      25% → flush bottom-left corner edge
-      50% → flush top-left corner edge
-      75% → slightly right of top-left
-      100%→ retraces back to start
+      0%  - slightly right of bottom-left   (start)
+      25% - flush bottom-left corner edge
+      50% - flush top-left corner edge
+      75% - slightly right of top-left
+      100%- retraces back to start
     
     animation-delay: -6s starts it mid-cycle so gold and ember are never
     at the same vertical position simultaneously from the very first frame.
@@ -1032,8 +1032,8 @@
     background: linear-gradient(270deg, rgba(214, 92, 58, 0.2) 0%, rgba(214, 92, 58, 0.07) 50%);
 
     /*
-      Path: slightly right of bottom-left → bottom-left edge → top-left edge
-      → slightly right of top-left → retrace.
+      Path: slightly right of bottom-left - bottom-left edge - top-left edge
+      - slightly right of top-left - retrace.
       
       Since element is anchored bottom-left with center at the corner:
       - Moving right (positive X) brings it into the hero
@@ -1055,14 +1055,14 @@
     The element's center starts at the top-right corner (top:-50%, right:-50%).
     translate() values move it from that anchor:
     
-      0%   slightly inside top-right:   pull left 8%, down 8%   → (-8vw,  8vh)
-      25%  flush top-right corner:      no translation           → (0,     0)
-      50%  flush bottom-right corner:   move down full height    → (0,     100vh) 
-      75%  slightly left of bottom-right: pull left a bit        → (-8vw,  100vh)
+      0%   slightly inside top-right:   pull left 8%, down 8%   - (-8vw,  8vh)
+      25%  flush top-right corner:      no translation           - (0,     0)
+      50%  flush bottom-right corner:   move down full height    - (0,     100vh) 
+      75%  slightly left of bottom-right: pull left a bit        - (-8vw,  100vh)
       100% = 0% to complete the retrace
     
     Because 100% === 0%, the browser interpolates smoothly back through
-    75% → 50% → 25% → 0% creating the retrace effect within a single
+    75% - 50% - 25% - 0% creating the retrace effect within a single
     forward-playing animation loop
 
    */
@@ -1110,10 +1110,10 @@
     The element's center starts at the bottom-left corner (bottom:-50%, left:-50%).
     translate() values move it from that anchor:
     
-      0%   slightly right of bottom-left: pull right 8%, up 0   → (8vw,   0vh)
-      25%  flush bottom-left corner:      no translation         → (0,     0)
-      50%  flush top-left corner:         move up full height    → (0,    -100vh)
-      75%  slightly right of top-left:    pull right a bit       → (8vw,  -100vh)
+      0%   slightly right of bottom-left: pull right 8%, up 0   - (8vw,   0vh)
+      25%  flush bottom-left corner:      no translation         - (0,     0)
+      50%  flush top-left corner:         move up full height    - (0,    -100vh)
+      75%  slightly right of top-left:    pull right a bit       - (8vw,  -100vh)
       100% = 0% to complete the retrace.
 
    */

@@ -5,7 +5,7 @@ import crypto from 'crypto'
 const SYSTEM_NAMESPACE = '5935b5ee-7c80-4e4f-9140-5da756a08111';
 
 function uuidV5(namespace: string, name: string): string {
-  // Concatenate namespace bytes (as hex string → buffer)
+  // Concatenate namespace bytes (as hex string - buffer)
   const nsBytes = Buffer.from(namespace.replace(/-/g, ''), 'hex');
   const nameBytes = Buffer.from(name, 'utf8');
   const hash = crypto.createHash('sha1')

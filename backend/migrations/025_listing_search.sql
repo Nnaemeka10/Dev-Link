@@ -46,7 +46,7 @@ CREATE INDEX IF NOT EXISTS idx_listing_tags_listing ON listing_tags(listing_id);
 -- 1. user_default_payment_methods , LIVE-BREAKING.
 --    Migration 016 creates it, but it's MISSING on live while the profile
 --    module actively queries it (setDefaultPaymentMethod / removePaymentMethod
---    throw `relation does not exist` → HTTP 500).
+--    throw `relation does not exist` - HTTP 500).
 CREATE TABLE IF NOT EXISTS user_default_payment_methods (
     user_id            BIGINT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
     authorization_code TEXT NOT NULL,
