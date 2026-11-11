@@ -105,14 +105,14 @@ export function DesktopCompareBar({ selectedListings, onClear }: CompareBarProps
 
   return (
     <>
-      <div className="fixed bottom-20 left-1/2 z-40 flex min-w-[42rem] -translate-x-1/2 items-center gap-6 rounded-full bg-[#1C1C18] px-8 py-4 text-white shadow-[0_18px_38px_rgba(0,0,0,0.28)]">
+      <div className="fixed bottom-20 left-1/2 z-40 flex min-w-2xl -translate-x-1/2 items-center gap-6 rounded-full bg-[#1C1C18] px-8 py-4 text-white shadow-[0_18px_38px_rgba(0,0,0,0.28)]">
         <div className="flex items-center gap-2">
           {Array.from({ length: MAX_COMPARE }, (_, slot) => (
             <CompareSlot key={slot} listing={selectedListings[slot]} dark />
           ))}
         </div>
         <div className="h-8 w-px bg-white/20" />
-        <p className="min-w-[10rem] text-sm font-extrabold">
+        <p className="min-w-40 text-sm font-extrabold">
           {selectedListings.length} of {MAX_COMPARE} selected
         </p>
         <button
