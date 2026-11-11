@@ -1,4 +1,4 @@
-import { ListingBadge } from "./details.types";
+import type { ListingBadge } from "./details.types";
 
 export interface Listing {
   id: string;
@@ -18,9 +18,9 @@ export interface ListingImage {
 }
 
 export interface HallTypeBadge {
-    id: string;
-    label: string;
-    icon: string | null;
+  id: string;
+  label: string;
+  icon: string | null;
 }
 
 export interface HomeListingCard {
@@ -33,8 +33,9 @@ export interface HomeListingCard {
   priceUnit: string;
   rating: number;
   primaryImage: ListingImage | null;
-  badges: ListingBadge[]; // Added badges property to HomeListingCard
-  capacity: number | null;        
+  badges: ListingBadge[];
+  capacity: number | null;
+  verified: boolean;
   hallTypes: HallTypeBadge[];
 }
 
@@ -48,7 +49,7 @@ export interface SavedListingCard {
   rating: number;
   reviewCount: number;
   primaryImage: ListingImage | null;
-  badges: string[]; // Added badges property to SavedListingCard
+  badges: string[];
 }
 
 export interface HomeTrendingCard {
@@ -79,4 +80,3 @@ export interface HomeListingsPayload {
   trendingHalls: HomeTrendingCard[];
   trendingServices: HomeTrendingCard[];
 }
-

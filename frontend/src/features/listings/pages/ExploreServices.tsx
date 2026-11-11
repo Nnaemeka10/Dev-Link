@@ -1,19 +1,16 @@
 "use client";
 
 import { useWatch } from "react-hook-form";
-import { useMemo, useState, useTransition } from "react";
+import { useMemo, useRef, useState, useTransition } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useSearchForm } from "@/features/search/hooks/useSearchForm";
 import { useSyncFormWithUrl } from "@/features/search/hooks/useSyncFormWithUrl";
 import type { SearchFormData } from "@/features/search/utils/searchSchema";
-
-// --- REAL DATA IMPORTS ---
+import { buildListingsUrl, SERVICE_CATEGORIES, saveLastSearch } from "@/features/search";
 import { useExploreListings } from "../hooks/useExploreListings";
 import { DesktopCompareBar, MobileCompareBar } from "../components/explore/CompareBars";
-import { DesktopExploreCard, MobileExploreCard } from "../components/explore/ExploreListingCards";
+import { ExploreResultsGrid } from "../components/explore/ExploreResultsGrid";
 import { DesktopExploreHeader, DesktopResultsHeader } from "../components/explore/DesktopExploreHeader";
-import { buildListingsUrl, SERVICE_CATEGORIES, saveLastSearch } from "@/features/search";
-
 import MobileExploreHeader, { MobileResultsHeader } from "../components/explore/MobileExploreHeader";
 import { toggleSelection } from "../utils/compareSelection";
 import HomeFooter from "@/components/layout/Footer";
@@ -24,70 +21,74 @@ function formatDateLabel(date: Date) {
   return date.toLocaleDateString("en-NG", { day: "numeric", month: "short" });
 }
 
+const PANE_SCROLLBAR =
+  "[scrollbar-width:thin] [scrollbar-color:#D8CDBF_transparent] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[#D8CDBF] [&::-webkit-scrollbar-thumb:hover]:bg-[#B9401D]/40";
+
 export default function ExploreServices() {
   const searchParams = useSearchParams();
+  const coverage = searchParams.get("coverage") || undefined;
+  const role = searchParams.get("role") || undefined;
   const dateFrom = searchParams.get("dateFrom") || undefined;
   const dateTo = searchParams.get("dateTo") || undefined;
+  const flexible = searchParams.get("flexible") ? Number(searchParams.get("flexible")) : undefined;
   const sort = searchParams.get("sort") || undefined;
   const sortOrder = searchParams.get("sortOrder") || undefined;
   const priceMin = searchParams.get("priceMin") ? Number(searchParams.get("priceMin")) : undefined;
   const priceMax = searchParams.get("priceMax") ? Number(searchParams.get("priceMax")) : undefined;
-  const capacityMin = searchParams.get("capacityMin") ? Number(searchParams.get("capacityMin")) : undefined;
-  const capacityMax = searchParams.get("capacityMax") ? Number(searchParams.get("capacityMax")) : undefined;
   const minRating = searchParams.get("minRating") ? Number(searchParams.get("minRating")) : undefined;
   const verified = searchParams.get("verified") === "true";
-  const venueTypes = searchParams.get("venueTypes")?.split(",").filter(Boolean);
-  const amenities = searchParams.get("amenities")?.split(",").filter(Boolean);
-  const coverage = searchParams.get("coverage") || undefined;
-  const role = searchParams.get("role") || undefined;
-  const flexible = searchParams.get("flexible") ? Number(searchParams.get("flexible")) : undefined;
 
-  // --- REAL DATA HOOK ---
-  const { data, isPending, isError } = useExploreListings({
-        kind: "service",
-        coverage,
-        role,
-        flexible,
-        dateFrom,
-        dateTo,
-        sort,
-        sortOrder,
-        priceMin,
-        priceMax,
-        capacityMin,
-        capacityMax,
-        minRating,
-        verified,
-        venueTypes,
-        amenities
-    });
+  // Cursor-paginated feed. Hall-only filters (amenities, venueTypes, capacity)
+  // are intentionally not read here — the publish flow writes no
+  // listing_features or capacity for services.
+  const {
+    listings,
+    isPending,
+    isError,
+    refetch,
+    hasNextPage,
+    isFetchingNextPage,
+    fetchNextPage,
+  } = useExploreListings({
+    kind: "service",
+    coverage,
+    role,
+    dateFrom,
+    dateTo,
+    flexible,
+    sort,
+    sortOrder,
+    priceMin,
+    priceMax,
+    minRating,
+    verified,
+  });
 
-  const listings = useMemo(() => data?.data ?? [], [data]);
-  
   const [mobileSelectedIds, setMobileSelectedIds] = useState(() => new Set<string>());
   const [desktopSelectedIds, setDesktopSelectedIds] = useState(() => new Set<string>());
+  const desktopScrollRef = useRef<HTMLDivElement>(null);
+
   const router = useRouter();
   const [isTransitioning, startTransition] = useTransition();
   const form = useSearchForm();
-  // URL is the source of truth on this page: keeps the bar (and refresh) honest.
   useSyncFormWithUrl(form);
 
   const mobileSelectedListings = useMemo(
     () => listings.filter((listing) => mobileSelectedIds.has(listing.id)),
-    [listings, mobileSelectedIds]
+    [listings, mobileSelectedIds],
   );
   const desktopSelectedListings = useMemo(
     () => listings.filter((listing) => desktopSelectedIds.has(listing.id)),
-    [listings, desktopSelectedIds]
+    [listings, desktopSelectedIds],
   );
 
- const handleSearch = (data: SearchFormData) => {
-  // Persist so the homepage hero + a fresh visit restore this exact search.
-  saveLastSearch(data);
-  startTransition(() => {
-    router.push(buildListingsUrl(data));
-  });
-};
+  const handleSearch = (data: SearchFormData) => {
+    // Persist so the homepage hero + a fresh visit restore this exact search.
+    saveLastSearch(data);
+    startTransition(() => {
+      router.push(buildListingsUrl(data));
+    });
+  };
 
   const selectedDateRange = useWatch({ control: form.control, name: "dateRange" });
   const selectedCoverage = useWatch({ control: form.control, name: "coverageArea" });
@@ -105,138 +106,126 @@ export default function ExploreServices() {
   })();
 
   const mobileSummaryLines = (() => {
-    const lines: {label: string; value: string}[] = [];
-    if (selectedCoverage?.trim()) lines.push({label: "Where", value: selectedCoverage.trim()});
-    if (roleLabel) lines.push({label: "Who", value: roleLabel});
-    if (mobileDateLabel) lines.push({label: "When", value: mobileDateLabel});
+    const lines: { label: string; value: string }[] = [];
+    if (selectedCoverage?.trim()) lines.push({ label: "Where", value: selectedCoverage.trim() });
+    if (roleLabel) lines.push({ label: "Who", value: roleLabel });
+    if (mobileDateLabel) lines.push({ label: "When", value: mobileDateLabel });
     return lines;
   })();
 
   const resultsCount = listings.length;
   const locationLabel = coverage || "Nigeria";
 
+  const resultsProps = {
+    noun: "service" as const,
+    listings,
+    isPending,
+    isError,
+    onRetry: () => {
+      void refetch();
+    },
+    hasNextPage,
+    isFetchingNextPage,
+    fetchNextPage: () => {
+      void fetchNextPage();
+    },
+  };
+
   return (
     <main className="min-h-screen bg-bg-primary text-[#252423]">
       <section className="md:hidden">
-        <MobileExploreHeader handleSearch={handleSearch} form={form} isPending={isTransitioning} mobileSummary={mobileSummaryLines} category="services"/>
-        <MobileResultsHeader count={resultsCount} locationLabel= {locationLabel} listingType="service" roleLabel={roleLabel}/>
-        <div className="flex flex-col gap-12 px-5 pb-44">
-          {isPending && (
-              <div className="space-y-4">
-                  {[...Array(3)].map((_, i) => (
-                      <div key={i} className="h-96 animate-pulse rounded-4xl bg-text-primary/8" />
-                  ))}
-              </div>
-            )}
-            {isError && (
-              <p className="text-center text-sm font-medium text-[#5E6588]">Failed to load services.</p>
-            )}
-            {!isPending && !isError && listings.length === 0 && (
-              <div className="flex flex-col items-center py-20 text-center">
-                  <p className="text-lg font-bold text-[#2A2826]">No Services found</p>
-                  <p className="mt-1 text-sm text-[#5E6588]">Try adjusting your search filters.</p>
-              </div>
-            )}
-          {listings.map((listing) => (
-            <MobileExploreCard key={listing.id} listing={listing} selected={mobileSelectedIds.has(listing.id)} onToggleCompare={() => setMobileSelectedIds((current) => toggleSelection(current, listing.id))} />
-          ))}
-        </div>
-        <MobileCompareBar selectedListings={mobileSelectedListings} onClear={() => setMobileSelectedIds(new Set())} />
+        <MobileExploreHeader
+          handleSearch={handleSearch}
+          form={form}
+          isPending={isTransitioning}
+          mobileSummary={mobileSummaryLines}
+          category="services"
+        />
+        <MobileResultsHeader
+          count={resultsCount}
+          hasMore={hasNextPage}
+          locationLabel={locationLabel}
+          listingType="service"
+          roleLabel={roleLabel}
+        />
+        <ExploreResultsGrid
+          variant="mobile"
+          {...resultsProps}
+          selectedIds={mobileSelectedIds}
+          onToggleCompare={(id) => setMobileSelectedIds((current) => toggleSelection(current, id))}
+        />
+        <MobileCompareBar
+          selectedListings={mobileSelectedListings}
+          onClear={() => setMobileSelectedIds(new Set())}
+        />
         <MobileDock />
         <HomeFooter />
       </section>
 
       <section className="hidden md:block xl:hidden">
-        <DesktopExploreHeader handleSearch={handleSearch} form={form} isPending={isTransitioning} category="services"/>
-        <div className="flex flex-1 overflow-hidden">
-          <div className="flex-1 overflow-y-auto px-8 pb-12 pt-10">
-            <DesktopResultsHeader count={resultsCount} locationLabel={locationLabel} listingType="service" roleLabel={roleLabel}/>
-            <div className="grid grid-cols-2 gap-8">
-              {isPending && (
-
-                <>
-                <div className="space-y-4">
-                    {[...Array(3)].map((_, i) => (
-                        <div key={i} className="h-96 animate-pulse rounded-4xl bg-text-primary/8" />
-                    ))}
-                </div>
-
-                <div className="space-y-4">
-                    {[...Array(3)].map((_, i) => (
-                        <div key={i} className="h-96 animate-pulse rounded-4xl bg-text-primary/8" />
-                    ))}
-                </div>
-                </>
-              )}
-              {isError && (
-                <p className="text-center text-sm font-medium text-[#5E6588]">Failed to load services.</p>
-              )}
-              {!isPending && !isError && listings.length === 0 && (
-                <div className="flex flex-col items-center py-20 text-center">
-                    <p className="text-lg font-bold text-[#2A2826]">No services found</p>
-                    <p className="mt-1 text-sm text-[#5E6588]">Try adjusting your search filters.</p>
-                </div>
-              )}
-              {listings.map((listing) => (
-                <DesktopExploreCard key={listing.id} listing={listing} selected={desktopSelectedIds.has(listing.id)} onToggleCompare={() => setDesktopSelectedIds((current) => toggleSelection(current, listing.id))} />
-              ))}
-            </div>
-          </div>
-          <DesktopCompareBar selectedListings={desktopSelectedListings} onClear={() => setDesktopSelectedIds(new Set())} />
+        <DesktopExploreHeader
+          handleSearch={handleSearch}
+          form={form}
+          isPending={isTransitioning}
+          category="services"
+        />
+        <div className="px-8 pb-12 pt-10">
+          <DesktopResultsHeader
+            count={resultsCount}
+            hasMore={hasNextPage}
+            locationLabel={locationLabel}
+            listingType="service"
+            roleLabel={roleLabel}
+          />
+          <ExploreResultsGrid
+            variant="tablet"
+            {...resultsProps}
+            selectedIds={desktopSelectedIds}
+            onToggleCompare={(id) => setDesktopSelectedIds((current) => toggleSelection(current, id))}
+          />
         </div>
+        <DesktopCompareBar
+          selectedListings={desktopSelectedListings}
+          onClear={() => setDesktopSelectedIds(new Set())}
+        />
         <MobileDock />
         <HomeFooter />
       </section>
 
-      <section className="hidden xl:flex h-screen">
+\
+      <section className="hidden h-screen xl:flex">
         <SideNavBar />
-        <div className="ml-[15%] w-[85%] flex flex-col overflow-hidden">
-          <DesktopExploreHeader handleSearch={handleSearch} form={form} isPending={isTransitioning} category="services"/>
+        <div className="ml-[15%] flex w-[85%] flex-col overflow-hidden">
+          <DesktopExploreHeader
+            handleSearch={handleSearch}
+            form={form}
+            isPending={isTransitioning}
+            category="services"
+          />
           <div className="flex flex-1 overflow-hidden">
-            <div className="flex-1 overflow-y-auto">
+            <div ref={desktopScrollRef} className={`flex-1 overflow-y-auto ${PANE_SCROLLBAR}`}>
               <div className="px-8 pb-12 pt-10">
-                <DesktopResultsHeader count={resultsCount} locationLabel={locationLabel} listingType="service" roleLabel={roleLabel}/>
-                <div className="grid grid-cols-3 gap-8">
-
-                  {isPending && (
-                    <>
-                    <div className="space-y-4">
-                        {[...Array(3)].map((_, i) => (
-                            <div key={i} className="h-96 animate-pulse rounded-4xl bg-text-primary/8" />
-                        ))}
-                    </div>
-
-                    <div className="space-y-4">
-                        {[...Array(3)].map((_, i) => (
-                            <div key={i} className="h-96 animate-pulse rounded-4xl bg-text-primary/8" />
-                        ))}
-                    </div>
-
-                    <div className="space-y-4">
-                        {[...Array(3)].map((_, i) => (
-                            <div key={i} className="h-96 animate-pulse rounded-4xl bg-text-primary/8" />
-                        ))}
-                    </div>
-                    </>
-                  )}
-                  {isError && (
-                    <p className="text-center text-sm font-medium text-[#5E6588]">Failed to load services.</p>
-                  )}
-                  {!isPending && !isError && listings.length === 0 && (
-                    <div className="flex flex-col items-center py-20 text-center">
-                        <p className="text-lg font-bold text-[#2A2826]">No services found</p>
-                        <p className="mt-1 text-sm text-[#5E6588]">Try adjusting your search filters.</p>
-                    </div>
-                  )}
-
-                  {listings.map((listing) => (
-                    <DesktopExploreCard key={listing.id} listing={listing} selected={desktopSelectedIds.has(listing.id)} onToggleCompare={() => setDesktopSelectedIds((current) => toggleSelection(current, listing.id))} />
-                  ))}
-                </div>
+                <DesktopResultsHeader
+                  count={resultsCount}
+                  hasMore={hasNextPage}
+                  locationLabel={locationLabel}
+                  listingType="service"
+                  roleLabel={roleLabel}
+                />
+                <ExploreResultsGrid
+                  variant="desktop"
+                  {...resultsProps}
+                  selectedIds={desktopSelectedIds}
+                  onToggleCompare={(id) => setDesktopSelectedIds((current) => toggleSelection(current, id))}
+                  scrollRootRef={desktopScrollRef}
+                />
               </div>
               <HomeFooter />
             </div>
-            <DesktopCompareBar selectedListings={desktopSelectedListings} onClear={() => setDesktopSelectedIds(new Set())} />
+            <DesktopCompareBar
+              selectedListings={desktopSelectedListings}
+              onClear={() => setDesktopSelectedIds(new Set())}
+            />
           </div>
         </div>
       </section>

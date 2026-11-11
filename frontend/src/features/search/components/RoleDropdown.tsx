@@ -93,7 +93,9 @@ export function RoleDropdown({ value, onChange, disabled = false, variant = "seg
           {value && (
           <button
             type="button"
-            onClick={() => onChange(undefined)}
+            onClick={() => {
+              onChange("")
+            }}
             disabled={disabled}
             aria-label="Clear service"
             className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-text-primary/40 transition-colors hover:text-text-primary disabled:cursor-not-allowed disabled:opacity-50 xl:h-5 xl:w-5"
@@ -131,7 +133,9 @@ export function RoleDropdown({ value, onChange, disabled = false, variant = "seg
         {value && (
           <button
             type="button"
-            onClick={() => onChange(undefined)}
+            onClick={() => {
+              onChange("")
+            }}
             disabled={disabled}
             aria-label="Clear service"
             className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-text-primary/40 transition-colors hover:text-text-primary disabled:cursor-not-allowed disabled:opacity-50 xl:h-5 xl:w-5"

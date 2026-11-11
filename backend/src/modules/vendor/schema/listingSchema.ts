@@ -1,11 +1,24 @@
 import { z } from "zod";
 
-// 
-// Per-step validation. Each schema validates the slice of `ListingFormState`
-// (see types/listing.ts) that its step is responsible for, so they can be
-// wired up independently with `zodResolver(stepXSchema)` per step, or merged
-// with `.merge()` for a final submit-time check on step 6.
-// 
+/**
+ * Two layers of validation live here:
+ *
+ * 1. STRICT per-step schemas - used by the wizard for inline field errors.
+ * 2. LAX publish shapes + a category-aware superRefine — used by
+ *    listingSubmitSchema on the server.
+ *
+ * The split exists because the wizard carries BOTH location objects in one
+ * payload for the whole session. The object belonging to the OTHER category
+ * is never filled in, so it arrives at publish time at its initial values:
+ *
+ *   hallLocation:    { stateId: null, lgaId: null, streetAddress: "" }
+ *   serviceLocation: { businessAddress: "", coverageMode: "statewide",
+ *                      coverageStateIds: [], deselectedLgaIdsByState: {} }
+ *
+ * A strict shape on the inactive object rejects the whole submission. The lax
+ * shapes accept it untouched, and superRefine enforces the real requirement
+ * for the category actually being published.
+ */
 
 export const categoryStepSchema = z.object({
   category: z.enum(["hall", "service"], {
@@ -13,36 +26,25 @@ export const categoryStepSchema = z.object({
   }),
 });
 
-const hallLocationSchema = z.object({
+export const hallLocationSchema = z.object({
   stateId: z.string().min(1, "Select a state"),
   lgaId: z.string().min(1, "Select a local government"),
   streetAddress: z.string().trim().min(5, "Enter a street address"),
 });
 
-const serviceLocationSchema = z
-  .object({
-    businessAddress: z.string().trim().min(5, "Enter a business address"),
-    coverageMode: z.enum(["statewide", "lga"]),
-    coverageStateIds: z.array(z.string()).min(1, "Select at least one area you cover"),
-    deselectedLgaIdsByState: z.record(z.string(), z.array(z.string())),
-  })
-  .refine(
-    (loc) => {
-      if (loc.coverageMode !== "lga") return true;
-      // At least one LGA must remain covered in every selected state
-      return loc.coverageStateIds.every((stateId) => {
-        const deselected = loc.deselectedLgaIdsByState[stateId] ?? [];
-        return deselected.length === 0 || true; // full check needs total LGA count, done in UI layer
-      });
-    },
-    { message: "Each covered state needs at least one local government selected" }
-  );
+export const serviceLocationSchema = z.object({
+  businessAddress: z.string().trim().min(5, "Enter a business address"),
+  coverageMode: z.enum(["statewide", "lga"]),
+  coverageStateIds: z.array(z.string()).min(1, "Select at least one area you cover"),
+  deselectedLgaIdsByState: z.record(z.string(), z.array(z.string())),
+});
 
 const hallLocationLax = z.object({
-  stateId: z.string(),
-  lgaId: z.string(),
+  stateId: z.string().nullable(),
+  lgaId: z.string().nullable(),
   streetAddress: z.string(),
 });
+
 const serviceLocationLax = z.object({
   businessAddress: z.string(),
   coverageMode: z.enum(["statewide", "lga"]),
@@ -52,11 +54,20 @@ const serviceLocationLax = z.object({
 
 export const detailsStepSchema = z.object({
   name: z.string().trim().min(3, "Listing name must be at least 3 characters").max(80),
-  description: z.string().trim().min(30, "Tell clients a bit more - at least 30 characters").max(2000),
+  description: z
+    .string()
+    .trim()
+    .min(30, "Tell clients a bit more, at least 30 characters")
+    .max(2000),
   selectedTypeIds: z.array(z.string()).min(1, "Select at least one type"),
   tags: z.array(z.string().trim().min(1).max(24)).max(5, "Up to 5 tags only"),
   hallLocation: hallLocationSchema.optional(),
   serviceLocation: serviceLocationSchema.optional(),
+});
+
+const detailsPublishSchema = detailsStepSchema.extend({
+  hallLocation: hallLocationLax.optional(),
+  serviceLocation: serviceLocationLax.optional(),
 });
 
 const selectedAmenitySchema = z.object({
@@ -79,7 +90,10 @@ const customRequirementSchema = z.object({
     .string()
     .trim()
     .min(1)
-    .refine((text) => text.split(/\s+/).filter(Boolean).length <= 20, "Keep custom requirements under 20 words"),
+    .refine(
+      (text) => text.split(/\s+/).filter(Boolean).length <= 20,
+      "Keep custom requirements under 20 words",
+    ),
 });
 
 export const requirementsStepSchema = z.object({
@@ -96,7 +110,7 @@ export const galleryStepSchema = z.object({
         publicId: z.string().nullable(),
         isCover: z.boolean(),
         uploadStatus: z.enum(["pending", "uploading", "uploaded", "error"]),
-      })
+      }),
     )
     .min(5, "Upload at least 5 photos"),
 });
@@ -107,9 +121,17 @@ const pricingPackageSchema = z.object({
   price: z.number().positive("Enter a price above ₦0"),
   isPopular: z.boolean(),
   description: z.string().trim().min(1, "Add a short description"),
-  perks: z.array(z.object({ id: z.string(), label: z.string().trim().min(1) })).min(1, "Add at least one perk"),
+  perks: z
+    .array(z.object({ id: z.string(), label: z.string().trim().min(1) }))
+    .min(1, "Add at least one perk"),
 });
 
+/**
+ * basePrice is nullable on purpose: a service using packages may leave the
+ * Standard Rate empty. VendorListing.processDraftPayload then derives
+ * listings.base_price_kobo from MIN(service_packages.price_kobo) so price
+ * filtering and price sorting still work.
+ */
 export const pricingStepSchema = z
   .object({
     basePrice: z.number().positive().nullable(),
@@ -118,19 +140,15 @@ export const pricingStepSchema = z
     packages: z.array(pricingPackageSchema),
     availability: z.object({ blockedDates: z.array(z.string()) }),
   })
-  .refine((pricing) => pricing.usesPackages ? pricing.packages.length > 0 : pricing.basePrice !== null, {
-    message: "Set a base price, or add at least one package",
-  });
+  .refine(
+    (pricing) => (pricing.usesPackages ? pricing.packages.length > 0 : pricing.basePrice !== null),
+    { message: "Set a base price, or add at least one package" },
+  );
 
-/** Full-form check, run once on the review step before publishing. */
-/** Full-form check, run once on the review step before publishing. */
 export const listingSubmitSchema = z
   .object({
     category: categoryStepSchema.shape.category,
-    details: detailsStepSchema.extend({
-      hallLocation: hallLocationLax.optional(),
-      serviceLocation: serviceLocationLax.optional(),
-    }),
+    details: detailsPublishSchema,
     amenities: z.array(selectedAmenitySchema),
     requirements: z.array(selectedRequirementSchema),
     customRequirements: z.array(customRequirementSchema),
@@ -140,16 +158,17 @@ export const listingSubmitSchema = z
   .superRefine((payload, ctx) => {
     if (payload.category === "hall") {
       const loc = payload.details.hallLocation;
-      if (!loc || !loc.stateId || !loc.lgaId || loc.streetAddress.trim().length < 5) {
+      if (!loc || !loc.stateId || !loc.lgaId || (loc.streetAddress ?? "").trim().length < 5) {
         ctx.addIssue({
           code: "custom",
           path: ["details", "hallLocation"],
           message: "Complete the venue address (state, LGA and street address)",
         });
       }
-      return; // halls owe no business address / coverage areas
+      // Halls owe no business address / coverage areas.
+      return;
     }
-    // category === "service"
+
     const loc = payload.details.serviceLocation;
     if (!loc) {
       ctx.addIssue({
@@ -159,7 +178,7 @@ export const listingSubmitSchema = z
       });
       return;
     }
-    if (loc.businessAddress.trim().length < 5) {
+    if (!loc.businessAddress || loc.businessAddress.trim().length < 5) {
       ctx.addIssue({
         code: "custom",
         path: ["details", "serviceLocation", "businessAddress"],
