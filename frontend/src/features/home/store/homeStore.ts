@@ -1,7 +1,7 @@
 "use client";
 
 import { create } from "zustand";
-import type { DateRange } from "../utils/searchSchema";
+import type { DateRange } from "@/features/search/utils/searchSchema";
 
 
 interface HomeStore {
