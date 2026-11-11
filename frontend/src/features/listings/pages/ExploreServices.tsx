@@ -4,7 +4,7 @@ import { useWatch } from "react-hook-form";
 import { useMemo, useState, useTransition } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useSearchForm } from "@/features/search/hooks/useSearchForm";
-import { buildListingsHref } from "@/features/listings/searchParams";
+import { useSyncFormWithUrl } from "@/features/search/hooks/useSyncFormWithUrl";
 import type { SearchFormData } from "@/features/search/utils/searchSchema";
 
 // --- REAL DATA IMPORTS ---
@@ -12,7 +12,7 @@ import { useExploreListings } from "../hooks/useExploreListings";
 import { DesktopCompareBar, MobileCompareBar } from "../components/explore/CompareBars";
 import { DesktopExploreCard, MobileExploreCard } from "../components/explore/ExploreListingCards";
 import { DesktopExploreHeader, DesktopResultsHeader } from "../components/explore/DesktopExploreHeader";
-import { SERVICE_CATEGORIES } from "@/features/search";
+import { buildListingsUrl, SERVICE_CATEGORIES, saveLastSearch } from "@/features/search";
 
 import MobileExploreHeader, { MobileResultsHeader } from "../components/explore/MobileExploreHeader";
 import { toggleSelection } from "../utils/compareSelection";
@@ -69,6 +69,8 @@ export default function ExploreServices() {
   const router = useRouter();
   const [isTransitioning, startTransition] = useTransition();
   const form = useSearchForm();
+  // URL is the source of truth on this page: keeps the bar (and refresh) honest.
+  useSyncFormWithUrl(form);
 
   const mobileSelectedListings = useMemo(
     () => listings.filter((listing) => mobileSelectedIds.has(listing.id)),
@@ -79,25 +81,20 @@ export default function ExploreServices() {
     [listings, desktopSelectedIds]
   );
 
-  const handleSearch = (data: SearchFormData) => {
-    startTransition(() => {
-      router.push(buildListingsHref({
-        category: "services",
-        coverage: data.coverageArea || undefined,
-        role: data.role || undefined,
-        dateFrom: data.dateRange?.from?.toISOString(),
-        dateTo: data.dateRange?.to?.toISOString(),
-        flexible: data.flexible || undefined,
-      }));
-    });
-  };
+ const handleSearch = (data: SearchFormData) => {
+  // Persist so the homepage hero + a fresh visit restore this exact search.
+  saveLastSearch(data);
+  startTransition(() => {
+    router.push(buildListingsUrl(data));
+  });
+};
 
   const selectedDateRange = useWatch({ control: form.control, name: "dateRange" });
   const selectedCoverage = useWatch({ control: form.control, name: "coverageArea" });
-  const selectedRole = useWatch({ control: form.control, name: "role" });
   const selectedFlexible = useWatch({ control: form.control, name: "flexible" });
 
-  const roleLabel = SERVICE_CATEGORIES.find((c) => c.id === selectedRole)?.label;
+  // From the URL, NOT the form: survives refresh by construction.
+  const roleLabel = SERVICE_CATEGORIES.find((c) => c.id === searchParams.get("role"))?.label;
 
   const mobileDateLabel = (() => {
     if (!selectedDateRange?.from) return "";
@@ -122,7 +119,7 @@ export default function ExploreServices() {
     <main className="min-h-screen bg-bg-primary text-[#252423]">
       <section className="md:hidden">
         <MobileExploreHeader handleSearch={handleSearch} form={form} isPending={isTransitioning} mobileSummary={mobileSummaryLines} category="services"/>
-        <MobileResultsHeader count={resultsCount} locationLabel= {locationLabel} listingType="service"/>
+        <MobileResultsHeader count={resultsCount} locationLabel= {locationLabel} listingType="service" roleLabel={roleLabel}/>
         <div className="flex flex-col gap-12 px-5 pb-44">
           {isPending && (
               <div className="space-y-4">
@@ -153,7 +150,7 @@ export default function ExploreServices() {
         <DesktopExploreHeader handleSearch={handleSearch} form={form} isPending={isTransitioning} category="services"/>
         <div className="flex flex-1 overflow-hidden">
           <div className="flex-1 overflow-y-auto px-8 pb-12 pt-10">
-            <DesktopResultsHeader count={resultsCount} locationLabel={locationLabel} listingType="service"/>
+            <DesktopResultsHeader count={resultsCount} locationLabel={locationLabel} listingType="service" roleLabel={roleLabel}/>
             <div className="grid grid-cols-2 gap-8">
               {isPending && (
 
@@ -198,7 +195,7 @@ export default function ExploreServices() {
           <div className="flex flex-1 overflow-hidden">
             <div className="flex-1 overflow-y-auto">
               <div className="px-8 pb-12 pt-10">
-                <DesktopResultsHeader count={resultsCount} locationLabel={locationLabel} listingType="service"/>
+                <DesktopResultsHeader count={resultsCount} locationLabel={locationLabel} listingType="service" roleLabel={roleLabel}/>
                 <div className="grid grid-cols-3 gap-8">
 
                   {isPending && (

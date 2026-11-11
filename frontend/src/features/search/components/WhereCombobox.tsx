@@ -445,7 +445,7 @@ export default function WhereCombobox({
   const portalTarget = typeof document !== "undefined" ? document.body : null;
 
   return (
-    <div ref={anchorRef} className="searchbar-segment flex items-center gap-2 px-4 py-2 xl:gap-3 xl:px-5 xl:py-3">
+    <div ref={anchorRef} className="searchbar-segment flex max-w-56 hover:max-w-64 focus-within:max-w-64 items-center gap-2 px-3.5 py-2 xl:max-w-60 xl:hover:max-w-64 xl:focus-within:max-w-64 xl:gap-3 xl:px-4 xl:py-3">
       <MapPin className="h-4 w-4 shrink-0 text-text-primary/50 xl:h-5 xl:w-5" />
       {input}
       {error && (

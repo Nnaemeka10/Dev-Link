@@ -13,12 +13,11 @@ import ReviewsSection from "../components/details/ReviewsSection";
 import SimilarVenues from "../components/details/SimilarVenues";
 import SideNavBar from "../../../components/layout/SideNavBar";
 import { DesktopExploreHeader } from "../components/explore/DesktopExploreHeader";
-import { useSearchForm } from "@/features/search";
-import { buildListingsHref } from "../searchParams";
+import { buildListingsUrl, useSearchForm } from "@/features/search";
 import { SearchFormData } from "@/features/search/utils/searchSchema";
 import type { DateRange } from "@/features/search/utils/searchSchema";
 import HomeFooter from "@/components/layout/Footer";
-import { MobileBookingDock } from "../components/details/MobileBookingDock.tsx";
+import { MobileBookingDock } from "../components/details/MobileBookingDock";
 import MobileDock from "@/components/layout/MobileDock";
 import { BOOKING_STORAGE_KEY } from "@/features/bookings/booking.data";
 
@@ -304,16 +303,7 @@ export default function HallDetails() {
   
   const handleSearch = (data: SearchFormData) => {
     startTransition(() => {
-      router.push(
-        buildListingsHref({
-          category: data.category,
-          location: data.location || undefined,
-          dateFrom: data.dateRange?.from?.toISOString(),
-          dateTo: data.dateRange?.to?.toISOString(),
-          capacity: data.capacity,
-          role: data.role,
-        })
-      );
+      router.push(buildListingsUrl(data));
     });
   };
 

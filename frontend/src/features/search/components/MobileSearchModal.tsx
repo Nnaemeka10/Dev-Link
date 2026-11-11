@@ -6,15 +6,16 @@ import { Search, X } from "lucide-react";
 import { Controller, type UseFormReturn } from "react-hook-form";
 
 import { SEARCH_TABS } from "../lib/constants";
-import type { SearchFormData } from "../utils/searchSchema";
+import type { SearchFormData, SearchFormInput } from "../utils/searchSchema";
 import { useSearchStore } from "../store/useSearchStore";
 import WhereCombobox from "./WhereCombobox";
 import { DateRangePicker } from "./DateRange";
 import { CapacityDropdown } from "./CapacityDropdown";
 import { RoleDropdown } from "./RoleDropdown";
+import { SearchCategory } from "../types/search.types";
 
 interface MobileSearchModalProps {
-  form: UseFormReturn<SearchFormData>;
+  form: UseFormReturn<SearchFormInput, any, SearchFormData>;   
   onSubmit: (data: SearchFormData) => void;
   isPending: boolean;
 }
@@ -45,14 +46,14 @@ export default function MobileSearchModal({ form, onSubmit, isPending }: MobileS
   }, [isMobileSearchOpen]);
 
   const handleCategoryChange = useCallback(
-    (next: "halls" | "services") => {
+    (next: SearchCategory) => {
       setValue("category", next);
       if (next === "halls") {
         setValue("role", undefined);
-        setValue("coverageArea", "");
+        setValue("coverageArea", "", { shouldValidate: true });
       } else {
         setValue("capacity", undefined);
-        setValue("location", "");
+        setValue("location", "", { shouldValidate: true });
       }
     },
     [setValue]

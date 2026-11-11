@@ -4,18 +4,21 @@ import { useEffect } from "react";
 import { useForm, type UseFormReturn } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
-import { searchSchema, SEARCH_FORM_DEFAULTS, type SearchFormData } from "../utils/searchSchema";
+import {
+  searchSchema,
+  SEARCH_FORM_DEFAULTS,
+  type SearchFormData,
+  type SearchFormInput,
+} from "../utils/searchSchema";
 import { loadLastSearch } from "../lib/lastSearch";
 
 /**
- * Form owns search state. SSR-safe defaults on the first render (identical
- * server/client markup), then `reset` restores the user's last search after
- * mount. RHF's `reset` is not a React setState, so this passes
- * react-hooks/set-state-in-effect while still syncing from the external
- * localStorage "store".
+ * Three generics: <form-state type, context, submit-data type>.
+ * The first MUST be the schema's INPUT type to match zodResolver;
+ * the third is the parsed OUTPUT your onSubmit callbacks receive.
  */
-export function useSearchForm(): UseFormReturn<SearchFormData> {
-  const form = useForm<SearchFormData>({
+export function useSearchForm(): UseFormReturn<SearchFormInput, any, SearchFormData> {
+  const form = useForm<SearchFormInput, any, SearchFormData>({
     resolver: zodResolver(searchSchema),
     mode: "onChange",
     defaultValues: SEARCH_FORM_DEFAULTS,

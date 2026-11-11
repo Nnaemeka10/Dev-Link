@@ -4,7 +4,6 @@ import { useWatch } from "react-hook-form";
 import { useMemo, useState, useTransition } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useSearchForm } from "@/features/search/hooks/useSearchForm";
-import { buildListingsHref } from "@/features/listings/searchParams";
 import type { SearchFormData } from "@/features/search/utils/searchSchema";
 
 // --- REAL DATA IMPORTS ---
@@ -18,6 +17,8 @@ import { toggleSelection } from "../utils/compareSelection";
 import HomeFooter from "@/components/layout/Footer";
 import SideNavBar from "@/components/layout/SideNavBar";
 import MobileDock from "@/components/layout/MobileDock";
+import { buildListingsUrl, saveLastSearch } from "@/features/search";
+import { useSyncFormWithUrl } from "@/features/search/hooks/useSyncFormWithUrl";
 
 function formatDateLabel(date: Date) {
   return date.toLocaleDateString("en-NG", { day: "numeric", month: "short" });
@@ -69,6 +70,8 @@ export default function ExploreHalls() {
   const router = useRouter();
   const [isTransitioning, startTransition] = useTransition();
   const form = useSearchForm();
+  // URL is the source of truth on this page: keeps the bar (and refresh) honest.
+  useSyncFormWithUrl(form);
 
   const mobileSelectedListings = useMemo(
     () => listings.filter((listing) => mobileSelectedIds.has(listing.id)),
@@ -80,17 +83,11 @@ export default function ExploreHalls() {
   );
 
   const handleSearch = (data: SearchFormData) => {
-    startTransition(() => {
-      router.push(buildListingsHref({
-        category: "halls",
-        location: data.location || undefined,
-        dateFrom: data.dateRange?.from?.toISOString(),
-        dateTo: data.dateRange?.to?.toISOString(),
-        flexible: data.flexible || undefined,
-        capacity: data.capacity,
-      }));
-    });
-  };
+  saveLastSearch(data);
+  startTransition(() => {
+    router.push(buildListingsUrl(data));
+  });
+};
 
   const selectedDateRange = useWatch({ control: form.control, name: "dateRange" });
   const selectedLocation = useWatch({ control: form.control, name: "location" });

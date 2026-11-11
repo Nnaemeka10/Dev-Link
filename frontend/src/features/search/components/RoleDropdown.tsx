@@ -2,7 +2,7 @@
 
 import { useCallback, useState } from "react";
 import { createPortal } from "react-dom";
-import { Briefcase, Check } from "lucide-react";
+import { Briefcase, Check, X } from "lucide-react";
 
 import { SERVICE_CATEGORIES } from "../lib/constants";
 import { usePopover } from "../hooks/usePopover";
@@ -89,6 +89,18 @@ export function RoleDropdown({ value, onChange, disabled = false, variant = "seg
               {selectedLabel}
             </button>
           </div>
+
+          {value && (
+          <button
+            type="button"
+            onClick={() => onChange(undefined)}
+            disabled={disabled}
+            aria-label="Clear service"
+            className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-text-primary/40 transition-colors hover:text-text-primary disabled:cursor-not-allowed disabled:opacity-50 xl:h-5 xl:w-5"
+          >
+            <X className="h-3 w-3 xl:h-3.5 xl:w-3.5" />
+          </button>
+        )}
         </div>
         {isOpen && list}
       </div>
@@ -98,7 +110,7 @@ export function RoleDropdown({ value, onChange, disabled = false, variant = "seg
   //Segment variant: pill segment + scrim + portal list
   return (
     <>
-      <div ref={anchorRef} className="searchbar-segment flex max-w-36 items-center gap-2 px-3 py-2 xl:max-w-40 xl:gap-2.5 xl:px-4 xl:py-3">
+      <div ref={anchorRef} className="searchbar-segment flex max-w-36 hover:max-w-44 focus-within:max-w-44 items-center gap-2 px-3 py-2 xl:max-w-40 xl:hover:max-w-48 xl:focus-within:max-w-48 xl:gap-2.5 xl:px-4 xl:py-3">
         <div className="min-w-0 flex-1">
           <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-text-primary/45 xl:text-[11px]">
             Service
@@ -116,6 +128,17 @@ export function RoleDropdown({ value, onChange, disabled = false, variant = "seg
             {selectedLabel}
           </button>
         </div>
+        {value && (
+          <button
+            type="button"
+            onClick={() => onChange(undefined)}
+            disabled={disabled}
+            aria-label="Clear service"
+            className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-text-primary/40 transition-colors hover:text-text-primary disabled:cursor-not-allowed disabled:opacity-50 xl:h-5 xl:w-5"
+          >
+            <X className="h-3 w-3 xl:h-3.5 xl:w-3.5" />
+          </button>
+        )}
       </div>
 
       {portalTarget && isOpen && pos

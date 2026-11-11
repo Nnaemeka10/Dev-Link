@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, SortDesc } from "lucide-react";
 import type { SortBy, SortOrder } from "@/features/listings/searchParams";
 
 interface SortDropdownProps {
@@ -53,10 +53,9 @@ export function SortDropdown({ currentSort, currentSortOrder, onSort }: SortDrop
         aria-haspopup="listbox"
       >
         <div className="flex flex-col md:flex-row items-center">
-        <span>Sort by:</span>
         <span>{getCurrentLabel()}</span>
         </div>
-        <ChevronDown className={`h-4 w-4 transition-transform ${isOpen ? "rotate-180" : ""}`} />
+        <SortDesc className={`h-4 w-4 transition-transform ${isOpen ? "rotate-180" : ""}`} />
       </button>
 
       {isOpen && (

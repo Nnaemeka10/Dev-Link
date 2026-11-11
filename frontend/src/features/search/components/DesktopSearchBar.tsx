@@ -6,14 +6,14 @@ import type { UseFormReturn } from "react-hook-form";
 
 import { SEARCH_TABS } from "../lib/constants";
 import type { SearchCategory } from "../types/search.types";
-import type { SearchFormData } from "../utils/searchSchema";
+import type { SearchFormData, SearchFormInput } from "../utils/searchSchema";
 import WhereCombobox from "./WhereCombobox";
 import { CapacityDropdown } from "./CapacityDropdown";
 import { RoleDropdown } from "./RoleDropdown";
 import { DateRangePicker } from "./DateRange";
 
 interface DesktopSearchBarProps {
-  form: UseFormReturn<SearchFormData>;
+  form: UseFormReturn<SearchFormInput, any, SearchFormData>;   
   onSubmit: (data: SearchFormData) => void;
   isPending: boolean;
   showShadow?: boolean;
@@ -68,13 +68,12 @@ export default function DesktopSearchBar({ form, onSubmit, isPending, showShadow
   const handleCategoryChange = useCallback(
     (next: SearchCategory) => {
       setValue("category", next);
-      // Clear the fields that don't apply to the new category.
       if (next === "halls") {
         setValue("role", undefined);
-        setValue("coverageArea", "");
+        setValue("coverageArea", "", { shouldValidate: true });
       } else {
         setValue("capacity", undefined);
-        setValue("location", "");
+        setValue("location", "", { shouldValidate: true });
       }
     },
     [setValue]

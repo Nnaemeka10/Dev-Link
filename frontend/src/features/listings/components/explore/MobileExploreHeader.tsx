@@ -37,6 +37,8 @@ export default function MobileExploreHeader({
 
   const [isFilterOpen, setIsFilterOpen] = useState(false);
 
+  const isServices = category === "services";
+
   const currentFilters: Partial<FilterState> = {
     priceMin: searchParams.get("priceMin") ? Number(searchParams.get("priceMin")) : undefined,
     priceMax: searchParams.get("priceMax") ? Number(searchParams.get("priceMax")) : undefined,
@@ -46,17 +48,21 @@ export default function MobileExploreHeader({
     verified: searchParams.get("verified") === "true",
     venueTypes: searchParams.get("venueTypes")?.split(",").filter(Boolean),
     amenities: searchParams.get("amenities")?.split(",").filter(Boolean),
-    coverageArea: searchParams.get("location") || undefined,
+    // Services keep their area in the `coverage` param, halls in `location`.
+    coverageArea: (isServices ? searchParams.get("coverage") : searchParams.get("location")) || undefined,
   };
 
   const handleApplyFilters = (filters: FilterState) => {
     const params = normalizeListingSearchParams({
       category: searchParams.get("category") || "halls",
-      location: filters.coverageArea || searchParams.get("location") || undefined,
+      // Halls only: the area lives in `location`.
+      location: isServices ? undefined : searchParams.get("location") || undefined,
+      // Services only: the modal's coverage value goes to `coverage`.
+      coverage: isServices ? filters.coverageArea || searchParams.get("coverage") || undefined : undefined,
       dateFrom: searchParams.get("dateFrom") || undefined,
       dateTo: searchParams.get("dateTo") || undefined,
-      capacity: searchParams.get("capacity") || undefined,      
-      role: searchParams.get("role") || undefined,               
+      capacity: searchParams.get("capacity") || undefined,
+      role: searchParams.get("role") || undefined,
       sort: searchParams.get("sort") || undefined,
       sortOrder: searchParams.get("sortOrder") || undefined,
     });
@@ -93,7 +99,7 @@ export default function MobileExploreHeader({
             <SlidersHorizontal className="h-5 w-5" />
           </button>
         </div>
-        
+
         <MobileSearchTrigger mobileSummaryLines={mobileSummary} />
         <MobileSearchModal onSubmit={handleSearch} form={form} isPending={isPending} />
       </header>
@@ -104,7 +110,8 @@ export default function MobileExploreHeader({
 }
 
 
-export function MobileResultsHeader({count, locationLabel, listingType} : {count: number, locationLabel: string, listingType: string}) {
+
+export function MobileResultsHeader({count, locationLabel, listingType, roleLabel} : {count: number, locationLabel: string, listingType: string, roleLabel?: string}) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -115,6 +122,7 @@ export function MobileResultsHeader({count, locationLabel, listingType} : {count
   const params = normalizeListingSearchParams({
     category: searchParams.get("category") || "halls",
     location: nullableToUndefined(searchParams.get("location")),
+    coverage: nullableToUndefined(searchParams.get("coverage")),
     dateFrom: nullableToUndefined(searchParams.get("dateFrom")),
     dateTo: nullableToUndefined(searchParams.get("dateTo")),
     capacity: nullableToUndefined(searchParams.get("capacity")),
@@ -136,7 +144,7 @@ export function MobileResultsHeader({count, locationLabel, listingType} : {count
   return (
     <div className="mb-6 px-6 py-4 justify-between flex">
       <div>
-        
+
         {listingType === "hall" && (
           <>
           <h2 className="text-lg font-extrabold tracking-[-0.02em] text-text-primary">Venues in {locationLabel}</h2>
@@ -145,17 +153,17 @@ export function MobileResultsHeader({count, locationLabel, listingType} : {count
         )}
         {listingType === "service" && (
           <>
-          <h2 className="text-lg font-extrabold tracking-[-0.02em] text-text-primary">Services in {locationLabel}</h2>
-          <p className="mt-1 text-tiny text-[#555B7F]"> {count} {count === 1 ? "premium service" : "premium services"} found for your event</p>
+          <h2 className="text-lg font-extrabold tracking-[-0.02em] text-text-primary">{roleLabel ?? "All Services"} in {locationLabel}</h2>
+          <p className="mt-1 text-tiny text-[#555B7F]"> {count} {count === 1 ? "service" : "services"} found for your event</p>
           </>
         )}
-        
+
       </div>
       <div className="flex items-center justify-between">
-        <SortDropdown 
-          currentSort={params.sort} 
-          currentSortOrder={params.sortOrder} 
-          onSort={handleSort} 
+        <SortDropdown
+          currentSort={params.sort}
+          currentSortOrder={params.sortOrder}
+          onSort={handleSort}
         />
       </div>
     </div>

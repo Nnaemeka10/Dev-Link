@@ -70,7 +70,7 @@ function FooterColumn({ title, items }: FooterColumnData) {
 
 export default function HomeFooter() {
   return (
-    <footer className="bg-linear-to-b from-bg-primary to-bg-secondary min-h-50 px-4 pb-28 pt-96 lg:px-8 lg:pb-10 lg:pt-12">
+    <footer className="bg-linear-to-b from-bg-primary to-bg-secondary min-h-50 px-4 pb-28 pt-96 lg:px-8">
       <div className="mx-auto grid max-w-7xl gap-8 lg:grid-cols-[1fr_280px_180px_140px_90px] lg:items-start">
         <div>
           <Link

@@ -12,7 +12,7 @@ import { RatingBadge, ListingBadge } from "../components/details/DetailBadges";
 import ReviewsSection from "../components/details/ReviewsSection";
 import MobileDock from "@/components/layout/MobileDock";
 import HomeFooter from "@/components/layout/Footer";
-import { MobileBookingDock } from "../components/details/MobileBookingDock.tsx";  
+import { MobileBookingDock } from "../components/details/MobileBookingDock";  
 import type { DateRange } from "@/features/search/utils/searchSchema";
 
 import { useParams } from "next/navigation";

@@ -19,29 +19,35 @@ export type DateRange = z.infer<typeof dateRangeSchema>;
 const cleanText = (v: string) => v.replace(/[<>"'`]/g, "").trim();
 const minTwo = (v: string) => v.length === 0 || v.length >= 2;
 
-export const searchSchema = z
-  .object({
-    category: z.enum(["halls", "services"]),
+const searchableText = () =>
+  z.string().transform(cleanText).refine(minTwo, "Enter at least 2 characters").default("");
 
-    location: z.string().transform(cleanText).refine(minTwo, "Enter at least 2 characters"),
-    coverageArea: z.string().transform(cleanText).refine(minTwo, "Enter at least 2 characters"),
+export const searchSchema = z.object({
+  category: z.enum(["halls", "services"]),
 
-    dateRange: dateRangeSchema.optional(),
+  location: searchableText(),
+  coverageArea: searchableText(),
 
-    capacity: z.number().min(1).optional(),
-    role: z.string().optional(),
+  dateRange: dateRangeSchema.optional(),
 
-    flexible: z.number().int().min(0).max(2),
-  })
-  .refine(
-    (v) => {
-      if (v.category === "halls") return !v.role && !v.coverageArea;
-      return !v.capacity && !v.location;
-    },
-    { message: "Invalid field combination for category" }
-  );
+  capacity: z.number().min(1).optional(),
+  role: z.string().optional(),
+  flexible: z.number().int().min(0).max(2).default(0),
+});
 
-export type SearchFormData = z.infer<typeof searchSchema>;
+/**
+ * INPUT: what lives in the form state / what the resolver receives.
+ * The defaulted fields are optional here - form state may hold undefined
+ * (e.g. mid category-switch) and the schema still parses.
+ */
+export type SearchFormInput = z.input<typeof searchSchema>;
+
+/**
+ * OUTPUT: what zodResolver hands to your onSubmit callbacks.
+ * Defaults applied and text cleaned - location/coverageArea/flexible
+ * are guaranteed present here.
+ */
+export type SearchFormData = z.output<typeof searchSchema>;
 
 export const SEARCH_FORM_DEFAULTS: SearchFormData = {
   category: "halls",

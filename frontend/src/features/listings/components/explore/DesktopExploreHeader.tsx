@@ -58,8 +58,10 @@ export function DesktopExploreHeader({ handleSearch, form, isPending, filter, ca
   const handleApplyFilters = (filters: FilterState) => {
     const params = normalizeListingSearchParams({
       category: searchParams.get("category") || "halls",
-      location: filters.coverageArea || searchParams.get("location") || undefined,
-      coverage: searchParams.get("coverage") || undefined,
+      location: searchParams.get("category") === "services" ? undefined : searchParams.get("location") || undefined,
+      coverage: searchParams.get("category") === "services"
+        ? filters.coverageArea || searchParams.get("coverage") || undefined
+        : undefined,
       dateFrom: searchParams.get("dateFrom") || undefined,
       dateTo: searchParams.get("dateTo") || undefined,
       flexible: searchParams.get("flexible") || undefined,
@@ -122,10 +124,12 @@ export function DesktopResultsHeader({
   count,
   locationLabel,
   listingType,
+  roleLabel,
 }: {
   count: number;
   locationLabel: string;
   listingType: "hall" | "service";
+  roleLabel?: string;
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -147,12 +151,13 @@ export function DesktopResultsHeader({
     router.push(buildListingsHref({ ...params, sort, sortOrder }));
   };
 
+  const headingLabel = listingType === "hall" ? "Venues" : (roleLabel ?? "All Services");
   const noun = listingType === "hall" ? "venue" : "service";
   return (
     <div className="mb-8 flex items-end justify-between">
       <div>
         <h2 className="text-xl font-extrabold tracking-[-0.02em] text-text-primary">
-          {listingType === "hall" ? "Venues" : "Services"} in {locationLabel}
+          {headingLabel} in {locationLabel}
         </h2>
         <p className="mt-1 text-sm text-[#555B7F]">
           {count} {count === 1 ? `premium ${noun}` : `premium ${noun}s`} found for your event

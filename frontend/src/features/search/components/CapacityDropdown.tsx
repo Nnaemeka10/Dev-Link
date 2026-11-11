@@ -2,7 +2,7 @@
 
 import { useCallback, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { Users } from "lucide-react";
+import { Users, X } from "lucide-react";
 
 import { usePopover } from "../hooks/usePopover";
 
@@ -117,6 +117,18 @@ export function CapacityDropdown({ value, onChange, disabled = false, variant = 
               {displayValue}
             </button>
           </div>
+
+          {value !== undefined && (
+            <button
+              type="button"
+              onClick={() => onChange(undefined)}
+              disabled={disabled}
+              aria-label="Clear capacity"
+              className="mt-4 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-text-primary/40 transition-colors hover:text-text-primary disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          )}
         </div>
         {isOpen && (
           <div className="search-popover mt-3 rounded-2xl border border-text-primary/10 bg-bg-primary/40 py-3">
@@ -130,7 +142,7 @@ export function CapacityDropdown({ value, onChange, disabled = false, variant = 
   //  Segment variant: pill segment + scrim + portal panel 
   return (
     <>
-      <div ref={anchorRef} className="searchbar-segment flex max-w-32 items-center gap-2 px-3 py-2 xl:max-w-36 xl:gap-2.5 xl:px-4 xl:py-3">
+      <div ref={anchorRef} className="searchbar-segment flex max-w-32 hover:max-w-40 focus-within:max-w-40 items-center gap-2 px-3 py-2 xl:max-w-36 xl:hover:max-w-44 xl:focus-within:max-w-44 xl:gap-2.5 xl:px-4 xl:py-3">
         <div className="min-w-0 flex-1">
           <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-text-primary/45 xl:text-[11px]">
             Capacity
@@ -148,6 +160,17 @@ export function CapacityDropdown({ value, onChange, disabled = false, variant = 
             {displayValue}
           </button>
         </div>
+        {value !== undefined && (
+          <button
+            type="button"
+            onClick={() => onChange(undefined)}
+            disabled={disabled}
+            aria-label="Clear capacity"
+            className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-text-primary/40 transition-colors hover:text-text-primary disabled:cursor-not-allowed disabled:opacity-50 xl:h-5 xl:w-5"
+          >
+            <X className="h-3 w-3 xl:h-3.5 xl:w-3.5" />
+          </button>
+        )}
       </div>
 
       {portalTarget && isOpen && pos
