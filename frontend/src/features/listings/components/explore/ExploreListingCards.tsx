@@ -315,8 +315,8 @@ export function MobileExploreCard({ listing, selected, onToggleCompare }: Explor
 
   return (
     <Link href={listingHref} className="group">
-      <article className="overflow-hidden rounded-[2rem] bg-white shadow-[0_16px_30px_rgba(50,38,23,0.08)]">
-        <div className="relative h-[20rem] overflow-hidden rounded-t-[2rem]">
+      <article className="overflow-hidden rounded-4xl bg-white shadow-[0_16px_30px_rgba(50,38,23,0.08)]">
+        <div className="relative h-80 overflow-hidden rounded-t-4xl">
           <ListingImage src={listing.imageUrl} alt={listing.name} sizes="(max-width: 1024px) 90vw" />
           
           {listing.verified && <div className="absolute left-5 top-4"><VerifiedBadge /></div>}
@@ -409,8 +409,8 @@ export function DesktopExploreCard({ listing, selected, onToggleCompare }: Explo
 
   return (
     <Link href={listingHref} className="group">
-      <article className="overflow-hidden rounded-[2rem] bg-white">
-        <div className="relative h-[17.25rem] overflow-hidden">
+      <article className="overflow-hidden rounded-4xl bg-white">
+        <div className="relative h-69 overflow-hidden">
           <ListingImage src={listing.imageUrl} alt={listing.name} sizes="25vw" />
            <SaveButton 
             listingId={listing.id} 
