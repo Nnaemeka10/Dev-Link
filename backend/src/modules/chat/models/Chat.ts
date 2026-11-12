@@ -72,64 +72,106 @@ export const ChatModel = {
   },
 
   // Idempotent Find or Create Conversation
-  async findOrCreateDirectConversation(userId: number, vendorId: number, type: string, contextId?: string): Promise<string> {
-    const db = getDB();
-    const client = await db.connect();
-    try {
-      await client.query('BEGIN');
+  async findOrCreateDirectConversation(
+      userId: number,
+      vendorId: number,
+      type: string,
+      contextId?: string
+  ): Promise<string> {
+      const db = getDB();
+      const client = await db.connect();
+      try {
+          await client.query('BEGIN');
 
-      // Check if conversation already exists for this context
-      let convId: string = "";
-      
-      if (contextId) {
-        const contextCol = type === 'listing' ? 'listing_id' : 'booking_id';
-        const existing = await client.query(
-          `SELECT c.id FROM conversations c
-           JOIN conversation_context ctx ON ctx.conversation_id = c.id
-           WHERE ctx.${contextCol} = $1 AND ctx.type = $2 AND c.type = 'direct'`,
-          [contextId, type]
-        );
-        if (existing.rows.length > 0) {
-          convId = existing.rows[0].id;
-        }
-      }
-
-      if (!convId) {
-        // Create conversation
-        const convRes = await client.query(
-          `INSERT INTO conversations (type) VALUES ('direct') RETURNING id`,
-          []
-        );
-        convId = convRes.rows[0].id;
-
-        // Add participants (Guest and Host)
-        await client.query(
-          `INSERT INTO conversation_participants (conversation_id, user_id, role) VALUES ($1, $2, 'guest'), ($1, $3, 'host')`,
-          [convId, userId, vendorId]
-        );
-
-        // Add context
-        if (contextId) {
-          const contextCol = type === 'listing' ? 'listing_id' : 'booking_id';
+          // Serialize concurrent creators for the same (context, user) - same
+          // advisory-lock pattern as BookingModel.checkAvailability. The second
+          // caller waits, then its lookup below sees the first caller's thread.
           await client.query(
-            `INSERT INTO conversation_context (conversation_id, ${contextCol}, type) VALUES ($1, $2, $3)`,
-            [convId, contextId, type]
+              `SELECT pg_advisory_xact_lock(hashtext($1 || ':' || $2 || ':' || $3))`,
+              [type, contextId ?? '', String(userId)]
           );
-        }
-      }
 
-      await client.query('COMMIT');
-      return convId;
-    } catch (error) {
-      await client.query('ROLLBACK');
-      throw error;
-    } finally {
-      client.release();
-    }
+          const contextCol = type === 'listing' ? 'listing_id' : 'booking_id';
+
+          // only reuse a conversation THIS USER is a participant of.
+          // Without the EXISTS check, a second customer inquiring about the same
+          // listing was dropped into the first customer's thread.
+          let convId = '';
+          if (contextId) {
+              const existing = await client.query(
+                  `SELECT c.id
+                    FROM conversations c
+                    JOIN conversation_context ctx ON ctx.conversation_id = c.id
+                    WHERE ctx.${contextCol} = $1
+                      AND ctx.type = $2
+                      AND c.type = 'direct'
+                      AND EXISTS (
+                          SELECT 1 FROM conversation_participants cp
+                          WHERE cp.conversation_id = c.id
+                            AND cp.user_id = $3
+                            AND cp.left_at IS NULL
+                      )
+                    LIMIT 1`,
+                  [contextId, type, userId]
+              );
+              if (existing.rows.length > 0) convId = existing.rows[0].id;
+          }
+
+          if (!convId) {
+              const convRes = await client.query(
+                  `INSERT INTO conversations (type) VALUES ('direct') RETURNING id`
+              );
+              convId = convRes.rows[0].id;
+
+              // DO NOTHING also covers guest === host (self-booking safety net)
+              await client.query(
+                  `INSERT INTO conversation_participants (conversation_id, user_id, role)
+                  VALUES ($1, $2, 'guest'), ($1, $3, 'host')
+                  ON CONFLICT (conversation_id, user_id) DO NOTHING`,
+                  [convId, userId, vendorId]
+              );
+
+              if (contextId) {
+                  await client.query(
+                      `INSERT INTO conversation_context (conversation_id, ${contextCol}, type)
+                      VALUES ($1, $2, $3)`,
+                      [convId, contextId, type]
+                  );
+              }
+          }
+
+          await client.query('COMMIT');
+          return convId;
+      } catch (error: any) {
+          await client.query('ROLLBACK');
+
+          // RACE BACKSTOP: if we still lost a create race for a booking, the
+          // partial unique index rejected our context insert. Our conversation
+          // was rolled back - return the winner's instead of failing the caller
+          // (this runs inside verifyPayment; it must not 500 a paid booking).
+          if (
+              error?.code === '23505' &&
+              error?.constraint === 'uq_conversation_context_booking' &&
+              contextId
+          ) {
+              const winner = await db.query(
+                  `SELECT conversation_id
+                    FROM conversation_context
+                    WHERE booking_id = $1 AND type = 'booking'`,
+                  [contextId]
+              );
+              if (winner.rows.length > 0) return winner.rows[0].conversation_id;
+          }
+
+          throw error;
+      } finally {
+          client.release();
+      }
   },
 
   // 3. Create System Message for Booking (Triggered after markAsPaid)
   async createBookingSystemMessage(bookingId: string, userId: number, vendorId: number, listingImage: string | null, listingTitle: string): Promise<void> {
+    if(Number(userId) === Number(vendorId)) return; // Avoid sending system message to self
     // Find or create the booking conversation
     const conversationId = await this.findOrCreateDirectConversation(userId, vendorId, 'booking', bookingId);
     

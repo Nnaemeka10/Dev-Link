@@ -126,31 +126,31 @@ export const createConversation = async (req: Request, res: Response) => {
      const db = getDB();
 
     if (bookingId) {
-      // 1. Check if a conversation already exists for this booking
-      const existing = await db.query(
-        `SELECT c.id FROM conversations c
-         JOIN conversation_context ctx ON ctx.conversation_id = c.id
-         WHERE ctx.booking_id = $1 AND ctx.type = 'booking'`,
-        [bookingId]
+      const bookingRes = await db.query(
+          `SELECT b.user_id, b.listing_id, l.vendor_id
+            FROM bookings b JOIN listings l ON l.id = b.listing_id
+            WHERE b.id = $1`,
+          [bookingId]
       );
+      if (bookingRes.rows.length === 0) return res.status(404).json({ message: 'Booking not found' });
+      const b = bookingRes.rows[0];
 
-      if (existing.rows.length > 0) {
-        conversationId = existing.rows[0].id;
-      } else {
-        // 2. Fallback: If somehow it doesn't exist, create it using the booking's listing_id
-        const bookingRes = await db.query('SELECT listing_id FROM bookings WHERE id = $1', [bookingId]);
-        if (bookingRes.rows.length === 0) return res.status(404).json({ message: 'Booking not found' });
-        
-        const listingIdFromBooking = bookingRes.rows[0].listing_id;
-        const listingRes = await db.query('SELECT vendor_id FROM listings WHERE id = $1', [listingIdFromBooking]);
-        if (listingRes.rows.length === 0) return res.status(404).json({ message: 'Listing not found' });
-
-        const vendorId = listingRes.rows[0].vendor_id;
-        if (vendorId === req.user.userId) return res.status(400).json({ message: 'Cannot chat with yourself' });
-
-        conversationId = await ChatModel.findOrCreateDirectConversation(req.user.userId, vendorId, 'booking', bookingId);
+      // Only the booking's guest opens this thread (vendors already get the
+      // 'Cannot chat with yourself' guard on the fallback path).
+      if (Number(b.user_id) !== req.user.userId) {
+          return res.status(403).json({ message: 'Forbidden: not your booking' });
       }
-    } else if (listingId) {
+
+      const existing = await db.query(
+          `SELECT c.id FROM conversations c
+          JOIN conversation_context ctx ON ctx.conversation_id = c.id
+          WHERE ctx.booking_id = $1 AND ctx.type = 'booking'`,
+          [bookingId]
+      );
+      conversationId = existing.rows.length > 0
+          ? existing.rows[0].id
+          : await ChatModel.findOrCreateDirectConversation(req.user.userId, b.vendor_id, 'booking', bookingId);
+  } else if (listingId) {
       // Standard listing inquiry flow
       const listingRes = await db.query('SELECT vendor_id FROM listings WHERE id = $1 AND status = \'published\'', [listingId]);
       if (listingRes.rows.length === 0) return res.status(404).json({ message: 'Listing not found' });

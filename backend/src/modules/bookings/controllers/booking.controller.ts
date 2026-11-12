@@ -41,35 +41,32 @@ export const createBooking = async (req: Request, res: Response) => {
             listingId, startDate, endDate, startTime, endTime, preferences, packageId
         });
 
-        //add  this when i add dva 
-         //INTEGRATION HOOK: Provision DVA for this specific booking
-        // We do this asynchronously so the user gets their booking confirmation instantly.
+    
         const uid = req.user.userId;
-        // setImmediate(async () => {
-        //     try {
-        //     const db = getDB();
-        //     const userRes = await db.query('SELECT email, paystack_customer_code FROM users WHERE id = $1', [uid]);
-        //     if (userRes.rows[0].paystack_customer_code) {
-        //         await provisionDvaForBooking(booking.id, uid, userRes.rows[0].email);
-        //     }
-        //     } catch (dvaError) {
-        //     console.error(`Failed to provision DVA for booking ${booking.id}:`, dvaError);
-        //     // Admin can manually trigger or user can use fallback payment link
-        //     }
-        // });
+     
 
         res.status(201).json({
             bookingId: booking.id,
             amount: parseFloat(booking.total_amount.toString()),
             currency: booking.currency,
             status: booking.status
-            // dvaAccountNumber: dvaDetails?.accountNumber || null,
-            // dvaBankName: dvaDetails?.bankSlug || null
         });
 
     } catch (error: any) {
         console.error('Create booking error:', error);
-        res.status(500).json({ message: error.message || 'Failed to create booking' });
+
+        const message: string = error?.message ?? '';
+
+        // Known client errors - 4xx
+        if (message === 'You cannot book your own listing' || message === 'Invalid package selected') {
+            return res.status(400).json({ message });
+        }
+        if (message === 'Listing not found or not available for booking') {
+            return res.status(404).json({ message });
+        }
+
+        // Unexpected errors: log the details, but don't leak them to the client
+        return res.status(500).json({ message: 'Failed to create booking' });
     }
 };
 
