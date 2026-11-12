@@ -365,7 +365,6 @@ export default function PaymentStep({ form, listing, wizard, variant = "desktop"
       // 4. Keep the lease alive while the popup is open + enforce the cap.
       startHoldSession(bookingRes.bookingId, deadline);
     } catch (error) {
-      console.error("Payment initialization failed:", error);
       // If a hold was created but the popup never opened, release it.
       if (createdBookingId) {
         liveHoldRef.current = null;
@@ -374,9 +373,19 @@ export default function PaymentStep({ form, listing, wizard, variant = "desktop"
         stopSessionTimer();
         void releaseHold(createdBookingId);
       }
+
       if (error instanceof ApiError) {
+        // Expected business rejections — "You cannot book your own listing",
+        // dates taken (409), session expired (400), etc. These are NOT
+        // exceptions: surface the message inline and keep them out of
+        // console.error so the Next.js dev overlay doesn't flag a crash.
         setErrorMessage(error.message || "Could not start payment process.");
+        if (error.status >= 500) {
+          console.error("Payment initialization failed:", error);
+        }
       } else {
+        // Genuine unexpected failure (network drop, bug) — worth logging.
+        console.error("Payment initialization failed:", error);
         setErrorMessage("An unexpected error occurred. Please check your network and try again.");
       }
       setIsProcessing(false);
