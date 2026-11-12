@@ -83,6 +83,10 @@ export function DateRangePicker({
   const portalTarget = typeof document !== "undefined" ? document.body : null;
   const isMobile = useMediaQuery("(max-width: 720px)");
 
+  // Single source of truth for live availability (paid blocks + others' holds).
+  // The hook polls every 15s and refetches on focus while the picker is open.
+  const { data: liveUnavailableDates } = useListingAvailability(listingId, open);
+
   function openPicker() {
     const seed: DayRange[] = multi
       ? (ranges ?? [])
@@ -170,8 +174,6 @@ export function DateRangePicker({
     if (multi) onRangesChange?.([]);
     else onChange(undefined);
   }
-
-  const { data: liveUnavailableDates } = useListingAvailability(listingId, open);
 
   const label = formatTriggerLabel(value);
   const singleDisplayLabel = label && flexible ? `${label} · ±${flexible}d` : label;

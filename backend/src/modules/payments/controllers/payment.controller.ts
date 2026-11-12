@@ -82,7 +82,7 @@ export const initializePayment = async (req: Request, res: Response) => {
         }
 
         // Security: Verify ownership
-        if (booking.user_id !== req.user.userId) {
+        if (Number(booking.user_id) !== Number(req.user.userId)) {
             res.status(403).json({ message: 'Forbidden: You do not own this booking' });
             return;
         }
@@ -108,13 +108,15 @@ export const initializePayment = async (req: Request, res: Response) => {
             booking.listing_id,
             toDateString(booking.start_date),
             toDateString(booking.end_date),
-            undefined,
+            Number(booking.user_id),
             booking.excluded_dates ?? []
         );
         if (!stillAvailable) {
             res.status(409).json({ message: 'Selected dates are no longer available' });
             return;
         }
+
+        await BookingModel.refreshHold(booking.id);
        
         let paymentReference = booking.payment_reference;
 

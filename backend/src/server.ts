@@ -8,6 +8,7 @@ import { startPostgresListener } from "./lib/listenBridge.js";
 import { processWebhookEvents } from "./modules/payments/utils/webhookProcessor.js"; 
 import { processAutomatedEscrowPayouts } from "./modules/payments/utils/payoutWorker.js"; 
 import { runReconciliation } from "./modules/payments/utils/reconciliation.js";
+import { startBookingCleanupJob } from './jobs/bookingCleanup.job.js';
 
 const PORT = ENV.PORT || 8080;
 
@@ -34,6 +35,8 @@ async function letsgo() {
     
     // Run reconciliation every 15 minutes
     setInterval(() => runReconciliation().catch(console.error), 15 * 60 * 1000);
+
+    startBookingCleanupJob();
 
 
     // 5. Start listening for requests

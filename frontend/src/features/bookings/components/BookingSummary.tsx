@@ -1,5 +1,6 @@
 import Image, { StaticImageData } from "next/image";
 import { MapPin, ShieldCheck } from "lucide-react";
+import HoldCountdown from "./HoldCountdown";
 
 interface SummaryData {
   venueName: string;
@@ -21,7 +22,7 @@ interface Fee {
   sublabel?: string; // e.g. "underline" fees like "Venue hire × 2 days"
 }
 
-export function PaymentSummary({ summary, onPay, isProcessing }: { summary: SummaryData; onPay: () => void; isProcessing: boolean }) {
+export function PaymentSummary({ summary, onPay, isProcessing, holdExpiresAt }: { summary: SummaryData; onPay: () => void; isProcessing: boolean; holdExpiresAt: string | null }) {
   return (
     <aside className="overflow-hidden rounded-4xl bg-white shadow-[0_24px_54px_rgba(34,27,18,0.08)]">
       <div className="relative h-64">
@@ -64,6 +65,8 @@ export function PaymentSummary({ summary, onPay, isProcessing }: { summary: Summ
           </div>
           {summary.totalNote && <p className="mt-2 text-right text-[11px] text-[#9A756C]">{summary.totalNote}</p>}
         </div>
+
+        <HoldCountdown expiresAt={holdExpiresAt} className="mb-3" />
         
         <button 
           type="button" 

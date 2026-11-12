@@ -23,6 +23,7 @@ import {
   TRENDING_LIMIT,
   trimPaginationRows,
 } from '../utils/pagination.js';
+import { BookingModel } from '../../bookings/models/Booking.js';
 
 function mapRows(rows: ListingRow[]): ListingCard[] {
   return rows.map(mapListingCard);
@@ -215,7 +216,12 @@ export const getListingAvailability = async (req: Request<{ id: string }>, res: 
     return;
   }
   try {
-    const dates = await ListingModel.findUnavailableDates(req.params.id);
+    // Populated only if optional auth is mounted on this route; anonymous
+    // viewers simply see all live holds (their own hold only exists while
+    // the popup is open, so it's never visible on the calendar anyway).
+    const viewerUserId = req.user?.userId ? Number(req.user.userId) : undefined;
+    const dates = await BookingModel.getCalendarUnavailableRanges(req.params.id, viewerUserId);
+    res.setHeader('Cache-Control', 'no-store');
     res.status(200).json({ unavailableDates: dates });
   } catch (error: any) {
     console.error('Get listing availability error:', error);

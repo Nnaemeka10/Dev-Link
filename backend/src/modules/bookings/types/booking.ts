@@ -33,6 +33,7 @@ export interface BookingRow {
   payment_status: string;
   paid_at: string | null;
   package_id: string | null;
+  expires_at: string | null; 
 }
 
 export interface CreateBookingInput {

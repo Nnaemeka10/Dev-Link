@@ -7,18 +7,27 @@ import { ListingDetailsResponse } from "@/features/listings/details.types";
 import { useBookingWizard } from "../hooks/useBookingWizard";
 import { apiFetch, ApiError } from "@/lib/api";
 import { usePricingQuote } from "../hooks/usePricingQuote";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { getPaystack } from "@/lib/paystack";
 import { useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
 import { toLocalDateString } from "@/lib/dates";
 import { envelope, excludedDates } from "@/features/search/utils/rangeSelection";
+import HoldCountdown from "./HoldCountdown";
+
+type PaystackInstance = Awaited<ReturnType<typeof getPaystack>>;
+
+/** Must match the backend lease model: 30s ping, 2-min lease, 30-min hard cap. */
+const HEARTBEAT_INTERVAL_MS = 30_000;
+const HEARTBEAT_MAX_FAILURES = 3;
 
 interface PaymentStepProps {
   form: BookingFormState;
   listing: ListingDetailsResponse;
   wizard: ReturnType<typeof useBookingWizard>;
   variant?: "desktop" | "mobile";
+  /** Vestigial - the countdown is driven by internal state (holdDeadline). */
+  holdExpiresAt?: string | null;
 }
 
 export default function PaymentStep({ form, listing, wizard, variant = "desktop" }: PaymentStepProps) {
@@ -28,27 +37,233 @@ export default function PaymentStep({ form, listing, wizard, variant = "desktop"
 
   const queryClient = useQueryClient();
   const router = useRouter();
+  // Stable actions (useMemo'd in the wizard) so callbacks below never churn.
+  const { setIsProcessing, setPaymentData, clearDraft } = wizard;
+
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [infoMessage, setInfoMessage] = useState<string | null>(null);
+  // Shows the HARD 30-minute session deadline, not the 2-minute lease.
+  const [holdExpiresAt, setHoldExpiresAt] = useState<string | null>(null);
 
   // Envelope + holes derived from the multi-range selection.
   const dateRange = envelope(form.dateRanges);
   const excluded = excludedDates(form.dateRanges);
 
-  const handlePay = async () => {
-    setErrorMessage(null); // Reset error message at the start
+  // The hold lives ONLY while the Paystack popup is open. Refs let the
+  // heartbeat / timers / unmount / pagehide paths act without stale closures,
+  // and distinguish "user abandoned checkout" from "payment succeeded".
+  const liveHoldRef = useRef<{ bookingId: string } | null>(null);
+  const paymentSucceededRef = useRef(false);
+  const heartbeatTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const sessionTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const heartbeatFailuresRef = useRef(0);
+  const popupRef = useRef<PaystackInstance | null>(null);
+  const transactionRef = useRef<{ id: string } | null>(null);
 
-    if (!dateRange?.from || !dateRange?.to) {
-      setErrorMessage("Please select a valid date range before proceeding to payment.");
+  const releaseHold = useCallback(async (bookingId: string) => {
+    try {
+      await apiFetch(`/api/bookings/${bookingId}/release-hold`, { method: "POST" });
+    } catch (error) {
+      // Non-fatal: the 2-minute lease + 30s cron are the safety net.
+      console.error("Failed to release date hold:", error);
+    }
+  }, []);
+
+  const stopHeartbeat = useCallback(() => {
+    if (heartbeatTimerRef.current) {
+      clearInterval(heartbeatTimerRef.current);
+      heartbeatTimerRef.current = null;
+    }
+    heartbeatFailuresRef.current = 0;
+  }, []);
+
+  const stopSessionTimer = useCallback(() => {
+    if (sessionTimerRef.current) {
+      clearTimeout(sessionTimerRef.current);
+      sessionTimerRef.current = null;
+    }
+  }, []);
+
+  /** Close the Paystack iframe (used for timeout / connection-loss fencing). */
+  const closePaystackPopup = useCallback(() => {
+    const popup = popupRef.current;
+    const transaction = transactionRef.current;
+    popupRef.current = null;
+    transactionRef.current = null;
+    if (!popup || !transaction) return;
+    try {
+      popup.cancelTransaction(transaction.id);
+    } catch (error) {
+      // Some builds throw if the iframe is already gone - safe to ignore.
+      console.error("Failed to close Paystack popup:", error);
+    }
+  }, []);
+
+  /**
+   * Single teardown path: stop timers, release the hold (unless money moved),
+   * clear the countdown, surface the right message. Idempotent - a second
+   * call sees liveHoldRef === null and only re-asserts the message.
+   */
+  const teardownHold = useCallback(
+    (opts: { release: boolean; info?: string; error?: string }) => {
+      stopHeartbeat();
+      stopSessionTimer();
+      const hold = liveHoldRef.current;
+      liveHoldRef.current = null;
+      setHoldExpiresAt(null);
+      if (opts.release && hold && !paymentSucceededRef.current) {
+        void releaseHold(hold.bookingId);
+      }
+      setIsProcessing(false);
+      if (opts.info) {
+        setInfoMessage(opts.info);
+        setErrorMessage(null);
+      }
+      if (opts.error) {
+        setErrorMessage(opts.error);
+        setInfoMessage(null);
+      }
+    },
+    [releaseHold, stopHeartbeat, stopSessionTimer, setIsProcessing]
+  );
+
+  /** Session died (hard cap / fenced lease / lost connectivity). */
+  const expireSession = useCallback(
+    (message: string) => {
+      // Tear down FIRST so the onCancel fired by cancelTransaction sees a
+      // null hold and keeps this specific message instead of the generic one.
+      teardownHold({ release: true, info: message });
+      closePaystackPopup();
+    },
+    [teardownHold, closePaystackPopup]
+  );
+
+  /**
+   * Starts the lease heartbeat + the hard-cap timer the moment the popup
+   * opens. The server is authoritative: alive:false means the lease lapsed
+   * (fenced - never resurrected) or the 30-minute cap passed.
+   */
+  const startHoldSession = useCallback(
+    (bookingId: string, holdDeadlineIso: string | null) => {
+      stopHeartbeat();
+      stopSessionTimer();
+
+      const ping = async () => {
+        // Guard against stale pings from a previous session.
+        if (!liveHoldRef.current || liveHoldRef.current.bookingId !== bookingId) return;
+        try {
+          const res = await apiFetch<{ alive: boolean }>(
+            `/api/bookings/${bookingId}/heartbeat`,
+            { method: "POST" }
+          );
+          if (!liveHoldRef.current || liveHoldRef.current.bookingId !== bookingId) return;
+          if (!res.alive) {
+            expireSession(
+              "Your payment session ended and the dates were released. Tap Pay to start a new one."
+            );
+            return;
+          }
+          heartbeatFailuresRef.current = 0;
+        } catch {
+          if (!liveHoldRef.current || liveHoldRef.current.bookingId !== bookingId) return;
+          heartbeatFailuresRef.current += 1;
+          if (heartbeatFailuresRef.current >= HEARTBEAT_MAX_FAILURES) {
+            expireSession(
+              "We lost contact with the server, so your date hold was released. Check your connection and tap Pay to try again."
+            );
+          }
+        }
+      };
+
+      void ping(); // renew the lease immediately on popup open
+      heartbeatTimerRef.current = setInterval(() => void ping(), HEARTBEAT_INTERVAL_MS);
+
+      if (holdDeadlineIso) {
+        const ms = new Date(holdDeadlineIso).getTime() - Date.now();
+        if (ms <= 0) {
+          expireSession(
+            "Your payment session ended and the dates were released. Tap Pay to start a new one."
+          );
+          return;
+        }
+        sessionTimerRef.current = setTimeout(() => {
+          expireSession(
+            "Your 30-minute payment session ended and the dates were released. Tap Pay to start a new one."
+          );
+        }, ms);
+      }
+    },
+    [expireSession, stopHeartbeat, stopSessionTimer]
+  );
+
+  // Release the hold if the user leaves the payment step (back to details,
+  // closes the wizard) or closes the tab while the popup is open. A successful
+  // payment is NEVER released - it converts to a paid booking instead.
+  useEffect(() => {
+    const releaseOnPageHide = () => {
+      const hold = liveHoldRef.current;
+      if (!hold || paymentSucceededRef.current) return;
+      const url = `/api/bookings/${hold.bookingId}/release-hold`;
+      // Same-origin /api path (the one apiFetch uses). Best-effort on tab close;
+      // the lease + cron guarantee release even if the browser drops this.
+      if (navigator.sendBeacon) navigator.sendBeacon(url);
+      else void fetch(url, { method: "POST", keepalive: true, credentials: "include" });
+    };
+    window.addEventListener("pagehide", releaseOnPageHide);
+    return () => {
+      window.removeEventListener("pagehide", releaseOnPageHide);
+      stopHeartbeat();
+      stopSessionTimer();
+      const hold = liveHoldRef.current;
+      if (hold && !paymentSucceededRef.current) void releaseHold(hold.bookingId);
+    };
+  }, [releaseHold, stopHeartbeat, stopSessionTimer]);
+
+  // Changing the date selection invalidates any stale hold + countdown.
+  const dateRangesKey = JSON.stringify(form.dateRanges);
+  useEffect(() => {
+    const hold = liveHoldRef.current;
+    if (hold && !paymentSucceededRef.current) {
+      liveHoldRef.current = null;
+      stopHeartbeat();
+      stopSessionTimer();
+      void releaseHold(hold.bookingId);
+    }
+    setHoldExpiresAt(null);
+  }, [dateRangesKey, releaseHold, stopHeartbeat, stopSessionTimer]);
+
+  const handlePay = async () => {
+    // A previous payment already succeeded but verification is pending -
+    // never charge the user twice. Point them at support instead.
+    if (paymentSucceededRef.current) {
+      setErrorMessage(
+        "Your previous payment succeeded but confirmation is still pending. Please contact support with your payment reference instead of paying again."
+      );
+      return;
+    }
+    if (!dateRange?.from || !dateRange.to) {
+      setErrorMessage("Please select your booking dates before paying.");
       return;
     }
 
-    try {
-      wizard.setIsProcessing(true);
+    setErrorMessage(null);
+    setInfoMessage(null);
+    setIsProcessing(true);
+    stopHeartbeat();
+    stopSessionTimer();
 
-      // 1. Create Pending Booking on Backend
-      // Backend calculates the exact amount (envelope days minus excluded
-      // days) and saves booking as 'pending'.
-      const bookingRes = await apiFetch<{ bookingId: string; amount: number; currency: string }>("/api/bookings", {
+    let createdBookingId: string | null = null;
+
+    try {
+      // 1. Create the booking = start the hold (reuses + renews a live one).
+      const bookingRes = await apiFetch<{
+        bookingId: string;
+        amount: number;
+        currency: string;
+        status: string;
+        expiresAt?: string;
+        holdDeadline?: string;
+      }>("/api/bookings", {
         method: "POST",
         body: JSON.stringify({
           listingId: listing.id,
@@ -60,17 +275,26 @@ export default function PaymentStep({ form, listing, wizard, variant = "desktop"
           preferences: form.preferences,
           packageId: form.packageId,
         }),
-        redirectOn401: true, // Redirect to login if user is not authenticated
-      });
-
-      // 2. Initialize Paystack Payment
-      const initRes = await apiFetch<{ accessCode: string; reference: string }>("/api/payments/initialize", {
-        method: "POST",
-        body: JSON.stringify({ bookingId: bookingRes.bookingId }),
         redirectOn401: true,
       });
 
-      wizard.setPaymentData({
+      createdBookingId = bookingRes.bookingId;
+      liveHoldRef.current = { bookingId: bookingRes.bookingId };
+      // Countdown + auto-close use the HARD deadline (created_at + 30 min).
+      const deadline = bookingRes.holdDeadline ?? bookingRes.expiresAt ?? null;
+      setHoldExpiresAt(deadline);
+
+      // 2. Initialize Paystack (backend renews the lease here).
+      const initRes = await apiFetch<{ accessCode: string; reference: string }>(
+        "/api/payments/initialize",
+        {
+          method: "POST",
+          body: JSON.stringify({ bookingId: bookingRes.bookingId }),
+          redirectOn401: true,
+        }
+      );
+
+      setPaymentData({
         bookingId: bookingRes.bookingId,
         amount: bookingRes.amount,
         currency: bookingRes.currency,
@@ -78,10 +302,18 @@ export default function PaymentStep({ form, listing, wizard, variant = "desktop"
         reference: initRes.reference,
       });
 
+      // 3. Open the popup. The hold is live for exactly this window.
       const popup = await getPaystack();
-      popup.resumeTransaction(initRes.accessCode, {
+      const transaction = popup.resumeTransaction(initRes.accessCode, {
         onSuccess: async () => {
-          // 4. Verify Payment on Backend
+          // Money moved: convert hold - paid. Never release from here on.
+          paymentSucceededRef.current = true;
+          liveHoldRef.current = null;
+          stopHeartbeat();
+          stopSessionTimer();
+          setHoldExpiresAt(null);
+          popupRef.current = null;
+          transactionRef.current = null;
           try {
             await apiFetch(`/api/payments/verify/${initRes.reference}`, {
               method: "GET",
@@ -89,32 +321,65 @@ export default function PaymentStep({ form, listing, wizard, variant = "desktop"
             });
             await queryClient.invalidateQueries({ queryKey: ["booking-details", bookingRes.bookingId] });
             await queryClient.invalidateQueries({ queryKey: ["listing", "details", listing.id] });
-
-            // 5. Clear Draft and Move to Confirmation Step
-            wizard.clearDraft();
-            router.push(`/bookings/${listing.id}?step=3&bookingId=${bookingRes.bookingId}`); // booking id in url so it survives refresh
+            clearDraft();
+            router.push(`/bookings/${listing.id}?step=3&bookingId=${bookingRes.bookingId}`);
           } catch (verifyError) {
             console.error("Payment verification failed:", verifyError);
-            setErrorMessage("Payment was made but verification failed. Please contact support with reference: " + initRes.reference);
-            wizard.setIsProcessing(false);
+            setErrorMessage(
+              "Payment was made but verification failed. Please contact support with reference: " + initRes.reference
+            );
+            setIsProcessing(false);
           }
         },
         onCancel: () => {
-          wizard.setIsProcessing(false);
+          popupRef.current = null;
+          transactionRef.current = null;
+          // Programmatic close (timeout / connection loss) already tore down
+          // with its own message - don't overwrite it.
+          if (!liveHoldRef.current) {
+            setIsProcessing(false);
+            return;
+          }
+          teardownHold({
+            release: true,
+            info: "Payment cancelled. Your date hold was released - tap Pay to reserve these dates again.",
+          });
         },
         onError: () => {
-          setErrorMessage("Payment failed. Please try again.");
-          wizard.setIsProcessing(false);
+          popupRef.current = null;
+          transactionRef.current = null;
+          if (!liveHoldRef.current) {
+            setIsProcessing(false);
+            return;
+          }
+          teardownHold({
+            release: true,
+            error: "Payment failed. Your date hold was released. Please try again.",
+          });
         },
       });
+
+      popupRef.current = popup;
+      transactionRef.current = transaction ?? null;
+
+      // 4. Keep the lease alive while the popup is open + enforce the cap.
+      startHoldSession(bookingRes.bookingId, deadline);
     } catch (error) {
       console.error("Payment initialization failed:", error);
+      // If a hold was created but the popup never opened, release it.
+      if (createdBookingId) {
+        liveHoldRef.current = null;
+        setHoldExpiresAt(null);
+        stopHeartbeat();
+        stopSessionTimer();
+        void releaseHold(createdBookingId);
+      }
       if (error instanceof ApiError) {
         setErrorMessage(error.message || "Could not start payment process.");
       } else {
         setErrorMessage("An unexpected error occurred. Please check your network and try again.");
       }
-      wizard.setIsProcessing(false);
+      setIsProcessing(false);
     }
   };
 
@@ -148,7 +413,17 @@ export default function PaymentStep({ form, listing, wizard, variant = "desktop"
     return (
       <section className="px-6 pb-28">
         <h1 className="text-2xl font-medium">Review & Confirm</h1>
-        <p className="mt-3 text-[#555B7F]">Confirm your details. You will be redirected to Paystack to complete payment securely.</p>
+        <p className="mt-3 text-[#555B7F]">
+          Confirm your details. Your dates are held only while the secure payment popup is open -
+          close it and they&apos;re released instantly.
+        </p>
+        <HoldCountdown expiresAt={holdExpiresAt} className="mt-6" />
+
+        {infoMessage && (
+          <div className="mt-4 rounded-xl border border-[#E8DDD2] bg-[#F7F2EA] p-4 text-sm font-semibold text-[#5E6588]">
+            {infoMessage}
+          </div>
+        )}
 
         {errorMessage && (
           <div className="mt-6 flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
@@ -162,7 +437,7 @@ export default function PaymentStep({ form, listing, wizard, variant = "desktop"
           256-bit SSL Encrypted Secure Checkout
         </div>
 
-        <MobilePaymentDock summary={paymentSummary} onPay={handlePay} isProcessing={wizard.isProcessing} />
+        <MobilePaymentDock summary={paymentSummary} onPay={handlePay} isProcessing={wizard.isProcessing} holdExpiresAt={holdExpiresAt} />
       </section>
     );
   }
@@ -172,8 +447,15 @@ export default function PaymentStep({ form, listing, wizard, variant = "desktop"
       <div>
         <h1 className="text-4xl font-medium">Review & Pay</h1>
         <p className="mt-3 text-lg text-[#555B7F]">
-          Click “Pay Now” to be redirected to our secure payment gateway. You will not be charged until the vendor confirms availability.
+          Tap Pay to open our secure payment popup. Your dates are held only while it&apos;s open -
+          close it and they&apos;re released instantly. Payment is held in escrow until the vendor confirms.
         </p>
+        <HoldCountdown expiresAt={holdExpiresAt} className="mt-5" />
+        {infoMessage && (
+          <div className="mt-6 rounded-xl border border-[#E8DDD2] bg-[#F7F2EA] p-4 text-sm font-semibold text-[#5E6588]">
+            {infoMessage}
+          </div>
+        )}
 
         {errorMessage && (
           <div className="mt-6 flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
@@ -193,7 +475,7 @@ export default function PaymentStep({ form, listing, wizard, variant = "desktop"
         </div>
       </div>
 
-      <PaymentSummary summary={paymentSummary} onPay={handlePay} isProcessing={wizard.isProcessing} />
+      <PaymentSummary summary={paymentSummary} onPay={handlePay} isProcessing={wizard.isProcessing} holdExpiresAt={holdExpiresAt} />
     </section>
   );
 }

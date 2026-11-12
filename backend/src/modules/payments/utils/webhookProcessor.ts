@@ -6,6 +6,7 @@ import { WebhookModel } from '../models/WebhookModel.js';
 import { LedgerModel } from '../models/LedgerModel.js';
 import { randomUUID } from 'crypto';
 import { applyConfirmedPayout } from './reconciliation.js'
+import { flagDoubleBookingIfNeeded } from '../../bookings/models/Booking.js';
 import { VendorVerificationModel } from '../../vendor/models/VendorVerification.js';
 
 /**
@@ -109,6 +110,8 @@ async function handleChargeSuccess(client: any, payload: any) {
      WHERE id = $1`,
     [booking.id, (receivedAmountKobo / 100).toFixed(2), newStatus]
   );
+
+  await flagDoubleBookingIfNeeded(client, booking);
 
   // 4. Post Ledger Entries ONLY if funds are successfully held
   // Overpayments are held in escrow; reconciliation/admin decides on refunding the difference.

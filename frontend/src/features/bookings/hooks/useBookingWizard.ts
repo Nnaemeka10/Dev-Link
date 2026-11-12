@@ -70,12 +70,6 @@ export function useBookingWizard(maxStep: number, listingId: string) {
   );
 
   useEffect(() => {
-    // Provision for production inventory locking:
-    // create or refresh a server-side "draft booking" here so selected dates
-    // can be temporarily held while the user completes payment.
-  }, []);
-
-  useEffect(() => {
     window.localStorage.setItem(BOOKING_STORAGE_KEY, JSON.stringify(form));
   }, [form]);
 

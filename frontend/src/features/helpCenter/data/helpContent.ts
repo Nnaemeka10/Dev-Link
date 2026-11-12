@@ -80,14 +80,15 @@ export const HELP_CATEGORIES: HelpCategory[] = [
       },
       {
         slug: "when-are-dates-locked",
-        question: "When are my selected dates locked?",
+        question: "When are my dates reserved??",
         answer: [
-          "Dates are only reserved for you after your payment succeeds - never while you're still browsing or filling in details. If you leave without paying, the dates immediately stay open for you and everyone else to select again.",
-          "Once payment succeeds, the dates are held and the vendor is notified to confirm your booking. This keeps the calendar honest and stops unpaid selections from blocking real bookings.",
+          "Tap Pay and we hold your selected dates while the secure payment popup is open, so nobody else can check out for them. The popup keeps your hold alive automatically - you don't need to do anything.",
+          "Close or cancel the popup and the hold is released immediately. If your browser crashes or you lose connection, the hold releases itself within about 2–3 minutes.",
+          "Each payment session lasts up to 30 minutes. If it runs out, the popup closes and the dates are released - just tap Pay again to start a fresh session, as long as nobody else has booked them. Your dates are permanently secured only once payment succeeds.",
         ],
         popular: true,
       },
-      {
+      { 
         slug: "payment-methods",
         question: "What payment methods can I use?",
         answer: [
@@ -117,8 +118,8 @@ export const HELP_CATEGORIES: HelpCategory[] = [
         slug: "booking-expiry",
         question: "Why did my booking expire?",
         answer: [
-          "Unpaid bookings are held for 30 minutes to give you time to complete payment. After that they expire automatically and the dates are released - nothing is charged and nothing stays blocked.",
-          "If this happens, simply start the booking again; the dates will still be available unless someone else has paid for them in the meantime.",
+          "Your dates are held only while the payment popup is open, and the popup quietly keeps the hold alive. Closing or cancelling it releases them instantly; a crash or lost connection releases them within about 2–3 minutes.",
+          "A payment session lasts up to 30 minutes. When it ends, the popup closes automatically and the dates are released. Nothing is charged unless you complete payment - tap Pay again whenever you're ready.",
         ],
       },
     ],
@@ -207,7 +208,7 @@ export const HELP_CATEGORIES: HelpCategory[] = [
         slug: "cancel-a-booking",
         question: "How do I cancel a booking?",
         answer: [
-          "Haven't paid yet? Just walk away - unpaid bookings expire on their own after 30 minutes and nothing is ever charged.",
+          "Haven't paid yet? Closing the payment popup releases your dates instantly - nothing to cancel, nothing charged. If the app closed unexpectedly, any leftover hold clears itself within a few minutes.",
           "For a paid booking, contact support or the vendor through your booking page. Cancelling before the vendor confirms gets you a full refund.",
         ],
         popular: true,

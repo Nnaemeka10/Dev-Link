@@ -55,7 +55,7 @@ const STEPS = [
     step: "02",
     title: "Book & pay securely",
     description:
-      "Pick your dates, review transparent pricing with VAT included, and pay through our secure payment partner.",
+      "Pick your dates and review transparent pricing with VAT included. Your dates are held while you pay securely - close the popup and they're released instantly.",
   },
   {
     id: "confirm",
@@ -63,7 +63,7 @@ const STEPS = [
     step: "03",
     title: "Vendor confirms",
     description:
-      "Your money is held safely in escrow while the vendor confirms. Dates lock only after payment - never before.",
+      "Your money is held safely in escrow while the vendor confirms. Your dates are locked in the moment payment succeeds.",
   },
   {
     id: "celebrate",

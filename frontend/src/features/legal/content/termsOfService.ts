@@ -63,8 +63,8 @@ export const TERMS_OF_SERVICE: LegalDocument = {
         {
           type: "list",
           items: [
-            "Selected dates are only reserved once your payment succeeds - not while you are still deciding. Until then, the dates stay open to you and other customers.",
-            "Unpaid bookings expire automatically after 30 minutes, freeing the dates entirely.",
+            "When you initiate checkout, we temporarily reserve your selected dates for up to 30 minutes so you can complete payment without another customer taking them. During a hold, those dates cannot be checked out by other customers.",
+            "Holds are free of charge, are not confirmed bookings, and lapse automatically if payment is not completed. Only a successfully paid booking secures your dates.",
             "All prices are calculated by the platform in Naira: the listing's base price for your dates, plus 7.5% VAT. What you see at review is what you pay.",
             "Payments are processed securely through our payment partner, supporting cards and bank transfers.",
             "Every booking has a unique reference you can use when contacting support.",
@@ -82,7 +82,7 @@ export const TERMS_OF_SERVICE: LegalDocument = {
         },
         {
           type: "p",
-          text: "Only after payment succeeds are your dates locked for others, and only then is the vendor notified to confirm. This keeps the calendar honest: unpaid selections never block anyone.",
+          text: "Initiating checkout temporarily reserves your selected dates while the payment popup is open. The hold is maintained automatically during an active payment session and is released immediately when you close or cancel the popup. If your session ends unexpectedly (for example, a browser crash or loss of connectivity), the hold lapses automatically within a few minutes. Each payment session is limited to 30 minutes, after which the hold is released and checkout must be restarted. Holds are free, are not confirmed bookings, and only a successfully paid booking secures your dates.",
         },
         {
           type: "p",
@@ -99,6 +99,8 @@ export const TERMS_OF_SERVICE: LegalDocument = {
           items: [
             "Unpaid bookings simply expire - nothing to cancel, nothing to refund.",
             "If you cancel a paid booking before the vendor confirms, you receive a full refund.",
+            "Starting checkout places a temporary 30-minute hold on your selected dates. Holds are free, create no charge, and lapse automatically if payment is not completed within the hold window.",
+            "A hold is not a confirmed booking. Dates are secured only when payment succeeds.",
             "If a vendor declines or does not confirm a paid booking, you are refunded automatically.",
             "Cancellations after the vendor confirms are handled per the listing's stated policy, and our support team will always help facilitate a fair outcome.",
             "Refunds are returned to your original payment method; how quickly they land depends on your bank or payment provider.",

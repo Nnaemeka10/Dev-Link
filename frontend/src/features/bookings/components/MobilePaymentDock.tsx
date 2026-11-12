@@ -7,6 +7,7 @@ import Image, { StaticImageData } from "next/image";
 import {
   X, ChevronUp, MapPin, Users, CalendarDays, BadgeCheck,
 } from "lucide-react";
+import HoldCountdown from "./HoldCountdown";
 
 //  Types 
 
@@ -34,6 +35,7 @@ interface MobilePaymentDockProps {
   summary: BookingSummary;
   onPay: () => void;
   isProcessing: boolean;
+  holdExpiresAt: string | null;
 }
 
 //  Sheet variants 
@@ -201,7 +203,7 @@ function SummarySheet({
 
 //  Main component 
 
-export function MobilePaymentDock({ summary, onPay, isProcessing }: MobilePaymentDockProps) {
+export function MobilePaymentDock({ summary, onPay, isProcessing, holdExpiresAt }: MobilePaymentDockProps) {
   const [open, setOpen] = useState(false);
 
   const portalTarget = typeof document !== "undefined" ? document.body : null;
@@ -234,6 +236,7 @@ export function MobilePaymentDock({ summary, onPay, isProcessing }: MobilePaymen
           </button>
 
           {/* Pay Now */}
+          <HoldCountdown expiresAt={holdExpiresAt} className="mb-3" />
           <button
             type="button"
             onClick={onPay}
