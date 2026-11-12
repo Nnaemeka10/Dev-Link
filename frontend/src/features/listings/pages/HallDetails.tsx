@@ -93,7 +93,7 @@ function MobileDetailsView({
   return (
     <section className="md:hidden">
       <MobileDetailsHeader title={listing.name} />
-      <MobileHeroPhoto image={gallery[0] || "/placeholder.jpg"} name={listing.title} />
+      <MobileHeroPhoto image={gallery[0] || "/placeholder.jpg"} name={listing.title}  photosHref = {`/listings/halls/${listing.id}/photos`} />
 
       <div className="relative z-10 -mt-12 px-5">
         <section className="rounded-4xl bg-white p-7 shadow-[0_20px_38px_rgba(36,28,18,0.08)]">
@@ -177,7 +177,7 @@ function TabletDetailsView({
         filter={false}
         category="halls"
       />
-      <TabletPhotoGallery gallery={gallery} name={listing.title} />
+      <TabletPhotoGallery gallery={gallery} name={listing.title} photosHref = {`/listings/halls/${listing.id}/photos`}/>
 
       <div className="mx-auto grid grid-cols-[minmax(0,1fr)_20rem] gap-10 px-8 py-12">
         <div>
@@ -263,7 +263,7 @@ function DesktopDetailsView({
 
         <div className="flex flex-1">
           <div className="flex-1 px-8 pb-12 pt-10">
-            <DesktopPhotoGallery gallery={gallery} name={listing.title} />
+            <DesktopPhotoGallery gallery={gallery} name={listing.title} photosHref = {`/listings/halls/${listing.id}/photos`}/>
             <div className="grid grid-cols-[minmax(0,1fr)_20rem] gap-20 py-12 pr-8">
               <div>
                 <div className="flex items-start justify-between gap-8">
