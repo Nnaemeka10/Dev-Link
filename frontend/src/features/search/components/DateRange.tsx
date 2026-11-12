@@ -1,16 +1,20 @@
 "use client";
-
-import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent } from "react";
+import { useCallback, useEffect, useRef, useState, type MouseEvent } from "react";
 import { createPortal } from "react-dom";
-import { DayPicker, type DateRange as DayPickerRange } from "react-day-picker";
-import { CalendarDays, ChevronLeft, ChevronRight, X } from "lucide-react";
+import { CalendarDays, X } from "lucide-react";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import type { DateRange } from "@/features/search";
 import { useListingAvailability } from "@/features/listings/hooks/useListingsAvailability";
 import { FLEX_OPTIONS } from "../lib/constants";
+import SmartRangeCalendar from "./SmartRangeCalender";
+import {
+  diffDays,
+  finalizeRanges,
+  startOfDay,
+  type DayRange,
+} from "../utils/rangeSelection";
 
 //  Helpers 
-
 function formatDate(date: Date): string {
   return date.toLocaleDateString("en-NG", { day: "numeric", month: "short" });
 }
@@ -21,8 +25,19 @@ export function formatTriggerLabel(range: DateRange | undefined): string {
   return `${formatDate(range.from)} – ${formatDate(range.to)}`;
 }
 
-// Props 
+/** "10 Dec - 14 Dec · 16 Dec - 20 Dec +1", at most two spans, then a count. */
+function formatMultiLabel(ranges: DayRange[]): string {
+  const done = finalizeRanges(ranges);
+  if (done.length === 0) return "";
+  const parts = done
+    .map((r) =>
+      diffDays(r.from, r.to) === 0 ? formatDate(r.from) : `${formatDate(r.from)} – ${formatDate(r.to)}`
+    )
+    .slice(0, 2);
+  return parts.join(" · ") + (done.length > 2 ? ` +${done.length - 2}` : "");
+}
 
+//  Props 
 interface DateRangePickerProps {
   value: DateRange | undefined;
   onChange: (range: DateRange | undefined) => void;
@@ -36,10 +51,12 @@ interface DateRangePickerProps {
   flexible?: number;
   onFlexibleChange?: (value: 0 | 1 | 2) => void;
   showFlexible?: boolean;
+  multi?: boolean;
+  ranges?: DayRange[];
+  onRangesChange?: (ranges: DayRange[]) => void;
 }
 
-// Component 
-
+//  Component 
 export function DateRangePicker({
   value,
   onChange,
@@ -52,42 +69,56 @@ export function DateRangePicker({
   flexible = 0,
   onFlexibleChange,
   showFlexible = false,
+  multi = false,
+  ranges,
+  onRangesChange,
 }: DateRangePickerProps) {
   const [open, setOpen] = useState(false);
-  // Position updates run inside rAF/listener callbacks , lint-clean.
+  // Position updates run inside rAF/listener callbacks - lint-clean.
   const [popoverTop, setPopoverTop] = useState<number | null>(null);
-  const [draftRange, setDraftRange] = useState<DayPickerRange | undefined>(value);
+  const [draftRanges, setDraftRanges] = useState<DayRange[]>([]);
+
   const containerRef = useRef<HTMLDivElement>(null);
   const popoverRef = useRef<HTMLDivElement>(null);
   const portalTarget = typeof document !== "undefined" ? document.body : null;
   const isMobile = useMediaQuery("(max-width: 720px)");
 
   function openPicker() {
-    setDraftRange(value ? { from: value.from, to: value.to } : undefined);
+    const seed: DayRange[] = multi
+      ? (ranges ?? [])
+      : value
+        ? [{ from: startOfDay(value.from), to: value.to ? startOfDay(value.to) : undefined }]
+        : [];
+    setDraftRanges(seed);
     setOpen(true);
   }
 
   const closePicker = useCallback(
     ({ apply }: { apply: boolean }) => {
       if (apply) {
-        onChange(draftRange?.from ? { from: draftRange.from, to: draftRange.to } : undefined);
+        // Committing finalizes any pending start as a single-day range.
+        const done = finalizeRanges(draftRanges);
+        if (multi) {
+          onRangesChange?.(done);
+        } else {
+          const r = done[0];
+          onChange(r ? { from: r.from, to: r.to } : undefined);
+        }
       }
       setOpen(false);
     },
-    [draftRange, onChange]
+    [draftRanges, multi, onRangesChange, onChange]
   );
 
-  //Close on outside click 
+  // Close on outside click
   useEffect(() => {
     if (!open) return;
-
     function handlePointerDown(e: PointerEvent) {
       const target = e.target as Node;
       const clickedTrigger = containerRef.current?.contains(target);
       const clickedPopover = popoverRef.current?.contains(target);
       if (!clickedTrigger && !clickedPopover) closePicker({ apply: true });
     }
-
     document.addEventListener("pointerdown", handlePointerDown);
     return () => document.removeEventListener("pointerdown", handlePointerDown);
   }, [closePicker, open]);
@@ -95,17 +126,14 @@ export function DateRangePicker({
   // Position (rAF-first: no setState in effect body)
   useEffect(() => {
     if (!open) return;
-
     function updatePopoverPosition() {
       const rect = containerRef.current?.getBoundingClientRect();
       if (!rect) return;
       setPopoverTop(rect.bottom + 14);
     }
-
     const raf = requestAnimationFrame(updatePopoverPosition);
     window.addEventListener("resize", updatePopoverPosition);
     window.addEventListener("scroll", updatePopoverPosition, true);
-
     return () => {
       cancelAnimationFrame(raf);
       window.removeEventListener("resize", updatePopoverPosition);
@@ -113,7 +141,7 @@ export function DateRangePicker({
     };
   }, [open]);
 
-  // Escape 
+  // Escape
   useEffect(() => {
     if (!open) return;
     function handleKey(e: KeyboardEvent) {
@@ -123,7 +151,7 @@ export function DateRangePicker({
     return () => document.removeEventListener("keydown", handleKey);
   }, [closePicker, open]);
 
-  // Lock body scroll while open 
+  // Lock body scroll while open
   useEffect(() => {
     if (!open) return;
     const previousOverflow = document.body.style.overflow;
@@ -133,36 +161,25 @@ export function DateRangePicker({
     };
   }, [open]);
 
-  function handleSelect(range: DayPickerRange | undefined) {
-    setDraftRange(range);
-  }
-
   function handleClear(e?: MouseEvent<HTMLButtonElement>) {
     e?.stopPropagation();
     if (open) {
-      setDraftRange(undefined);
+      setDraftRanges([]);
       return;
     }
-    onChange(undefined);
+    if (multi) onRangesChange?.([]);
+    else onChange(undefined);
   }
-
-  const label = formatTriggerLabel(value);
-  const displayLabel = label && flexible ? `${label} · ±${flexible}d` : label;
-  const today = new Date(new Date().toDateString());
 
   const { data: liveUnavailableDates } = useListingAvailability(listingId, open);
 
-  const blockedRanges = useMemo(
-    () =>
-      (liveUnavailableDates ?? unavailableDates).map((d) => ({
-        from: new Date(d.from + "T00:00:00"),
-        to: new Date(d.to + "T00:00:00"),
-      })),
-    [liveUnavailableDates, unavailableDates]
-  );
+  const label = formatTriggerLabel(value);
+  const singleDisplayLabel = label && flexible ? `${label} · ±${flexible}d` : label;
+  const multiLabel = formatMultiLabel(multi ? (ranges ?? []) : []);
+  const displayLabel = multi ? multiLabel : singleDisplayLabel;
+  const hasSelection = multi ? finalizeRanges(ranges ?? []).length > 0 : !!value;
 
-  // Render
-
+  //  Render 
   return (
     <div
       ref={containerRef}
@@ -176,7 +193,7 @@ export function DateRangePicker({
           aria-expanded={open}
           className={triggerClassName || "w-full text-left text-sm"}
         >
-          {displayLabel || "Select date"}
+          {displayLabel || "Select dates"}
         </button>
       ) : (
         <div className="flex w-full items-center">
@@ -197,7 +214,7 @@ export function DateRangePicker({
             </div>
           </button>
 
-          {value && (
+          {hasSelection && (
             <button
               type="button"
               onClick={handleClear}
@@ -243,53 +260,15 @@ export function DateRangePicker({
                     <X className="h-4 w-4 xl:h-5 xl:w-5" />
                   </button>
 
-                  <p className="date-picker-hint">
-                    {!draftRange?.from
-                      ? "Select a start date"
-                      : !draftRange?.to
-                        ? "Select an end date, or click the same date for a single day"
-                        : `${formatDate(draftRange.from)} – ${formatDate(draftRange.to)}`}
-                  </p>
-
-                  <DayPicker
-                    mode="range"
-                    selected={draftRange}
-                    onSelect={handleSelect}
+                  {/* Hint + calendar live inside SmartRangeCalendar. Blocked
+                      days can never be highlighted: the engine excludes them
+                      from every span and clamps the hover preview. */}
+                  <SmartRangeCalendar
+                    ranges={draftRanges}
+                    onChange={setDraftRanges}
+                    blocked={liveUnavailableDates ?? unavailableDates}
+                    allowSplit={multi}
                     numberOfMonths={isMobile ? 1 : 2}
-                    disabled={[{ before: today }, ...blockedRanges]}
-                    showOutsideDays={false}
-                    classNames={{
-                      root: "rdp-root",
-                      months: "rdp-months",
-                      month: "rdp-month",
-                      month_caption: "rdp-month-caption",
-                      caption_label: "rdp-caption-label",
-                      nav: "rdp-nav",
-                      button_previous: "rdp-nav-btn rdp-nav-btn--prev",
-                      button_next: "rdp-nav-btn rdp-nav-btn--next",
-                      month_grid: "rdp-grid",
-                      weekdays: "rdp-weekdays",
-                      weekday: "rdp-weekday",
-                      week: "rdp-week",
-                      day: "rdp-day",
-                      day_button: "rdp-day-btn",
-                      today: "rdp-day--today",
-                      outside: "rdp-day--outside",
-                      disabled: "rdp-day--disabled",
-                      range_start: "rdp-day--range-start",
-                      range_end: "rdp-day--range-end",
-                      range_middle: "rdp-day--range-middle",
-                      selected: "rdp-day--selected",
-                      hidden: "rdp-day--hidden",
-                    }}
-                    components={{
-                      Chevron: ({ orientation }) =>
-                        orientation === "left" ? (
-                          <ChevronLeft className="h-4 w-4" />
-                        ) : (
-                          <ChevronRight className="h-4 w-4" />
-                        ),
-                    }}
                   />
 
                   {showFlexible && (
@@ -328,7 +307,7 @@ export function DateRangePicker({
                       type="button"
                       onClick={() => closePicker({ apply: true })}
                       className="date-picker-footer-apply"
-                      disabled={!draftRange}
+                      disabled={finalizeRanges(draftRanges).length === 0}
                     >
                       Apply
                     </button>

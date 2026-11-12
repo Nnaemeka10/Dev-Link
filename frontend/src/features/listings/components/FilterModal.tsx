@@ -277,7 +277,7 @@ function DualSlider({ min, max, valueMin, valueMax, onChange, step = PRICE_STEP 
         onPointerDown={handleTrackPointerDown}
         className="relative h-1 cursor-pointer rounded-full bg-text-primary/10"
       >
-        {/* Breakpoint tick — visual hint that the scale changes here */}
+        {/* Breakpoint tick - visual hint that the scale changes here */}
         <div
           className="absolute top-1/2 h-2.5 w-px -translate-y-1/2 rounded-full bg-text-primary/20"
           style={{ left: `${BREAKPOINT_POS * 100}%` }}
@@ -439,7 +439,7 @@ function Stepper({
   );
 }
 
-// ─── Pill & section ───────────────────────────────────────────────────────────
+//  Pill & section 
 
 function Pill({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
   return (
@@ -476,7 +476,7 @@ function mergeFilters(initial?: Partial<FilterState>): FilterState {
   return { ...DEFAULT_FILTERS, ...cleanInitial };
 }
 
-// ─── Main modal ───────────────────────────────────────────────────────────────
+//  Main modal 
 
 /**
  * Applying filters calls onApplyFilters, the header rebuilds the listings URL
@@ -496,7 +496,7 @@ export default function FilterModal({
   const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
 
   // Re-seed from the URL each time the sheet opens (sanctioned render-time
-  // "previous prop" sync — no effect, no cascading render).
+  // "previous prop" sync - no effect, no cascading render).
   if (isOpen !== prevIsOpen) {
     setPrevIsOpen(isOpen);
     if (isOpen) setFilters(mergeFilters(initialFilters));
@@ -685,7 +685,7 @@ export default function FilterModal({
               ))}
             </div>
             <p className="mt-3 text-xs text-text-primary/45">
-              Amenities stack — a venue must offer every one you pick.
+              Amenities stack - a venue must offer every one you pick.
             </p>
           </Section>
         </>

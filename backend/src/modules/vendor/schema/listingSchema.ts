@@ -4,7 +4,7 @@ import { z } from "zod";
  * Two layers of validation live here:
  *
  * 1. STRICT per-step schemas - used by the wizard for inline field errors.
- * 2. LAX publish shapes + a category-aware superRefine — used by
+ * 2. LAX publish shapes + a category-aware superRefine - used by
  *    listingSubmitSchema on the server.
  *
  * The split exists because the wizard carries BOTH location objects in one

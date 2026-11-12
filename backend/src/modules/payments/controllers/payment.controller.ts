@@ -6,10 +6,10 @@ import { createDedicatedVirtualAccount, initializePaystackTransaction, verifyPay
 import { ENV } from '../../../lib/env.js';
 import { WebhookModel } from '../models/WebhookModel.js';
 
-// ─────────────────────────────────────────────────────────────────────────────
+// 
 // Paystack source-verification helpers (shared by the webhook
 // ingestor and /transfer-approval)
-// ─────────────────────────────────────────────────────────────────────────────
+// 
 
 /**
  * Paystack's documented source IPs for server-to-server calls. Used as
@@ -107,7 +107,9 @@ export const initializePayment = async (req: Request, res: Response) => {
         const stillAvailable = await BookingModel.checkAvailability(
             booking.listing_id,
             toDateString(booking.start_date),
-            toDateString(booking.end_date)
+            toDateString(booking.end_date),
+            undefined,
+            booking.excluded_dates ?? []
         );
         if (!stillAvailable) {
             res.status(409).json({ message: 'Selected dates are no longer available' });

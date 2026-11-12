@@ -1,5 +1,4 @@
 "use client";
-
 import Image from "next/image";
 import { Check, ChevronDown, MapPin } from "lucide-react";
 import type { BookingFormState } from "../booking.types";
@@ -7,6 +6,7 @@ import { DateTimeSection } from "./DateTimeSection";
 import { useRouter } from "next/navigation";
 import { ListingDetailsResponse } from "@/features/listings/details.types";
 import { usePricingQuote } from "../hooks/usePricingQuote";
+import { envelope, excludedDates } from "@/features/search/utils/rangeSelection";
 
 interface BookingDetailsStepProps {
   form: BookingFormState;
@@ -18,16 +18,22 @@ interface BookingDetailsStepProps {
 
 export default function BookingDetailsStep({ form, listing, onContinue, onUpdate, variant = "desktop" }: BookingDetailsStepProps) {
   const router = useRouter();
-
   const gallery = listing.images.map((img) => img.url);
   const venueImage = listing.primaryImage?.url || gallery[0] || "/images/placeholder.jpg";
 
-  const { data: quote, isLoading: isQuoteLoading } = usePricingQuote(listing.id, form.dateRange, form.packageId);
+  // dateRanges is the source of truth; the envelope + holes drive the quote.
+  const dateRange = envelope(form.dateRanges);
+  const excluded = excludedDates(form.dateRanges);
+  const { data: quote, isLoading: isQuoteLoading } = usePricingQuote(listing.id, dateRange, form.packageId, excluded);
+  const hasDates = form.dateRanges.length > 0;
 
-  const hasDates = !!(form.dateRange?.from && form.dateRange?.to);
   const hireLabel = listing.kind === 'service' ? 'Service fee' : 'Venue hire';
   const selectedPackage = listing.packages?.find(p => p.id === form.packageId);
-  
+
+  // Keep the legacy envelope field in sync for display/hand-off consumers.
+  const handleDateRangesChange = (ranges: BookingFormState["dateRanges"]) =>
+    onUpdate({ dateRanges: ranges, dateRange: envelope(ranges) });
+
   if (variant === "mobile") {
     return (
       <section className="px-6 pb-28 mb-64">
@@ -40,29 +46,30 @@ export default function BookingDetailsStep({ form, listing, onContinue, onUpdate
               {listing.location}
             </p>
             <div className="flex items-center gap-2 mt-8">
-            <p className="mt-2 inline-flex rounded-full bg-[#FFE3A2] px-3 py-1 text-micro font-extrabold">★ {listing.rating.toFixed(1)} ({listing.reviewCount})</p>
-            <p className="mt-2 text-micro font-extrabold text-[#B9401D]">{listing.capacity} Guests</p>
+              <p className="mt-2 inline-flex rounded-full bg-[#FFE3A2] px-3 py-1 text-micro font-extrabold">★ {listing.rating.toFixed(1)} ({listing.reviewCount})</p>
+              <p className="mt-2 text-micro font-extrabold text-[#B9401D]">{listing.capacity} Guests</p>
             </div>
           </div>
         </article>
-        <DateTimeSection 
-          dateRange = {form.dateRange} 
-          startTime = {form.startTime} 
-          endTime = {form.endTime} 
-          onDateRangeChange = { (dateRange) => onUpdate({ dateRange }) } 
-          onStartTimeChange = { (time) => onUpdate({ startTime: time }) } 
-          onEndTimeChange = { (time) => onUpdate({ endTime: time }) } 
+
+        <DateTimeSection
+          dateRanges={form.dateRanges}
+          startTime={form.startTime}
+          endTime={form.endTime}
+          onDateRangesChange={handleDateRangesChange}
+          onStartTimeChange={(time) => onUpdate({ startTime: time })}
+          onEndTimeChange={(time) => onUpdate({ endTime: time })}
           unavailableDates={listing.unavailableDates || []}
           listingId={listing.id}
         />
-        
+
         {listing.kind === 'service' && listing.packages && listing.packages.length > 0 && (
           <div className="mt-9 rounded-4xl bg-[#F4F1EA] p-6">
             <h2 className="text-heading-m font-medium text-[#252423] mb-4">Select Package</h2>
             <div className="space-y-4">
               {listing.packages.map((pkg) => (
-                <div 
-                  key={pkg.id} 
+                <div
+                  key={pkg.id}
                   onClick={() => onUpdate({ packageId: pkg.id })}
                   className={`cursor-pointer rounded-2xl border-2 p-5 transition-all ${
                     form.packageId === pkg.id ? "border-[#252423] bg-white" : "border-[#E8DDD2] bg-white hover:border-[#252423]"
@@ -74,7 +81,6 @@ export default function BookingDetailsStep({ form, listing, onContinue, onUpdate
                   </div>
                   <p className="text-lg font-extrabold">₦{pkg.price.toLocaleString()}</p>
                   <p className="text-sm text-[#5E6588] mt-2">{pkg.description || ""}</p>
-                  
                   {form.packageId === pkg.id && (
                     <div className="mt-4 pt-4 border-t border-[#E8DDD2] space-y-3">
                       {pkg.features.map((feat, i) => (
@@ -120,13 +126,12 @@ export default function BookingDetailsStep({ form, listing, onContinue, onUpdate
                   </>
                 ) : null}
               </div>
-
-              <div className="mt-6 ">
-                <div className= "flex items-end justify-between md:mb-0 mb-4">
+              <div className="mt-6">
+                <div className="flex items-end justify-between md:mb-0 mb-4">
                   <p className="font-extrabold text-[#252423]">Total Estimate</p>
-                   {quote && <strong className="text-base md:text-3xl font-extrabold text-[#B9401D]">₦{quote.total.toLocaleString()}</strong>}
+                  {quote && <strong className="text-base md:text-3xl font-extrabold text-[#B9401D]">₦{quote.total.toLocaleString()}</strong>}
                 </div>
-                  <p className="text-micro font-extrabold uppercase tracking-[0.16em] text-[#7B7E9B]">Final amount calculated at checkout</p>
+                <p className="text-micro font-extrabold uppercase tracking-[0.16em] text-[#7B7E9B]">Final amount calculated at checkout</p>
               </div>
             </>
           ) : (
@@ -159,13 +164,14 @@ export default function BookingDetailsStep({ form, listing, onContinue, onUpdate
             <p className="mt-2 text-xs font-extrabold text-[#B9401D]">{listing.capacity} Guests</p>
           </div>
         </article>
-        <DateTimeSection 
-          dateRange = {form.dateRange} 
-          startTime = {form.startTime} 
-          endTime = {form.endTime} 
-          onDateRangeChange = { (dateRange) => onUpdate({ dateRange }) } 
-          onStartTimeChange = { (time) => onUpdate({ startTime: time }) } 
-          onEndTimeChange = { (time) => onUpdate({ endTime: time }) } 
+
+        <DateTimeSection
+          dateRanges={form.dateRanges}
+          startTime={form.startTime}
+          endTime={form.endTime}
+          onDateRangesChange={handleDateRangesChange}
+          onStartTimeChange={(time) => onUpdate({ startTime: time })}
+          onEndTimeChange={(time) => onUpdate({ endTime: time })}
           unavailableDates={listing.unavailableDates}
           listingId={listing.id}
         />
@@ -175,8 +181,8 @@ export default function BookingDetailsStep({ form, listing, onContinue, onUpdate
             <h2 className="text-2xl font-medium text-[#252423] mb-6">Select Package</h2>
             <div className="space-y-4">
               {listing.packages.map((pkg) => (
-                <div 
-                  key={pkg.id} 
+                <div
+                  key={pkg.id}
                   onClick={() => onUpdate({ packageId: pkg.id })}
                   className={`cursor-pointer rounded-2xl border-2 p-5 transition-all ${
                     form.packageId === pkg.id ? "border-[#252423] bg-[#F9F7F5]" : "border-[#E8DDD2] hover:border-[#252423]"
@@ -188,7 +194,6 @@ export default function BookingDetailsStep({ form, listing, onContinue, onUpdate
                   </div>
                   <p className="text-2xl font-extrabold">₦{pkg.price.toLocaleString()}</p>
                   <p className="text-sm text-[#5E6588] mt-2">{pkg.description || ""}</p>
-                  
                   {form.packageId === pkg.id && (
                     <div className="mt-4 pt-4 border-t border-[#E8DDD2] space-y-3">
                       {pkg.features.map((feat, i) => (
@@ -204,6 +209,7 @@ export default function BookingDetailsStep({ form, listing, onContinue, onUpdate
             </div>
           </div>
         )}
+
         <aside className="rounded-[2.2rem] h-fit bg-white p-8 shadow-[0_24px_54px_rgba(34,27,18,0.08)]">
           <h2 className="text-2xl font-medium text-[#252423]">Estimated Cost</h2>
           {hasDates ? (
@@ -246,10 +252,11 @@ export default function BookingDetailsStep({ form, listing, onContinue, onUpdate
               <p className="font-semibold">Select dates to calculate price</p>
             </div>
           )}
-        <button type="button" onClick={onContinue} className="mt-8 w-full rounded-full bg-[#B9401D] px-8 py-5 text-lg font-extrabold text-white shadow-[0_16px_26px_rgba(185,64,29,0.2)]">
-          Proceed to Payment
-        </button>
-      </aside>
+
+          <button type="button" onClick={onContinue} className="mt-8 w-full rounded-full bg-[#B9401D] px-8 py-5 text-lg font-extrabold text-white shadow-[0_16px_26px_rgba(185,64,29,0.2)]">
+            Proceed to Payment
+          </button>
+        </aside>
 
         <details className="rounded-3xl bg-[#F4F1EA] p-6">
           <summary className="flex cursor-pointer items-center justify-between font-extrabold">Contract Terms & Cancellation Policy <ChevronDown className="h-4 w-4" /></summary>

@@ -166,7 +166,7 @@ export type ListingRow = {
   average_rating: string | number | null;
   review_count: number | null;
   capacity: number | null;
-  /** Computed by VERIFIED_EXPR in the SELECT — not a listings column. */
+  /** Computed by VERIFIED_EXPR in the SELECT - not a listings column. */
   verified?: boolean | null;
   unavailable_dates?: { from: string; to: string }[] | null;
   available_from: string | null;

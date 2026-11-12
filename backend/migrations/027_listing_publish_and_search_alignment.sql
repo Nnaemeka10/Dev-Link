@@ -3,7 +3,7 @@
 --
 -- lib/db.ts wraps every migration file in BEGIN/COMMIT, so this file must NOT
 -- contain its own transaction block and must NOT use CREATE INDEX CONCURRENTLY.
--- Every statement is idempotent — safe to re-run.
+-- Every statement is idempotent - safe to re-run.
 -- ============================================================================
 
 -- 1. Split the two catering amenities onto distinct icons.
@@ -50,8 +50,8 @@ WHERE l.kind = 'service' AND l.deleted_at IS NULL
 ON CONFLICT DO NOTHING;
 
 -- 4. Keyset (cursor) pagination indexes. Each mirrors buildOrderBy() in
---    listings/models/Listing.ts exactly — COALESCE expressions plus the
---    created_at/id tie-breakers — so Postgres walks the index in order and stops
+--    listings/models/Listing.ts exactly - COALESCE expressions plus the
+--    created_at/id tie-breakers - so Postgres walks the index in order and stops
 --    at LIMIT instead of sorting the whole filtered set. The partial predicate
 --    mirrors PUBLIC_LISTING_CLAUSES; leading `kind` serves the explore tabs.
 --    At today's row count the planner still prefers a seq scan; these are here

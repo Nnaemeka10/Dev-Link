@@ -39,7 +39,7 @@ export default function ExploreServices() {
   const verified = searchParams.get("verified") === "true";
 
   // Cursor-paginated feed. Hall-only filters (amenities, venueTypes, capacity)
-  // are intentionally not read here — the publish flow writes no
+  // are intentionally not read here - the publish flow writes no
   // listing_features or capacity for services.
   const {
     listings,

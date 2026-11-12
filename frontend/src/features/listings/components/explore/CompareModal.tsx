@@ -55,7 +55,7 @@ function highlightChips(listing: ExploreListing) {
 }
 
 function MissingValue() {
-  return <span className="text-sm font-bold text-text-primary/25">—</span>;
+  return <span className="text-sm font-bold text-text-primary/25">-</span>;
 }
 
 function buildRows(a: ExploreListing, b: ExploreListing): CompareRow[] {

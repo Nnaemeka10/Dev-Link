@@ -183,7 +183,7 @@ export function useExploreListings(params: ExploreListingsParams) {
   /**
    * Flatten pages once per data change. The Set guard is cheap insurance:
    * keyset pagination is stable, but a listing edited between two page fetches
-   * (its rating changed mid-scroll) can drift across the cursor boundary —
+   * (its rating changed mid-scroll) can drift across the cursor boundary -
    * deduping by id guarantees React keys never collide.
    */
   const listings = useMemo(() => {

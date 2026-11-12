@@ -49,7 +49,7 @@ function sanitizeNumber(value: string | undefined): number | undefined {
   return !Number.isNaN(num) && num >= 1 ? num : undefined;
 }
 
-/** Ratings are fractional (3.5 / 4.5 / 4.8) — parseInt would floor them to 3 / 4. */
+/** Ratings are fractional (3.5 / 4.5 / 4.8) - parseInt would floor them to 3 / 4. */
 function sanitizeRating(value: string | undefined): number | undefined {
   if (!value) return undefined;
   const num = Number(value);

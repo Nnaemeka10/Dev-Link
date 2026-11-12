@@ -1,47 +1,43 @@
 "use client";
-
 import { AlertCircle, LockKeyhole, ShieldCheck } from "lucide-react";
 import type { BookingFormState } from "../booking.types";
 import { PaymentSummary } from "./BookingSummary";
-
 import { MobilePaymentDock } from "./MobilePaymentDock";
 import { ListingDetailsResponse } from "@/features/listings/details.types";
 import { useBookingWizard } from "../hooks/useBookingWizard";
 import { apiFetch, ApiError } from "@/lib/api";
 import { usePricingQuote } from "../hooks/usePricingQuote";
-
-
 import { useState, useEffect } from "react";
-
 import { getPaystack } from "@/lib/paystack";
 import { useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
 import { toLocalDateString } from "@/lib/dates";
+import { envelope, excludedDates } from "@/features/search/utils/rangeSelection";
 
 interface PaymentStepProps {
   form: BookingFormState;
-  listing: ListingDetailsResponse; 
+  listing: ListingDetailsResponse;
   wizard: ReturnType<typeof useBookingWizard>;
   variant?: "desktop" | "mobile";
 }
 
-
 export default function PaymentStep({ form, listing, wizard, variant = "desktop" }: PaymentStepProps) {
-
   useEffect(() => {
     void getPaystack();
   }, []);
 
   const queryClient = useQueryClient();
-
   const router = useRouter();
- 
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const handlePay = async () => {
-    setErrorMessage(null); // Reset error message at the start   
+  // Envelope + holes derived from the multi-range selection.
+  const dateRange = envelope(form.dateRanges);
+  const excluded = excludedDates(form.dateRanges);
 
-    if(!form.dateRange?.from || !form.dateRange?.to) {
+  const handlePay = async () => {
+    setErrorMessage(null); // Reset error message at the start
+
+    if (!dateRange?.from || !dateRange?.to) {
       setErrorMessage("Please select a valid date range before proceeding to payment.");
       return;
     }
@@ -50,13 +46,15 @@ export default function PaymentStep({ form, listing, wizard, variant = "desktop"
       wizard.setIsProcessing(true);
 
       // 1. Create Pending Booking on Backend
-       // Backend calculates the exact amount and saves booking as 'pending'
+      // Backend calculates the exact amount (envelope days minus excluded
+      // days) and saves booking as 'pending'.
       const bookingRes = await apiFetch<{ bookingId: string; amount: number; currency: string }>("/api/bookings", {
         method: "POST",
         body: JSON.stringify({
           listingId: listing.id,
-          startDate: toLocalDateString(form.dateRange.from),
-          endDate: toLocalDateString(form.dateRange.to),
+          startDate: toLocalDateString(dateRange.from),
+          endDate: toLocalDateString(dateRange.to),
+          excludedDates: excluded,
           startTime: form.startTime,
           endTime: form.endTime,
           preferences: form.preferences,
@@ -81,40 +79,34 @@ export default function PaymentStep({ form, listing, wizard, variant = "desktop"
       });
 
       const popup = await getPaystack();
-      
       popup.resumeTransaction(initRes.accessCode, {
         onSuccess: async () => {
           // 4. Verify Payment on Backend
-          try{
-            await apiFetch(`/api/payments/verify/${initRes.reference}`, { 
-              method: "GET", 
-              redirectOn401: true 
+          try {
+            await apiFetch(`/api/payments/verify/${initRes.reference}`, {
+              method: "GET",
+              redirectOn401: true,
             });
-
             await queryClient.invalidateQueries({ queryKey: ["booking-details", bookingRes.bookingId] });
             await queryClient.invalidateQueries({ queryKey: ["listing", "details", listing.id] });
 
             // 5. Clear Draft and Move to Confirmation Step
             wizard.clearDraft();
-            router.push(`/bookings/${listing.id}?step=3&bookingId=${bookingRes.bookingId}`); //booking id to url so it survives refresh
+            router.push(`/bookings/${listing.id}?step=3&bookingId=${bookingRes.bookingId}`); // booking id in url so it survives refresh
           } catch (verifyError) {
             console.error("Payment verification failed:", verifyError);
             setErrorMessage("Payment was made but verification failed. Please contact support with reference: " + initRes.reference);
             wizard.setIsProcessing(false);
           }
         },
-
         onCancel: () => {
           wizard.setIsProcessing(false);
         },
-
         onError: () => {
           setErrorMessage("Payment failed. Please try again.");
           wizard.setIsProcessing(false);
-        }
-       
+        },
       });
-
     } catch (error) {
       console.error("Payment initialization failed:", error);
       if (error instanceof ApiError) {
@@ -126,15 +118,13 @@ export default function PaymentStep({ form, listing, wizard, variant = "desktop"
     }
   };
 
-
-  const { data: quote } = usePricingQuote(listing.id, form.dateRange, form.packageId);
-  const days = quote?.days
+  const { data: quote } = usePricingQuote(listing.id, dateRange, form.packageId, excluded);
+  const days = quote?.days;
   const selectedPackage = listing.packages?.find(p => p.id === form.packageId);
-  const hireLabel = selectedPackage 
-    ? `${selectedPackage.name} (${days ?? '...'} ${days === 1 ? 'day' : 'days'})` 
-    : (listing.kind === 'service' ? `Service fee (${days ?? '...'} ${days === 1 ? 'day' : 'days'})` 
-    : `Venue hire (${days ?? '...'} ${days === 1 ? 'day' : 'days'})`);
-
+  const hireLabel = selectedPackage
+    ? `${selectedPackage.name} (${days ?? '...'} ${days === 1 ? 'day' : 'days'})`
+    : (listing.kind === 'service' ? `Service fee (${days ?? '...'} ${days === 1 ? 'day' : 'days'})`
+      : `Venue hire (${days ?? '...'} ${days === 1 ? 'day' : 'days'})`);
 
   // Unified summary object for both Mobile and Desktop
   const paymentSummary = {
@@ -142,13 +132,13 @@ export default function PaymentStep({ form, listing, wizard, variant = "desktop"
     venueLocation: listing.location,
     venueImage: listing.primaryImage?.url || "/placeholder.jpg",
     eventName: "Event Booking",
-    eventDateFrom: form.dateRange?.from?.toLocaleDateString() || "Invalid Date",
-    eventDateto: form.dateRange?.to?.toLocaleDateString() ,
+    eventDateFrom: dateRange?.from?.toLocaleDateString() || "Invalid Date",
+    eventDateTo: dateRange?.to?.toLocaleDateString(),
     guests: listing.kind === 'service' ? undefined : `Up to ${listing.capacity} Guests`,
     verified: listing.autoApprove,
     fees: quote ? [
       { label: hireLabel, value: `₦${quote.subtotal.toLocaleString()}` },
-      { label: "VAT (7.5%)", value: `₦${quote.vat.toLocaleString()}` }
+      { label: "VAT (7.5%)", value: `₦${quote.vat.toLocaleString()}` },
     ] : [],
     total: quote ? `₦${quote.total.toLocaleString()}` : "Calculating...",
     totalNote: "Includes all taxes and fees",
@@ -159,7 +149,8 @@ export default function PaymentStep({ form, listing, wizard, variant = "desktop"
       <section className="px-6 pb-28">
         <h1 className="text-2xl font-medium">Review & Confirm</h1>
         <p className="mt-3 text-[#555B7F]">Confirm your details. You will be redirected to Paystack to complete payment securely.</p>
-         {errorMessage && (
+
+        {errorMessage && (
           <div className="mt-6 flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
             <AlertCircle className="h-5 w-5 shrink-0" />
             <p>{errorMessage}</p>
@@ -181,16 +172,16 @@ export default function PaymentStep({ form, listing, wizard, variant = "desktop"
       <div>
         <h1 className="text-4xl font-medium">Review & Pay</h1>
         <p className="mt-3 text-lg text-[#555B7F]">
-          Click &ldquo;Pay Now&rdquo; to be redirected to our secure payment gateway. You will not be charged until the vendor confirms availability.
+          Click “Pay Now” to be redirected to our secure payment gateway. You will not be charged until the vendor confirms availability.
         </p>
 
-         {errorMessage && (
+        {errorMessage && (
           <div className="mt-6 flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
             <AlertCircle className="h-5 w-5 shrink-0" />
             <p>{errorMessage}</p>
           </div>
         )}
-        
+
         <div className="mt-9 rounded-4xl bg-[#F4F1EA] p-8">
           <div className="flex items-center gap-4">
             <LockKeyhole className="h-6 w-6 text-[#B9401D]" />
@@ -201,7 +192,7 @@ export default function PaymentStep({ form, listing, wizard, variant = "desktop"
           </div>
         </div>
       </div>
-      
+
       <PaymentSummary summary={paymentSummary} onPay={handlePay} isProcessing={wizard.isProcessing} />
     </section>
   );

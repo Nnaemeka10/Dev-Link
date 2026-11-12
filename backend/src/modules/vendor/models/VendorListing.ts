@@ -114,7 +114,7 @@ export const VendorListingModel = {
     const db = getDB();
     const name = String(payload?.details?.name ?? '').trim();
     const priceKobo = Number.isFinite(payload?.pricing?.basePrice)
-      ? Math.round(payload.pricing.basePrice) // already kobo — do NOT ×100 again
+      ? Math.round(payload.pricing.basePrice) // already kobo - do NOT ×100 again
       : null;
     await db.query(
       `UPDATE listings SET draft_payload = $3,
@@ -207,7 +207,7 @@ export const VendorListingModel = {
           [
             listingId,
             details.name || null,
-            details.name ? `${details.name} — Premium Event Venue` : null,
+            details.name ? `${details.name} - Premium Event Venue` : null,
             details.description || null,
             details.hallLocation.streetAddress || null,
             lgaName,
@@ -342,7 +342,7 @@ export const VendorListingModel = {
       }
 
       // 5a. Cached "from" price. pricingStepSchema allows basePrice: null when
-      //     usesPackages is true, which would leave base_price_kobo = 0 — making
+      //     usesPackages is true, which would leave base_price_kobo = 0 - making
       //     the listing match EVERY price filter and sort as the cheapest result.
       //     Derive it from the cheapest package, inside the same transaction.
       if (category === 'service' && hasPackages) {

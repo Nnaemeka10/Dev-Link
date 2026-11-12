@@ -602,6 +602,25 @@
     gap: 2rem;
   }
 
+  /* Hover affordance: this selected day will be removed on click */
+  .rdp-day--deselect-hint .rdp-day-btn {
+    opacity: 0.45;
+    text-decoration: line-through;
+  }
+
+  /* Belt & braces: a disabled day can NEVER carry range styling */
+  .rdp-day--disabled.rdp-day--range-middle,
+  .rdp-day--disabled.rdp-day--range-start,
+  .rdp-day--disabled.rdp-day--range-end {
+    background: transparent;
+  }
+  .rdp-day--disabled.rdp-day--range-start .rdp-day-btn,
+  .rdp-day--disabled.rdp-day--range-end .rdp-day-btn,
+  .rdp-day--disabled.rdp-day--selected .rdp-day-btn {
+    background: transparent;
+    color: rgba(26, 31, 60, 0.2);
+  }
+
   @media (max-width: 720px) {
     .rdp-months {
       flex-direction: column;

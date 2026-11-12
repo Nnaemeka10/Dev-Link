@@ -1,65 +1,68 @@
 export type BookingStatus =
-    | 'pending'           // created, awaiting payment
-    | 'paid'              // paid (card/Paystack), awaiting vendor confirmation
-    | 'funds_held'        // paid via DVA/escrow transfer, awaiting vendor confirmation
-    | 'confirmed'         // vendor confirmed
-    | 'declined'          // vendor/admin rejected
-    | 'cancelled'
-    | 'completed'
-    | 'processing_payout'
-    | 'payout_released'
-    | 'refunded'
-    | 'failed'
-    | 'expired';
-
+  | 'pending'           // created, awaiting payment
+  | 'paid'              // paid (card/Paystack), awaiting vendor confirmation
+  | 'funds_held'        // paid via DVA/escrow transfer, awaiting vendor confirmation
+  | 'confirmed'         // vendor confirmed
+  | 'declined'          // vendor/admin rejected
+  | 'cancelled'
+  | 'completed'
+  | 'processing_payout'
+  | 'payout_released'
+  | 'refunded'
+  | 'failed'
+  | 'expired';
 
 export interface BookingRow {
-    id: string;
-    listing_id: string;
-    user_id: number;
-    start_date: string;
-    end_date: string;
-    status: BookingStatus;
-    total_amount: number;
-    guests: number;
-    created_at: string;
-    booking_reference: string;
-    start_time: string | null;
-    end_time: string | null;
-    currency: string;
-    payment_reference: string | null;
-    payment_provider: string;
-    payment_status: string;
-    paid_at: string | null;
-    package_id: string | null;
+  id: string;
+  listing_id: string;
+  user_id: number;
+  start_date: string;
+  end_date: string;
+  /** Interior days removed from the booking (sorted YYYY-MM-DD). */
+  excluded_dates: string[];
+  status: BookingStatus;
+  total_amount: number;
+  guests: number;
+  created_at: string;
+  booking_reference: string;
+  start_time: string | null;
+  end_time: string | null;
+  currency: string;
+  payment_reference: string | null;
+  payment_provider: string;
+  payment_status: string;
+  paid_at: string | null;
+  package_id: string | null;
 }
 
 export interface CreateBookingInput {
-    listingId: string;
-    startDate: string; // ISO string
-    endDate: string;   // ISO string
-    startTime: string; // "16:00"
-    endTime: string;   // "23:00"
-    preferences?: string;
-    packageId?: string;
+  listingId: string;
+  startDate: string; // ISO string - envelope start
+  endDate: string;   // ISO string - envelope end
+  /** Interior days the customer deselected (YYYY-MM-DD). Optional. */
+  excludedDates?: string[];
+  startTime: string; // "16:00"
+  endTime: string;   // "23:00"
+  preferences?: string;
+  packageId?: string;
 }
 
 export interface BookingResponse {
-    bookingId: string;
-    amount: number;
-    currency: string;
-    status: string;
+  bookingId: string;
+  amount: number;
+  currency: string;
+  status: string;
 }
 
 export interface BookingDetailsResponse extends BookingRow {
-    listing_title: string;
-    listing_image: string | null;
-    listing_location: string;
-    listing_capacity: string;
-    vendor_first_name: string | null;
-    vendor_last_name: string | null;
-    vendor_phone: string | null;
-    vendor_email: string | null;
-    auto_approve: boolean;
-    package_name: string | null;
+  listing_title: string;
+  listing_image: string | null;
+  listing_location: string;
+  listing_capacity: string;
+  vendor_first_name: string | null;
+  vendor_last_name: string | null;
+  vendor_phone: string | null;
+  vendor_email: string | null;
+  auto_approve: boolean;
+  package_name: string | null;
 }

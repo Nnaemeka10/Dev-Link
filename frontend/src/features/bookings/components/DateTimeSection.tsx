@@ -1,12 +1,10 @@
 "use client";
-
-import { CalendarDays, Clock, UsersRound, ChevronDown } from "lucide-react";
-import { Dropdown, type DropdownOption } from "@/components/ui/Dropdown"; 
+import { CalendarDays, Clock } from "lucide-react";
+import { Dropdown, type DropdownOption } from "@/components/ui/Dropdown";
 import { DateRangePicker } from "@/features/search/components/DateRange";
 import type { DateRange } from "@/features/search/utils/searchSchema";
 
 //  Time options 
-
 const START_TIMES: DropdownOption[] = [
   { value: "08:00", label: "08:00 AM" },
   { value: "09:00", label: "09:00 AM" },
@@ -41,20 +39,19 @@ const END_TIMES: DropdownOption[] = [
 ];
 
 //  Props 
-
 interface DateTimeSectionProps {
-  dateRange: DateRange | undefined;
+  /** Disjoint completed ranges - the booking's source of truth. */
+  dateRanges: DateRange[];
   startTime: string;
   endTime: string;
   unavailableDates?: { from: string; to: string }[];
-  onDateRangeChange: (range: DateRange | undefined) => void;
+  onDateRangesChange: (ranges: DateRange[]) => void;
   onStartTimeChange: (time: string) => void;
   onEndTimeChange: (time: string) => void;
   listingId: string;
 }
 
-// Field wrapper
-
+//  Field wrapper 
 function FieldPill({ children }: { children: React.ReactNode }) {
   return (
     <div className="mt-2.5 flex items-center gap-3 rounded-full bg-[#E8E4DC] px-5 py-3.5">
@@ -72,60 +69,52 @@ function FieldLabel({ children }: { children: React.ReactNode }) {
 }
 
 //  Component 
-
 export function DateTimeSection({
-  dateRange,
+  dateRanges,
   startTime,
   endTime,
-  onDateRangeChange,
+  onDateRangesChange,
   onStartTimeChange,
   onEndTimeChange,
   unavailableDates = [],
   listingId,
 }: DateTimeSectionProps) {
   return (
-    <div className="rounded-[2rem] bg-[#F4F1EA] p-6 md:p-8">
+    <div className="rounded-4xl bg-[#F4F1EA] p-6 md:p-8">
       <h3 className="mt-6 mb-2 font-man text-heading-m font-extrabold text-[#252423]">
-        Select Date &amp; Time
+        Select Date & Time
       </h3>
 
       <div className="space-y-5">
-
-        {/*  Event Date - full width  */}
+        {/* Event Date - full width, multi-range (tap a selected day to remove it) */}
         <div>
           <FieldLabel>Event Date</FieldLabel>
           <FieldPill>
             <CalendarDays className="h-4 w-4 shrink-0 text-[#B9401D]" aria-hidden="true" />
             <DateRangePicker
-              value={dateRange}
-              onChange={onDateRangeChange}
+              multi
+              ranges={dateRanges}
+              onRangesChange={onDateRangesChange}
+              // Single-range contract is unused in multi mode.
+              value={undefined}
+              onChange={() => {}}
               unavailableDates={unavailableDates}
               variant="ghost"
               triggerClassName="flex-1 bg-transparent md:text-sm text-small font-semibold text-[#252423] focus:outline-none text-left"
-              listingId = {listingId}
+              listingId={listingId}
             />
           </FieldPill>
         </div>
 
-        {/*Start Time + End Time - side by side*/}
-        {/*
-          We use the feature-agnostic Dropdown in a custom pill wrapper
-          rather than the "cell" variant so we can match the pill shape.
-          The Dropdown's popover portals to body so it won't be clipped
-          by the rounded-[2rem] container.
-        */}
+        {/* Start Time + End Time - side by side.
+            The Dropdown's popover portals to body so it won't be clipped
+            by the rounded-[2rem] container. */}
         <div className="grid grid-cols-2 gap-3">
-
           {/* Start Time */}
           <div>
             <FieldLabel>Start Time</FieldLabel>
             <div className="mt-2.5 flex items-center gap-2 rounded-full bg-[#E8E4DC] px-4 py-3">
               <Clock className="sm-h-4 sm:w-4 h-2.5 w-2.5 shrink-0 text-[#B9401D]" aria-hidden="true" />
-              {/*
-                We render a minimal inline trigger here that wraps Dropdown
-                so the clock icon sits outside the Dropdown's own trigger,
-                matching the design exactly.
-              */}
               <Dropdown
                 aria-label="Start time"
                 variant="ghost"
@@ -157,7 +146,6 @@ export function DateTimeSection({
             </div>
           </div>
         </div>
-
       </div>
     </div>
   );

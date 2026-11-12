@@ -1,8 +1,12 @@
 import { Request, Response } from 'express';
 import { BookingModel } from '../models/Booking.js';
 import type { CreateBookingInput } from '../types/booking.js';
-import { getDB } from '../../../lib/db.js';
-import { provisionDvaForBooking } from '../../payments/controllers/payment.controller.js';
+
+/** Shared guard: excludedDates must be an array of strings when present. */
+function isValidExcludedDates(value: unknown): boolean {
+    return value === undefined ||
+        (Array.isArray(value) && value.every((d) => typeof d === 'string'));
+}
 
 export const createBooking = async (req: Request, res: Response) => {
     try {
@@ -11,15 +15,24 @@ export const createBooking = async (req: Request, res: Response) => {
             return;
         }
 
-        const { listingId, startDate, endDate, startTime, endTime, preferences, packageId } = req.body as CreateBookingInput;
+        const { listingId, startDate, endDate, startTime, endTime, preferences, packageId, excludedDates } =
+            req.body as CreateBookingInput;
 
         if (!listingId || !startDate || !endDate || !startTime || !endTime) {
             res.status(400).json({ message: 'Missing required booking fields' });
             return;
         }
 
-        // 1: Idempotency - Reuse existing pending booking if user retries
-        const existingBooking = await BookingModel.findExistingPending(req.user.userId, listingId, startDate, endDate);
+        if (!isValidExcludedDates(excludedDates)) {
+            res.status(400).json({ message: 'excludedDates must be an array of date strings (YYYY-MM-DD)' });
+            return;
+        }
+
+        // 1. Idempotency - reuse existing pending booking if the user retries
+        //    the SAME selection (envelope + excluded days must both match).
+        const existingBooking = await BookingModel.findExistingPending(
+            req.user.userId, listingId, startDate, endDate, excludedDates
+        );
         if (existingBooking) {
             return res.status(200).json({
                 bookingId: existingBooking.id,
@@ -29,21 +42,19 @@ export const createBooking = async (req: Request, res: Response) => {
             });
         }
 
-        // 2. Check Availability (excluding the users own pending)
-        const isAvailable = await BookingModel.checkAvailability(listingId, startDate, endDate, req.user.userId);
+        // 2. Day-aware availability check (excluded days don't conflict)
+        const isAvailable = await BookingModel.checkAvailability(
+            listingId, startDate, endDate, req.user.userId, excludedDates
+        );
         if (!isAvailable) {
             res.status(409).json({ message: 'Selected dates are no longer available' });
             return;
         }
 
-        // 3. Create Booking (Price calculated securely in model)
+        // 3. Create Booking (price calculated securely in model)
         const booking = await BookingModel.createBooking(req.user.userId, {
-            listingId, startDate, endDate, startTime, endTime, preferences, packageId
+            listingId, startDate, endDate, excludedDates, startTime, endTime, preferences, packageId
         });
-
-    
-        const uid = req.user.userId;
-     
 
         res.status(201).json({
             bookingId: booking.id,
@@ -58,14 +69,18 @@ export const createBooking = async (req: Request, res: Response) => {
         const message: string = error?.message ?? '';
 
         // Known client errors - 4xx
-        if (message === 'You cannot book your own listing' || message === 'Invalid package selected') {
+        if (
+            message === 'You cannot book your own listing' ||
+            message === 'Invalid package selected' ||
+            message === 'Invalid date selection'
+        ) {
             return res.status(400).json({ message });
         }
         if (message === 'Listing not found or not available for booking') {
             return res.status(404).json({ message });
         }
 
-        // Unexpected errors: log the details, but don't leak them to the client
+        // Unexpected errors: log the details, but don't leak them to the client.
         return res.status(500).json({ message: 'Failed to create booking' });
     }
 };
@@ -83,8 +98,9 @@ export const getBookingDetails = async (req: Request, res: Response) => {
             return;
         }
 
-        // Security: Ensure user owns this booking
-        if (booking.user_id !== req.user.userId) {
+        // Security: ensure user owns this booking.
+        // pg returns BIGINT as string - compare numerically.
+        if (Number(booking.user_id) !== Number(req.user.userId)) {
             res.status(403).json({ message: 'Forbidden: You do not own this booking' });
             return;
         }
@@ -98,17 +114,32 @@ export const getBookingDetails = async (req: Request, res: Response) => {
 
 export const getBookingQuote = async (req: Request, res: Response) => {
     try {
-        const { listingId, startDate, endDate, packageId } = req.body;
+        const { listingId, startDate, endDate, packageId, excludedDates } = req.body;
 
         if (!listingId || !startDate || !endDate) {
             res.status(400).json({ message: 'Listing ID, start date, and end date are required' });
             return;
         }
 
-        const quote = await BookingModel.getQuote(listingId, startDate, endDate, packageId);
+        if (!isValidExcludedDates(excludedDates)) {
+            res.status(400).json({ message: 'excludedDates must be an array of date strings (YYYY-MM-DD)' });
+            return;
+        }
+
+        const quote = await BookingModel.getQuote(listingId, startDate, endDate, packageId, excludedDates);
         res.status(200).json(quote);
     } catch (error: any) {
         console.error('Get quote error:', error);
-        res.status(500).json({ message: error.message || 'Failed to get quote' });
+
+        const message: string = error?.message ?? '';
+
+        if (message === 'Invalid package selected' || message === 'Invalid date selection') {
+            return res.status(400).json({ message });
+        }
+        if (message === 'Listing not found') {
+            return res.status(404).json({ message });
+        }
+
+        return res.status(500).json({ message: 'Failed to get quote' });
     }
 };

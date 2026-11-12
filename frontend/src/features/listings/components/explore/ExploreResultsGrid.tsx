@@ -100,7 +100,7 @@ function EmptyState({ plural }: { plural: string }) {
  * mid-scroll retry, a manual "Load more" fallback, and the end-of-results cap.
  *
  * All three breakpoint instances share ONE infinite query, so whichever
- * sentinel is visible drives pagination — hidden (display:none) sentinels
+ * sentinel is visible drives pagination - hidden (display:none) sentinels
  * report zero intersection and never fetch.
  */
 export function ExploreResultsGrid({
@@ -187,7 +187,7 @@ export function ExploreResultsGrid({
         <div className="mt-10 flex flex-col items-center gap-3 rounded-4xl border border-[#E8DDD2] bg-white px-6 py-8 text-center">
           <p className="text-sm font-extrabold text-[#252423]">Couldn&apos;t load more {plural}</p>
           <p className="text-tiny font-semibold text-[#5E6588]">
-            Your place in the list is saved — pick up right where you left off.
+            Your place in the list is saved - pick up right where you left off.
           </p>
           <button
             type="button"
@@ -200,7 +200,7 @@ export function ExploreResultsGrid({
         </div>
       )}
 
-      {/* Manual fallback — also covers environments without IntersectionObserver */}
+      {/* Manual fallback - also covers environments without IntersectionObserver */}
       {hasNextPage && !isFetchingNextPage && !isError && (
         <div className="mt-10 flex justify-center">
           <button
