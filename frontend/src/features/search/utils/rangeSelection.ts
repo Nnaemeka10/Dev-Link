@@ -12,12 +12,55 @@ export const dayKey = (d: Date) =>
   `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 export const diffDays = (a: Date, b: Date) =>
   Math.round((startOfDay(b).getTime() - startOfDay(a).getTime()) / DAY_MS);
-export const parseDay = (s: string) => startOfDay(new Date(`${s.split("T")[0]}T00:00:00`));
+
+/**
+ * Coerce a date-ish value (ISO string, "YYYY-MM-DD", or Date) to a
+ * local-midnight Date. Returns null for anything unusable - never throws.
+ */
+export function toDay(value: unknown): Date | null {
+  if (value instanceof Date) {
+    return Number.isNaN(value.getTime()) ? null : startOfDay(value);
+  }
+  if (typeof value === "string" && value.trim().length > 0) {
+    const d = new Date(`${value.split("T")[0]}T00:00:00`);
+    return Number.isNaN(d.getTime()) ? null : d;
+  }
+  return null;
+}
+
+/** Parse a canonical day string/Date. Inputs are normalized before reaching here. */
+export const parseDay = (s: string | Date): Date => {
+  const d = toDay(s);
+  if (!d) throw new Error(`Invalid day value: ${String(s)}`);
+  return d;
+};
+
+/**
+ * Boundary adapter for blocked ranges. Accepts the common shapes upstream
+ * might emit - {from,to}, {start,end}, {startDate,endDate}, {start_date,end_date}
+ * - with either string or Date values. Skips malformed entries, swaps reversed
+ * ranges, and returns canonical {from:"YYYY-MM-DD", to:"YYYY-MM-DD"} strings.
+ * This is what makes the calendar immune to upstream shape mismatches.
+ */
+export function normalizeBlockedRanges(input: unknown): BlockedRanges {
+  if (!Array.isArray(input)) return [];
+  const out: BlockedRanges = [];
+  for (const raw of input) {
+    if (!raw || typeof raw !== "object") continue;
+    const r = raw as Record<string, unknown>;
+    const from = toDay(r.from ?? r.start ?? r.startDate ?? r.start_date);
+    const to = toDay(r.to ?? r.end ?? r.endDate ?? r.end_date);
+    if (!from || !to) continue; // missing/unusable endpoint - skip, never crash
+    const [a, b] = from <= to ? [from, to] : [to, from];
+    out.push({ from: dayKey(a), to: dayKey(b) });
+  }
+  return out;
+}
 
 /** Expand blocked ranges into a Set of day keys for O(1) lookups. */
 export function toBlockedSet(ranges: BlockedRanges): Set<string> {
   const set = new Set<string>();
-  for (const r of ranges) {
+  for (const r of normalizeBlockedRanges(ranges)) {
     for (let d = parseDay(r.from), end = parseDay(r.to); d <= end; d = addDays(d, 1)) {
       set.add(dayKey(d));
     }

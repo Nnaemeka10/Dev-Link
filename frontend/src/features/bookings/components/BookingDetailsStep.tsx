@@ -131,7 +131,7 @@ export default function BookingDetailsStep({ form, listing, onContinue, onUpdate
                   <p className="font-extrabold text-[#252423]">Total Estimate</p>
                   {quote && <strong className="text-base md:text-3xl font-extrabold text-[#B9401D]">₦{quote.total.toLocaleString()}</strong>}
                 </div>
-                <p className="text-micro font-extrabold uppercase tracking-[0.16em] text-[#7B7E9B]">Final amount calculated at checkout</p>
+                <p className="max-w-[50%] text-nano font-extrabold uppercase tracking-[0.16em] text-[#7B7E9B]">Final amount calculated at checkout</p>
               </div>
             </>
           ) : (
@@ -150,8 +150,9 @@ export default function BookingDetailsStep({ form, listing, onContinue, onUpdate
   }
 
   return (
-    <section className="mx-auto grid max-w-7xl gap-16 px-8 py-16 lg:grid-cols-[minmax(0,1fr)_23rem]">
-      <div className="space-y-8">
+    <section className="mx-auto grid max-w-7xl gap-16 px-8 py-16">
+      <div className="grid gap-28 grid-cols-2 justify-between w-full max-w-250">
+        <div className="space-y-8">
         <article className="flex items-center gap-6 rounded-[2.2rem] bg-white p-8 shadow-[0_24px_54px_rgba(34,27,18,0.06)]">
           <Image src={venueImage} alt={listing.title} className="h-28 w-28 rounded-[1.4rem] object-cover" width={112} height={112} />
           <div>
@@ -209,6 +210,7 @@ export default function BookingDetailsStep({ form, listing, onContinue, onUpdate
             </div>
           </div>
         )}
+        </div>
 
         <aside className="rounded-[2.2rem] h-fit bg-white p-8 shadow-[0_24px_54px_rgba(34,27,18,0.08)]">
           <h2 className="text-2xl font-medium text-[#252423]">Estimated Cost</h2>
@@ -240,11 +242,11 @@ export default function BookingDetailsStep({ form, listing, onContinue, onUpdate
                 ) : null}
               </div>
               <div className="mt-6 flex items-end justify-between">
-                <div>
+                <div className="max-w-[50%]">
                   <p className="font-extrabold text-[#252423]">Total Estimate</p>
-                  <p className="text-[11px] font-extrabold uppercase tracking-[0.16em] text-[#7B7E9B]">Final amount calculated at checkout</p>
+                  <p className="text-micro font-extrabold uppercase tracking-[0.16em] text-[#7B7E9B]">Final amount calculated at checkout</p>
                 </div>
-                {quote && <strong className="text-3xl font-extrabold text-[#B9401D]">₦{quote.total.toLocaleString()}</strong>}
+                {quote && <strong className="text-2xl font-extrabold text-[#B9401D]">₦{quote.total.toLocaleString()}000000</strong>}
               </div>
             </>
           ) : (

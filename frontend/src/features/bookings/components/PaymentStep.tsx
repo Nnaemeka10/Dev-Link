@@ -375,7 +375,7 @@ export default function PaymentStep({ form, listing, wizard, variant = "desktop"
       }
 
       if (error instanceof ApiError) {
-        // Expected business rejections — "You cannot book your own listing",
+        // Expected business rejections - "You cannot book your own listing",
         // dates taken (409), session expired (400), etc. These are NOT
         // exceptions: surface the message inline and keep them out of
         // console.error so the Next.js dev overlay doesn't flag a crash.
@@ -384,7 +384,7 @@ export default function PaymentStep({ form, listing, wizard, variant = "desktop"
           console.error("Payment initialization failed:", error);
         }
       } else {
-        // Genuine unexpected failure (network drop, bug) — worth logging.
+        // Genuine unexpected failure (network drop, bug) - worth logging.
         console.error("Payment initialization failed:", error);
         setErrorMessage("An unexpected error occurred. Please check your network and try again.");
       }

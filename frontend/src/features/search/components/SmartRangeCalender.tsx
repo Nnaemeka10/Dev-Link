@@ -3,7 +3,7 @@ import { useMemo, useState } from "react";
 import { DayPicker } from "react-day-picker";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import {
-  addDays, applyDayClick, countSelectedDays, diffDays, parseDay,
+  addDays, applyDayClick, countSelectedDays, diffDays, normalizeBlockedRanges, parseDay,
   previewRange, toBlockedSet, type BlockedRanges, type DayRange,
 } from "../utils/rangeSelection";
 
@@ -30,14 +30,18 @@ export default function SmartRangeCalendar({
   ranges, onChange, blocked = [], allowSplit = true, numberOfMonths = 2,
 }: SmartRangeCalendarProps) {
   const [hovered, setHovered] = useState<Date | null>(null);
-  const blockedSet = useMemo(() => toBlockedSet(blocked), [blocked]);
+
+  // Normalize once at the boundary: tolerate alternate shapes / Date values,
+  // drop malformed entries. Everything downstream gets canonical strings.
+  const safeBlocked = useMemo(() => normalizeBlockedRanges(blocked), [blocked]);
+  const blockedSet = useMemo(() => toBlockedSet(safeBlocked), [safeBlocked]);
 
   const disabled = useMemo(
     () => [
       { before: new Date(new Date().toDateString()) },
-      ...blocked.map((r) => ({ from: parseDay(r.from), to: parseDay(r.to) })),
+      ...safeBlocked.map((r) => ({ from: parseDay(r.from), to: parseDay(r.to) })),
     ],
-    [blocked],
+    [safeBlocked],
   );
 
   // Custom modifier names (span_*) mapped onto your existing rdp CSS classes.
@@ -69,7 +73,7 @@ export default function SmartRangeCalendar({
   const open = ranges.find((r) => !r.to);
   const total = countSelectedDays(ranges);
   const hint = open
-    ? "Pick an end date - unavailable dates can't be included"
+    ? "Pick an end date — unavailable dates can't be included"
     : total > 0
       ? allowSplit
         ? `${total} day${total === 1 ? "" : "s"} selected · tap a selected date to remove it`
