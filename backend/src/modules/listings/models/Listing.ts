@@ -347,9 +347,22 @@ export const ListingModel = {
           FROM listing_features lf WHERE lf.listing_id = l.id
         ) feature_data ON TRUE
         LEFT JOIN LATERAL (
-          SELECT json_agg(json_build_object('id', lr.id, 'userId', lr.user_id, 'rating', lr.rating, 'body', lr.body, 'createdAt', lr.created_at)
-            ORDER BY lr.created_at DESC) AS reviews
-          FROM listing_reviews lr WHERE lr.listing_id = l.id
+          SELECT json_agg(json_build_object(
+            'id', lr.id,
+            'userId', lr.user_id,
+            'reviewerName', TRIM(COALESCE(u.first_name, 'Guest') || ' ' ||
+              CASE WHEN COALESCE(u.last_name, '') <> '' THEN LEFT(u.last_name, 1) || '.' ELSE '' END),
+            'initials', UPPER(LEFT(COALESCE(u.first_name, 'G'), 1) || LEFT(COALESCE(u.last_name, ''), 1)),
+            'avatarUrl', u.avatar_url,
+            'rating', lr.rating,
+            'body', lr.body,
+            'subRatings', lr.sub_ratings,
+            'createdAt', lr.created_at,
+            'updatedAt', lr.updated_at
+          ) ORDER BY lr.created_at DESC) AS reviews
+          FROM listing_reviews lr
+          JOIN users u ON u.id = lr.user_id
+          WHERE lr.listing_id = l.id
         ) review_data ON TRUE
         LEFT JOIN LATERAL (
           SELECT json_agg(json_build_object('city', lsa.city, 'state', lsa.state, 'country', lsa.country)
@@ -357,19 +370,22 @@ export const ListingModel = {
           FROM listing_service_areas lsa WHERE lsa.listing_id = l.id
         ) area_data ON TRUE
         LEFT JOIN LATERAL (
-          SELECT json_agg(to_char(d, 'YYYY-MM-DD')) AS unavailable_dates
-          FROM (
-            SELECT generate_series(lud.start_date, lud.end_date, '1 day'::interval)::date AS d
-            FROM listing_unavailable_dates lud WHERE lud.listing_id = l.id
-          ) dates
+          SELECT json_agg(json_build_object(
+            'from', to_char(lud.start_date, 'YYYY-MM-DD'),
+            'to',   to_char(lud.end_date,   'YYYY-MM-DD')
+          ) ORDER BY lud.start_date ASC) AS unavailable_dates
+          FROM listing_unavailable_dates lud
+          WHERE lud.listing_id = l.id
         ) unavail_data ON TRUE
         WHERE ${PUBLIC_LISTING_CLAUSES.join(' AND ')} AND l.id = $1
       )
       SELECT ld.*, 0 AS booking_count,
         json_build_object(
+          'kind', ld.kind,
           'cleanliness', lrm.cleanliness, 'communication', lrm.communication,
           'valueForMoney', lrm.value_for_money, 'location', lrm.location,
-          'facilityQuality', lrm.facility_quality
+          'facilityQuality', lrm.facility_quality,
+          'subMetrics', COALESCE(lrm.sub_metrics, '{}'::jsonb)
         ) AS review_metrics
       FROM listing_details ld
       LEFT JOIN listing_review_metrics lrm ON lrm.listing_id = ld.id

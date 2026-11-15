@@ -13,7 +13,7 @@ interface MobileDockItem {
 
 const MOBILE_DOCK_ITEMS: MobileDockItem[] = [
   { id: "explore", label: "Explore", icon: "explore", href: "/" },
-  { id: "saved", label: "Saved", icon: "saved", href: "/listings/saved" },
+  { id: "saved", label: "Saved", icon: "saved", href: "/saved" },
   { id: "Messages", label: "Messages", icon: "Messages", href: "/messages" },
   { id: "profile", label: "Profile", icon: "profile", href: "/profile" },
 ];
@@ -35,7 +35,7 @@ export default function MobileDock() {
           const Icon = dockIcon(item.icon);
           const isActive = 
             pathname === item.href || 
-            (item.href === "/" && pathname.startsWith("/listings") && !pathname.startsWith("/listings/saved"));
+            (item.href === "/" && pathname.startsWith("/listings") && !pathname.startsWith("/saved"));
 
           return (
             <Link

@@ -1,15 +1,14 @@
 import { ENV } from '../../../lib/env.js';
-import type { 
-    PaystackInitializeResponse, 
-    PaystackVerifyResponse, 
-    PaystackRecipientResponse, 
+import type {
+    PaystackInitializeResponse,
+    PaystackVerifyResponse,
+    PaystackRecipientResponse,
     PaystackDvaResponse,
     PaystackTransferResponse
 } from '../types/payment.js';
 
 const PAYSTACK_BASE_URL = 'https://api.paystack.co';
 
-//new
 async function paystackRequest<T>(endpoint: string, method: string, body?: any): Promise<T> {
     const response = await fetch(`${PAYSTACK_BASE_URL}${endpoint}`, {
         method,
@@ -40,12 +39,8 @@ export async function verifyPaystackTransaction(reference: string): Promise<Pays
     return paystackRequest<PaystackVerifyResponse>(`/transaction/verify/${reference}`, 'GET');
 }
 
-// --- New Escrow Functions ---
+// --- Escrow functions ---
 
-/**
- * Creates a Transfer Recipient in Paystack for a Vendor.
- * Called during Listing Creation (Vendor Onboarding).
- */
 export async function createTransferRecipient(
     businessName: string,
     accountNumber: string,
@@ -60,25 +55,17 @@ export async function createTransferRecipient(
     });
 }
 
-/**
- * Creates a Dedicated Virtual Account (DVA) for a specific booking/customer.
- * The guest pays into this account to fund the escrow.
- */
 export async function createDedicatedVirtualAccount(
     customerEmail: string,
-    customerCode: string // Paystack customer code (e.g. from user table)
+    customerCode: string
 ): Promise<PaystackDvaResponse> {
     return paystackRequest<PaystackDvaResponse>('/dedicated_account/assign', 'POST', {
         email: customerEmail,
         customer: customerCode,
-        preferred_bank: 'test-bank', // Use a specific bank slug in production
+        preferred_bank: 'test-bank',
     });
 }
 
-/**
- * Initiates a transfer to a Vendor's bank account via Paystack.
- * Called by the automated payout worker.
- */
 export async function initiateTransfer(
     amountKobo: number,
     recipientCode: string,
@@ -94,58 +81,32 @@ export async function initiateTransfer(
     });
 }
 
-/**
- * Verifies the status of a transfer (payout).
- * Used by the reconciliation job to resolve 'unknown' or 'dispatched' states.
- */
 export async function verifyTransfer(reference: string): Promise<any> {
     return paystackRequest<any>(`/transfer/verify/${reference}`, 'GET');
 }
 
+// --- Refunds ---
 
+export interface PaystackRefundResponse {
+    status: boolean;
+    message: string;
+    data: {
+        id: number;
+        transaction: { reference: string; amount: number; id: number };
+        amount: number;
+        status: string;            // 'pending' | 'processed' | 'failed'
+        currency: string;
+        createdAt: string;
+    };
+}
 
-
-// export async function initializePaystackTransaction(
-//     email: string, 
-//     amountInNaira: number, 
-//     reference: string
-// ): Promise<PaystackInitializeResponse> {
-    
-//     const response = await fetch(`${PAYSTACK_BASE_URL}/transaction/initialize`, {
-//         method: 'POST',
-//         headers: {
-//             Authorization: `Bearer ${ENV.PAYSTACK_SECRET_KEY}`,
-//             'Content-Type': 'application/json',
-//         },
-//         body: JSON.stringify({
-//             email,
-//             amount: Math.round(amountInNaira * 100), // Convert Naira to Kobo
-//             reference,
-//             callback_url: `${ENV.CLIENT_URL}/bookings/callback`, // Where Paystack redirects after payment
-//         }),
-//     });
-
-//     if (!response.ok) {
-//         const error = await response.json();
-//         throw new Error(`Paystack initialization failed: ${error.message}`);
-//     }
-
-//     return response.json();
-// }
-
-// export async function verifyPaystackTransaction(reference: string): Promise<PaystackVerifyResponse> {
-//     const response = await fetch(`${PAYSTACK_BASE_URL}/transaction/verify/${reference}`, {
-//         method: 'GET',
-//         headers: {
-//             Authorization: `Bearer ${ENV.PAYSTACK_SECRET_KEY}`,
-//         },
-//     });
-
-//     if (!response.ok) {
-//         const error = await response.json();
-//         throw new Error(`Paystack verification failed: ${error.message}`);
-//     }
-
-//     return response.json();
-// }
-
+/**
+ * Initiates a FULL refund of a transaction. Omitting `amount` tells Paystack
+ * to refund the entire transaction. Idempotent on Paystack's side per
+ * transaction — a replay returns the existing refund rather than doubling.
+ */
+export async function createPaystackRefund(transactionReference: string): Promise<PaystackRefundResponse> {
+    return paystackRequest<PaystackRefundResponse>('/refund', 'POST', {
+        transaction: transactionReference,
+    });
+}

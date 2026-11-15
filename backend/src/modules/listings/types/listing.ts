@@ -24,6 +24,7 @@ export interface ListingBadge {
 }
 
 export interface ListingReviewMetric {
+  key: string;
   label: string;
   value: number;
 }
@@ -142,6 +143,8 @@ export type ListingAssetRow = {
 };
 
 export type ListingReviewMetricsRow = {
+  kind?: string | null;
+  subMetrics?: Record<string, number> | null;
   cleanliness: string | number | null;
   communication: string | number | null;
   valueForMoney: string | number | null;

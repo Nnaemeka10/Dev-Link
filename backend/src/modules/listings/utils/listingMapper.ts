@@ -14,6 +14,15 @@ import type {
 import { buildListingImageVariants, buildListingThumbnailUrl, buildSrcSet } from './cloudinaryImage.js';
 import { calculateTrendingScore } from './ranking.js';
 
+const HALL_METRIC_LABELS: [string, string][] = [
+  ['cleanliness', 'Cleanliness'], ['communication', 'Communication'],
+  ['value_for_money', 'Value for money'], ['location', 'Location'], ['facility_quality', 'Facility quality'],
+];
+const SERVICE_METRIC_LABELS: [string, string][] = [
+  ['quality_of_work', 'Quality of work'], ['professionalism', 'Professionalism'],
+  ['punctuality', 'Punctuality'], ['communication', 'Communication'], ['value_for_money', 'Value for money'],
+];
+
 export function koboToNaira(value: string | number | null | undefined): number {
   if (value === null || value === undefined) return 0;
   const kobo = Number(value);
@@ -77,12 +86,20 @@ export function mapListingCard(row: ListingRow): ListingCard {
 function mapReviewMetrics(row: ListingRow): ListingReviewMetric[] {
   const metrics = row.review_metrics;
   if (!metrics) return [];
+
+  const sub = (metrics.subMetrics ?? {}) as Record<string, number>;
+  if (Object.keys(sub).length > 0) {
+    const dims = row.kind === 'service' ? SERVICE_METRIC_LABELS : HALL_METRIC_LABELS;
+    return dims.map(([key, label]) => ({ key, label, value: toNumber(sub[key] ?? 0) }));
+  }
+
+  // Legacy fallback for rows without sub_metrics yet.
   return [
-    { label: 'Cleanliness', value: toNumber(metrics.cleanliness) },
-    { label: 'Communication', value: toNumber(metrics.communication) },
-    { label: 'Value for money', value: toNumber(metrics.valueForMoney) },
-    { label: 'Location', value: toNumber(metrics.location) },
-    { label: 'Facility quality', value: toNumber(metrics.facilityQuality) },
+    { key: 'cleanliness', label: 'Cleanliness', value: toNumber(metrics.cleanliness) },
+    { key: 'communication', label: 'Communication', value: toNumber(metrics.communication) },
+    { key: 'value_for_money', label: 'Value for money', value: toNumber(metrics.valueForMoney) },
+    { key: 'location', label: 'Location', value: toNumber(metrics.location) },
+    { key: 'facility_quality', label: 'Facility quality', value: toNumber(metrics.facilityQuality) },
   ];
 }
 
@@ -104,7 +121,18 @@ export function mapListingDetails(row: ListingRow): ListingDetails {
     requirements: metadata?.requirements ?? [],
     responseTime: metadata?.response_time ?? null,
     features: (row.features ?? []) as any[],
-    reviews: (row.reviews ?? []) as any[],
+    reviews: (row.reviews ?? []).map((r: any) => ({
+      id: r.id,
+      userId: String(r.userId),
+      reviewerName: r.reviewerName ?? 'Guest',
+      initials: r.initials ?? 'G',
+      avatarUrl: r.avatarUrl ?? null,
+      rating: toNumber(r.rating),
+      body: r.body ?? '',
+      subRatings: (r.subRatings ?? {}) as Record<string, number>,
+      createdAt: r.createdAt,
+      updatedAt: r.updatedAt ?? r.createdAt,
+    })),
     serviceAreas: (row.service_areas ?? []) as any[],
     unavailableDates: (row.unavailable_dates ?? []) as { from: string; to: string }[],
   };

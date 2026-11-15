@@ -7,6 +7,7 @@ import { LedgerModel } from '../models/LedgerModel.js';
 import { randomUUID } from 'crypto';
 import { applyConfirmedPayout } from './reconciliation.js'
 import { flagDoubleBookingIfNeeded } from '../../bookings/models/Booking.js';
+import { RefundModel } from '../models/RefundModel.js';
 import { VendorVerificationModel } from '../../vendor/models/VendorVerification.js';
 
 /**
@@ -33,12 +34,20 @@ export async function processWebhookEvents() {
           break;
 
         case 'customeridentification.success':
-        await handleIdentitySuccess(client, payload);
-        break;
-        
-      case 'customeridentification.failed':
-        await handleIdentityFailed(client, payload);
-        break;
+          await handleIdentitySuccess(client, payload);
+          break;
+          
+        case 'customeridentification.failed':
+          await handleIdentityFailed(client, payload);
+          break;
+
+        case 'refund.processed':
+          await RefundModel.applyRefundWebhook(client, payload.data.transaction?.reference ?? payload.data.reference, true);
+          break;
+
+        case 'refund.failed':
+          await RefundModel.applyRefundWebhook(client, payload.data.transaction?.reference ?? payload.data.reference, false);
+          break;
         // transfer.failed, etc. will be handled here
         default:
           // Unhandled event types are safely marked as processed

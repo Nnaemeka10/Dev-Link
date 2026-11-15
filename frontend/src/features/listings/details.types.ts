@@ -24,6 +24,7 @@ export interface ListingBadge {
 }
 
 export interface ListingReviewMetric {
+    key: string;
     label: string;
     value: number;
 }
@@ -31,9 +32,14 @@ export interface ListingReviewMetric {
 export interface ListingReview {
     id: string;
     userId: string;
+    reviewerName: string;
+    initials: string;
+    avatarUrl: string | null;
     rating: number;
     body: string;
+    subRatings: Record<string, number>;
     createdAt: string;
+    updatedAt: string;
 }
 
 export interface ListingFeature {

@@ -17,7 +17,7 @@ const navLinks = [
     id: "saved",
     icon: Heart,
     label: "Saved",
-    href: "/listings/saved",
+    href: "/saved",
   },
   {
     id: "messages",
@@ -53,7 +53,7 @@ export default function SideNavBar() {
           // or if it's the root path ("/") and we are on a listings path (but not '/listings/saved')
           const isActive = 
             pathname === link.href || 
-            (link.href === "/" && pathname.startsWith("/listings") && !pathname.startsWith("/listings/saved"));
+            (link.href === "/" && pathname.startsWith("/listings") && !pathname.startsWith("/saved"));
 
           return (
             <Link
