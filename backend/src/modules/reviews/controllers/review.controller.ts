@@ -15,7 +15,7 @@ function serialize(row: NonNullable<Awaited<ReturnType<typeof ReviewModel.getFor
     };
 }
 
-/** GET /api/bookings/:id/review — the caller's review (or null). */
+/** GET /api/bookings/:id/review - the caller's review (or null). */
 export const getMyReview = async (req: Request, res: Response) => {
     try {
         if (!req.user?.userId) {
@@ -31,7 +31,7 @@ export const getMyReview = async (req: Request, res: Response) => {
     }
 };
 
-/** POST /api/bookings/:id/review — create or edit the one review. */
+/** POST /api/bookings/:id/review - create or edit the one review. */
 export const submitReview = async (req: Request, res: Response) => {
     try {
         if (!req.user?.userId) {

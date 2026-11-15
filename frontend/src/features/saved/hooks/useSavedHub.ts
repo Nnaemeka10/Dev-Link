@@ -77,7 +77,7 @@ export function useSubmitReview(bookingId: string) {
     onSuccess: (data) => {
       invalidate();
       qc.setQueryData(hubKeys.review(bookingId), { review: data.review });
-      // Listing aggregates changed — refresh any cached listing details.
+      // Listing aggregates changed - refresh any cached listing details.
       qc.invalidateQueries({ queryKey: ["listing"] });
     },
   });

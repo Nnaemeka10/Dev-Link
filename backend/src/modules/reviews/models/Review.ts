@@ -78,7 +78,7 @@ export const ReviewModel = {
     /**
      * Create or edit the one review for a booking. Validates ownership,
      * eligibility, overall rating, and the exact kind-specific sub-rating
-     * keys, then recomputes listing aggregates — all in one transaction.
+     * keys, then recomputes listing aggregates - all in one transaction.
      * Throws sentinel errors the controller maps to HTTP codes.
      */
     async upsert(bookingId: string, userId: number, input: SubmitReviewInput): Promise<ReviewRow> {

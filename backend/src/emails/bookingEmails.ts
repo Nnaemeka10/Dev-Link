@@ -58,7 +58,7 @@ async function send(to: string, subject: string, html: string) {
 }
 
 export const bookingEmailService = {
-    // ── Batch 1: vendor-timeout auto-cancel + refund completion ──
+    //  Batch 1: vendor-timeout auto-cancel + refund completion 
 
     async sendAutoCancelledToCustomer(email: string, name: string, listingTitle: string, bookingRef: string, amountNaira: number) {
         const html = shell(
@@ -68,9 +68,9 @@ export const bookingEmailService = {
              so it was automatically cancelled and a <strong>full refund of ${naira(amountNaira)}</strong> has been initiated
              to your original payment method.</p>
              <p>Booking reference: <strong>${escapeHtml(bookingRef)}</strong>. Refunds typically land within 3–10 business days depending on your bank.</p>
-             <p>Your dates are open again — you're free to book another vendor.</p>`
+             <p>Your dates are open again - you're free to book another vendor.</p>`
         );
-        await send(email, `Booking ${bookingRef} cancelled — refund initiated`, html);
+        await send(email, `Booking ${bookingRef} cancelled - refund initiated`, html);
     },
 
     async sendAutoCancelledToVendor(email: string, name: string, listingTitle: string, bookingRef: string) {
@@ -92,10 +92,10 @@ export const bookingEmailService = {
              (ref <strong>${escapeHtml(bookingRef)}</strong>) has been processed back to your original payment method.</p>
              <p>It typically lands within 3–10 business days depending on your bank or card provider.</p>`
         );
-        await send(email, `Refund processed — booking ${bookingRef}`, html);
+        await send(email, `Refund processed - booking ${bookingRef}`, html);
     },
 
-    // ── Batch 2: reviewed refund requests ──
+    //  Batch 2: reviewed refund requests 
 
     async sendRefundRequestToSupport(
         bookingRef: string, customerName: string, customerEmail: string,
@@ -103,15 +103,15 @@ export const bookingEmailService = {
     ) {
         const html = shell(
             "New refund request",
-            `<p><strong>Booking:</strong> ${escapeHtml(bookingRef)} — ${escapeHtml(listingTitle)}</p>
-             <p><strong>Customer:</strong> ${escapeHtml(customerName || "—")} (${escapeHtml(customerEmail)})</p>
+            `<p><strong>Booking:</strong> ${escapeHtml(bookingRef)} - ${escapeHtml(listingTitle)}</p>
+             <p><strong>Customer:</strong> ${escapeHtml(customerName || "-")} (${escapeHtml(customerEmail)})</p>
              <p><strong>Amount:</strong> ${naira(amountNaira)} (full refund requested)</p>
              <p><strong>Reason:</strong> ${escapeHtml(REFUND_REASON_LABELS[reason] ?? reason)}</p>
              <p><strong>Details:</strong></p>
              <p style="white-space:pre-wrap;background:#F7F2EA;border-radius:12px;padding:16px">${escapeHtml(description)}</p>
              <p>Review this request in the admin tooling (or the refunds table) and approve or reject it.</p>`
         );
-        await send(SUPPORT, `[Refund request] ${bookingRef} — ${naira(amountNaira)}`, html);
+        await send(SUPPORT, `[Refund request] ${bookingRef} - ${naira(amountNaira)}`, html);
     },
 
     async sendRefundRequestAckToCustomer(email: string, name: string, listingTitle: string, bookingRef: string, amountNaira: number) {
@@ -123,10 +123,10 @@ export const bookingEmailService = {
              <p>We'll review it and email you once a decision is made. Approved refunds return to your original payment method
              within 3–10 business days.</p>`
         );
-        await send(email, `Refund request received — booking ${bookingRef}`, html);
+        await send(email, `Refund request received - booking ${bookingRef}`, html);
     },
 
-    // ── Batch 2: complaints ──
+    //  Batch 2: complaints 
 
     async sendComplaintToSupport(
         bookingRef: string, customerName: string, customerEmail: string,
@@ -134,14 +134,14 @@ export const bookingEmailService = {
     ) {
         const html = shell(
             "New booking complaint",
-            `<p><strong>Booking:</strong> ${escapeHtml(bookingRef)} — ${escapeHtml(listingTitle)}</p>
-             <p><strong>Customer:</strong> ${escapeHtml(customerName || "—")} (${escapeHtml(customerEmail)})</p>
+            `<p><strong>Booking:</strong> ${escapeHtml(bookingRef)} - ${escapeHtml(listingTitle)}</p>
+             <p><strong>Customer:</strong> ${escapeHtml(customerName || "-")} (${escapeHtml(customerEmail)})</p>
              <p><strong>Category:</strong> ${escapeHtml(COMPLAINT_CATEGORY_LABELS[category] ?? category)}</p>
              ${subject ? `<p><strong>Subject:</strong> ${escapeHtml(subject)}</p>` : ""}
              <p><strong>Message:</strong></p>
              <p style="white-space:pre-wrap;background:#F7F2EA;border-radius:12px;padding:16px">${escapeHtml(message)}</p>`
         );
-        await send(SUPPORT, `[Complaint] ${bookingRef} — ${COMPLAINT_CATEGORY_LABELS[category] ?? category}`, html);
+        await send(SUPPORT, `[Complaint] ${bookingRef} - ${COMPLAINT_CATEGORY_LABELS[category] ?? category}`, html);
     },
 
     async sendComplaintAckToCustomer(email: string, name: string, bookingRef: string) {
@@ -152,6 +152,6 @@ export const bookingEmailService = {
              has been logged and our support team will review it and reach out shortly.</p>
              <p>If it's urgent, reply to this email and quote your booking reference.</p>`
         );
-        await send(email, `Complaint received — booking ${bookingRef}`, html);
+        await send(email, `Complaint received - booking ${bookingRef}`, html);
     },
 };

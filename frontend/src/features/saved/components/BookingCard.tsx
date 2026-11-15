@@ -73,7 +73,7 @@ export default function BookingCard({ booking, index, onAction }: BookingCardPro
   const timeLabel = [fmtTime(booking.startTime), fmtTime(booking.endTime)].filter(Boolean).join(" – ");
   const refundPending = booking.refundStatus === "pending" || booking.refundStatus === "approved" || booking.refundStatus === "processing";
   const refundClosedTitle = !booking.refundWindowOpen
-    ? "Refund window closed — available until 24 hours after the event ends"
+    ? "Refund window closed - available until 24 hours after the event ends"
     : refundPending
       ? "A refund request is already in progress"
       : undefined;
@@ -135,7 +135,7 @@ export default function BookingCard({ booking, index, onAction }: BookingCardPro
       {booking.refundStatus && (
         <div className="mx-4 mb-3 rounded-xl bg-[#F7F2EA] px-3 py-2 text-[11px] font-bold text-[#6B5F57] sm:mx-5">
           Refund {booking.refundStatus === "completed" ? "processed" : booking.refundStatus}
-          {booking.refundStatus === "pending" && " — under review by support"}
+          {booking.refundStatus === "pending" && " - under review by support"}
         </div>
       )}
 

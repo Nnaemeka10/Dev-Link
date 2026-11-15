@@ -1,6 +1,6 @@
 -- 030_saved_hub.sql
 -- Saved hub: bookings location/cancellation, refunds, complaints, reviews.
--- Runner wraps this file in BEGIN/COMMIT — no explicit transaction here.
+-- Runner wraps this file in BEGIN/COMMIT - no explicit transaction here.
 
 -- 1. Bookings: service delivery location + cancellation audit ---------------
 ALTER TABLE bookings ADD COLUMN IF NOT EXISTS event_location TEXT;
@@ -9,7 +9,7 @@ ALTER TABLE bookings ADD COLUMN IF NOT EXISTS cancellation_reason TEXT;
 
 CREATE INDEX IF NOT EXISTS idx_bookings_user_status ON bookings (user_id, status);
 
--- 2. Refunds (full refund only → one row per booking, reused across attempts)
+-- 2. Refunds (full refund only - one row per booking, reused across attempts)
 CREATE TABLE IF NOT EXISTS refunds (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     booking_id UUID NOT NULL UNIQUE REFERENCES bookings(id) ON DELETE CASCADE,

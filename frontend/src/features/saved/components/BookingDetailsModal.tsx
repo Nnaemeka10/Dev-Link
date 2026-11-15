@@ -9,7 +9,7 @@ function fmtDate(d: string): string {
   return new Date(`${d}T00:00:00`).toLocaleDateString("en-NG", { weekday: "short", day: "numeric", month: "long", year: "numeric" });
 }
 function fmtTime(t: string | null): string {
-  if (!t) return "—";
+  if (!t) return "-";
   const [h, m] = t.split(":");
   const d = new Date();
   d.setHours(Number(h), Number(m));
@@ -63,7 +63,7 @@ export default function BookingDetailsModal({
           </div>
 
           <div className="grid gap-2.5 sm:grid-cols-2">
-            <Row icon={CalendarDays} label="Dates" value={data.startDate === data.endDate ? fmtDate(data.startDate) : `${fmtDate(data.startDate)} → ${fmtDate(data.endDate)}`} />
+            <Row icon={CalendarDays} label="Dates" value={data.startDate === data.endDate ? fmtDate(data.startDate) : `${fmtDate(data.startDate)} - ${fmtDate(data.endDate)}`} />
             <Row icon={Clock} label="Time" value={`${fmtTime(data.startTime)} – ${fmtTime(data.endTime)}`} />
             <Row icon={MapPin} label={data.kind === "hall" ? "Venue location" : "Event location"} value={data.location || "Location to be added"} />
             <Row icon={User} label="Vendor" value={data.vendorName} />
@@ -102,7 +102,7 @@ export default function BookingDetailsModal({
           {data.refund && (
             <div className="rounded-2xl bg-[#F7F2EA] px-4 py-3 text-sm font-semibold text-[#6B5F57]">
               Refund {data.refund.status}
-              {data.refund.status === "pending" && " — support is reviewing your request."}
+              {data.refund.status === "pending" && " - support is reviewing your request."}
             </div>
           )}
 

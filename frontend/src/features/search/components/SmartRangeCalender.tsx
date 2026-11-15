@@ -73,7 +73,7 @@ export default function SmartRangeCalendar({
   const open = ranges.find((r) => !r.to);
   const total = countSelectedDays(ranges);
   const hint = open
-    ? "Pick an end date — unavailable dates can't be included"
+    ? "Pick an end date - unavailable dates can't be included"
     : total > 0
       ? allowSplit
         ? `${total} day${total === 1 ? "" : "s"} selected · tap a selected date to remove it`

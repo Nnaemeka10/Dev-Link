@@ -1,7 +1,7 @@
 export type BookingBucket = 'upcoming' | 'completed' | 'cancelled';
 export type HubListingKind = 'hall' | 'service';
 
-/** Shared reason/category vocabularies — the frontend imports the same keys. */
+/** Shared reason/category vocabularies - the frontend imports the same keys. */
 export const REFUND_REASONS = [
     'vendor_unresponsive',
     'changed_plans',
@@ -21,7 +21,7 @@ export const COMPLAINT_CATEGORIES = [
 ] as const;
 export type ComplaintCategory = typeof COMPLAINT_CATEGORIES[number];
 
-/** Server-driven eligibility — the frontend renders, never decides. */
+/** Server-driven eligibility - the frontend renders, never decides. */
 export interface BookingActions {
     canChat: boolean;
     canRequestRefund: boolean;

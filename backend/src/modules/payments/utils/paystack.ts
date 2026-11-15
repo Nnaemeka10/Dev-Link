@@ -103,7 +103,7 @@ export interface PaystackRefundResponse {
 /**
  * Initiates a FULL refund of a transaction. Omitting `amount` tells Paystack
  * to refund the entire transaction. Idempotent on Paystack's side per
- * transaction — a replay returns the existing refund rather than doubling.
+ * transaction - a replay returns the existing refund rather than doubling.
  */
 export async function createPaystackRefund(transactionReference: string): Promise<PaystackRefundResponse> {
     return paystackRequest<PaystackRefundResponse>('/refund', 'POST', {

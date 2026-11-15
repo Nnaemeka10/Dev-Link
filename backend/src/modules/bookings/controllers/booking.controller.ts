@@ -51,7 +51,7 @@ export const createBooking = async (req: Request, res: Response) => {
 
         if (message === 'DATES_UNAVAILABLE') {
             res.status(409).json({
-                message: 'These dates are no longer available — another customer may be checking out. Please pick different dates.',
+                message: 'These dates are no longer available - another customer may be checking out. Please pick different dates.',
             });
             return;
         }
@@ -100,7 +100,7 @@ export const releaseBookingHold = async (req: Request, res: Response) => {
     }
 };
 
-/** GET /api/bookings/:id — wizard/confirmation contract (unchanged). */
+/** GET /api/bookings/:id - wizard/confirmation contract (unchanged). */
 export const getBookingDetails = async (req: Request, res: Response) => {
     try {
         if (!req.user?.userId) {
@@ -151,9 +151,9 @@ export const getBookingQuote = async (req: Request, res: Response) => {
     }
 };
 
-// ─────────────────────────── Saved hub ───────────────────────────
+//  Saved hub 
 
-/** GET /api/bookings/mine — bucketed bookings with server-computed actions. */
+/** GET /api/bookings/mine - bucketed bookings with server-computed actions. */
 export const getMyBookings = async (req: Request, res: Response) => {
     try {
         if (!req.user?.userId) {
@@ -169,7 +169,7 @@ export const getMyBookings = async (req: Request, res: Response) => {
     }
 };
 
-/** GET /api/bookings/:id/hub — enriched details for the hub modal. */
+/** GET /api/bookings/:id/hub - enriched details for the hub modal. */
 export const getHubBookingDetails = async (req: Request, res: Response) => {
     try {
         if (!req.user?.userId) {
@@ -189,7 +189,7 @@ export const getHubBookingDetails = async (req: Request, res: Response) => {
     }
 };
 
-/** GET /api/bookings/:id/refund — current refund request status. */
+/** GET /api/bookings/:id/refund - current refund request status. */
 export const getRefundStatus = async (req: Request, res: Response) => {
     try {
         if (!req.user?.userId) {
@@ -210,7 +210,7 @@ export const getRefundStatus = async (req: Request, res: Response) => {
     }
 };
 
-/** POST /api/bookings/:id/refund — reviewed FULL refund request. */
+/** POST /api/bookings/:id/refund - reviewed FULL refund request. */
 export const requestRefund = async (req: Request, res: Response) => {
     try {
         if (!req.user?.userId) {
@@ -220,7 +220,7 @@ export const requestRefund = async (req: Request, res: Response) => {
         const { reason, description } = req.body as { reason: RefundReason; description: string };
         const result = await BookingHubModel.requestRefund(req.params.id, Number(req.user.userId), { reason, description });
 
-        // Emails are best-effort — the request is already durably stored.
+        // Emails are best-effort - the request is already durably stored.
         try {
             await bookingEmailService.sendRefundRequestToSupport(
                 result.bookingReference, result.customerName, result.customerEmail,
@@ -252,7 +252,7 @@ export const requestRefund = async (req: Request, res: Response) => {
     }
 };
 
-/** POST /api/bookings/:id/complaint — stored + emailed to support. */
+/** POST /api/bookings/:id/complaint - stored + emailed to support. */
 export const submitComplaint = async (req: Request, res: Response) => {
     try {
         if (!req.user?.userId) {

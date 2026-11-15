@@ -22,7 +22,7 @@ router.use(arcjetProtection);
 // public routes
 router.post('/quote', getBookingQuote);
 
-// authenticated routes — /mine MUST precede /:id
+// authenticated routes - /mine MUST precede /:id
 router.post('/', authenticateUser, createBooking);
 router.get('/mine', authenticateUser, getMyBookings);
 router.get('/:id', authenticateUser, getBookingDetails);

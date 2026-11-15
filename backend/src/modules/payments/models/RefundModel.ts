@@ -70,8 +70,8 @@ async function finalizeRefundInTx(
         status: RefundStatus;
     }
 ): Promise<RefundRow> {
-    // vendor_timeout / vendor_decline → 'cancelled' (shows under Cancelled);
-    // user/admin approved → 'refunded'.
+    // vendor_timeout / vendor_decline - 'cancelled' (shows under Cancelled);
+    // user/admin approved - 'refunded'.
     const finalStatus = opts.source === 'vendor_timeout' || opts.source === 'vendor_decline' ? 'cancelled' : 'refunded';
 
     if (!TERMINAL.includes(booking.status)) {
@@ -144,7 +144,7 @@ export const RefundModel = {
         const booking = rows[0];
         if (!booking) throw new Error('BOOKING_NOT_FOUND');
 
-        // Idempotent: already terminal → return the existing refund row.
+        // Idempotent: already terminal - return the existing refund row.
         if (TERMINAL.includes(booking.status)) {
             const existing = await this.getForBooking(bookingId);
             if (existing) return existing;
@@ -157,7 +157,7 @@ export const RefundModel = {
 
         const amountKobo = Math.round(parseFloat(booking.total_amount) * 100);
 
-        // 1. Paystack (network) — full refund of the transaction.
+        // 1. Paystack (network) - full refund of the transaction.
         let paystackCode: string | null = null;
         let status: RefundStatus = 'processing';
         try {

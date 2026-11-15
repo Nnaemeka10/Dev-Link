@@ -61,7 +61,7 @@ function actionsFor(row: any, bucket: BookingBucket): BookingActions {
 
 /**
  * Shared projection. Unpaid checkout attempts (pending/expired, and failed
- * without a captured payment) are excluded — the hub shows real bookings.
+ * without a captured payment) are excluded - the hub shows real bookings.
  * The refund window falls back to end_date + 24h for legacy rows.
  *
  * IMPORTANT: every alias referenced in HUB_SELECT must be joined here.
@@ -209,7 +209,7 @@ export const BookingHubModel = {
     },
 
     /**
-     * User-initiated FULL refund request → 'pending' (support reviews it).
+     * User-initiated FULL refund request - 'pending' (support reviews it).
      * Window: until dispute_window_closes_at (event end + 24h), matching the
      * escrow payout logic. Re-request allowed only after rejection/failure.
      * Throws sentinel errors the controller maps to HTTP codes.
@@ -288,7 +288,7 @@ export const BookingHubModel = {
         }
     },
 
-    /** Complaint → stored for the future admin app + emailed to support. */
+    /** Complaint - stored for the future admin app + emailed to support. */
     async createComplaint(
         bookingId: string,
         userId: number,

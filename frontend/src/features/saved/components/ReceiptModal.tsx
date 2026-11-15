@@ -41,8 +41,8 @@ export default function ReceiptModal({
         <div className="space-y-2.5 py-4 text-sm">
           <div className="flex justify-between"><span className="font-semibold text-[#9A9AAE]">Listing</span><span className="font-bold text-[#252423]">{booking.listingTitle}</span></div>
           <div className="flex justify-between"><span className="font-semibold text-[#9A9AAE]">Vendor</span><span className="font-bold text-[#252423]">{booking.vendorName}</span></div>
-          <div className="flex justify-between"><span className="font-semibold text-[#9A9AAE]">Dates</span><span className="font-bold text-[#252423]">{fmtDate(booking.startDate)}{booking.endDate !== booking.startDate ? ` → ${fmtDate(booking.endDate)}` : ""}</span></div>
-          <div className="flex justify-between"><span className="font-semibold text-[#9A9AAE]">Paid on</span><span className="font-bold text-[#252423]">{booking.paidAt ? fmtDate(booking.paidAt.slice(0, 10)) : "—"}</span></div>
+          <div className="flex justify-between"><span className="font-semibold text-[#9A9AAE]">Dates</span><span className="font-bold text-[#252423]">{fmtDate(booking.startDate)}{booking.endDate !== booking.startDate ? ` - ${fmtDate(booking.endDate)}` : ""}</span></div>
+          <div className="flex justify-between"><span className="font-semibold text-[#9A9AAE]">Paid on</span><span className="font-bold text-[#252423]">{booking.paidAt ? fmtDate(booking.paidAt.slice(0, 10)) : "-"}</span></div>
         </div>
 
         <div className="space-y-2 border-t border-dashed border-[#E0D5C7] pt-4 text-sm">

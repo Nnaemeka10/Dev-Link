@@ -75,7 +75,7 @@ export default function ReviewModal({
             <CheckCircle2 className="h-7 w-7" />
           </span>
           <h3 className="mt-4 text-base font-extrabold text-[#252423]">Review saved</h3>
-          <p className="mt-2 max-w-sm text-sm font-semibold text-[#9A9AAE]">Thanks — your feedback helps other customers book with confidence.</p>
+          <p className="mt-2 max-w-sm text-sm font-semibold text-[#9A9AAE]">Thanks - your feedback helps other customers book with confidence.</p>
           <button type="button" onClick={onClose} className="mt-6 rounded-full bg-[#B9401D] px-6 py-2.5 text-xs font-extrabold text-white">Done</button>
         </div>
       ) : (
