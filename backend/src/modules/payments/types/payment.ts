@@ -86,16 +86,6 @@ export interface PaystackRecipientResponse {
     };
 }
 
-export interface PaystackDvaResponse {
-    status: boolean;
-    message: string;
-    data: {
-        account_name: string;
-        account_number: string;
-        bank: { slug: string; name: string };
-    };
-}
-
 export interface PaystackTransferResponse {
     status: boolean;
     message: string;

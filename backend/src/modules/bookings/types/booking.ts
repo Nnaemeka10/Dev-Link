@@ -34,6 +34,10 @@ export interface BookingRow {
   paid_at: string | null;
   package_id: string | null;
   expires_at: string | null; 
+  /** Pre-VAT subtotal (Naira). Written at creation; authoritative for payouts. */
+  subtotal_amount?: string | number | null;
+  /** VAT collected (Naira). A liability, never platform revenue. */
+  vat_amount?: string | number | null;
 }
 
 export interface CreateBookingInput {

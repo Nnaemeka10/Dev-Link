@@ -154,4 +154,35 @@ export const bookingEmailService = {
         );
         await send(email, `Complaint received - booking ${bookingRef}`, html);
     },
+        //  Payouts 
+
+    async sendPayoutToVendor(
+        email: string,
+        name: string,
+        listingTitle: string,
+        bookingRef: string,
+        money: { subtotal: number; commission: number; vat: number; vendorNet: number }
+    ) {
+        const row = (label: string, value: string, strong = false) => `
+            <tr>
+              <td style="padding:6px 0;color:#5E6588;font-size:14px">${label}</td>
+              <td style="padding:6px 0;text-align:right;color:#252423;font-size:14px;${strong ? "font-weight:800" : "font-weight:600"}">${value}</td>
+            </tr>`;
+
+        const html = shell(
+            "Your payout is on its way",
+            `<p>Hi ${escapeHtml(name || "there")},</p>
+             <p>Your payout of <strong>${naira(money.vendorNet)}</strong> for <strong>${escapeHtml(listingTitle)}</strong>
+             (ref <strong>${escapeHtml(bookingRef)}</strong>) is on its way to your registered bank account.</p>
+             <table role="presentation" style="width:100%;border-collapse:collapse;background:#F7F2EA;border-radius:12px;padding:8px 16px;margin:20px 0">
+               ${row("Listing subtotal", naira(money.subtotal))}
+               ${row("EventVnV commission (10%)", `− ${naira(money.commission)}`)}
+               ${row("Your payout", naira(money.vendorNet), true)}
+             </table>
+             <p>VAT of <strong>${naira(money.vat)}</strong> was collected from the customer and is remitted to the tax authority.
+             It is never deducted from your earnings.</p>
+             <p>Banks typically take 1–3 business days to reflect the transfer.</p>`
+        );
+        await send(email, `Payout sent - booking ${bookingRef}`, html);
+    },
 };

@@ -111,17 +111,12 @@ const handleChatWithVendor = async () => {
       {!compact ? (
         <div className="mt-8 space-y-4 border-t border-[#EFE8DE] pt-6 text-sm">
           <div className="flex justify-between">
-            <span className="font-semibold text-[#5E6588] underline">Venue Hire Fee</span>
+            <span className="font-semibold text-[#5E6588]">Venue hire</span>
             <strong>{price}</strong>
           </div>
-          <div className="flex justify-between">
-            <span className="font-semibold text-[#5E6588] underline">VAT (10%)</span>
-            <strong>₦125,000</strong>
-          </div>
-          <div className="flex justify-between border-t border-[#EFE8DE] pt-4 text-base">
-            <strong>Total</strong>
-            <strong>₦1,375,000</strong>
-          </div>
+          <p className="text-[11px] font-semibold text-[#7B7E9B]">
+            VAT (7.5%) and your total are calculated from your selected dates at checkout.
+          </p>
         </div>
       ) : null}
     </aside>

@@ -65,8 +65,9 @@ export const TERMS_OF_SERVICE: LegalDocument = {
           items: [
             "When you initiate checkout, we temporarily reserve your selected dates for up to 30 minutes so you can complete payment without another customer taking them. During a hold, those dates cannot be checked out by other customers.",
             "Holds are free of charge, are not confirmed bookings, and lapse automatically if payment is not completed. Only a successfully paid booking secures your dates.",
-            "All prices are calculated by the platform in Naira: the listing's base price for your dates, plus 7.5% VAT. What you see at review is what you pay.",
-            "Payments are processed securely through our payment partner, supporting cards and bank transfers.",
+            "Prices are set by vendors. EventVnV adds Value Added Tax (VAT) at 7.5% of the vendor's price (the subtotal). The amount payable at checkout is the subtotal plus VAT.",
+            "EventVnV charges vendors a commission of 10% of the subtotal. VAT is collected on behalf of, and remitted to, the relevant tax authority and does not form part of EventVnV's revenue.",
+            "Payments are processed by our payment partner. We do not store full card details. Funds are held in escrow until the booking is confirmed and the event has completed.",
             "Every booking has a unique reference you can use when contacting support.",
           ],
         },
@@ -86,7 +87,7 @@ export const TERMS_OF_SERVICE: LegalDocument = {
         },
         {
           type: "p",
-          text: "Vendors pay EventVnV a platform service fee of 17.5% of the total booking value (inclusive of VAT), deducted from their payout. Vendor payouts are released after the event ends and the 24-hour dispute window closes without a dispute.",
+          text: "Vendor earnings equal the subtotal less the 10% commission. Payouts are initiated automatically after the event ends and the 24-hour dispute window closes, to the bank account on the vendor's profile. Payouts require a verified vendor profile and valid bank details. Payouts are paused while a dispute or refund request is open, or where we reasonably suspect fraud or a breach of these terms.",
         },
       ],
     },
@@ -101,12 +102,24 @@ export const TERMS_OF_SERVICE: LegalDocument = {
             "If you cancel a paid booking before the vendor confirms, you receive a full refund.",
             "Starting checkout places a temporary 30-minute hold on your selected dates. Holds are free, create no charge, and lapse automatically if payment is not completed within the hold window.",
             "A hold is not a confirmed booking. Dates are secured only when payment succeeds.",
-            "If a vendor declines or does not confirm a paid booking, you are refunded automatically.",
-            "Cancellations after the vendor confirms are handled per the listing's stated policy, and our support team will always help facilitate a fair outcome.",
+            "If a vendor does not confirm a paid booking within 24 hours of payment, the booking is cancelled and a full refund is issued automatically.",
+            "You may request a full refund up to 24 hours after the event ends. Refund requests are reviewed by our support team before being processed.",
+            "Once the dispute window closes and the vendor has been paid, refunds are no longer available through the platform; contact support for exceptional cases.",
+            "Only full refunds are supported. Unpaid bookings simply expire - nothing to cancel, nothing to refund.",
             "Refunds are returned to your original payment method; how quickly they land depends on your bank or payment provider.",
           ],
         },
       ],
+    },
+    {
+      id: "taxes",
+      heading: "Taxes",
+      blocks: [
+        {
+          type: "p",
+          text: "VAT shown at checkout is collected by EventVnV as agent for the vendor and remitted to the relevant tax authority. Vendors remain responsible for their own income tax and any other taxes applicable to their business.",
+        },
+      ]
     },
     {
       id: "vendor-obligations",

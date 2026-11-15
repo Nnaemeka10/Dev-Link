@@ -4,7 +4,6 @@ import { useState } from "react";
 import VendorHeader from "../components/VendorHeader";
 import DashboardHeading from "../components/DashboardHeading";
 import FinancialSummaryCards from "../components/FinancialSummaryCards";
-// import RevenueTrendChart from "../components/RevenueTrendChart";
 import TransactionHistory from "../components/TransactionHistory";
 import BookingsTable from "../components/BookingsTable";
 import VendorSideNavBar from "../../../components/layout/VendorSideNavBar";
@@ -13,18 +12,7 @@ import { useAuth } from "@/features/auth/useAuth";
 import { useVendorSummary, useVendorTransactions, useVendorBookings, useConfirmBooking } from "../hooks/useVendorDashboard";
 import type { BookingFilterKey, BookingFilterTab } from "../types";
 
-
 export default function VendorDashboardPage() {
-  // const {
-  //   // vendor,
-  //   // financialSummary,
-  //   revenueTrend,
-  //   // transactions,
-  //   // bookingFilters,
-  //   // bookings,
-  //   // bookingsPagination,
-  // } = vendorDashboardData;
-
   const { user } = useAuth();
   const [activeFilter, setActiveFilter] = useState<BookingFilterKey>("all");
   const [currentPage, setCurrentPage] = useState(1);
@@ -36,38 +24,38 @@ export default function VendorDashboardPage() {
   const financialSummary = summary ? {
     currencySymbol: "₦",
     totalRevenue: summary.totalRevenue,
-    // totalRevenueChangePercent: 12.4, // Mock % until we build historical diff query
     confirmedBookings: summary.confirmedBookings,
-    // confirmedBookingsChangePercent: 8,
     pendingBookings: summary.pendingBookings,
     pendingBookingsNote: "Paid, awaiting your confirmation",
   } : null;
 
+  // Counts come from the summary aggregate, so every tab is correct
+  // regardless of which filter is currently paginated.
+  const counts = summary?.filterCounts;
   const bookingFilters: BookingFilterTab[] = [
-    { key: "all", label: "All Bookings", count: bookingsData?.pagination.totalItems || 0 },
-    { key: "upcoming", label: "Upcoming", count: 0 },
-    { key: "completed", label: "Completed", count: 0 },
-    { key: "cancelled", label: "Cancelled", count: 0 },
+    { key: "all", label: "All Bookings", count: counts?.all ?? 0 },
+    { key: "upcoming", label: "Upcoming", count: counts?.upcoming ?? 0 },
+    { key: "completed", label: "Completed", count: counts?.completed ?? 0 },
+    { key: "cancelled", label: "Cancelled", count: counts?.cancelled ?? 0 },
   ];
 
-  const vendor = { 
-    id: user?.id?.toString() || "", 
-    name: user?.firstName || "Vendor", 
-    firstName: user?.firstName || "Vendor", 
-    avatarUrl: user?.avatarUrl || "/placeholder.jpg", 
-    isFirstVisit: false, 
-    unreadMessages: 0 
-  } 
+  const vendor = {
+    id: user?.id?.toString() || "",
+    name: user?.firstName || "Vendor",
+    firstName: user?.firstName || "Vendor",
+    avatarUrl: user?.avatarUrl || "/placeholder.jpg",
+    isFirstVisit: false,
+    unreadMessages: 0,
+  };
 
   const bookings = bookingsData?.bookings || [];
-
   const bookingsPagination = bookingsData?.pagination || { currentPage: 1, totalPages: 1, totalItems: 0, itemsPerPage: 4 };
   const confirmBooking = useConfirmBooking();
 
   return (
     <div className="min-h-screen bg-bg-primary">
       <aside className="fixed inset-y-0 left-0 z-50 hidden w-64 xl:block">
-         <VendorSideNavBar /> 
+        <VendorSideNavBar />
       </aside>
 
       <div className="xl:pl-64">
@@ -95,13 +83,9 @@ export default function VendorDashboardPage() {
             </div>
           )}
 
-          {/* <FinancialSummaryCards summary={financialSummary} /> */}
           {financialSummary && <FinancialSummaryCards summary={financialSummary} />}
 
-
-          {/* addthis when there is revenue lg:grid-cols-5 */}
-          <section className="grid grid-cols-1 gap-6 ">
-            {/* <RevenueTrendChart trend={revenueTrend} /> */}
+          <section className="grid grid-cols-1 gap-6">
             <TransactionHistory transactions={transactions || []} />
           </section>
 
@@ -117,8 +101,9 @@ export default function VendorDashboardPage() {
           />
         </main>
       </div>
+
       <div className="fixed inset-x-0 bottom-0 z-50 xl:hidden">
-        <VendorMobileDock /> 
+        <VendorMobileDock />
       </div>
     </div>
   );

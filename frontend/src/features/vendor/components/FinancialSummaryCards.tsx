@@ -6,23 +6,29 @@ interface FinancialSummaryCardsProps {
 }
 
 export default function FinancialSummaryCards({ summary }: FinancialSummaryCardsProps) {
+  const revenueChange = summary.totalRevenueChangePercent;
+  const confirmedChange = summary.confirmedBookingsChangePercent;
+
   return (
     <section className="grid grid-cols-1 gap-4 xs:gap-5 lg:grid-cols-7 lg:gap-6">
       {/* Total revenue - the anchor card, 3/7 of the row on large screens */}
       <div className="animate-fade-up rounded-card bg-text-primary p-6 text-white shadow-card lg:col-span-3 xl:p-8">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-3">
           <p className="text-xs font-bold uppercase tracking-widest text-white/60">Total Revenue</p>
-          <span className="flex items-center gap-1 rounded-full bg-white/10 px-2.5 py-1 text-xs font-bold text-emerald-400">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-              <path d="M4 17L10 11L14 15L20 8" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
-              <path d="M14 8H20V14" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-            {summary.totalRevenueChangePercent}%
-          </span>
+          {typeof revenueChange === "number" && (
+            <span className="flex items-center gap-1 rounded-full bg-white/10 px-2.5 py-1 text-xs font-bold text-emerald-400">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M4 17L10 11L14 15L20 8" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M14 8H20V14" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+              {revenueChange}%
+            </span>
+          )}
         </div>
         <p className="mt-6 font-man text-4xl font-black tracking-tight xl:text-5xl">
           {formatCurrency(summary.totalRevenue, summary.currencySymbol)}
         </p>
+        <p className="mt-2 text-xs font-semibold text-white/50">After 10% commission · paid out</p>
       </div>
 
       {/* Confirmed + pending - share the remaining 4/7 of the row */}
@@ -39,7 +45,9 @@ export default function FinancialSummaryCards({ summary }: FinancialSummaryCards
             <p className="font-man text-2xl font-black text-text-primary xl:text-3xl">
               {summary.confirmedBookings}
             </p>
-            <span className="text-xs font-bold text-emerald-600">+{summary.confirmedBookingsChangePercent}%</span>
+            {typeof confirmedChange === "number" && (
+              <span className="text-xs font-bold text-emerald-600">+{confirmedChange}%</span>
+            )}
           </div>
         </div>
 

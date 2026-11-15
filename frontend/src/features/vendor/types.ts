@@ -4,17 +4,9 @@
 // for a real fetch/hook layer later without touching the UI components.
 // 
 export type BookingStatus =
-  | "confirmed"
-  | "pending"
-  | "completed"
-  | "cancelled"
-  | "funds_held"
-  | "paid"
-  | "processing_payout"
-  | "payout_released"
-  | "refunded"
-  | "failed"
-  | "expired";
+  | "confirmed" | "pending" | "completed" | "cancelled" | "declined"
+  | "funds_held" | "paid" | "processing_payout" | "payout_released"
+  | "refunded" | "failed" | "expired";
 
 export type BookingFilterKey = "all" | "upcoming" | "completed" | "cancelled";
 
@@ -150,4 +142,5 @@ export interface VendorDashboardSummary {
   pendingBookings: number;
   nextPayoutDate: string | null;
   nextPayoutListing: string | null;
+  filterCounts: Record<BookingFilterKey, number>;
 }

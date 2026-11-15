@@ -6,13 +6,19 @@ export const getSummary = async (req: Request, res: Response) => {
   try {
     if (!req.user?.userId) return res.status(401).json({ message: 'Unauthorized' });
     const summary = await VendorDashboardModel.getFinancialSummary(req.user.userId);
-    
+
     res.status(200).json({
       totalRevenue: parseFloat(summary.total_revenue) || 0,
       confirmedBookings: parseInt(summary.confirmed_bookings, 10) || 0,
       pendingBookings: parseInt(summary.pending_bookings, 10) || 0,
       nextPayoutDate: summary.nextPayout?.dispute_window_closes_at || null,
       nextPayoutListing: summary.nextPayout?.listing_title || null,
+      filterCounts: {
+        all: parseInt(summary.count_all, 10) || 0,
+        upcoming: parseInt(summary.count_upcoming, 10) || 0,
+        completed: parseInt(summary.count_completed, 10) || 0,
+        cancelled: parseInt(summary.count_cancelled, 10) || 0,
+      },
     });
   } catch (error: any) {
     console.error('Get summary error:', error);
@@ -24,21 +30,21 @@ export const getTransactions = async (req: Request, res: Response) => {
   try {
     if (!req.user?.userId) return res.status(401).json({ message: 'Unauthorized' });
     const transactions = await VendorDashboardModel.getTransactions(req.user.userId, 5);
-    
-    // Format for frontend Transaction[] type
+
     const formatted = transactions.map((txn: any) => ({
       id: txn.id,
-      title: txn.description,
-      referenceId: txn.paystack_reference || txn.id,
+      title: txn.listing_title ? `Payout - ${txn.listing_title}` : (txn.description ?? 'Payout'),
+      referenceId: txn.booking_reference || txn.paystack_reference || txn.id,
       date: new Date(txn.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
-      amount: txn.amount_kobo / 100, // Convert kobo back to naira for UI
+      amount: txn.amount_kobo / 100,
       direction: txn.direction === 'credit' ? 'credit' : 'debit',
-      status: 'completed', // Ledger entries are immutable, so they represent completed facts
-      icon: 'venue', // Icon mapping can be done dynamically later based on listing type
+      status: 'completed', // ledger entries are immutable facts
+      icon: txn.listing_kind === 'service' ? 'hosting' : 'venue',
     }));
 
     res.status(200).json(formatted);
   } catch (error: any) {
+    console.error('Get transactions error:', error);
     res.status(500).json({ message: 'Failed to fetch transactions' });
   }
 };

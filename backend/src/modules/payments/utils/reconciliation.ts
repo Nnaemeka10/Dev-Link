@@ -1,123 +1,183 @@
-// The self-healing mechanism. Resolves stuck 'created' attempts, 
-// verifies 'unknown'/'dispatched' attempts, and checks for system-wide ledger drift.
 import { getDB } from '../../../lib/db.js';
-import { verifyTransfer } from '../utils/paystack.js';
+import type { PoolClient } from 'pg';
 import { LedgerModel } from '../models/LedgerModel.js';
-import { randomUUID } from 'crypto';
+import { moneyFromBooking, assertSplitBalances } from './money.js';
+import { verifyTransfer } from './paystack.js';
+import { bookingEmailService } from '../../../emails/bookingEmails.js';
 
-export async function runReconciliation() {
-  const db = getDB();
+export interface PayoutNotification {
+    vendorEmail: string;
+    vendorName: string;
+    listingTitle: string;
+    bookingRef: string;
+    money: { subtotal: number; commission: number; vat: number; vendorNet: number };
+}
 
-  // 1. FIX Issue #1: Sweep for stuck 'created' attempts (crash before dispatch)
-  const stuckCreated = await db.query(`
-    SELECT pa.*, l.vendor_id 
-    FROM payout_attempts pa
-    JOIN bookings b ON pa.booking_id = b.id
-    JOIN listings l ON b.listing_id = l.id
-    WHERE pa.status = 'created' AND pa.created_at < NOW() - INTERVAL '5 minutes'
-  `);
+const TERMINAL_BOOKING = ['refunded', 'cancelled', 'declined', 'expired', 'failed'];
 
-  for (const attempt of stuckCreated.rows) {
-    // Safe to revert to funds_held because no transfer was ever sent to Paystack.
-    await db.query(`UPDATE payout_attempts SET status = 'failed' WHERE id = $1`, [attempt.id]);
-    await db.query(`UPDATE bookings SET status = 'funds_held', updated_at = NOW() WHERE id = $1`, [attempt.booking_id]);
-  }
+/**
+ * Final double-entry split for a confirmed vendor payout. Idempotent:
+ *   • payout_attempts row lock + status guard,
+ *   • deterministic ledger key `payout:<bookingId>`.
+ * Safe to call from the transfer webhook and from reconciliation.
+ */
+export async function applyConfirmedPayout(
+    attemptRef: { id: string; booking_id: string; paystack_transfer_code?: string | null; dispatch_reference?: string | null },
+    existingClient?: PoolClient
+): Promise<PayoutNotification | null> {
+    const db = getDB();
+    const client = existingClient ?? await db.connect();
+    const ownsTransaction = !existingClient;
 
-  // 2. Resolve 'unknown' and long-pending 'dispatched' attempts
-  const stuck = await db.query(`
-    SELECT * FROM payout_attempts
-    WHERE status IN ('unknown', 'dispatched') AND updated_at < NOW() - INTERVAL '10 minutes'
-  `);
-
-  for (const attempt of stuck.rows) {
     try {
-      const verified = await verifyTransfer(attempt.dispatch_reference);
-      
-      if (verified.data.status === 'success') {
-        await applyConfirmedPayout(attempt);
-      } else if (verified.data.status === 'failed' || verified.data.status === 'reversed') {
-        await db.query(`UPDATE payout_attempts SET status = 'failed' WHERE id = $1`, [attempt.id]);
-        await db.query(`UPDATE bookings SET status = 'funds_held', updated_at = NOW() WHERE id = $1`, [attempt.booking_id]);
-      }
-    } catch (error) {
-      console.error(`Reconciliation verify failed for ${attempt.dispatch_reference}`, error);
-    }
-  }
+        if (ownsTransaction) await client.query('BEGIN');
 
-  // 3. System-wide ledger integrity check
-  const driftRes = await db.query(`
-    SELECT SUM(CASE WHEN entry_type='credit' THEN amount_kobo ELSE -amount_kobo END) AS drift
-    FROM ledger_entries
-  `);
-  
-  const drift = Number(driftRes.rows[0].drift);
-  if (drift !== 0) {
-    // CRITICAL ALERT: Mathematically impossible in a balanced system.
-    console.error(`LEDGER DRIFT DETECTED: System is out of balance by ${drift} kobo!`);
-    // In production: alertOnCall('LEDGER DRIFT', drift);
-  }
+        const attemptRes = await client.query(
+            `SELECT * FROM payout_attempts WHERE id = $1 FOR UPDATE`,
+            [attemptRef.id]
+        );
+        const attempt = attemptRes.rows[0];
+        if (!attempt) throw new Error('PAYOUT_ATTEMPT_NOT_FOUND');
+        if (attempt.status === 'succeeded') {
+            if (ownsTransaction) await client.query('COMMIT');
+            return null;
+        }
+
+        const bookingRes = await client.query(
+            `SELECT b.*, l.title AS listing_title, l.vendor_id AS vendor_user_id, 
+                    v.id AS vendor_ledger_id
+                    vu.email AS vendor_email, vu.first_name AS vendor_first_name
+             FROM bookings b
+             JOIN listings l ON l.id = b.listing_id
+             JOIN vendors v ON v.user_id = l.vendor_id
+             JOIN users vu ON vu.id = l.vendor_id
+             WHERE b.id = $1
+             FOR UPDATE OF b`,
+            [attempt.booking_id]
+        );
+        const booking = bookingRes.rows[0];
+        if (!booking) throw new Error('BOOKING_NOT_FOUND');
+
+        if (TERMINAL_BOOKING.includes(booking.status)) {
+            // Money may already have moved; never silently split escrow for a
+            // refunded/cancelled booking. Alert support to reconcile manually.
+            console.error(
+                `[PAYOUT_TERMINAL] Transfer confirmed for booking ${booking.id} in status ${booking.status}. ` +
+                `Attempt ${attempt.id} needs manual reconciliation.`
+            );
+            throw new Error('PAYOUT_BOOKING_TERMINAL');
+        }
+
+        const money = moneyFromBooking(booking);
+        assertSplitBalances(money);
+
+        if (money.totalKobo > 0) {
+            const escrow = await LedgerModel.getOrCreateAccount(client, 'escrow_holding', booking.id);
+            const vendorPayable = await LedgerModel.getOrCreateAccount(client, 'vendor_payable', booking.id, booking.vendor_ledger_id);
+            const revenue = await LedgerModel.getOrCreateAccount(client, 'platform_revenue');
+            const tax = await LedgerModel.getOrCreateAccount(client, 'tax_payable');
+
+            const legs = [
+                { account: escrow, entryType: 'debit' as const, amountKobo: money.totalKobo, description: `Escrow release for booking ${booking.id}` },
+                { account: vendorPayable, entryType: 'credit' as const, amountKobo: money.vendorNetKobo, description: `Vendor net for booking ${booking.id}` },
+                { account: revenue, entryType: 'credit' as const, amountKobo: money.commissionKobo, description: `Platform commission for booking ${booking.id}` },
+                { account: tax, entryType: 'credit' as const, amountKobo: money.vatKobo, description: `VAT payable for booking ${booking.id}` },
+            ].filter((leg) => leg.amountKobo > 0);
+
+            if (legs.length >= 2) {
+                await LedgerModel.postBalancedEntry(client, `payout:${booking.id}`, legs);
+            }
+        }
+
+        await client.query(
+            `UPDATE payout_attempts
+             SET status = 'succeeded',
+                 paystack_transfer_code = COALESCE($2, paystack_transfer_code),
+                 updated_at = NOW()
+             WHERE id = $1`,
+            [attempt.id, attemptRef.paystack_transfer_code ?? null]
+        );
+        await client.query(
+            `UPDATE bookings SET status = 'payout_released' WHERE id = $1`,
+            [booking.id]
+        );
+
+        if (ownsTransaction) await client.query('COMMIT');
+        return {
+            vendorEmail: booking.vendor_email,
+            vendorName: booking.vendor_first_name,
+            listingTitle: booking.listing_title,
+            bookingRef: booking.booking_reference,
+            money: {
+                subtotal: money.subtotal,
+                commission: money.commission,
+                vat: money.vat,
+                vendorNet: money.vendorNet,
+            },
+        };
+    } catch (error) {
+        if (ownsTransaction) await client.query('ROLLBACK').catch(() => {});
+        throw error;
+    } finally {
+        if (ownsTransaction) client.release();
+    }
 }
 
 /**
- * Applies the final double-entry ledger updates for a successful vendor payout.
+ * Sweeps in-flight payout attempts and confirms them against Paystack's
+ * verify-transfer endpoint. Covers missed/failed webhooks and crashes between
+ * dispatch and confirmation.
  */
-export async function applyConfirmedPayout(attempt: any, existingClient?: any) {
-  const db = getDB();
-  const client = existingClient ?? await db.connect();
-  const shouldRelease = !existingClient;
-  
-  try {
-    if (!existingClient) await client.query('BEGIN');
-    // await client.query('BEGIN');
+export async function runReconciliation(): Promise<void> {
+    const db = getDB();
 
-    // Lock the booking
-    const bookingRes = await client.query(
-      `SELECT b.total_amount, b.platform_fee, l.vendor_id 
-      FROM bookings b
-      JOIN listings l ON b.listing_id = l.id
-      WHERE b.id = $1 
-      FOR UPDATE of b`,
-      [attempt.booking_id]
+    const { rows: attempts } = await db.query(
+        `SELECT * FROM payout_attempts
+         WHERE status IN ('created', 'awaiting_webhook', 'processing')
+           AND created_at < NOW() - interval '5 minutes'
+         ORDER BY created_at ASC
+         LIMIT 20`
     );
-    const booking = bookingRes.rows[0];
 
-    // Idempotency check: if booking is already released, skip.
-    if (booking.status === 'payout_released') {
-      await client.query('COMMIT');
-      return;
+    for (const attempt of attempts) {
+        try {
+            const verified = await verifyTransfer(attempt.dispatch_reference);
+            const status = verified?.data?.status;
+
+            if (status === 'success') {
+                const notification = await applyConfirmedPayout({
+                    id: attempt.id,
+                    booking_id: attempt.booking_id,
+                    paystack_transfer_code: verified.data.transfer_code ?? attempt.paystack_transfer_code,
+                    dispatch_reference: attempt.dispatch_reference,
+                });
+                if (notification) {
+                    try {
+                        await bookingEmailService.sendPayoutToVendor(
+                            notification.vendorEmail, notification.vendorName,
+                            notification.listingTitle, notification.bookingRef, notification.money
+                        );
+                    } catch (emailError) {
+                        console.error('[reconciliation] payout email failed:', emailError);
+                    }
+                }
+                console.log(`[reconciliation] Confirmed payout ${attempt.dispatch_reference}`);
+            } else if (status === 'failed' || status === 'reversed') {
+                await db.query(
+                    `UPDATE payout_attempts SET status = 'failed', updated_at = NOW() WHERE id = $1`,
+                    [attempt.id]
+                );
+                // Return the booking to the payable pool for a retry.
+                await db.query(
+                    `UPDATE bookings SET status = 'confirmed', payout_hold = FALSE
+                     WHERE id = $1 AND status = 'processing_payout'`,
+                    [attempt.booking_id]
+                );
+                console.warn(`[reconciliation] Payout ${attempt.dispatch_reference} ${status}`);
+            }
+            // 'pending' / 'otp' / unknown - leave for the next sweep.
+        } catch (error) {
+            console.error(`[reconciliation] Failed for ${attempt.dispatch_reference}:`, error);
+        }
     }
-
-    const totalKobo = Math.round(parseFloat(booking.total_amount) * 100);
-    const feeKobo = Math.round(parseFloat(booking.platform_fee) * 100);
-    const netPayoutKobo = totalKobo - feeKobo;
-
-    // Fetch ledger accounts
-    const escrowAccount = await LedgerModel.getOrCreateAccount(client, 'escrow_holding', booking.id);
-    const vendorAccount = await LedgerModel.getOrCreateAccount(client, 'vendor_payable', booking.id, booking.vendor_id);
-    const platformAccount = await LedgerModel.getOrCreateAccount(client, 'platform_revenue');
-
-    // FIX Issue #2: Use a dedicated idempotency key for the entire transaction group.
-    // If the webhook is replayed, the unique index on (idempotency_key, account_id) will reject the duplicate.
-    const idempotencyKey = attempt.paystack_transfer_code || attempt.dispatch_reference;
-
-    await LedgerModel.postBalancedEntry(client, idempotencyKey, [
-      { account: escrowAccount, entryType: 'debit', amountKobo: totalKobo, description: `Escrow released for payout ${attempt.booking_id}` },
-      { account: vendorAccount, entryType: 'credit', amountKobo: netPayoutKobo, description: `Vendor payout confirmed ${attempt.booking_id}` },
-      { account: platformAccount, entryType: 'credit', amountKobo: feeKobo, description: `Platform fee earned ${attempt.booking_id}` }
-    ]);
-
-    // Update statuses
-    await client.query(`UPDATE payout_attempts SET status = 'succeeded', updated_at = NOW() WHERE id = $1`, [attempt.id]);
-    await client.query(`UPDATE bookings SET status = 'payout_released', updated_at = NOW() WHERE id = $1`, [attempt.booking_id]);
-
-    if (!existingClient) await client.query('COMMIT');
-
-    console.log(`Payout confirmed for booking ${attempt.booking_id}. Ledger entries posted.`);
-    
-  } catch (error) {
-    if (!existingClient) await client.query('ROLLBACK');
-    throw error;
-  } finally {
-    if (shouldRelease) client.release();
-  }
 }

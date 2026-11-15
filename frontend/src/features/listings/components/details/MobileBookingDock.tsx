@@ -147,12 +147,7 @@ function PriceDetailSheet({
   packageId,
 }: PriceDetailSheetProps) {
    const { data: quote, isLoading: isQuoteLoading } = usePricingQuote(listingId, dateRange, packageId);
-  const days   = dateRange?.from && dateRange?.to
-    ? daysBetween(dateRange.from, dateRange.to)
-    : 1;
-  const vat    = Math.round(priceRaw * days * 0.1);
-  const total  = priceRaw * days + vat;
-
+   
   return (
     <div className="flex flex-col">
       {/* Handle + header */}

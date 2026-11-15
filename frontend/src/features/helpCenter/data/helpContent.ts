@@ -92,8 +92,9 @@ export const HELP_CATEGORIES: HelpCategory[] = [
         slug: "payment-methods",
         question: "What payment methods can I use?",
         answer: [
-          "We accept payments in Naira through our secure payment partner, including debit/credit cards and bank transfer.",
-          "Card details are handled entirely by the payment processor - EventVnV never sees or stores your full card number.",
+          "You can pay by card, bank, USSD or bank transfer - all inside the secure Paystack popup. We never see or store your card details.",
+          "Choosing bank transfer generates a one-time account number for that booking. It's unique to your transaction, so your payment is matched automatically. Don't reuse it for another booking.",
+          "Your dates are held only while the payment popup is open. Close or cancel it and the hold releases immediately.",
         ],
         popular: true,
       },
@@ -159,10 +160,24 @@ export const HELP_CATEGORIES: HelpCategory[] = [
         slug: "vendor-payouts",
         question: "How and when do I get paid?",
         answer: [
-          "Payouts are released after the customer's event ends and the 24-hour dispute window closes without a dispute.",
-          "A platform service fee of 17.5% of the total booking value (inclusive of VAT) is deducted from your payout. You can follow each payout's status - funds held, processing, released - in your vendor dashboard.",
+          "You keep 90% of your listing price. EventVnV charges a flat 10% commission on your pre-VAT subtotal - nothing else. VAT is added on top of your price at checkout, paid by the customer, and remitted to the tax authority. It never comes out of your earnings.",
+          "Example: you price a hall at ₦100,000. The customer pays ₦107,500 (₦100,000 + ₦7,500 VAT). Your commission is ₦10,000, so you receive ₦90,000.",
+          "Payouts are automatic. Once the event has ended and the 24-hour dispute window closes, we transfer your earnings to the bank account on your vendor profile. You don't need to request it.",
+          "To get paid you need a verified vendor profile and a valid bank account. If verification is incomplete, the payout waits until it's done.",
+          "If a customer opens a dispute or a refund is under review, the payout is paused until support resolves it.",
         ],
         popular: true,
+      },
+
+      {
+        slug: "pricing-and-vat",
+        question: "What exactly am I paying for?",
+        answer: [
+          "Your total has two lines: the vendor's price (the subtotal) and VAT at 7.5% of that price. Nothing is added at the last step.",
+          "For multi-day bookings the subtotal is the daily price × the number of days you selected. Days you removed from the middle of a range aren't charged.",
+          "VAT is a government tax we collect on the vendor's behalf and remit to the tax authority. It's shown separately so you can see exactly where your money goes.",
+          "You're charged the full total once, at checkout. Your payment is then held in escrow until the vendor confirms and the event completes.",
+        ],
       },
     ],
   },
@@ -267,6 +282,18 @@ export const HELP_CATEGORIES: HelpCategory[] = [
         answer: [
           "Keep all coordination and payment inside EventVnV so there's a record of everything that was agreed, and the escrow protections apply.",
           "Visit or verify the venue before the event where you can, keep your booking reference handy, and raise anything off within 24 hours after the event so the dispute window can work for you.",
+        ],
+      },
+      {
+        slug: "refunds",
+        question: "Can I get a refund?",
+        popular: true,
+        answer: [
+          "Yes - you can request a full refund any time up to 24 hours after your event ends. After that window the refund button is disabled, because the payout has already been released to the vendor.",
+          "Open Saved - Bookings, find the booking and tap Request refund. Choose a reason and describe what happened. Support reviews every request and emails you the decision.",
+          "Approved refunds return to your original payment method. Banks typically take 3–10 business days.",
+          "If the vendor doesn't confirm within 24 hours of your payment, the booking is cancelled and refunded automatically - you don't need to do anything.",
+          "Only full refunds are supported. For partial adjustments, contact support@eventvnv.com.",
         ],
       },
     ],

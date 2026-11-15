@@ -3,8 +3,7 @@ import type {
     PaystackInitializeResponse,
     PaystackVerifyResponse,
     PaystackRecipientResponse,
-    PaystackDvaResponse,
-    PaystackTransferResponse
+    PaystackTransferResponse,
 } from '../types/payment.js';
 
 const PAYSTACK_BASE_URL = 'https://api.paystack.co';
@@ -26,11 +25,22 @@ async function paystackRequest<T>(endpoint: string, method: string, body?: any):
     return data as T;
 }
 
-export async function initializePaystackTransaction(email: string, amountInNaira: number, reference: string): Promise<PaystackInitializeResponse> {
+/**
+ * Per-transaction checkout. `bank_transfer` gives the customer a ONE-TIME
+ * account number matched to this reference - no dedicated virtual account,
+ * no provisioning, no orphan inflows.
+ */
+export async function initializePaystackTransaction(
+    email: string,
+    amountInNaira: number,
+    reference: string
+): Promise<PaystackInitializeResponse> {
     return paystackRequest<PaystackInitializeResponse>('/transaction/initialize', 'POST', {
         email,
         amount: Math.round(amountInNaira * 100),
         reference,
+        currency: 'NGN',
+        channels: ['card', 'bank', 'ussd', 'bank_transfer'],
         callback_url: `${ENV.CLIENT_URL}/bookings/callback`,
     });
 }
@@ -39,7 +49,7 @@ export async function verifyPaystackTransaction(reference: string): Promise<Pays
     return paystackRequest<PaystackVerifyResponse>(`/transaction/verify/${reference}`, 'GET');
 }
 
-// --- Escrow functions ---
+// --- Vendor payouts ---
 
 export async function createTransferRecipient(
     businessName: string,
@@ -52,17 +62,6 @@ export async function createTransferRecipient(
         account_number: accountNumber,
         bank_code: bankCode,
         currency: 'NGN',
-    });
-}
-
-export async function createDedicatedVirtualAccount(
-    customerEmail: string,
-    customerCode: string
-): Promise<PaystackDvaResponse> {
-    return paystackRequest<PaystackDvaResponse>('/dedicated_account/assign', 'POST', {
-        email: customerEmail,
-        customer: customerCode,
-        preferred_bank: 'test-bank',
     });
 }
 
@@ -94,17 +93,13 @@ export interface PaystackRefundResponse {
         id: number;
         transaction: { reference: string; amount: number; id: number };
         amount: number;
-        status: string;            // 'pending' | 'processed' | 'failed'
+        status: string; // 'pending' | 'processed' | 'failed'
         currency: string;
         createdAt: string;
     };
 }
 
-/**
- * Initiates a FULL refund of a transaction. Omitting `amount` tells Paystack
- * to refund the entire transaction. Idempotent on Paystack's side per
- * transaction - a replay returns the existing refund rather than doubling.
- */
+/** FULL refund of a transaction. Omitting amount refunds the entire charge. */
 export async function createPaystackRefund(transactionReference: string): Promise<PaystackRefundResponse> {
     return paystackRequest<PaystackRefundResponse>('/refund', 'POST', {
         transaction: transactionReference,

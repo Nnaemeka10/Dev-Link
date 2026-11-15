@@ -9,13 +9,19 @@ interface QuoteResponse {
   vat: number;
   total: number;
   currency: string;
+  /** 10% of subtotal - the platform's commission. */
+  commission: number;
+  /** subtotal − commission - what the vendor receives. */
+  vendorNet: number;
 }
 
 /**
- * `dateRange` is the envelope (min start - max end). `excludedDates` are the
- * interior days the customer deselected - the backend subtracts them from
- * the day count, so the quote is honest for split ranges.
- * The 4th param is optional: existing single-range callers are unaffected.
+ * `dateRange` is the envelope (min start – max end). `excludedDates` are the
+ * interior days the customer deselected - the backend subtracts them from the
+ * day count, so the quote is honest for split ranges.
+ *
+ * Always read commission/vendorNet from here rather than applying a rate in
+ * the UI: modules/payments/utils/money.ts is the single source of truth.
  */
 export function usePricingQuote(
   listingId: string,
@@ -31,7 +37,7 @@ export function usePricingQuote(
     queryFn: async () => {
       if (!dateRange?.from || !dateRange?.to) return null;
 
-      const data = await apiFetch<QuoteResponse>("/api/bookings/quote", {
+      return apiFetch<QuoteResponse>("/api/bookings/quote", {
         method: "POST",
         body: JSON.stringify({
           listingId,
@@ -42,9 +48,8 @@ export function usePricingQuote(
         }),
         redirectOn401: false,
       });
-      return data;
     },
     enabled: !!dateRange?.from && !!dateRange?.to,
-    staleTime: 1000 * 60 * 5, // Cache quote for 5 mins
+    staleTime: 1000 * 60 * 5,
   });
 }

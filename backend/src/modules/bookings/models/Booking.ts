@@ -1,6 +1,8 @@
 import { getDB } from '../../../lib/db.js';
 import type { PoolClient } from 'pg';
 import type { BookingDetailsResponse, BookingRow, CreateBookingInput } from '../types/booking.js';
+import { LedgerModel } from '../../payments/models/LedgerModel.js';
+import { computeMoney, moneyFromBooking } from '../../payments/utils/money.js';
 
 function generateBookingReference(): string {
     return `EVV-${Date.now()}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
@@ -23,6 +25,14 @@ export const HOLD_SESSION_MINUTES = 30;
 export function getHoldDeadline(createdAt: string | Date): string {
     return new Date(new Date(createdAt).getTime() + HOLD_SESSION_MINUTES * 60 * 1000).toISOString();
 }
+
+/** Statuses that mean "money already landed and was accounted for". */
+const ALREADY_PAID: readonly string[] = [
+    'paid', 'confirmed', 'funds_held',
+    'processing_payout', 'payout_released', 'completed', 'refunded',
+];
+
+export type SettlementOutcome = 'settled' | 'already_settled' | 'amount_mismatch';
 
 //
 // Stay math - single source of truth for envelope + holes.
@@ -160,9 +170,9 @@ const PAID_OVERLAP_SQL = `
     LIMIT 1`;
 
 /**
- * Late-payment safety net (lease lapsed, popup stayed open / late DVA inflow).
- * Money is ALWAYS honored - no auto-refund. If the paid booking overlaps an
- * already-paid one, hold the payout and alert support to resolve manually.
+ * Late-payment safety net (lease lapsed, popup stayed open). Money is ALWAYS
+ * honored - no auto-refund. If the paid booking overlaps an already-paid one,
+ * hold the payout and alert support to resolve manually.
  * Call INSIDE the caller's transaction, after the booking is marked paid.
  */
 export async function flagDoubleBookingIfNeeded(
@@ -370,7 +380,7 @@ export const BookingModel = {
      * Create a booking (= start the hold). The availability check and the
      * INSERT live in ONE transaction under the listing advisory lock, so two
      * simultaneous checkouts can never both pass. Lock order is always
-     * advisory - row (same as markAsPaid) to avoid deadlocks.
+     * advisory - row (same as settlement) to avoid deadlocks.
      *
      * Throws Error('DATES_UNAVAILABLE') for the controller to map to 409.
      */
@@ -390,9 +400,7 @@ export const BookingModel = {
             // 1. Idempotent reuse: same user, same selection, lease still alive
             //    - renew the lease and return it (retrying Pay is safe).
             //    created_at is untouched, so the 30-minute session clock keeps
-            //    running - reuse can never extend a session past the hard cap
-            //    (expires_at is always ≤ created_at + 30min, so once the cap
-            //    passes, this lookup finds nothing and a NEW booking starts).
+            //    running - reuse can never extend a session past the hard cap.
             const existing = await client.query<BookingRow>(
                 `SELECT * FROM bookings
                  WHERE user_id = $1 AND listing_id = $2
@@ -444,11 +452,10 @@ export const BookingModel = {
                 basePriceKobo = parseFloat(listing.base_price_kobo);
             }
 
-            // 3. Money math - backend is the source of truth.
-            const subtotal = (basePriceKobo * stay.days) / 100;               // Kobo - Naira
-            const vat = Math.round((subtotal * 0.075) * 100) / 100;           // 7.5% VAT
-            const totalAmount = Math.round((subtotal + vat) * 100) / 100;
-            const platformFee = Math.round((totalAmount * 0.175) * 100) / 100; // 17.5% of total
+            // 3. Money math - one module, integer kobo, exact split invariant:
+            //    vendorNet + commission + vat === total.
+            //    commission = 10% of SUBTOTAL (pre-VAT). VAT is a liability.
+            const money = computeMoney(basePriceKobo, stay.days);
             const currency = 'NGN';
             const bookingReference = generateBookingReference();
             // Initial short lease: covers the create - initialize - popup-open
@@ -473,7 +480,8 @@ export const BookingModel = {
                 [userId, listingId]
             );
 
-            // 6. Create the booking - this row IS the hold.
+            // 6. Create the booking - this row IS the hold. Money components are
+            //    persisted so payout/refund math never re-derives them.
             //    Dispute window: computed from the same $4 end-date being
             //    inserted; AT TIME ZONE 'UTC' pins the instant regardless of
             //    server/session timezone.
@@ -481,15 +489,18 @@ export const BookingModel = {
                 `INSERT INTO bookings (
                     listing_id, user_id, start_date, end_date, status, total_amount,
                     booking_reference, start_time, end_time, expires_at, currency,
-                    platform_fee, dispute_window_closes_at, package_id, excluded_dates
+                    platform_fee, dispute_window_closes_at, package_id, excluded_dates,
+                    subtotal_amount, vat_amount
                 )
                 VALUES ($1, $2, $3, $4, 'pending', $5, $6, $7, $8, $9, $10, $11,
-                        ($4::date + interval '24 hours') AT TIME ZONE 'UTC', $12, $13::date[])
+                        ($4::date + interval '24 hours') AT TIME ZONE 'UTC', $12, $13::date[],
+                        $14, $15)
                 RETURNING *`,
                 [
-                    listingId, userId, stay.cleanStart, stay.cleanEnd, totalAmount,
+                    listingId, userId, stay.cleanStart, stay.cleanEnd, money.total,
                     bookingReference, startTime, endTime, expiresAt, currency,
-                    platformFee, packageId || null, stay.excluded,
+                    money.commission, packageId || null, stay.excluded,
+                    money.subtotal, money.vat,
                 ]
             );
 
@@ -525,8 +536,7 @@ export const BookingModel = {
                 sp.name as package_name,
                 (
                     SELECT la.url FROM listing_assets la
-                    WHERE la.listing_id = l.id AND la.is_primary = true
-                    LIMIT 1
+                    WHERE la.listing_id = l.id AND la.is_primary = true LIMIT 1
                 ) as listing_image,
                 u.first_name as vendor_first_name,
                 u.last_name as vendor_last_name,
@@ -555,11 +565,28 @@ export const BookingModel = {
     },
 
     /**
-     * Idempotent and safe to call multiple times.
-     * Lock order: listing advisory lock FIRST, then the booking row -
-     * identical to createBooking, so the two can never deadlock.
+     * THE single settlement path for a successful charge. Called by BOTH
+     * verifyPayment (synchronous, browser-driven) and the charge.success
+     * webhook (async, authoritative). They race safely: same row lock, same
+     * status guard, same deterministic ledger key.
+     *
+     * In ONE transaction:
+     *   1. listing advisory lock - booking row lock (same order as createBooking)
+     *   2. idempotency: already-paid - no-op
+     *   3. amount validation against the persisted total (partial-payment exploit)
+     *   4. status - paid / confirmed (auto_approve)
+     *   5. LEDGER FUNDING: debit paystack_wallet, credit escrow_holding,
+     *      keyed `charge:<reference>` so replays can never double-post
+     *   6. double-booking safety net + calendar blocking
+     * Chat notification runs AFTER commit and can never fail the settlement.
+     *
+     * `observedAmountKobo` is the amount Paystack reports (verify response or
+     * webhook payload). Omit only for trusted internal replays.
      */
-    async markAsPaid(paymentReference: string): Promise<BookingRow | null> {
+    async settleSuccessfulCharge(
+        paymentReference: string,
+        observedAmountKobo?: number
+    ): Promise<{ outcome: SettlementOutcome; booking: BookingRow | null }> {
         const db = getDB();
         const client = await db.connect();
         try {
@@ -573,7 +600,7 @@ export const BookingModel = {
             );
             if (peek.rows.length === 0) {
                 await client.query('ROLLBACK');
-                return null;
+                throw new Error('BOOKING_NOT_FOUND');
             }
             await client.query(`SELECT pg_advisory_xact_lock(hashtext($1))`, [peek.rows[0].listing_id]);
 
@@ -583,13 +610,30 @@ export const BookingModel = {
             );
             const booking = res.rows[0];
 
-            const ALREADY_PAID: readonly string[] = [
-                'paid', 'confirmed', 'funds_held',
-                'processing_payout', 'payout_released', 'completed', 'refunded',
-            ];
             if (ALREADY_PAID.includes(booking.status)) {
-                await client.query('ROLLBACK'); // unlock
-                return booking;
+                await client.query('ROLLBACK'); // unlock, nothing to do
+                return { outcome: 'already_settled', booking };
+            }
+
+            const money = moneyFromBooking(booking);
+            const expectedKobo = money.totalKobo;
+
+            // Partial/over-payment guard. Money may have moved, so record the
+            // discrepancy and alert support instead of silently settling.
+            if (observedAmountKobo != null && observedAmountKobo !== expectedKobo) {
+                const flagged = await client.query<BookingRow>(
+                    `UPDATE bookings
+                     SET status = 'failed', payment_status = 'failed', received_amount = $2
+                     WHERE id = $1
+                     RETURNING *`,
+                    [booking.id, (observedAmountKobo / 100).toFixed(2)]
+                );
+                await client.query('COMMIT');
+                console.error(
+                    `[AMOUNT_MISMATCH] Booking ${booking.id} (${paymentReference}): expected ${expectedKobo} kobo, ` +
+                    `received ${observedAmountKobo}. NOT settled - support must reconcile/refund.`
+                );
+                return { outcome: 'amount_mismatch', booking: flagged.rows[0] };
             }
 
             // NOTE: an 'expired' booking can still land here (payment settled
@@ -604,24 +648,46 @@ export const BookingModel = {
 
             const updated = await client.query<BookingRow>(
                 `UPDATE bookings
-                 SET status = $1, payment_status = 'success', paid_at = NOW()
+                 SET status = $1, payment_status = 'success', paid_at = NOW(), received_amount = $3
                  WHERE payment_reference = $2
                  RETURNING *`,
-                [finalStatus, paymentReference]
+                [finalStatus, paymentReference, (expectedKobo / 100).toFixed(2)]
             );
+            const settled = updated.rows[0];
+
+            //  Escrow funding 
+            // Debit paystack_wallet (asset up), credit escrow_holding (liability
+            // to the customer). Deterministic key ⇒ verify + webhook + replays
+            // all collapse to one group. Zero-total bookings post nothing.
+            if (expectedKobo > 0) {
+                const wallet = await LedgerModel.getOrCreateAccount(client, 'paystack_wallet');
+                const escrow = await LedgerModel.getOrCreateAccount(client, 'escrow_holding', settled.id);
+                await LedgerModel.postBalancedEntry(client, `charge:${paymentReference}`, [
+                    {
+                        account: wallet,
+                        entryType: 'debit',
+                        amountKobo: expectedKobo,
+                        description: `Charge inflow for booking ${settled.id}`,
+                        paystackReference: paymentReference,
+                    },
+                    {
+                        account: escrow,
+                        entryType: 'credit',
+                        amountKobo: expectedKobo,
+                        description: `Escrow funded for booking ${settled.id}`,
+                        paystackReference: paymentReference,
+                    },
+                ]);
+            }
 
             // Safety net for the lapsed-lease edge: never auto-refund, but
             // hold the payout + alert support if this overlaps a paid booking.
-            await flagDoubleBookingIfNeeded(client, updated.rows[0]);
+            await flagDoubleBookingIfNeeded(client, settled);
 
             // Block dates per contiguous sub-range - excluded days stay open
             // for other customers; the explore filter needs zero changes.
-            const stay = resolveStay(
-                updated.rows[0].start_date,
-                updated.rows[0].end_date,
-                updated.rows[0].excluded_dates ?? []
-            );
-            await blockStayDates(client, updated.rows[0].listing_id, stay);
+            const stay = resolveStay(settled.start_date, settled.end_date, settled.excluded_dates ?? []);
+            await blockStayDates(client, settled.listing_id, stay);
 
             await client.query('COMMIT');
 
@@ -633,7 +699,7 @@ export const BookingModel = {
                      (SELECT la.url FROM listing_assets la
                       WHERE la.listing_id = l.id AND la.is_primary = true LIMIT 1) as listing_image
                      FROM bookings b JOIN listings l ON b.listing_id = l.id WHERE b.id = $1`,
-                    [updated.rows[0].id]
+                    [settled.id]
                 );
                 if (bookingDetails.rows.length > 0) {
                     const d = bookingDetails.rows[0];
@@ -643,16 +709,26 @@ export const BookingModel = {
                     );
                 }
             } catch (chatError) {
-                console.error(`Booking ${updated.rows[0].id} paid, but system message failed:`, chatError);
+                console.error(`Booking ${settled.id} paid, but system message failed:`, chatError);
             }
 
-            return updated.rows[0];
+            return { outcome: 'settled', booking: settled };
         } catch (error) {
             await client.query('ROLLBACK').catch(() => {});
             throw error;
         } finally {
             client.release();
         }
+    },
+
+    /**
+     * Back-compat delegate. Prefer settleSuccessfulCharge - it reports the
+     * outcome instead of collapsing mismatch into "success".
+     */
+    async markAsPaid(paymentReference: string): Promise<BookingRow | null> {
+        const { outcome, booking } = await BookingModel.settleSuccessfulCharge(paymentReference);
+        if (outcome === 'amount_mismatch') throw new Error('AMOUNT_MISMATCH');
+        return booking;
     },
 
     async markAsFailed(paymentReference: string): Promise<void> {
@@ -703,8 +779,8 @@ export const BookingModel = {
                 [bookingId]
             );
 
-            // Covers the DVA/funds_held path, which doesn't go through
-            // markAsPaid. Per sub-range, so excluded days remain bookable.
+            // Idempotent date blocking, per sub-range so excluded days remain
+            // bookable by other customers.
             const stay = resolveStay(row.start_date, row.end_date, row.excluded_dates ?? []);
             await blockStayDates(client, row.listing_id, stay);
 
@@ -724,7 +800,9 @@ export const BookingModel = {
         endDate: string,
         packageId?: string,
         excludedDates?: string[]
-    ): Promise<{ days: number; subtotal: number; vat: number; total: number; currency: string }> {
+    ): Promise<{
+        days: number; subtotal: number; vat: number; total: number; currency: string;
+    }> {
         const db = getDB();
         const stay = resolveStay(startDate, endDate, excludedDates ?? []);
 
@@ -747,11 +825,16 @@ export const BookingModel = {
             basePriceKobo = parseFloat(listing.base_price_kobo);
         }
 
-        const subtotal = (basePriceKobo * stay.days) / 100;
-        const vat = Math.round((subtotal * 0.075) * 100) / 100;
-        const total = Math.round((subtotal + vat) * 100) / 100;
+        // Same module as createBooking ⇒ the quote can never disagree with the charge.
+        const money = computeMoney(basePriceKobo, stay.days);
 
-        return { days: stay.days, subtotal, vat, total, currency: 'NGN' };
+        return {
+            days: stay.days,
+            subtotal: money.subtotal,
+            vat: money.vat,
+            total: money.total,
+            currency: 'NGN',
+        };
     },
 
     /**
