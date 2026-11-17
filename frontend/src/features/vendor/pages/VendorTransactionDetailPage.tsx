@@ -123,7 +123,7 @@ function TimelineStep({
       {!last && (
         <span
           aria-hidden="true"
-          className="absolute left-[9px] top-5 h-full w-0.5 bg-[#E4DDD3]"
+          className="absolute left-2.25 top-5 h-full w-0.5 bg-[#E4DDD3]"
         />
       )}
       <span className="relative z-10 mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#2D5A27] ring-4 ring-white">
