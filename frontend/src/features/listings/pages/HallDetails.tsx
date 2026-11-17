@@ -391,7 +391,7 @@ export default function HallDetails() {
   if (isError || !listing) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-bg-primary px-6">
-        <div className="max-w-sm rounded-[2rem] bg-white p-8 text-center shadow-[0_20px_44px_rgba(34,27,18,0.07)]">
+        <div className="max-w-sm rounded-4xl bg-white p-8 text-center shadow-[0_20px_44px_rgba(34,27,18,0.07)]">
           <h1 className="text-xl font-extrabold text-[#B9401D]">
             Failed to load venue details
           </h1>
