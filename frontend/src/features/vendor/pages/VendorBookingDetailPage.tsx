@@ -687,7 +687,7 @@ export default function VendorBookingDetailPage() {
       <div
         id="vendor-booking-receipt-print"
         aria-hidden="true"
-        className="pointer-events-none absolute -left-[9999px] top-0 w-[720px] bg-white p-10 text-[#252423]"
+        className="pointer-events-none absolute -left-2499.75 top-0 w-180 bg-white p-10 text-[#252423]"
       >
         <div className="flex items-start justify-between border-b border-dashed border-[#C9BFB2] pb-5">
           <div>

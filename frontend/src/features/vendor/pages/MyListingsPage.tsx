@@ -133,7 +133,7 @@ function MyListingsContent() {
                     : "hover:shadow-xl"
                 }`}
               >
-                <div className="relative aspect-[4/3] bg-surface-dim overflow-hidden">
+                <div className="relative aspect-4/3 bg-surface-dim overflow-hidden">
                   <Image
                     src={listing.thumbnailUrl}
                     alt={listing.title}
@@ -170,7 +170,7 @@ function MyListingsContent() {
                       </button>
 
                       {/* Hover CTA on the image */}
-                      <div className="pointer-events-none absolute inset-x-0 bottom-0 flex justify-center bg-gradient-to-t from-black/70 via-black/25 to-transparent p-4 pt-10 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+                      <div className="pointer-events-none absolute inset-x-0 bottom-0 flex justify-center bg-linear-to-t from-black/70 via-black/25 to-transparent p-4 pt-10 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
                         <span className="flex items-center gap-2 rounded-full bg-white px-4 py-2 text-xs font-bold text-text-primary shadow-card">
                           <Pencil className="w-3.5 h-3.5" />
                           {listing.status === "rejected" ? "Edit & Resubmit" : "Continue Draft"}
