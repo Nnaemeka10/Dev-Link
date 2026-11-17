@@ -1,18 +1,22 @@
 "use client";
-import { AlertCircle, LockKeyhole, ShieldCheck } from "lucide-react";
-import type { BookingFormState } from "../booking.types";
-import { PaymentSummary } from "./BookingSummary";
-import { MobilePaymentDock } from "./MobilePaymentDock";
-import { ListingDetailsResponse } from "@/features/listings/details.types";
-import { useBookingWizard } from "../hooks/useBookingWizard";
-import { apiFetch, ApiError } from "@/lib/api";
-import { usePricingQuote } from "../hooks/usePricingQuote";
-import { useState, useEffect, useRef, useCallback } from "react";
-import { getPaystack } from "@/lib/paystack";
+
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
+import { motion } from "framer-motion";
+import { AlertCircle, ArrowLeft, CheckCircle2, Clock3, LockKeyhole, ShieldCheck } from "lucide-react";
+import type { ListingDetailsResponse } from "@/features/listings/details.types";
+import { getPaystack } from "@/lib/paystack";
+import { apiFetch, ApiError } from "@/lib/api";
 import { toLocalDateString } from "@/lib/dates";
-import { envelope, excludedDates } from "@/features/search/utils/rangeSelection";
+import { useNigeriaLgas, useNigeriaStates } from "@/hooks/useNigeriaLocations";
+import { diffDays, envelope, excludedDates, finalizeRanges } from "@/features/search/utils/rangeSelection";
+import type { BookingFormState, PaymentSummaryData } from "../booking.types";
+import { usePricingQuote } from "../hooks/usePricingQuote";
+import type { useBookingWizard } from "../hooks/useBookingWizard";
+import { bookingDetailsRequirements } from "./BookingDetailsStep";
+import { PaymentSummary, SecuritySignals } from "./BookingSummary";
+import { MobilePaymentDock } from "./MobilePaymentDock";
 import HoldCountdown from "./HoldCountdown";
 
 type PaystackInstance = Awaited<ReturnType<typeof getPaystack>>;
@@ -20,6 +24,29 @@ type PaystackInstance = Awaited<ReturnType<typeof getPaystack>>;
 /** Must match the backend lease model: 30s ping, 2-min lease, 30-min hard cap. */
 const HEARTBEAT_INTERVAL_MS = 30_000;
 const HEARTBEAT_MAX_FAILURES = 3;
+const FALLBACK_IMAGE = "/placeholder.jpg";
+const EASE_OUT = [0.16, 1, 0.3, 1] as const;
+
+function naira(value: number): string {
+  return `₦${value.toLocaleString("en-NG")}`;
+}
+
+function formatDay(date: Date): string {
+  return date.toLocaleDateString("en-NG", { day: "numeric", month: "short", year: "numeric" });
+}
+
+/** "10 Dec 2026 – 14 Dec 2026 · 16 Dec 2026 +1" - split ranges included. */
+function formatDateRangesLabel(ranges: BookingFormState["dateRanges"]): string {
+  const done = finalizeRanges(ranges);
+  if (done.length === 0) return "No dates selected";
+  const parts = done.map((range) =>
+    diffDays(range.from, range.to) === 0
+      ? formatDay(range.from)
+      : `${formatDay(range.from)} – ${formatDay(range.to)}`
+  );
+  if (parts.length <= 2) return parts.join(" · ");
+  return `${parts.slice(0, 2).join(" · ")} +${parts.length - 2} more`;
+}
 
 interface PaymentStepProps {
   form: BookingFormState;
@@ -37,17 +64,28 @@ export default function PaymentStep({ form, listing, wizard, variant = "desktop"
 
   const queryClient = useQueryClient();
   const router = useRouter();
+  const mobile = variant === "mobile";
+
   // Stable actions (useMemo'd in the wizard) so callbacks below never churn.
   const { setIsProcessing, setPaymentData, clearDraft } = wizard;
 
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [infoMessage, setInfoMessage] = useState<string | null>(null);
+  const [isRedirecting, setIsRedirecting] = useState(false);
   // Shows the HARD 30-minute session deadline, not the 2-minute lease.
   const [holdExpiresAt, setHoldExpiresAt] = useState<string | null>(null);
 
   // Envelope + holes derived from the multi-range selection.
   const dateRange = envelope(form.dateRanges);
   const excluded = excludedDates(form.dateRanges);
+  const isService = listing.kind === "service";
+
+  const { data: quote } = usePricingQuote(listing.id, dateRange, form.packageId, excluded);
+  const { data: states = [] } = useNigeriaStates();
+  const { data: lgas = [] } = useNigeriaLgas(isService ? form.eventLocation.stateId : null);
+
+  const missing = bookingDetailsRequirements(form, listing);
+  const selectedPackage = listing.packages?.find((pkg) => pkg.id === form.packageId);
 
   // The hold lives ONLY while the Paystack popup is open. Refs let the
   // heartbeat / timers / unmount / pagehide paths act without stale closures,
@@ -152,10 +190,9 @@ export default function PaymentStep({ form, listing, wizard, variant = "desktop"
         // Guard against stale pings from a previous session.
         if (!liveHoldRef.current || liveHoldRef.current.bookingId !== bookingId) return;
         try {
-          const res = await apiFetch<{ alive: boolean }>(
-            `/api/bookings/${bookingId}/heartbeat`,
-            { method: "POST" }
-          );
+          const res = await apiFetch<{ alive: boolean }>(`/api/bookings/${bookingId}/heartbeat`, {
+            method: "POST",
+          });
           if (!liveHoldRef.current || liveHoldRef.current.bookingId !== bookingId) return;
           if (!res.alive) {
             expireSession(
@@ -219,8 +256,9 @@ export default function PaymentStep({ form, listing, wizard, variant = "desktop"
     };
   }, [releaseHold, stopHeartbeat, stopSessionTimer]);
 
-  // Changing the date selection invalidates any stale hold + countdown.
-  const dateRangesKey = JSON.stringify(form.dateRanges);
+  // Changing the selection (dates OR package) invalidates any stale hold:
+  // both are part of the server's reuse key, so the old hold is abandoned.
+  const selectionKey = `${JSON.stringify(form.dateRanges)}|${form.packageId ?? ""}`;
   useEffect(() => {
     const hold = liveHoldRef.current;
     if (hold && !paymentSucceededRef.current) {
@@ -230,7 +268,16 @@ export default function PaymentStep({ form, listing, wizard, variant = "desktop"
       void releaseHold(hold.bookingId);
     }
     setHoldExpiresAt(null);
-  }, [dateRangesKey, releaseHold, stopHeartbeat, stopSessionTimer]);
+  }, [selectionKey, releaseHold, stopHeartbeat, stopSessionTimer]);
+
+  const eventLocationText = useMemo(() => {
+    if (!isService) return listing.location;
+    const stateName = states.find((s) => s.id === form.eventLocation.stateId)?.name;
+    const lgaName = lgas.find((l) => l.id === form.eventLocation.lgaId)?.name;
+    return [form.eventLocation.address.trim(), lgaName, stateName, "Nigeria"]
+      .filter(Boolean)
+      .join(", ");
+  }, [isService, listing.location, states, lgas, form.eventLocation]);
 
   const handlePay = async () => {
     // A previous payment already succeeded but verification is pending -
@@ -239,6 +286,10 @@ export default function PaymentStep({ form, listing, wizard, variant = "desktop"
       setErrorMessage(
         "Your previous payment succeeded but confirmation is still pending. Please contact support with your payment reference instead of paying again."
       );
+      return;
+    }
+    if (missing.length > 0) {
+      setErrorMessage(`Before you pay: ${missing.join(", ").toLowerCase()}.`);
       return;
     }
     if (!dateRange?.from || !dateRange.to) {
@@ -273,13 +324,25 @@ export default function PaymentStep({ form, listing, wizard, variant = "desktop"
           startTime: form.startTime,
           endTime: form.endTime,
           preferences: form.preferences,
-          packageId: form.packageId,
+          packageId: form.packageId || undefined,
+          // Services travel to the customer: the delivery address is mandatory
+          // and resolved server-side against nigeria_states / nigeria_lgas.
+          eventLocation: isService
+            ? {
+                address: form.eventLocation.address.trim(),
+                stateId: form.eventLocation.stateId,
+                lgaId: form.eventLocation.lgaId,
+                country: "Nigeria",
+              }
+            : null,
+          guests: isService ? 1 : form.guests,
         }),
         redirectOn401: true,
       });
 
       createdBookingId = bookingRes.bookingId;
       liveHoldRef.current = { bookingId: bookingRes.bookingId };
+
       // Countdown + auto-close use the HARD deadline (created_at + 30 min).
       const deadline = bookingRes.holdDeadline ?? bookingRes.expiresAt ?? null;
       setHoldExpiresAt(deadline);
@@ -306,7 +369,7 @@ export default function PaymentStep({ form, listing, wizard, variant = "desktop"
       const popup = await getPaystack();
       const transaction = popup.resumeTransaction(initRes.accessCode, {
         onSuccess: async () => {
-          // Money moved: convert hold - paid. Never release from here on.
+          // Money moved: convert hold -> paid. Never release from here on.
           paymentSucceededRef.current = true;
           liveHoldRef.current = null;
           stopHeartbeat();
@@ -314,19 +377,28 @@ export default function PaymentStep({ form, listing, wizard, variant = "desktop"
           setHoldExpiresAt(null);
           popupRef.current = null;
           transactionRef.current = null;
+
           try {
             await apiFetch(`/api/payments/verify/${initRes.reference}`, {
               method: "GET",
               redirectOn401: true,
             });
-            await queryClient.invalidateQueries({ queryKey: ["booking-details", bookingRes.bookingId] });
-            await queryClient.invalidateQueries({ queryKey: ["listing", "details", listing.id] });
+            setIsRedirecting(true);
+            await Promise.all([
+              queryClient.invalidateQueries({
+                queryKey: ["booking-details", bookingRes.bookingId],
+              }),
+              queryClient.invalidateQueries({ queryKey: ["listing", "details", listing.id] }),
+              queryClient.invalidateQueries({ queryKey: ["listing", "availability", listing.id] }),
+              queryClient.invalidateQueries({ queryKey: ["saved-hub"] }),
+            ]);
             clearDraft();
             router.push(`/bookings/${listing.id}?step=3&bookingId=${bookingRes.bookingId}`);
           } catch (verifyError) {
             console.error("Payment verification failed:", verifyError);
             setErrorMessage(
-              "Payment was made but verification failed. Please contact support with reference: " + initRes.reference
+              "Payment was made but verification failed. Please contact support with reference: " +
+                initRes.reference
             );
             setIsProcessing(false);
           }
@@ -373,18 +445,15 @@ export default function PaymentStep({ form, listing, wizard, variant = "desktop"
         stopSessionTimer();
         void releaseHold(createdBookingId);
       }
-
       if (error instanceof ApiError) {
-        // Expected business rejections - "You cannot book your own listing",
-        // dates taken (409), session expired (400), etc. These are NOT
-        // exceptions: surface the message inline and keep them out of
-        // console.error so the Next.js dev overlay doesn't flag a crash.
+        // Expected business rejections - own listing, dates taken (409),
+        // missing event location (400), session expired. Surface inline and
+        // keep them out of console.error so the dev overlay stays quiet.
         setErrorMessage(error.message || "Could not start payment process.");
         if (error.status >= 500) {
           console.error("Payment initialization failed:", error);
         }
       } else {
-        // Genuine unexpected failure (network drop, bug) - worth logging.
         console.error("Payment initialization failed:", error);
         setErrorMessage("An unexpected error occurred. Please check your network and try again.");
       }
@@ -392,99 +461,218 @@ export default function PaymentStep({ form, listing, wizard, variant = "desktop"
     }
   };
 
-  const { data: quote } = usePricingQuote(listing.id, dateRange, form.packageId, excluded);
   const days = quote?.days;
-  const selectedPackage = listing.packages?.find(p => p.id === form.packageId);
+  const dayWord = days === 1 ? "day" : "days";
   const hireLabel = selectedPackage
-    ? `${selectedPackage.name} (${days ?? '...'} ${days === 1 ? 'day' : 'days'})`
-    : (listing.kind === 'service' ? `Service fee (${days ?? '...'} ${days === 1 ? 'day' : 'days'})`
-      : `Venue hire (${days ?? '...'} ${days === 1 ? 'day' : 'days'})`);
+    ? `${selectedPackage.name} × ${days ?? "…"} ${dayWord}`
+    : `${isService ? "Service fee" : "Venue hire"} × ${days ?? "…"} ${dayWord}`;
 
-  // Unified summary object for both Mobile and Desktop
-  const paymentSummary = {
+  const paymentSummary: PaymentSummaryData = {
     venueName: listing.title,
-    venueLocation: listing.location,
-    venueImage: listing.primaryImage?.url || "/placeholder.jpg",
-    eventName: "Event Booking",
-    eventDateFrom: dateRange?.from?.toLocaleDateString() || "Invalid Date",
-    eventDateTo: dateRange?.to?.toLocaleDateString(),
-    guests: listing.kind === 'service' ? undefined : `Up to ${listing.capacity} Guests`,
+    venueLocation: eventLocationText,
+    venueImage: listing.primaryImage?.url || listing.images[0]?.url || FALLBACK_IMAGE,
+    eventName: isService ? selectedPackage?.name ?? "Service booking" : "Venue booking",
+    eventDateLabel: formatDateRangesLabel(form.dateRanges),
+    eventTimeLabel: `${form.startTime} – ${form.endTime}`,
+    guests: isService ? undefined : `${form.guests.toLocaleString()} expected`,
+    kind: listing.kind,
+    locationLabel: isService ? "Event location" : "Venue address",
     verified: listing.autoApprove,
-    fees: quote ? [
-      { label: hireLabel, value: `₦${quote.subtotal.toLocaleString()}` },
-      { label: "VAT (7.5%)", value: `₦${quote.vat.toLocaleString()}` },
-    ] : [],
-    total: quote ? `₦${quote.total.toLocaleString()}` : "Calculating...",
-    totalNote: "Includes all taxes and fees",
+    fees: quote
+      ? [
+          { label: hireLabel, value: naira(quote.subtotal), sublabel: "per-day rate" },
+          { label: "VAT (7.5%)", value: naira(quote.vat) },
+        ]
+      : [],
+    total: quote ? naira(quote.total) : "Calculating…",
+    totalNote: excluded.length
+      ? `Includes VAT · ${excluded.length} removed ${excluded.length === 1 ? "day" : "days"} not charged`
+      : "Includes VAT · held in escrow until your event",
   };
 
-  if (variant === "mobile") {
+  //  Post-payment transition 
+  if (isRedirecting) {
     return (
-      <section className="px-6 pb-28">
-        <h1 className="text-2xl font-medium">Review & Confirm</h1>
-        <p className="mt-3 text-[#555B7F]">
-          Confirm your details. Your dates are held only while the secure payment popup is open -
-          close it and they&apos;re released instantly.
+      <section className={mobile ? "px-6 pb-32 pt-10" : "mx-auto max-w-3xl px-8 py-24"}>
+        <motion.div
+          initial={{ opacity: 0, scale: 0.97 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.35, ease: EASE_OUT }}
+          className="flex flex-col items-center rounded-4xl bg-white px-6 py-14 text-center shadow-[0_20px_44px_rgba(34,27,18,0.07)]"
+        >
+          <span className="flex h-16 w-16 items-center justify-center rounded-full bg-[#E8F3EC] text-[#2D5A27]">
+            <CheckCircle2 className="h-8 w-8" aria-hidden="true" />
+          </span>
+          <h2 className="mt-6 text-xl font-extrabold text-[#252423] md:text-2xl">
+            Payment confirmed
+          </h2>
+          <p className="mt-2 max-w-sm text-sm font-semibold text-[#5E6588]">
+            Preparing your booking confirmation…
+          </p>
+          <span
+            className="mt-6 h-6 w-6 animate-spin rounded-full border-2 border-[#B9401D]/25 border-t-[#B9401D]"
+            aria-hidden="true"
+          />
+        </motion.div>
+      </section>
+    );
+  }
+
+  //  Deep-link protection 
+  // ?step=2 with an incomplete selection can never reach checkout.
+  if (missing.length > 0) {
+    return (
+      <section className={mobile ? "px-6 pb-32 pt-8" : "mx-auto max-w-3xl px-8 py-20"}>
+        <div className="rounded-4xl bg-white p-7 shadow-[0_20px_44px_rgba(34,27,18,0.07)] md:p-10">
+          <span className="flex h-12 w-12 items-center justify-center rounded-full bg-[#FFF1E6] text-[#B9401D]">
+            <AlertCircle className="h-6 w-6" aria-hidden="true" />
+          </span>
+          <h2 className="mt-5 text-xl font-extrabold text-[#252423]">
+            Let&apos;s finish your booking details
+          </h2>
+          <p className="mt-2 text-sm font-semibold text-[#5E6588]">
+            We still need a few things before payment can open.
+          </p>
+          <ul className="mt-5 space-y-2">
+            {missing.map((item) => (
+              <li
+                key={item}
+                className="flex items-center gap-2.5 rounded-2xl bg-[#F7F2EA] px-4 py-3 text-sm font-bold text-[#3A3734]"
+              >
+                <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[#B9401D]" aria-hidden="true" />
+                {item}
+              </li>
+            ))}
+          </ul>
+          <button
+            type="button"
+            onClick={() => wizard.goToStep(1)}
+            className="mt-7 inline-flex items-center gap-2 rounded-full bg-[#B9401D] px-7 py-3.5 text-sm font-extrabold text-white transition-all hover:brightness-95 active:scale-[0.99]"
+          >
+            <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+            Back to booking details
+          </button>
+        </div>
+      </section>
+    );
+  }
+
+  const notices = (
+    <>
+      {infoMessage && (
+        <motion.div
+          initial={{ opacity: 0, y: -6 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mt-4 flex items-start gap-3 rounded-2xl border border-[#E8DDD2] bg-[#F7F2EA] p-4 text-sm font-semibold text-[#5E6588]"
+        >
+          <Clock3 className="mt-0.5 h-4 w-4 shrink-0 text-[#B9401D]" aria-hidden="true" />
+          <p>{infoMessage}</p>
+        </motion.div>
+      )}
+      {errorMessage && (
+        <motion.div
+          initial={{ opacity: 0, y: -6 }}
+          animate={{ opacity: 1, y: 0 }}
+          role="alert"
+          className="mt-4 flex items-start gap-3 rounded-2xl border border-[#F3C9BC] bg-[#FDF1EC] p-4 text-sm font-semibold text-[#8A3A1C]"
+        >
+          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+          <p>{errorMessage}</p>
+        </motion.div>
+      )}
+    </>
+  );
+
+  if (mobile) {
+    return (
+      <section className="px-5 pb-44">
+        <h1 className="text-2xl font-extrabold text-[#252423]">Review &amp; pay</h1>
+        <p className="mt-2 text-sm font-semibold leading-6 text-[#5E6588]">
+          Your dates are held only while the secure payment popup is open — close it and they&apos;re
+          released instantly. Payment stays in escrow until the vendor confirms.
         </p>
-        <HoldCountdown expiresAt={holdExpiresAt} className="mt-6" />
 
-        {infoMessage && (
-          <div className="mt-4 rounded-xl border border-[#E8DDD2] bg-[#F7F2EA] p-4 text-sm font-semibold text-[#5E6588]">
-            {infoMessage}
+        <HoldCountdown expiresAt={holdExpiresAt} className="mt-5" />
+        {notices}
+
+        <div className="mt-6 space-y-2.5">
+          <div className="flex items-center gap-2.5 rounded-2xl bg-[#F7F2EA] px-4 py-3 text-xs font-extrabold text-[#3A3734]">
+            <ShieldCheck className="h-4 w-4 shrink-0 text-[#B9401D]" aria-hidden="true" />
+            256-bit encrypted checkout · we never store your card
           </div>
-        )}
-
-        {errorMessage && (
-          <div className="mt-6 flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
-            <AlertCircle className="h-5 w-5 shrink-0" />
-            <p>{errorMessage}</p>
+          <div className="flex items-center gap-2.5 rounded-2xl bg-[#F7F2EA] px-4 py-3 text-xs font-extrabold text-[#3A3734]">
+            <LockKeyhole className="h-4 w-4 shrink-0 text-[#B9401D]" aria-hidden="true" />
+            Full refund if the vendor doesn&apos;t confirm in 24 hours
           </div>
-        )}
-
-        <div className="mt-8 flex items-center gap-2 text-sm font-semibold text-[#555B7F]">
-          <ShieldCheck className="h-4 w-4 text-[#B9401D]" />
-          256-bit SSL Encrypted Secure Checkout
         </div>
 
-        <MobilePaymentDock summary={paymentSummary} onPay={handlePay} isProcessing={wizard.isProcessing} holdExpiresAt={holdExpiresAt} />
+        <button
+          type="button"
+          onClick={() => wizard.goToStep(1)}
+          className="mt-6 inline-flex items-center gap-1.5 text-small font-extrabold text-[#555B7F]"
+        >
+          <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" />
+          Edit booking details
+        </button>
+
+        <MobilePaymentDock
+          summary={paymentSummary}
+          onPay={handlePay}
+          isProcessing={wizard.isProcessing}
+          holdExpiresAt={holdExpiresAt}
+        />
       </section>
     );
   }
 
   return (
-    <section className="mx-auto grid max-w-6xl gap-12 px-8 py-16 lg:grid-cols-[minmax(0,1fr)_29rem]">
+    <section className="mx-auto grid max-w-6xl gap-12 px-8 py-14 lg:grid-cols-[minmax(0,1fr)_29rem]">
       <div>
-        <h1 className="text-4xl font-medium">Review & Pay</h1>
-        <p className="mt-3 text-lg text-[#555B7F]">
-          Tap Pay to open our secure payment popup. Your dates are held only while it&apos;s open -
-          close it and they&apos;re released instantly. Payment is held in escrow until the vendor confirms.
+        <h1 className="text-4xl font-extrabold tracking-[-0.02em] text-[#252423]">
+          Review &amp; pay
+        </h1>
+        <p className="mt-3 max-w-xl text-lg leading-8 text-[#5E6588]">
+          Tap Pay to open our secure payment popup. Your dates are held only while it&apos;s open —
+          close it and they&apos;re released instantly. Payment is held in escrow until the vendor
+          confirms.
         </p>
+
         <HoldCountdown expiresAt={holdExpiresAt} className="mt-5" />
-        {infoMessage && (
-          <div className="mt-6 rounded-xl border border-[#E8DDD2] bg-[#F7F2EA] p-4 text-sm font-semibold text-[#5E6588]">
-            {infoMessage}
-          </div>
-        )}
+        {notices}
 
-        {errorMessage && (
-          <div className="mt-6 flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
-            <AlertCircle className="h-5 w-5 shrink-0" />
-            <p>{errorMessage}</p>
-          </div>
-        )}
-
-        <div className="mt-9 rounded-4xl bg-[#F4F1EA] p-8">
-          <div className="flex items-center gap-4">
-            <LockKeyhole className="h-6 w-6 text-[#B9401D]" />
+        <div className="mt-8 rounded-4xl bg-[#F4F1EA] p-7">
+          <div className="flex items-start gap-4">
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white text-[#B9401D] shadow-sm">
+              <LockKeyhole className="h-5 w-5" aria-hidden="true" />
+            </span>
             <div>
-              <h3 className="font-extrabold text-lg">Secure Backend Processing</h3>
-              <p className="text-sm text-[#555B7F]">We do not store your card details. All transactions are processed by Paystack.</p>
+              <h3 className="text-lg font-extrabold text-[#252423]">Secure backend processing</h3>
+              <p className="mt-1 text-sm leading-6 text-[#5E6588]">
+                We do not store your card details. Every transaction is processed by Paystack, and
+                your money sits in escrow until your event is delivered.
+              </p>
             </div>
           </div>
         </div>
+
+        <SecuritySignals />
+
+        <button
+          type="button"
+          onClick={() => wizard.goToStep(1)}
+          className="mt-8 inline-flex items-center gap-2 text-sm font-extrabold text-[#555B7F] transition-colors hover:text-[#252423]"
+        >
+          <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+          Edit booking details
+        </button>
       </div>
 
-      <PaymentSummary summary={paymentSummary} onPay={handlePay} isProcessing={wizard.isProcessing} holdExpiresAt={holdExpiresAt} />
+      <PaymentSummary
+        summary={paymentSummary}
+        onPay={handlePay}
+        isProcessing={wizard.isProcessing}
+        holdExpiresAt={holdExpiresAt}
+      />
     </section>
   );
 }

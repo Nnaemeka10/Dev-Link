@@ -1,101 +1,212 @@
-import Image, { StaticImageData } from "next/image";
-import { MapPin, ShieldCheck } from "lucide-react";
+"use client";
+
+import Image from "next/image";
+import { motion } from "framer-motion";
+import {
+  BadgeCheck,
+  CalendarDays,
+  Clock,
+  MapPin,
+  ShieldCheck,
+  Sparkles,
+  UsersRound,
+} from "lucide-react";
+import type { PaymentSummaryData } from "../booking.types";
 import HoldCountdown from "./HoldCountdown";
 
-interface SummaryData {
-  venueName: string;
-  venueLocation: string;   // e.g. "Victoria Island, Lagos"
-  venueImage: string | StaticImageData;      // image src
-  eventName: string;       // e.g. "Corporate Dinner"
-  eventDateFrom?: string;
-  eventDateTo?: string;       // e.g. "December 24, 2024"
-  guests?: string;          // e.g. "350 Attendees" (Optional now)
-  verified: boolean;
-  fees: Fee[];
-  total: string;           // formatted e.g. "₦495,000"
-  totalNote?: string;      // e.g. "Includes all taxes and marketplace fees"
-}
+const EASE_OUT = [0.16, 1, 0.3, 1] as const;
 
-interface Fee {
+function DetailTile({
+  icon: Icon,
+  label,
+  value,
+  wide = false,
+}: {
+  icon: React.ElementType;
   label: string;
   value: string;
-  sublabel?: string; // e.g. "underline" fees like "Venue hire × 2 days"
-}
-
-export function PaymentSummary({ summary, onPay, isProcessing, holdExpiresAt }: { summary: SummaryData; onPay: () => void; isProcessing: boolean; holdExpiresAt: string | null }) {
+  wide?: boolean;
+}) {
   return (
-    <aside className="overflow-hidden rounded-4xl bg-white shadow-[0_24px_54px_rgba(34,27,18,0.08)]">
-      <div className="relative h-64">
-        <Image src={summary.venueImage} alt={summary.venueName} fill className="object-cover brightness-75" sizes="34vw" />
-        <div className="absolute bottom-6 left-8 text-white">
-          <h2 className="text-xl font-extrabold">{summary.venueName}</h2>
-          <p className="flex items-center gap-1 text-sm"><MapPin className="h-4 w-4" /> {summary.venueLocation}</p>
-        </div>
-      </div>
-      
-      <div className="p-8">
-        <div className={`grid gap-8 border-b border-[#E8DED2] pb-7 ${summary.guests ? 'lg:grid-cols-2 grid-cols-1' : 'grid-cols-1'}`}>
-          <div className={summary.guests ? '' : 'lg:col-span-2'}>
-            <p className="text-xs font-extrabold uppercase tracking-[0.14em] text-[#555B7F]">Event Date</p>
-            <p className="mt-2 font-extrabold">{summary.eventDateFrom} - {summary.eventDateTo}</p>
-          </div>
-          {summary.guests && (
-            <div className="text-right">
-              <p className="text-xs font-extrabold uppercase tracking-[0.14em] text-[#555B7F]">Guests</p>
-              <p className="mt-2 font-extrabold">{summary.guests}</p>
-            </div>
-          )}
-        </div>
-
-        <div className="mt-7 space-y-4">
-          {summary.fees.map((fee) => (
-            <div key={fee.label} className="flex items-start justify-between gap-4 text-sm">
-              <span className={`text-[#555B7F] ${fee.sublabel ? "underline underline-offset-2" : ""}`}>
-                {fee.label}
-              </span>
-              <strong className="shrink-0 text-[#252423]">{fee.value}</strong>
-            </div>
-          ))}
-        </div>
-
-        <div className="mt-8 rounded-3xl bg-[#E8E4DC] p-6">
-          <div className="flex items-end justify-between">
-            <p className="text-xs font-extrabold uppercase tracking-[0.14em] text-[#555B7F]">Total Amount</p>
-            <strong className="text-3xl font-extrabold text-[#B9401D]">{summary.total}</strong>
-          </div>
-          {summary.totalNote && <p className="mt-2 text-right text-[11px] text-[#9A756C]">{summary.totalNote}</p>}
-        </div>
-
-        <HoldCountdown expiresAt={holdExpiresAt} className="mb-3" />
-        
-        <button 
-          type="button" 
-          onClick={onPay} 
-          disabled={isProcessing}
-          className="mt-8 w-full rounded-full bg-[#B9401D] px-8 py-5 text-sm font-extrabold uppercase tracking-[0.12em] text-white disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {isProcessing ? "Processing..." : "Pay Securely Now "}
-        </button>
-        
-        <p className="mt-4 flex items-center justify-center gap-2 text-xs text-[#555B7F]">
-          <ShieldCheck className="h-3 w-3" /> Powered by Paystack
+    <div
+      className={`flex items-start gap-3 rounded-2xl bg-[#F7F2EA] px-4 py-3.5 ${
+        wide ? "col-span-full" : ""
+      }`}
+    >
+      <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-white text-[#B9401D] shadow-sm">
+        <Icon className="h-4 w-4" aria-hidden="true" />
+      </span>
+      <div className="min-w-0">
+        <p className="text-[10px] font-extrabold uppercase tracking-[0.14em] text-[#9A9AAE]">
+          {label}
         </p>
+        <p className="mt-0.5 text-sm font-extrabold leading-snug text-[#252423]">{value}</p>
       </div>
-    </aside>
+    </div>
   );
 }
 
+export function PaymentSummary({
+  summary,
+  onPay,
+  isProcessing,
+  holdExpiresAt,
+}: {
+  summary: PaymentSummaryData;
+  onPay: () => void;
+  isProcessing: boolean;
+  holdExpiresAt: string | null;
+}) {
+  return (
+    <motion.aside
+      initial={{ opacity: 0, y: 18 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.45, ease: EASE_OUT }}
+      className="h-fit overflow-hidden rounded-4xl bg-white shadow-[0_24px_54px_rgba(34,27,18,0.08)] lg:sticky lg:top-8"
+    >
+      {/* Identity header */}
+      <div className="relative h-52">
+        <Image
+          src={summary.venueImage}
+          alt={summary.venueName}
+          fill
+          className="object-cover"
+          sizes="(max-width: 1024px) 100vw, 34vw"
+        />
+        <div
+          className="absolute inset-0 bg-linear-to-t from-[#1B140E]/85 via-[#1B140E]/25 to-transparent"
+          aria-hidden="true"
+        />
+        <div className="absolute left-5 top-5 flex flex-wrap gap-2">
+          <span className="inline-flex items-center gap-1 rounded-full bg-white/92 px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-wider text-[#B9401D] backdrop-blur-sm">
+            <ShieldCheck className="h-3 w-3" aria-hidden="true" />
+            Escrow protected
+          </span>
+          {summary.verified && (
+            <span className="inline-flex items-center gap-1 rounded-full bg-[#B9401D] px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-wider text-white">
+              <Sparkles className="h-3 w-3" aria-hidden="true" />
+              Instant approval
+            </span>
+          )}
+        </div>
+        <div className="absolute inset-x-6 bottom-5 text-white">
+          <p className="text-[10px] font-extrabold uppercase tracking-[0.16em] text-white/70">
+            {summary.kind === "service" ? "Service" : "Venue"}
+          </p>
+          <h2 className="mt-1 truncate text-xl font-extrabold">{summary.venueName}</h2>
+        </div>
+      </div>
 
+      <div className="p-6 md:p-8">
+        {/* Event facts */}
+        <div className="grid grid-cols-2 gap-2.5">
+          <DetailTile
+            icon={MapPin}
+            label={summary.locationLabel}
+            value={summary.venueLocation || "Location not set"}
+            wide
+          />
+          <DetailTile icon={CalendarDays} label="Event dates" value={summary.eventDateLabel} wide />
+          <DetailTile icon={Clock} label="Time (24h)" value={summary.eventTimeLabel} />
+          {summary.guests ? (
+            <DetailTile icon={UsersRound} label="Guests" value={summary.guests} />
+          ) : (
+            <DetailTile icon={BadgeCheck} label="Booking" value={summary.eventName} />
+          )}
+        </div>
+
+        {/* Price breakdown */}
+        <div className="mt-6 space-y-3.5 border-t border-[#E8DED2] pt-6">
+          {summary.fees.length === 0 ? (
+            <div className="animate-pulse space-y-3">
+              <div className="h-4 w-3/4 rounded bg-[#EFE7DE]" />
+              <div className="h-4 w-1/2 rounded bg-[#EFE7DE]" />
+            </div>
+          ) : (
+            summary.fees.map((fee) => (
+              <div key={fee.label} className="flex items-start justify-between gap-4 text-sm">
+                <span
+                  className={`text-[#5E6588] ${
+                    fee.sublabel ? "underline decoration-[#D8CDBF] underline-offset-2" : ""
+                  }`}
+                >
+                  {fee.label}
+                </span>
+                <strong className="shrink-0 text-[#252423]">{fee.value}</strong>
+              </div>
+            ))
+          )}
+        </div>
+
+        {/* Total */}
+        <div className="mt-6 rounded-3xl bg-[#F4F1EA] p-5">
+          <div className="flex items-end justify-between gap-4">
+            <p className="text-[10px] font-extrabold uppercase tracking-[0.14em] text-[#555B7F]">
+              Total amount
+            </p>
+            <motion.strong
+              key={summary.total}
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.25, ease: EASE_OUT }}
+              className="shrink-0 text-2xl font-extrabold text-[#B9401D] md:text-3xl"
+            >
+              {summary.total}
+            </motion.strong>
+          </div>
+          {summary.totalNote && (
+            <p className="mt-2 text-right text-[11px] font-semibold text-[#9A756C]">
+              {summary.totalNote}
+            </p>
+          )}
+        </div>
+
+        <HoldCountdown expiresAt={holdExpiresAt} className="mt-5" />
+
+        <button
+          type="button"
+          onClick={onPay}
+          disabled={isProcessing}
+          className="mt-5 w-full rounded-full bg-[#B9401D] px-8 py-5 text-sm font-extrabold uppercase tracking-[0.12em] text-white shadow-[0_16px_26px_rgba(185,64,29,0.2)] transition-all hover:brightness-95 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none"
+        >
+          {isProcessing ? "Processing…" : "Pay securely now"}
+        </button>
+        <p className="mt-4 flex items-center justify-center gap-2 text-xs font-semibold text-[#555B7F]">
+          <ShieldCheck className="h-3.5 w-3.5 text-[#B9401D]" aria-hidden="true" />
+          Card, bank &amp; transfer · powered by Paystack
+        </p>
+      </div>
+    </motion.aside>
+  );
+}
 
 export function SecuritySignals() {
+  const signals = [
+    { icon: ShieldCheck, label: "256-bit encrypted checkout" },
+    { icon: LockKeyholeIcon, label: "Funds held in escrow" },
+    { icon: BadgeCheck, label: "Verified provider" },
+  ];
   return (
-    <div className="mt-10 grid gap-6 text-sm font-extrabold md:grid-cols-3">
-      {["256-bit SSL Encrypted", "Vendor Protection", "Verified Provider"].map((label) => (
-        <div key={label} className="flex items-center gap-3">
-          <ShieldCheck className="h-5 w-5 text-[#B9401D]" />
-          <span>{label}</span>
+    <div className="mt-8 grid gap-3 sm:grid-cols-3">
+      {signals.map(({ icon: Icon, label }) => (
+        <div
+          key={label}
+          className="flex items-center gap-2.5 rounded-2xl bg-[#F7F2EA] px-4 py-3 text-xs font-extrabold text-[#3A3734]"
+        >
+          <Icon className="h-4 w-4 shrink-0 text-[#B9401D]" aria-hidden="true" />
+          {label}
         </div>
       ))}
     </div>
+  );
+}
+
+/** Local alias so the signals row keeps its own lock glyph. */
+function LockKeyholeIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
+      <rect x="4" y="10" width="16" height="10" rx="2.5" stroke="currentColor" strokeWidth="1.8" />
+      <path d="M8 10V7.5a4 4 0 0 1 8 0V10" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+    </svg>
   );
 }

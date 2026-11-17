@@ -12,6 +12,20 @@ export type BookingStatus =
   | 'failed'
   | 'expired';
 
+/**
+ * Structured event location for SERVICE bookings - where the customer wants
+ * the vendor to show up. Resolved server-side against nigeria_states /
+ * nigeria_lgas and stored as one composed string in bookings.event_location.
+ * Halls never send this (the venue IS the location).
+ */
+export interface BookingEventLocationInput {
+  address: string;
+  stateId: string;
+  lgaId: string;
+  /** Always "Nigeria" for now - the form renders it fixed. */
+  country?: string;
+}
+
 export interface BookingRow {
   id: string;
   listing_id: string;
@@ -33,11 +47,15 @@ export interface BookingRow {
   payment_status: string;
   paid_at: string | null;
   package_id: string | null;
-  expires_at: string | null; 
+  expires_at: string | null;
   /** Pre-VAT subtotal (Naira). Written at creation; authoritative for payouts. */
   subtotal_amount?: string | number | null;
   /** VAT collected (Naira). A liability, never platform revenue. */
   vat_amount?: string | number | null;
+  /** Composed service delivery address (hall bookings leave this NULL). */
+  event_location?: string | null;
+  /** Customer notes to the vendor. */
+  preferences?: string | null;
 }
 
 export interface CreateBookingInput {
@@ -46,10 +64,14 @@ export interface CreateBookingInput {
   endDate: string;   // ISO string - envelope end
   /** Interior days the customer deselected (YYYY-MM-DD). Optional. */
   excludedDates?: string[];
-  startTime: string; // "16:00"
-  endTime: string;   // "23:00"
+  startTime: string; // "16:00" (24h)
+  endTime: string;   // "23:00" (24h)
   preferences?: string;
   packageId?: string;
+  /** Required for service listings; ignored for halls. */
+  eventLocation?: BookingEventLocationInput | null;
+  /** Expected guests (halls). Defaults to 1. */
+  guests?: number;
 }
 
 export interface BookingResponse {
@@ -60,10 +82,12 @@ export interface BookingResponse {
 }
 
 export interface BookingDetailsResponse extends BookingRow {
+  kind: 'hall' | 'service';
   listing_title: string;
   listing_image: string | null;
   listing_location: string;
-  listing_capacity: string;
+  listing_address: string | null;
+  listing_capacity: number | null;
   vendor_first_name: string | null;
   vendor_last_name: string | null;
   vendor_phone: string | null;

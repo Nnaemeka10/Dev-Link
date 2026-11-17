@@ -16,6 +16,9 @@ export const connectDB = async () => {
             connectionString: POSTGRES_URI,
         });
 
+        pool.on('error', (err) => {
+            console.error('Unexpected error on idle client', err);
+        });
         // test connection
         const conn = await pool.connect();
         console.log(`PostgreSQL database connected`);

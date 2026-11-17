@@ -1,26 +1,37 @@
 "use client";
 
+import { useState, useTransition } from "react";
 import { MapPin, MessageSquare } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
 import BookingCard from "../components/details/BookingCard";
-import { DetailsActions, MobileDetailsHeader } from "../components/details/DetailsHeader";
-import { ListingBadge, RatingBadge, VerifiedVenueBadge } from "../components/details/DetailBadges";
+import {
+  DetailsActions,
+  MobileDetailsHeader,
+} from "../components/details/DetailsHeader";
+import {
+  ListingBadge,
+  RatingBadge,
+  VerifiedVenueBadge,
+} from "../components/details/DetailBadges";
 import ListingFeatures from "../components/details/ListingFeatures";
-import { DesktopPhotoGallery, MobileHeroPhoto, TabletPhotoGallery } from "../components/details/PhotoGallery";
+import {
+  DesktopPhotoGallery,
+  MobileHeroPhoto,
+  TabletPhotoGallery,
+} from "../components/details/PhotoGallery";
 import ReviewsSection from "../components/details/ReviewsSection";
 import SimilarVenues from "../components/details/SimilarVenues";
 import AboutSection from "../components/details/AboutSection";
-import SideNavBar from "../../../components/layout/SideNavBar";
+import SideNavBar from "@/components/layout/SideNavBar";
 import { DesktopExploreHeader } from "../components/explore/DesktopExploreHeader";
 import { buildListingsUrl, useSearchForm } from "@/features/search";
-import { SearchFormData } from "@/features/search/utils/searchSchema";
+import type { SearchFormData } from "@/features/search/utils/searchSchema";
 import type { DateRange } from "@/features/search/utils/searchSchema";
+import { envelope } from "@/features/search/utils/rangeSelection";
 import HomeFooter from "@/components/layout/Footer";
 import { MobileBookingDock } from "../components/details/MobileBookingDock";
 import MobileDock from "@/components/layout/MobileDock";
 import { BOOKING_STORAGE_KEY } from "@/features/bookings/booking.data";
-
 import { useListingDetails } from "../hooks/useListingDetails";
 import { useSimilarListings } from "../hooks/useSimilarListings";
 import type { ListingDetailsResponse, ListingCardSmall } from "../details.types";
@@ -38,22 +49,28 @@ interface DetailsViewProps extends SearchProps {
   similarVenues: ListingCardSmall[] | undefined;
 }
 
+/**
+ * The detail page owns only the date selection. Guest count, 24-hour times,
+ * notes and the service address are collected in the booking wizard - the
+ * hand-off carries the full multi-range selection so nothing is lost.
+ */
 function useBookingState() {
   const router = useRouter();
-  const [dateRange, setDateRange] = useState<DateRange | undefined>();
-  const [guests, setGuests] = useState("Up to 500");
-  const [time, setTime] = useState("Evening");
-  const [booked, setBooked] = useState(false);
   const params = useParams();
   const id = params.id as string;
+  const [dateRanges, setDateRanges] = useState<DateRange[]>([]);
+  const [booked, setBooked] = useState(false);
 
   return {
     booked,
-    dateRange,
-    guests,
-    time,
+    dateRanges,
+    setDateRanges,
     bookNow: () => {
-      const bookingPayload = { dateRange, guests, time };
+      const bookingPayload = {
+        dateRanges,
+        // Legacy envelope kept for any consumer still reading `dateRange`.
+        dateRange: envelope(dateRanges),
+      };
       try {
         localStorage.setItem(BOOKING_STORAGE_KEY, JSON.stringify(bookingPayload));
       } catch (error) {
@@ -62,9 +79,6 @@ function useBookingState() {
       setBooked(true);
       router.push(`/bookings/${id}?step=1`);
     },
-    setDateRange,
-    setGuests,
-    setTime,
   };
 }
 
@@ -93,7 +107,11 @@ function MobileDetailsView({
   return (
     <section className="md:hidden">
       <MobileDetailsHeader title={listing.name} />
-      <MobileHeroPhoto image={gallery[0] || "/placeholder.jpg"} name={listing.title}  photosHref = {`/listings/halls/${listing.id}/photos`} />
+      <MobileHeroPhoto
+        image={gallery[0] || "/placeholder.jpg"}
+        name={listing.title}
+        photosHref={`/listings/halls/${listing.id}/photos`}
+      />
 
       <div className="relative z-10 -mt-12 px-5">
         <section className="rounded-4xl bg-white p-7 shadow-[0_20px_38px_rgba(36,28,18,0.08)]">
@@ -108,7 +126,7 @@ function MobileDetailsView({
             {listing.title}
           </h1>
           <p className="mt-1 flex items-center gap-1 text-tiny font-semibold text-[#5E6588] md:text-sm">
-            <MapPin className="h-4 w-4" />
+            <MapPin className="h-4 w-4" aria-hidden="true" />
             {listing.location}
           </p>
           <div className="mt-6 flex flex-wrap gap-3">
@@ -116,7 +134,6 @@ function MobileDetailsView({
               <ListingBadge key={badge.id}>{badge.name}</ListingBadge>
             ))}
           </div>
-
           <AboutSection description={listing.description} compact />
         </section>
       </div>
@@ -126,10 +143,10 @@ function MobileDetailsView({
       <div className="px-5 pb-10">
         <button
           type="button"
-          className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#E8E4DC] py-4 text-small font-extrabold text-[#252423]"
+          className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#E8E4DC] py-4 text-small font-extrabold text-[#252423] transition-all active:scale-[0.99]"
           onClick={handleChatWithVendor}
         >
-          <MessageSquare className="h-5 w-5" />
+          <MessageSquare className="h-5 w-5" aria-hidden="true" />
           Chat with Vendor
         </button>
       </div>
@@ -148,9 +165,11 @@ function MobileDetailsView({
         price={`₦${listing.priceFrom.toLocaleString()}`}
         priceRaw={listing.priceFrom}
         booked={booking.booked}
-        dateRange={booking.dateRange}
-        onDateChange={booking.setDateRange}
+        dateRanges={booking.dateRanges}
+        onDateRangesChange={booking.setDateRanges}
         onBook={booking.bookNow}
+        kind="hall"
+        unavailableDates={listing.unavailableDates ?? []}
       />
       <MobileDock />
       <HomeFooter />
@@ -177,16 +196,22 @@ function TabletDetailsView({
         filter={false}
         category="halls"
       />
-      <TabletPhotoGallery gallery={gallery} name={listing.title} photosHref = {`/listings/halls/${listing.id}/photos`}/>
+      <TabletPhotoGallery
+        gallery={gallery}
+        name={listing.title}
+        photosHref={`/listings/halls/${listing.id}/photos`}
+      />
 
       <div className="mx-auto grid grid-cols-[minmax(0,1fr)_20rem] gap-10 px-8 py-12">
         <div>
           <div className="flex items-start justify-between gap-8">
             <div>
-              <h1 className="text-heading-xl font-extrabold text-[#252423]">{listing.title}</h1>
+              <h1 className="text-heading-xl font-extrabold text-[#252423]">
+                {listing.title}
+              </h1>
               <span className="flex gap-8">
                 <p className="mt-1 flex items-center gap-1 text-sm font-semibold text-[#5E6588]">
-                  <MapPin className="h-4 w-4" />
+                  <MapPin className="h-4 w-4" aria-hidden="true" />
                   {listing.location}
                 </p>
                 <DetailsActions />
@@ -201,7 +226,7 @@ function TabletDetailsView({
             </div>
           </div>
 
-          <div className="mt-7 flex gap-3">
+          <div className="mt-7 flex flex-wrap gap-3">
             {listing.badges.map((badge) => (
               <ListingBadge key={badge.id}>{badge.name}</ListingBadge>
             ))}
@@ -219,15 +244,13 @@ function TabletDetailsView({
 
         <BookingCard
           booked={booking.booked}
-          dateRange={booking.dateRange}
-          guests={booking.guests}
-          time={booking.time}
+          dateRanges={booking.dateRanges}
+          onDateRangesChange={booking.setDateRanges}
           onBook={booking.bookNow}
           listingId={listing.id}
-          onDateChange={booking.setDateRange}
-          onGuestsChange={booking.setGuests}
-          onTimeChange={booking.setTime}
           price={`₦${listing.priceFrom.toLocaleString()}`}
+          priceRaw={listing.priceFrom}
+          unavailableDates={listing.unavailableDates ?? []}
         />
       </div>
 
@@ -263,7 +286,12 @@ function DesktopDetailsView({
 
         <div className="flex flex-1">
           <div className="flex-1 px-8 pb-12 pt-10">
-            <DesktopPhotoGallery gallery={gallery} name={listing.title} photosHref = {`/listings/halls/${listing.id}/photos`}/>
+            <DesktopPhotoGallery
+              gallery={gallery}
+              name={listing.title}
+              photosHref={`/listings/halls/${listing.id}/photos`}
+            />
+
             <div className="grid grid-cols-[minmax(0,1fr)_20rem] gap-20 py-12 pr-8">
               <div>
                 <div className="flex items-start justify-between gap-8">
@@ -273,7 +301,7 @@ function DesktopDetailsView({
                     </h1>
                     <span className="flex gap-8">
                       <p className="mt-1 flex items-center gap-1 text-sm font-semibold text-[#5E6588]">
-                        <MapPin className="h-4 w-4" />
+                        <MapPin className="h-4 w-4" aria-hidden="true" />
                         {listing.location}
                       </p>
                       <DetailsActions />
@@ -288,7 +316,7 @@ function DesktopDetailsView({
                   </div>
                 </div>
 
-                <div className="mt-7 flex gap-3">
+                <div className="mt-7 flex flex-wrap gap-3">
                   {listing.badges.map((badge) => (
                     <ListingBadge key={badge.id}>{badge.name}</ListingBadge>
                   ))}
@@ -306,15 +334,13 @@ function DesktopDetailsView({
 
               <BookingCard
                 booked={booking.booked}
-                dateRange={booking.dateRange}
-                guests={booking.guests}
-                time={booking.time}
+                dateRanges={booking.dateRanges}
+                onDateRangesChange={booking.setDateRanges}
                 onBook={booking.bookNow}
-                onDateChange={booking.setDateRange}
-                onGuestsChange={booking.setGuests}
-                onTimeChange={booking.setTime}
                 price={`₦${listing.priceFrom.toLocaleString()}`}
+                priceRaw={listing.priceFrom}
                 listingId={listing.id}
+                unavailableDates={listing.unavailableDates ?? []}
               />
             </div>
 
@@ -351,22 +377,39 @@ export default function HallDetails() {
   if (isLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-bg-primary">
-        <div className="animate-pulse text-xl font-extrabold text-[#5E6588]">Loading venue...</div>
+        <div className="flex flex-col items-center gap-4">
+          <span
+            className="h-9 w-9 animate-spin rounded-full border-2 border-[#B9401D]/25 border-t-[#B9401D]"
+            aria-hidden="true"
+          />
+          <p className="text-sm font-bold text-[#5E6588]">Loading venue…</p>
+        </div>
       </div>
     );
   }
 
   if (isError || !listing) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-bg-primary">
-        <div className="text-xl font-extrabold text-[#B9401D]">Failed to load venue details.</div>
+      <div className="flex min-h-screen items-center justify-center bg-bg-primary px-6">
+        <div className="max-w-sm rounded-[2rem] bg-white p-8 text-center shadow-[0_20px_44px_rgba(34,27,18,0.07)]">
+          <h1 className="text-xl font-extrabold text-[#B9401D]">
+            Failed to load venue details
+          </h1>
+          <p className="mt-2 text-sm font-semibold text-[#5E6588]">
+            This venue may have been removed. Try exploring other venues.
+          </p>
+        </div>
       </div>
     );
   }
 
   return (
     <main className="min-h-screen bg-bg-primary text-[#252423]">
-      <MobileDetailsView booking={booking} listing={listing} similarVenues={similarVenues} />
+      <MobileDetailsView
+        booking={booking}
+        listing={listing}
+        similarVenues={similarVenues}
+      />
       <TabletDetailsView
         booking={booking}
         handleSearch={handleSearch}

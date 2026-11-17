@@ -1,354 +1,378 @@
-import Image from "next/image";
-import type { BookingFilterTab, BookingRecord, PaginationState } from "../types";
-import { formatCurrency } from "../utils";
+"use client";
+
+import { useRouter } from "next/navigation";
+import { AnimatePresence, motion } from "framer-motion";
+import { CalendarClock, CheckCircle2, ChevronRight, Inbox, XCircle } from "lucide-react";
+import { Dropdown, type DropdownOption } from "@/components/ui/Dropdown";
+import type {
+  BookingFilterKey,
+  BookingFilterTab,
+  BookingRecord,
+  BookingSortKey,
+  PaginationState,
+} from "../types";
 import BookingStatusPill from "./BookingStatusPill";
+import VendorPagination from "./VendorPagination";
+import { EASE_OUT, VENDOR_CARD, initialsOf } from "../utils";
+
+/** Concise trigger labels; the full phrasing lives in the popover. */
+const SORT_LABELS: Record<BookingSortKey, string> = {
+  newest: "Newest",
+  oldest: "Oldest",
+  event_soonest: "Event date",
+  amount_desc: "Price: high → low",
+  amount_asc: "Price: low → high",
+};
+
+const SORT_DESCRIPTIONS: Record<BookingSortKey, string> = {
+  newest: "Most recently booked first",
+  oldest: "Earliest bookings first",
+  event_soonest: "Soonest event date first",
+  amount_desc: "Highest booking value first",
+  amount_asc: "Lowest booking value first",
+};
+
+const SORT_ORDER: BookingSortKey[] = [
+  "newest",
+  "oldest",
+  "event_soonest",
+  "amount_desc",
+  "amount_asc",
+];
+
+const EMPTY_COPY: Record<
+  BookingFilterKey,
+  { icon: React.ElementType; title: string; body: string }
+> = {
+  pending: {
+    icon: Inbox,
+    title: "Nothing awaiting confirmation",
+    body: "Paid bookings appear here the moment a customer pays. Confirm within 24 hours to keep them.",
+  },
+  upcoming: {
+    icon: CalendarClock,
+    title: "No upcoming events",
+    body: "Confirmed bookings with a future event date will show up here.",
+  },
+  completed: {
+    icon: CheckCircle2,
+    title: "No completed events yet",
+    body: "Once an event wraps and the payout settles, it moves here.",
+  },
+  cancelled: {
+    icon: XCircle,
+    title: "Nothing cancelled",
+    body: "Declined, cancelled and refunded bookings are kept here for your records.",
+  },
+};
 
 interface BookingsTableProps {
   filters: BookingFilterTab[];
-  activeFilterKey?: BookingFilterTab["key"];
+  activeFilterKey: BookingFilterKey;
+  sort: BookingSortKey;
   bookings: BookingRecord[];
   pagination: PaginationState;
-  onFilterChange?: (key: BookingFilterTab["key"]) => void;
-  onPageChange?: (page: number) => void;
-  onConfirmBooking?: (bookingId: string) => void;
+  isLoading?: boolean;
+  onFilterChange: (key: BookingFilterKey) => void;
+  onSortChange: (key: BookingSortKey) => void;
+  onPageChange: (page: number) => void;
+  onConfirmBooking: (bookingId: string) => void;
   confirmingBookingId?: string | null;
 }
 
-function formatDateRange(dateRange: BookingRecord["dateRange"]) {
-  if (dateRange.end) return `${dateRange.start} – ${dateRange.end}`;
-  return dateRange.start;
+function ClientAvatar({ booking }: { booking: BookingRecord }) {
+  if (booking.clientAvatarUrl) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element -- avatars may be Google-hosted; plain img avoids remote-pattern failures
+      <img
+        src={booking.clientAvatarUrl}
+        alt=""
+        referrerPolicy="no-referrer"
+        className="h-11 w-11 shrink-0 rounded-full object-cover ring-1 ring-[#F0E9DF]"
+      />
+    );
+  }
+  return (
+    <span
+      aria-hidden="true"
+      className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#F7D1C8] text-xs font-extrabold text-[#B9401D]"
+    >
+      {initialsOf(booking.clientName)}
+    </span>
+  );
+}
+
+function CardSkeleton() {
+  return (
+    <div className="flex items-center gap-3 rounded-2xl border border-[#F0E9DF] bg-white p-4">
+      <div className="h-11 w-11 shrink-0 animate-pulse rounded-full bg-[#EFE7DE]" />
+      <div className="flex-1 space-y-2">
+        <div className="h-3.5 w-1/2 animate-pulse rounded bg-[#EFE7DE]" />
+        <div className="h-3 w-2/3 animate-pulse rounded bg-[#EFE7DE]" />
+      </div>
+      <div className="h-6 w-20 animate-pulse rounded-full bg-[#EFE7DE]" />
+    </div>
+  );
+}
+
+/**
+ * Deliberately minimal: who booked, what they booked, where it stands, and the
+ * one action that matters. Everything else lives on the booking detail page.
+ */
+function BookingRow({
+  booking,
+  index,
+  onConfirm,
+  isConfirming,
+}: {
+  booking: BookingRecord;
+  index: number;
+  onConfirm: (id: string) => void;
+  isConfirming: boolean;
+}) {
+  const router = useRouter();
+  const canConfirm = booking.status === "paid" || booking.status === "funds_held";
+  const href = `/vendor/bookings/${booking.id}`;
+  const open = () => router.push(href);
+
+  return (
+    <motion.li
+      layout
+      initial={{ opacity: 0, y: 14 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, scale: 0.97, transition: { duration: 0.18 } }}
+      transition={{ duration: 0.35, delay: Math.min(index * 0.04, 0.24), ease: EASE_OUT }}
+    >
+      <div
+        role="button"
+        tabIndex={0}
+        onClick={open}
+        onKeyDown={(event) => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            open();
+          }
+        }}
+        aria-label={`Open booking ${booking.bookingRef} for ${booking.clientName}`}
+        className="group cursor-pointer rounded-2xl border border-[#F0E9DF] bg-white p-4 transition-all hover:-translate-y-0.5 hover:border-[#B9401D]/25 hover:shadow-[0_14px_30px_rgba(36,28,18,0.08)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#B9401D]"
+      >
+        <div className="flex items-center gap-3">
+          <ClientAvatar booking={booking} />
+
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-sm font-extrabold text-[#252423] transition-colors group-hover:text-[#B9401D]">
+              {booking.clientName}
+            </p>
+            <p className="mt-0.5 truncate text-tiny font-semibold text-[#9A9AAE]">
+              {booking.listing.name}
+            </p>
+          </div>
+
+          <div className="flex shrink-0 items-center gap-2">
+            <BookingStatusPill status={booking.status} />
+            <ChevronRight
+              className="hidden h-4 w-4 text-[#C4BBAE] transition-transform group-hover:translate-x-0.5 group-hover:text-[#B9401D] sm:block"
+              aria-hidden="true"
+            />
+          </div>
+        </div>
+
+        {canConfirm && (
+          <button
+            type="button"
+            onClick={(event) => {
+              event.stopPropagation();
+              onConfirm(booking.id);
+            }}
+            disabled={isConfirming}
+            className="mt-3 flex w-full items-center justify-center gap-2 rounded-full bg-[#B9401D] px-4 py-2.5 text-xs font-extrabold text-white transition-all hover:brightness-95 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto sm:px-6"
+          >
+            {isConfirming ? (
+              <>
+                Confirming
+                <span
+                  className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/40 border-t-white"
+                  aria-hidden="true"
+                />
+              </>
+            ) : (
+              "Confirm booking"
+            )}
+          </button>
+        )}
+      </div>
+    </motion.li>
+  );
 }
 
 export default function BookingsTable({
   filters,
-  activeFilterKey = "all",
+  activeFilterKey,
+  sort,
   bookings,
   pagination,
+  isLoading = false,
   onFilterChange,
+  onSortChange,
   onPageChange,
   onConfirmBooking,
   confirmingBookingId,
 }: BookingsTableProps) {
-  // const rangeStart = (pagination.currentPage - 1) * pagination.itemsPerPage + 1;
-  // const rangeEnd = Math.min(pagination.currentPage * pagination.itemsPerPage, pagination.totalItems);
-  const rangeStart = pagination.totalItems === 0 ? 0 : (pagination.currentPage - 1) * pagination.itemsPerPage + 1;
-  const rangeEnd = Math.min(pagination.currentPage * pagination.itemsPerPage, pagination.totalItems);
+  const filterOptions: DropdownOption<BookingFilterKey>[] = filters.map((tab) => ({
+    value: tab.key,
+    label: tab.label,
+    description: `${tab.count} booking${tab.count === 1 ? "" : "s"}`,
+  }));
+
+  const sortOptions: DropdownOption<BookingSortKey>[] = SORT_ORDER.map((key) => ({
+    value: key,
+    label: SORT_LABELS[key],
+    description: SORT_DESCRIPTIONS[key],
+  }));
+
+  const empty = EMPTY_COPY[activeFilterKey];
+  const EmptyIcon = empty.icon;
 
   return (
-    <section className="animate-fade-up overflow-hidden rounded-card border border-black/5 bg-white shadow-card">
-      {/* Filter bar */}
-      <div className="flex flex-col gap-4 border-b border-black/5 px-0 py-3 sm:flex-row sm:items-center sm:justify-between md:px-8">
-        <div className="flex flex-wrap md:gap-1 rounded-md bg-bg-tertiary justify-between py-2 px-2">
-          {filters.map((tab) => {
-            const isActive = tab.key === activeFilterKey;
-            return (
-              <button
-                key={tab.key}
-                type="button"
-                onClick={() => onFilterChange?.(tab.key)}
-                className={`rounded-full md:px-4 px-2.5 py-2 md:text-sm text-xs font-bold transition-all duration-300 xs:px-5 ${
-                  isActive
-                    ? "bg-white text-accent-primary shadow-card"
-                    : "text-text-primary/55 hover:bg-white/60 hover:text-text-primary"
-                }`}
-              >
-                {tab.label}
-                <span className="ml-1.5 text-xs font-medium text-text-primary/40">{tab.count}</span>
-              </button>
-            );
-          })}
+    <section className={`${VENDOR_CARD} overflow-hidden`}>
+      {/*  Controls  */}
+      <div className="border-b border-[#F0E9DF] p-4 md:p-6">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <h2 className="font-man text-base font-extrabold text-[#252423] md:text-lg">
+              Bookings
+            </h2>
+            <p className="mt-0.5 text-tiny font-semibold text-[#9A9AAE]">
+              Tap a booking for full details and actions
+            </p>
+          </div>
         </div>
 
-        <div className="items-center gap-3 hidden md:flex">
-          <button
-            type="button"
-            className="flex items-center gap-2 rounded-full border border-black/10 px-4 py-2 md:text-sm text-micro font-medium text-text-primary/60 transition-all duration-300 hover:border-accent-primary/30 hover:bg-bg-tertiary"
-          >
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-              <path d="M4 6H20L14 13V19L10 21V13L4 6Z" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" />
-            </svg>
-            Filters
-          </button>
-          <button
-            type="button"
-            className="flex items-center gap-2 rounded-full border border-black/10 px-4 py-2 md:text-sm text-micro font-medium text-text-primary/60 transition-all duration-300 hover:border-accent-primary/30 hover:bg-bg-tertiary"
-          >
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-              <path d="M6 8H18M8 12H16M10 16H14" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
-            </svg>
-            Sort: Newest
-          </button>
+        {/* Mobile: labelled Filter + Sort dropdowns replace the tab strip */}
+        <div className="mt-4 grid grid-cols-2 gap-3 md:hidden">
+          <Dropdown<BookingFilterKey>
+            label="Filter"
+            options={filterOptions}
+            value={activeFilterKey}
+            onChange={onFilterChange}
+            size="md"
+            width="content"
+            aria-label="Filter bookings"
+          />
+          <Dropdown<BookingSortKey>
+            label="Sort by"
+            options={sortOptions}
+            value={sort}
+            onChange={onSortChange}
+            size="md"
+            align="right"
+            width="content"
+            aria-label="Sort bookings"
+          />
         </div>
-      </div>
 
-      {/* Desktop / tablet table */}
-      <div className="hidden overflow-x-auto md:block">
-        <table className="w-full border-collapse text-left">
-          <thead>
-            <tr className="bg-bg-tertiary/40">
-              <th className="px-8 py-4 text-xs font-bold uppercase tracking-widest text-text-primary/45">
-                Client Name
-              </th>
-              <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-text-primary/45">
-                Event Type
-              </th>
-              <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-text-primary/45">
-                Date &amp; Time
-              </th>
-              <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-text-primary/45">
-                Venue / Service
-              </th>
-              <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-text-primary/45">
-                Total Price
-              </th>
-              <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-text-primary/45">
-                Status
-              </th>
-              <th className="px-8 py-4 text-right text-xs font-bold uppercase tracking-widest text-text-primary/45">
-                Actions
-              </th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-black/5">
-          {bookings.length === 0 ? (
-              <tr>
-                <td colSpan={7} className="px-8 py-12 text-center text-sm text-text-primary/50">
-                  No bookings found in this category.
-                </td>
-              </tr>
-            ) : (
-              bookings.map((booking, index) => {
-                const isCancelled = booking.status === "cancelled";
-                const canConfirm = booking.status === "paid" || booking.status === "funds_held";
-                return (
-                  <tr
-                    key={booking.id}
-                    className="group transition-all duration-300 hover:-translate-y-0.5 hover:bg-bg-tertiary/50 hover:shadow-card"
-                    style={{ animationDelay: `${index * 60}ms` }}
-                  >
-                    <td className="px-8 py-6">
-                      <div className="flex items-center gap-3">
-                        <div className="relative h-10 w-10 overflow-hidden rounded-full border border-black/10 transition-transform duration-500 group-hover:scale-110">
-                          <Image
-                            src={booking.clientAvatarUrl}
-                            alt={booking.clientName}
-                            fill
-                            sizes="40px"
-                            className="object-cover"
-                          />
-                        </div>
-                        <div>
-                          <p className="font-bold text-text-primary transition-colors group-hover:text-accent-primary">
-                            {booking.clientName}
-                          </p>
-                          <p className="text-xs text-text-primary/45">{booking.bookingRef}</p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-6">
-                      <span className="text-sm font-medium text-text-primary">{booking.eventType}</span>
-                    </td>
-                    <td className="px-6 py-6">
-                      <div className={`text-sm ${isCancelled ? "opacity-60" : ""}`}>
-                        <p className={`font-semibold text-text-primary ${isCancelled ? "line-through" : ""}`}>
-                          {formatDateRange(booking.dateRange)}
-                        </p>
-                        <p className="text-xs text-text-primary/45">{booking.time}</p>
-                      </div>
-                    </td>
-                    <td className={`px-6 py-6 ${isCancelled ? "opacity-60" : ""}`}>
-                      <div className="text-sm">
-                        <p className="font-medium text-text-primary">{booking.listing.name}</p>
-                        <p className="text-xs font-bold text-accent-primary">{booking.listing.label}</p>
-                      </div>
-                    </td>
-                    <td className={`px-6 py-6 ${isCancelled ? "opacity-60" : ""}`}>
-                      <p className="font-bold text-text-primary">{formatCurrency(booking.totalPrice)}</p>
-                    </td>
-                    <td className="px-6 py-6">
-                      <BookingStatusPill status={booking.status} />
-                    </td>
-                    <td className="px-8 py-6 text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        <button
-                          type="button"
-                          title="Chat with client"
-                          className="rounded-full p-2 text-text-primary/50 transition-all duration-300 hover:scale-110 hover:bg-bg-tertiary hover:text-accent-primary"
-                        >
-                          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                            <path
-                              d="M4 5.5C4 4.67157 4.67157 4 5.5 4H18.5C19.3284 4 20 4.67157 20 5.5V15.5C20 16.3284 19.3284 17 18.5 17H8L4 20.5V5.5Z"
-                              stroke="currentColor"
-                              strokeWidth="1.6"
-                              strokeLinejoin="round"
-                            />
-                          </svg>
-                        </button>
-                        {canConfirm && (
-                          <button
-                            type="button"
-                            onClick={() => onConfirmBooking?.(booking.id)}
-                            disabled={confirmingBookingId === booking.id}
-                            className="flex items-center gap-1.5 rounded-full bg-accent-primary px-4 py-2 text-xs font-bold text-white shadow-card transition-all duration-300 hover:scale-105 hover:shadow-card-hover active:scale-95 disabled:opacity-60"
-                          >
-                            {confirmingBookingId === booking.id ? (
-                              <>
-                                Confirming
-                                <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/40 border-t-white" />
-                              </>
-                            ) : (
-                              "Confirm Booking"
-                            )}
-                          </button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })
-            )}
-          </tbody>
-        </table>
-      </div>
-
-      {/* Mobile card list */}
-      <ul className="divide-y divide-black/5 md:hidden">
-        {bookings.length === 0 ? (
-          <li className="p-8 text-center md:text-sm text-xs text-text-primary/50">No bookings found.</li>
-        ) : (
-          bookings.map((booking) => {
-            const isCancelled = booking.status === "cancelled";
-            const canConfirm = booking.status === "paid" || booking.status === "funds_held";
-            return (
-              <li key={booking.id} className="p-5 xs:p-6">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex items-center gap-3">
-                    <div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-full border border-black/10">
-                      <Image
-                        src={booking.clientAvatarUrl}
-                        alt={booking.clientName}
-                        fill
-                        sizes="44px"
-                        className="object-cover"
-                      />
-                    </div>
-                    <div>
-                      <p className="font-bold text-text-primary">{booking.clientName}</p>
-                      <p className="text-xs text-text-primary/45">{booking.bookingRef}</p>
-                    </div>
-                  </div>
-                  <BookingStatusPill status={booking.status} />
-                </div>
-
-                <div className={`mt-4 grid grid-cols-2 gap-3 text-sm ${isCancelled ? "opacity-60" : ""}`}>
-                  <div>
-                    <p className="text-[11px] font-bold uppercase tracking-wider text-text-primary/40">
-                      Event
-                    </p>
-                    <p className="mt-0.5 font-medium text-text-primary">{booking.eventType}</p>
-                  </div>
-                  <div>
-                    <p className="text-[11px] font-bold uppercase tracking-wider text-text-primary/40">
-                      Total
-                    </p>
-                    <p className="mt-0.5 font-bold text-text-primary">{formatCurrency(booking.totalPrice)}</p>
-                  </div>
-                  <div>
-                    <p className="text-[11px] font-bold uppercase tracking-wider text-text-primary/40">
-                      Date &amp; Time
-                    </p>
-                    <p className={`mt-0.5 font-medium text-text-primary ${isCancelled ? "line-through" : ""}`}>
-                      {formatDateRange(booking.dateRange)}
-                    </p>
-                    <p className="text-xs text-text-primary/45">{booking.time}</p>
-                  </div>
-                  <div>
-                    <p className="text-[11px] font-bold uppercase tracking-wider text-text-primary/40">
-                      Venue / Service
-                    </p>
-                    <p className="mt-0.5 font-medium text-text-primary">{booking.listing.name}</p>
-                    <p className="text-xs font-bold text-accent-primary">{booking.listing.label}</p>
-                  </div>
-                </div>
-
-                <div className="mt-4 flex items-center gap-2">
-                  {canConfirm && (
-                    <button
-                      type="button"
-                      onClick={() => onConfirmBooking?.(booking.id)}
-                      disabled={confirmingBookingId === booking.id}
-                      className="flex flex-1 items-center justify-center gap-2 rounded-full bg-accent-primary px-4 py-2.5 text-xs font-bold text-white shadow-card active:scale-95 disabled:opacity-60"
-                    >
-                      {confirmingBookingId === booking.id ? "Confirming…" : "Confirm Booking"}
-                    </button>
+        {/* Desktop: tabs + sort. No redundant Filters button. */}
+        <div className="mt-4 hidden items-center justify-between gap-4 md:flex">
+          <div
+            role="tablist"
+            aria-label="Booking status"
+            className="flex flex-wrap items-center gap-1 rounded-full bg-[#F4F1EA] p-1"
+          >
+            {filters.map((tab) => {
+              const isActive = tab.key === activeFilterKey;
+              return (
+                <button
+                  key={tab.key}
+                  type="button"
+                  role="tab"
+                  aria-selected={isActive}
+                  onClick={() => onFilterChange(tab.key)}
+                  className={`relative rounded-full px-4 py-2 text-xs font-extrabold transition-colors lg:px-5 ${
+                    isActive ? "text-white" : "text-[#6B5F57] hover:text-[#252423]"
+                  }`}
+                >
+                  {isActive && (
+                    <motion.span
+                      layoutId="vendor-booking-tab"
+                      className="absolute inset-0 rounded-full bg-[#252423]"
+                      transition={{ type: "spring", stiffness: 420, damping: 34 }}
+                    />
                   )}
-                  <button
-                    type="button"
-                    title="Chat with client"
-                    className="rounded-full border border-black/10 p-2.5 text-text-primary/50 active:scale-90"
+                  <span className="relative z-10">{tab.label}</span>
+                  <span
+                    className={`relative z-10 ml-1.5 rounded-full px-1.5 py-0.5 text-[10px] tabular-nums ${
+                      isActive ? "bg-white/20" : "bg-white"
+                    }`}
                   >
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                      <path
-                        d="M4 5.5C4 4.67157 4.67157 4 5.5 4H18.5C19.3284 4 20 4.67157 20 5.5V15.5C20 16.3284 19.3284 17 18.5 17H8L4 20.5V5.5Z"
-                        stroke="currentColor"
-                        strokeWidth="1.6"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
-                  </button>
-                </div>
-              </li>
-            );
-          })
-        )}
-      </ul>
+                    {tab.count}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
 
-      {/* Pagination */}
-      <div className="flex flex-col items-center justify-between gap-1 border-t border-black/5 bg-bg-tertiary/40 px-5 py-6 xs:flex-row md:px-8">
-        <p className="md:text-sm text-tiny font-medium text-text-primary/55">
-          Showing {rangeStart}-{rangeEnd} of {pagination.totalItems} bookings
-        </p>
-        <div className="flex items-center gap-1.5">
-          <button
-            type="button"
-            aria-label="Previous page"
-            disabled={pagination.currentPage === 1}
-            onClick={() => onPageChange?.(pagination.currentPage - 1)}
-            className="flex h-9 w-9 items-center justify-center rounded-full text-text-primary/40 transition-all duration-300 hover:scale-110 hover:bg-bg-tertiary disabled:pointer-events-none disabled:opacity-30"
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-              <path d="M15 6L9 12L15 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </button>
-
-          {Array.from({ length: Math.min(pagination.totalPages, 3) }, (_, i) => i + 1).map((page) => (
-            <button
-              key={page}
-              type="button"
-              aria-current={page === pagination.currentPage ? "page" : undefined}
-              onClick={() => onPageChange?.(page)}
-              className={`flex h-9 w-9 items-center justify-center rounded-full text-sm font-bold transition-all duration-300 hover:scale-110 ${
-                page === pagination.currentPage
-                  ? "bg-accent-primary text-white"
-                  : "text-text-primary/60 hover:bg-bg-tertiary"
-              }`}
-            >
-              {page}
-            </button>
-          ))}
-
-          <button
-            type="button"
-            aria-label="Next page"
-            disabled={pagination.currentPage === pagination.totalPages}
-            onClick={() => onPageChange?.(pagination.currentPage + 1)}
-            className="flex h-9 w-9 items-center justify-center rounded-full text-text-primary/40 transition-all duration-300 hover:scale-110 hover:bg-bg-tertiary disabled:pointer-events-none disabled:opacity-30"
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-              <path d="M9 6L15 12L9 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </button>
+          <Dropdown<BookingSortKey>
+            label="Sort by"
+            options={sortOptions}
+            value={sort}
+            onChange={onSortChange}
+            size="md"
+            align="right"
+            width="content"
+            className="w-52 shrink-0"
+            aria-label="Sort bookings"
+          />
         </div>
+      </div>
+
+      {/*  Cards - identical minimal shape on every breakpoint  */}
+      <div className="p-4 md:p-6">
+        {isLoading ? (
+          <div className="grid gap-3 md:grid-cols-2">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <CardSkeleton key={i} />
+            ))}
+          </div>
+        ) : bookings.length === 0 ? (
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.35, ease: EASE_OUT }}
+            className="flex flex-col items-center rounded-2xl border border-dashed border-[#E0D5C7] bg-[#FDFBF7] px-6 py-14 text-center"
+          >
+            <span className="flex h-14 w-14 items-center justify-center rounded-full bg-[#F7F2EA] text-[#B9401D]">
+              <EmptyIcon className="h-6 w-6" aria-hidden="true" />
+            </span>
+            <h3 className="mt-4 text-sm font-extrabold text-[#252423]">{empty.title}</h3>
+            <p className="mt-1 max-w-sm text-tiny font-semibold leading-5 text-[#9A9AAE]">
+              {empty.body}
+            </p>
+          </motion.div>
+        ) : (
+          <motion.ul layout className="grid gap-3 md:grid-cols-2">
+            <AnimatePresence mode="popLayout">
+              {bookings.map((booking, index) => (
+                <BookingRow
+                  key={booking.id}
+                  booking={booking}
+                  index={index}
+                  onConfirm={onConfirmBooking}
+                  isConfirming={confirmingBookingId === booking.id}
+                />
+              ))}
+            </AnimatePresence>
+          </motion.ul>
+        )}
+      </div>
+
+      {/*  Pagination  */}
+      <div className="border-t border-[#F0E9DF] bg-[#FDFBF7] px-4 py-4 md:px-6">
+        <VendorPagination
+          pagination={pagination}
+          onPageChange={onPageChange}
+          itemLabel="bookings"
+          layoutId="vendor-bookings-pagination"
+        />
       </div>
     </section>
   );
