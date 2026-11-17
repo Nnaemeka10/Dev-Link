@@ -31,21 +31,21 @@ export function naira(value: number): string {
 
 export function formatDay(value: string | null | undefined): string {
   const d = toDay(value ?? "");
-  if (!d) return "—";
+  if (!d) return "-";
   return d.toLocaleDateString("en-NG", { day: "numeric", month: "short", year: "numeric" });
 }
 
 export function formatDayShort(value: string | null | undefined): string {
   const d = toDay(value ?? "");
-  if (!d) return "—";
+  if (!d) return "-";
   return d.toLocaleDateString("en-NG", { day: "numeric", month: "short" });
 }
 
 /** Timestamps render on the 24-hour clock, matching the booking flow. */
 export function formatTimestamp(value: string | null | undefined): string {
-  if (!value) return "—";
+  if (!value) return "-";
   const d = new Date(value);
-  if (Number.isNaN(d.getTime())) return "—";
+  if (Number.isNaN(d.getTime())) return "-";
   return d.toLocaleString("en-NG", {
     day: "numeric",
     month: "short",
@@ -59,7 +59,7 @@ export function formatTimestamp(value: string | null | undefined): string {
 /** "today" / "tomorrow" / "in 4 days" / "3 days ago" - for payout ETAs. */
 export function formatRelativeDay(value: string | null | undefined): string {
   const d = toDay(value ?? "");
-  if (!d) return "—";
+  if (!d) return "-";
   const today = toDay(new Date())!;
   const delta = diffDays(today, d);
   if (delta === 0) return "today";
@@ -116,7 +116,7 @@ export function spanLabel(span: DaySpan): string {
 }
 
 export function spansLabel(spans: DaySpan[], max = 2): string {
-  if (spans.length === 0) return "—";
+  if (spans.length === 0) return "-";
   const parts = spans.slice(0, max).map(spanLabel);
   return parts.join(" · ") + (spans.length > max ? ` +${spans.length - max} more` : "");
 }

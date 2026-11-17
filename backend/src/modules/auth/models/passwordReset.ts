@@ -190,7 +190,7 @@ export const PasswordResetModel = {
         };
     },
 
-    // OTP verified successfully -> issue short-lived session token, reset attempts
+    // OTP verified successfully - issue short-lived session token, reset attempts
     async markVerifiedAndIssueSession(id: number): Promise<{ sessionToken: string; sessionExpiresAt: Date }> {
         const db = getDB();
         const sessionToken = this.generateSessionToken();

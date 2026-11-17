@@ -43,9 +43,9 @@ interface ConfirmationStepProps {
 
 /** 24-hour clock, straight from the stored TIME column. */
 function formatTime(value: string | null | undefined): string {
-  if (!value) return "—";
+  if (!value) return "-";
   const match = /^(\d{1,2}):(\d{2})/.exec(value);
-  if (!match) return "—";
+  if (!match) return "-";
   return `${match[1].padStart(2, "0")}:${match[2]}`;
 }
 
@@ -93,7 +93,7 @@ function bookedSpans(
 }
 
 function spansLabel(spans: { from: Date; to: Date }[]): string {
-  if (spans.length === 0) return "—";
+  if (spans.length === 0) return "-";
   const parts = spans.map((span) =>
     diffDays(span.from, span.to) === 0
       ? formatDay(span.from)
@@ -133,7 +133,7 @@ function statusMeta(booking: BookingDetailsResponse): {
         tone: "pending",
         title: "Payment received",
         subtitle:
-          "Your money is safe in escrow. The vendor has 24 hours to confirm — if they don't, we cancel and refund you in full automatically. Nothing for you to do.",
+          "Your money is safe in escrow. The vendor has 24 hours to confirm - if they don't, we cancel and refund you in full automatically. Nothing for you to do.",
         pill: "Awaiting confirmation",
         icon: Clock3,
       };
@@ -290,7 +290,7 @@ export default function ConfirmationStep({ wizard, variant = "desktop" }: Confir
   const image = booking.listing_image || FALLBACK_IMAGE;
 
   const preparationNote = isService
-    ? "Ensure all necessary facilities are prepared on time — power, water, space and access as agreed with your vendor."
+    ? "Ensure all necessary facilities are prepared on time - power, water, space and access as agreed with your vendor."
     : "Ensure to check into the venue on time and follow the house rules shared by your host.";
 
   async function handleChatWithVendor() {
@@ -716,7 +716,7 @@ export default function ConfirmationStep({ wizard, variant = "desktop" }: Confir
                       month: "long",
                       year: "numeric",
                     })
-                  : "—",
+                  : "-",
               ],
             ].map(([label, value]) => (
               <tr key={String(label)}>

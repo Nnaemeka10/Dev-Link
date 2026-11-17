@@ -70,7 +70,7 @@ function useDecisionDeadline(paidAt: string | null, active: boolean) {
   if (!active || !paidAt) return null;
   const deadline = new Date(paidAt).getTime() + CONFIRM_WINDOW_HOURS * 3_600_000;
   const msLeft = deadline - now;
-  if (msLeft <= 0) return { expired: true, label: "Auto-refund is due — confirm now" };
+  if (msLeft <= 0) return { expired: true, label: "Auto-refund is due - confirm now" };
   const hours = Math.floor(msLeft / 3_600_000);
   const minutes = Math.floor((msLeft % 3_600_000) / 60_000);
   return {
@@ -286,7 +286,7 @@ export default function VendorBookingDetailPage() {
             <DetailRow
               icon={CalendarDays}
               label={`Event dates · ${dayCount} ${dayCount === 1 ? "day" : "days"}`}
-              value={spans.map(spanLabel).join(" · ") || "—"}
+              value={spans.map(spanLabel).join(" · ") || "-"}
               wide
             />
             <DetailRow icon={Clock} label="Time (24h)" value={booking.time} />
@@ -406,7 +406,7 @@ export default function VendorBookingDetailPage() {
             <span className="tabular-nums text-[#252423]">{naira(booking.money.subtotal)}</span>
           </div>
           <div className="flex justify-between gap-4 text-sm font-semibold text-[#5E6588]">
-            <span>VAT (7.5%) — remitted to tax authority</span>
+            <span>VAT (7.5%) - remitted to tax authority</span>
             <span className="tabular-nums text-[#9A9AAE]">{naira(booking.money.vat)}</span>
           </div>
           <div className="flex justify-between gap-4 text-sm font-semibold text-[#5E6588]">
@@ -452,7 +452,7 @@ export default function VendorBookingDetailPage() {
         {booking.excludedDates.length > 0 && (
           <div className="mt-3 rounded-2xl bg-[#F7F2EA] px-4 py-3">
             <p className="text-[10px] font-extrabold uppercase tracking-[0.14em] text-[#9A9AAE]">
-              Removed days — not booked, not charged
+              Removed days - not booked, not charged
             </p>
             <p className="mt-1 text-sm font-bold text-[#252423]">
               {booking.excludedDates.map((d) => formatDayShort(d)).join(", ")}
@@ -708,14 +708,14 @@ export default function VendorBookingDetailPage() {
           <tbody>
             {[
               ["Client", booking.client.name],
-              ["Client email", booking.client.email ?? "—"],
-              ["Client phone", booking.client.phone ?? "—"],
+              ["Client email", booking.client.email ?? "-"],
+              ["Client phone", booking.client.phone ?? "-"],
               [isService ? "Service" : "Venue", booking.listing.name],
               [
                 isService ? "Event location" : "Venue address",
-                booking.location ?? "—",
+                booking.location ?? "-",
               ],
-              ["Event dates", spans.map(spanLabel).join(" · ") || "—"],
+              ["Event dates", spans.map(spanLabel).join(" · ") || "-"],
               ["Time (24h)", booking.time],
               ...(booking.packageName ? [["Package", booking.packageName]] : []),
               ...(!isService

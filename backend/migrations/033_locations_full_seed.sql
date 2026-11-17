@@ -1,11 +1,11 @@
 -- 033_locations_full_seed.sql
 -- Complete national coverage: all 774 LGAs across the 36 states + FCT.
 -- Migration 021 seeded only a representative subset (Lagos, FCT, Rivers, Ogun),
--- which left the state -> LGA dropdowns dead for most of the country and made
+-- which left the state - LGA dropdowns dead for most of the country and made
 -- the booking event-location form impossible to complete outside those states.
 --
 -- id convention matches 021 exactly: `${state_id}-${slugify(name)}` where
--- slugify = lowercase, non-alphanumeric runs -> '-', trimmed '-'.
+-- slugify = lowercase, non-alphanumeric runs - '-', trimmed '-'.
 -- Rows that already exist (same id) are skipped, so this is safe to re-run
 -- and never renames anything the publish flow already resolved against.
 -- lib/db.ts wraps this file in BEGIN/COMMIT - no explicit transaction here.

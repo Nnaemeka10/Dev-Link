@@ -5,7 +5,7 @@
 //   activeThreadId: string | null;
 //   threads: ChatThread[];
 //   messages: Record<string, ChatMessage[]>;
-//   typingStatus: Record<string, boolean>; // threadId -> isTyping
+//   typingStatus: Record<string, boolean>; // threadId - isTyping
   
 //   // Actions
 //   setActiveThread: (id: string | null) => void;
@@ -77,7 +77,7 @@ interface ChatState {
   activeThreadId: string | null;
   threads: ChatThread[];
   messages: Record<string, ChatMessage[]>;
-  typingStatus: Record<string, boolean>; // threadId -> isTyping
+  typingStatus: Record<string, boolean>; // threadId - isTyping
   
   // Actions
   setActiveThread: (id: string | null) => void;

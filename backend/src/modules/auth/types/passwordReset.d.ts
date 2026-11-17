@@ -15,7 +15,7 @@ export interface PasswordResetToken {
     expires_at: Date;
     used_at: Date | null;
 
-    // OTP verification -> session exchange
+    // OTP verification - session exchange
     session_token: string | null;
     session_expires_at: Date | null;
     verified_at: Date | null;

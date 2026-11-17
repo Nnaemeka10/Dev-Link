@@ -21,7 +21,7 @@ function clampStep(step: number, maxStep: number) {
   return Math.min(Math.max(step, 1), maxStep);
 }
 
-/** "HH:MM" / "HH:MM:SS" -> minutes past midnight, or null. */
+/** "HH:MM" / "HH:MM:SS" - minutes past midnight, or null. */
 function timeToMinutes(value: unknown): number | null {
   if (typeof value !== "string") return null;
   const match = /^(\d{1,2}):(\d{2})/.exec(value.trim());

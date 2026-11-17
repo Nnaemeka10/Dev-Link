@@ -141,7 +141,7 @@ export default function VendorDashboardPage() {
                 </p>
                 <p className="mt-0.5 text-tiny font-semibold leading-5 text-[#9A9AAE]">
                   {summary.nextPayoutListing
-                    ? `${summary.nextPayoutListing} — `
+                    ? `${summary.nextPayoutListing} - `
                     : ""}
                   released to your bank on {formatDay(summary.nextPayoutDate)}, once the
                   dispute window closes.

@@ -11,7 +11,7 @@ import { countSelectedDays } from "@/features/search/utils/rangeSelection";
 const SLOT_MINUTES = 30;
 const DAY_END = 23 * 60 + 30; // 23:30 - last selectable slot
 
-/** "HH:MM" / "HH:MM:SS" -> minutes past midnight, or null. */
+/** "HH:MM" / "HH:MM:SS" - minutes past midnight, or null. */
 function toMinutes(value: string | null | undefined): number | null {
   if (!value) return null;
   const match = /^(\d{1,2}):(\d{2})/.exec(value.trim());
@@ -35,7 +35,7 @@ function band(minutes: number): string {
 }
 
 function formatDuration(minutes: number): string {
-  if (minutes <= 0) return "—";
+  if (minutes <= 0) return "-";
   const h = Math.floor(minutes / 60);
   const m = minutes % 60;
   if (h === 0) return `${m} mins`;
@@ -65,7 +65,7 @@ interface DateTimeSectionProps {
   onStartTimeChange: (time: string) => void;
   onEndTimeChange: (time: string) => void;
   listingId: string;
-  /** Hall operating window. Null/invalid -> full-day fallback. */
+  /** Hall operating window. Null/invalid - full-day fallback. */
   availableFrom?: string | null;
   availableTo?: string | null;
 }

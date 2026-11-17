@@ -369,7 +369,7 @@ export default function PaymentStep({ form, listing, wizard, variant = "desktop"
       const popup = await getPaystack();
       const transaction = popup.resumeTransaction(initRes.accessCode, {
         onSuccess: async () => {
-          // Money moved: convert hold -> paid. Never release from here on.
+          // Money moved: convert hold - paid. Never release from here on.
           paymentSucceededRef.current = true;
           liveHoldRef.current = null;
           stopHeartbeat();
@@ -588,7 +588,7 @@ export default function PaymentStep({ form, listing, wizard, variant = "desktop"
       <section className="px-5 pb-44">
         <h1 className="text-2xl font-extrabold text-[#252423]">Review &amp; pay</h1>
         <p className="mt-2 text-sm font-semibold leading-6 text-[#5E6588]">
-          Your dates are held only while the secure payment popup is open — close it and they&apos;re
+          Your dates are held only while the secure payment popup is open - close it and they&apos;re
           released instantly. Payment stays in escrow until the vendor confirms.
         </p>
 
@@ -632,7 +632,7 @@ export default function PaymentStep({ form, listing, wizard, variant = "desktop"
           Review &amp; pay
         </h1>
         <p className="mt-3 max-w-xl text-lg leading-8 text-[#5E6588]">
-          Tap Pay to open our secure payment popup. Your dates are held only while it&apos;s open —
+          Tap Pay to open our secure payment popup. Your dates are held only while it&apos;s open -
           close it and they&apos;re released instantly. Payment is held in escrow until the vendor
           confirms.
         </p>

@@ -81,7 +81,7 @@ function CopyRow({ label, value }: { label: string; value: string | null }) {
           {label}
         </p>
         <p className="mt-0.5 truncate font-mono text-tiny font-bold text-[#252423] md:text-xs">
-          {value ?? "—"}
+          {value ?? "-"}
         </p>
       </div>
       {value && (
@@ -131,7 +131,7 @@ function TimelineStep({
       </span>
       <div className="min-w-0">
         <p className="text-sm font-extrabold text-[#252423]">{label}</p>
-        <p className="mt-0.5 text-tiny font-semibold text-[#9A9AAE]">{at ?? "—"}</p>
+        <p className="mt-0.5 text-tiny font-semibold text-[#9A9AAE]">{at ?? "-"}</p>
       </div>
     </motion.li>
   );
@@ -311,7 +311,7 @@ export default function VendorTransactionDetailPage() {
               <span className="tabular-nums text-[#252423]">{naira(booking.subtotal)}</span>
             </div>
             <div className="flex justify-between gap-4 text-sm font-semibold text-[#5E6588]">
-              <span>VAT (7.5%) — remitted to tax authority</span>
+              <span>VAT (7.5%) - remitted to tax authority</span>
               <span className="tabular-nums text-[#9A9AAE]">{naira(booking.vat)}</span>
             </div>
             <div className="flex justify-between gap-4 text-sm font-semibold text-[#5E6588]">
@@ -349,13 +349,13 @@ export default function VendorTransactionDetailPage() {
             <DetailRow
               icon={data.isService ? Package : Building2}
               label={data.isService ? "Service" : "Venue"}
-              value={data.listing?.title ?? "—"}
+              value={data.listing?.title ?? "-"}
             />
             <DetailRow icon={Hash} label="Reference" value={booking.reference} />
             <DetailRow
               icon={CalendarDays}
               label={`Event dates · ${dayCount} ${dayCount === 1 ? "day" : "days"}`}
-              value={spans.map(spanLabel).join(" · ") || "—"}
+              value={spans.map(spanLabel).join(" · ") || "-"}
             />
             <DetailRow icon={Clock} label="Time (24h)" value={booking.time} />
             {booking.packageName && (
@@ -484,13 +484,13 @@ export default function VendorTransactionDetailPage() {
           <tbody>
             {[
               ["Credited to", destinationLabel],
-              ["Account name", data.destination?.accountName ?? "—"],
+              ["Account name", data.destination?.accountName ?? "-"],
               ["Credited on", formatTimestamp(data.createdAt)],
-              [data.isService ? "Service" : "Venue", data.listing?.title ?? "—"],
-              ["Client", data.client?.name ?? "—"],
-              ["Event dates", spans.map(spanLabel).join(" · ") || "—"],
-              ["Time (24h)", booking?.time ?? "—"],
-              ["Transfer code", data.payout?.transferCode ?? "—"],
+              [data.isService ? "Service" : "Venue", data.listing?.title ?? "-"],
+              ["Client", data.client?.name ?? "-"],
+              ["Event dates", spans.map(spanLabel).join(" · ") || "-"],
+              ["Time (24h)", booking?.time ?? "-"],
+              ["Transfer code", data.payout?.transferCode ?? "-"],
             ].map(([label, value]) => (
               <tr key={String(label)}>
                 <td className="py-2 pr-6 align-top font-semibold text-[#6B5F57]">{label}</td>

@@ -4,7 +4,7 @@ BEGIN;
 -- 1. SCHEMA: Create Saved Listings Table
 -- ==========================================
 
--- Many-to-many relationship: users <----> listings
+-- Many-to-many relationship: users <---- listings
 CREATE TABLE IF NOT EXISTS saved_listings (
     user_id BIGINT NOT NULL 
         REFERENCES users(id) ON DELETE CASCADE,

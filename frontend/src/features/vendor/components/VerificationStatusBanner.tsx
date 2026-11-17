@@ -63,21 +63,21 @@ export default function VerificationStatusBanner() {
     case "manual_review":
       tone = "danger";
       Icon = AlertCircle;
-      title = "Payouts paused — account under review";
+      title = "Payouts paused - account under review";
       body = "We need to manually confirm your account details before payouts can resume.";
       ctaLabel = "Review account";
       break;
     case "failed":
       tone = "danger";
       Icon = AlertCircle;
-      title = "Payouts paused — verification failed";
+      title = "Payouts paused - verification failed";
       body = "Double-check your account number and BVN, then submit them again.";
       ctaLabel = "Fix details";
       break;
     default:
       tone = "danger";
       Icon = AlertCircle;
-      title = "Payouts paused — no payout account";
+      title = "Payouts paused - no payout account";
       body = "Add a verified bank account so client payments can reach you.";
       ctaLabel = "Add payout method";
       break;

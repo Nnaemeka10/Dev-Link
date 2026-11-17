@@ -119,7 +119,7 @@ export default function DeclineBookingModal({
             <p className="text-tiny font-semibold leading-5 text-[#8A3A1C] md:text-xs">
               Declining refunds {booking.clientName}{" "}
               <strong>{naira(booking.refundAmount)}</strong> in full, immediately. This
-              can&apos;t be undone — the customer will need to book again.
+              can&apos;t be undone - the customer will need to book again.
             </p>
           </div>
 

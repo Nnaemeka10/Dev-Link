@@ -47,7 +47,7 @@ function timeLabel(start: unknown, end: unknown): string {
   const a = time24(start);
   const b = time24(end);
   if (a && b) return `${a} – ${b}`;
-  return a ?? b ?? '—';
+  return a ?? b ?? '-';
 }
 
 function hallLocation(row: any): string | null {
@@ -456,7 +456,7 @@ export const declineBooking = async (req: Request, res: Response) => {
       });
     }
 
-    const description = `${DECLINE_REASONS[reason]}${trimmedNote ? ` — ${trimmedNote}` : ''}`;
+    const description = `${DECLINE_REASONS[reason]}${trimmedNote ? ` - ${trimmedNote}` : ''}`;
 
     // executeRefund re-reads and locks the booking, reverses the escrow
     // ledger under `refund:<bookingId>`, releases the blocked dates and
