@@ -1,6 +1,6 @@
 import type { LegalDocument } from "./legalTypes";
 
-const LAST_UPDATED = "7 November 2026";
+const LAST_UPDATED = "18 November 2026";
 
 export const TERMS_OF_SERVICE: LegalDocument = {
   eyebrow: "Legal · Terms",
@@ -15,11 +15,11 @@ export const TERMS_OF_SERVICE: LegalDocument = {
       blocks: [
         {
           type: "p",
-          text: "EventVnV provides an online marketplace for event halls and event services in Nigeria. By accessing or using EventVnV - as a guest, customer or vendor - you agree to be bound by these terms and our Privacy Policy.",
+          text: "EventVnV provides an online marketplace for event halls and event services in Nigeria. By accessing or using EventVnV - as a guest, customer or vendor - you agree to be bound by these terms, our Privacy Policy and our Cookie Policy.",
         },
         {
           type: "p",
-          text: "If you do not agree with any part of these terms, please do not use the platform. If you have questions, contact support@eventvnv.ng before transacting.",
+          text: "If you do not agree with any part of these terms, please do not use the platform. If you have questions, contact support@eventvnv.com before transacting.",
         },
       ],
     },
@@ -63,7 +63,7 @@ export const TERMS_OF_SERVICE: LegalDocument = {
         {
           type: "list",
           items: [
-            "When you initiate checkout, we temporarily reserve your selected dates for up to 30 minutes so you can complete payment without another customer taking them. During a hold, those dates cannot be checked out by other customers.",
+            "When you open the secure payment popup, we temporarily reserve your selected dates so you can complete payment without another customer taking them. During a hold, those dates cannot be checked out by other customers.",
             "Holds are free of charge, are not confirmed bookings, and lapse automatically if payment is not completed. Only a successfully paid booking secures your dates.",
             "Prices are set by vendors. EventVnV adds Value Added Tax (VAT) at 7.5% of the vendor's price (the subtotal). The amount payable at checkout is the subtotal plus VAT.",
             "EventVnV charges vendors a commission of 10% of the subtotal. VAT is collected on behalf of, and remitted to, the relevant tax authority and does not form part of EventVnV's revenue.",
@@ -83,7 +83,7 @@ export const TERMS_OF_SERVICE: LegalDocument = {
         },
         {
           type: "p",
-          text: "Initiating checkout temporarily reserves your selected dates while the payment popup is open. The hold is maintained automatically during an active payment session and is released immediately when you close or cancel the popup. If your session ends unexpectedly (for example, a browser crash or loss of connectivity), the hold lapses automatically within a few minutes. Each payment session is limited to 30 minutes, after which the hold is released and checkout must be restarted. Holds are free, are not confirmed bookings, and only a successfully paid booking secures your dates.",
+          text: "Your dates are held only while the payment popup is open. The hold is maintained automatically during an active payment session and is released immediately when you close or cancel the popup. If your session ends unexpectedly (for example, a browser crash or loss of connectivity), the hold lapses automatically within a few minutes. Each payment session is limited to 30 minutes, after which the hold is released and checkout must be restarted. Holds are free, are not confirmed bookings, and only a successfully paid booking secures your dates.",
         },
         {
           type: "p",
@@ -100,12 +100,11 @@ export const TERMS_OF_SERVICE: LegalDocument = {
           items: [
             "Unpaid bookings simply expire - nothing to cancel, nothing to refund.",
             "If you cancel a paid booking before the vendor confirms, you receive a full refund.",
-            "Starting checkout places a temporary 30-minute hold on your selected dates. Holds are free, create no charge, and lapse automatically if payment is not completed within the hold window.",
-            "A hold is not a confirmed booking. Dates are secured only when payment succeeds.",
+            "Closing or cancelling the payment popup releases your dates immediately. A hold is not a confirmed booking; dates are secured only when payment succeeds.",
             "If a vendor does not confirm a paid booking within 24 hours of payment, the booking is cancelled and a full refund is issued automatically.",
             "You may request a full refund up to 24 hours after the event ends. Refund requests are reviewed by our support team before being processed.",
             "Once the dispute window closes and the vendor has been paid, refunds are no longer available through the platform; contact support for exceptional cases.",
-            "Only full refunds are supported. Unpaid bookings simply expire - nothing to cancel, nothing to refund.",
+            "Only full refunds are supported. For partial adjustments, contact support@eventvnv.com.",
             "Refunds are returned to your original payment method; how quickly they land depends on your bank or payment provider.",
           ],
         },
@@ -119,7 +118,7 @@ export const TERMS_OF_SERVICE: LegalDocument = {
           type: "p",
           text: "VAT shown at checkout is collected by EventVnV as agent for the vendor and remitted to the relevant tax authority. Vendors remain responsible for their own income tax and any other taxes applicable to their business.",
         },
-      ]
+      ],
     },
     {
       id: "vendor-obligations",
@@ -206,7 +205,7 @@ export const TERMS_OF_SERVICE: LegalDocument = {
       blocks: [
         {
           type: "p",
-          text: "You may stop using EventVnV and delete your account at any time. We may suspend or remove accounts that violate these terms, create risk for others, or abuse the platform.",
+          text: "You may deactivate your account at any time from your profile, and ask us to delete your data. We may suspend or remove accounts that violate these terms, create risk for others, or abuse the platform.",
         },
         {
           type: "p",
@@ -235,7 +234,7 @@ export const TERMS_OF_SERVICE: LegalDocument = {
         {
           type: "list",
           items: [
-            "Support - support@eventvnv.ng",
+            "Support - support@eventvnv.com",
             "EventVnV Support, Lagos, Nigeria",
           ],
         },

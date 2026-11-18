@@ -1,4 +1,5 @@
 "use client";
+
 import { motion } from "framer-motion";
 import Image from "next/image";
 import {
@@ -6,19 +7,15 @@ import {
 } from "lucide-react";
 import StatusPill from "./StatusPill";
 import type { MyBookingItem } from "../saved.types";
+import {
+  bookedSpans,
+  countBookedDays,
+  formatEventTimeLabel,
+  spansLabel,
+} from "@/lib/datetime";
 
 const FALLBACK = "https://images.unsplash.com/photo-1519167758481-83f550bb49b3?w=800&q=80";
 
-function fmtDate(d: string): string {
-  return new Date(`${d}T00:00:00`).toLocaleDateString("en-NG", { day: "numeric", month: "short", year: "numeric" });
-}
-function fmtTime(t: string | null): string {
-  if (!t) return "";
-  const [h, m] = t.split(":");
-  const d = new Date();
-  d.setHours(Number(h), Number(m));
-  return d.toLocaleTimeString("en-NG", { hour: "numeric", minute: "2-digit" });
-}
 function naira(n: number): string {
   return `₦${n.toLocaleString("en-NG")}`;
 }
@@ -66,12 +63,18 @@ function ActionButton({
 
 export default function BookingCard({ booking, index, onAction }: BookingCardProps) {
   const cancelled = booking.bucket === "cancelled";
-  const dateLabel =
-    booking.startDate === booking.endDate
-      ? fmtDate(booking.startDate)
-      : `${fmtDate(booking.startDate)} – ${fmtDate(booking.endDate)}`;
-  const timeLabel = [fmtTime(booking.startTime), fmtTime(booking.endTime)].filter(Boolean).join(" – ");
-  const refundPending = booking.refundStatus === "pending" || booking.refundStatus === "approved" || booking.refundStatus === "processing";
+
+  // Split-range aware: shows the days actually booked, not the envelope.
+  const spans = bookedSpans(booking.startDate, booking.endDate, booking.excludedDates);
+  const dayCount = countBookedDays(spans);
+  const dateLabel = spansLabel(spans, 2);
+  const timeLabel = formatEventTimeLabel(booking.startTime, booking.endTime);
+
+  const refundPending =
+    booking.refundStatus === "pending" ||
+    booking.refundStatus === "approved" ||
+    booking.refundStatus === "processing";
+
   const refundClosedTitle = !booking.refundWindowOpen
     ? "Refund window closed - available until 24 hours after the event ends"
     : refundPending
@@ -104,15 +107,23 @@ export default function BookingCard({ booking, index, onAction }: BookingCardPro
           </div>
 
           <div className="mt-3 grid gap-1.5 text-xs font-semibold text-[#5E6588]">
-            <span className="flex items-center gap-1.5">
-              <CalendarDays className="h-3.5 w-3.5 shrink-0 text-[#B9401D]" /> {dateLabel}
-              {booking.excludedDates.length > 0 && (
-                <span className="rounded-full bg-[#F7F2EA] px-2 py-0.5 text-[10px] font-bold text-[#9A9AAE]">
-                  {booking.excludedDates.length} day{booking.excludedDates.length > 1 ? "s" : ""} removed
-                </span>
-              )}
+            <span className="flex items-start gap-1.5">
+              <CalendarDays className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#B9401D]" />
+              <span className="min-w-0">
+                {dateLabel}
+                {dayCount > 0 && (
+                  <span className="ml-1.5 text-[10px] font-bold text-[#9A9AAE]">
+                    · {dayCount} {dayCount === 1 ? "day" : "days"}
+                  </span>
+                )}
+                {booking.excludedDates.length > 0 && (
+                  <span className="ml-1.5 rounded-full bg-[#F7F2EA] px-2 py-0.5 text-[10px] font-bold text-[#9A9AAE]">
+                    {booking.excludedDates.length} day{booking.excludedDates.length > 1 ? "s" : ""} removed
+                  </span>
+                )}
+              </span>
             </span>
-            {timeLabel && (
+            {timeLabel !== "-" && (
               <span className="flex items-center gap-1.5">
                 <Clock className="h-3.5 w-3.5 shrink-0 text-[#B9401D]" /> {timeLabel}
               </span>

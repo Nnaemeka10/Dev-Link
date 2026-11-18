@@ -7,12 +7,14 @@ import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import {
   Building2,
+  CalendarClock,
   CalendarDays,
   Check,
   CheckCircle2,
   Clock,
   Clock3,
   Copy,
+  CreditCard,
   FileText,
   Hash,
   Mail,
@@ -26,7 +28,15 @@ import {
   UsersRound,
   XCircle,
 } from "lucide-react";
-import { addDays, dayKey, diffDays, toDay } from "@/features/search/utils/rangeSelection";
+import {
+  allSpansLabel,
+  bookedSpans,
+  countBookedDays,
+  formatDayShort,
+  formatEventTimeLabel,
+  formatWatDateTimeLabelled,
+  spansLabel,
+} from "@/lib/datetime";
 import { createConversation } from "@/features/chat/chat.api";
 import type { BookingDetailsResponse } from "../booking.types";
 import type { useBookingWizard } from "../hooks/useBookingWizard";
@@ -39,68 +49,8 @@ interface ConfirmationStepProps {
   variant?: "desktop" | "mobile";
 }
 
-//  Formatting helpers
-
-/** 24-hour clock, straight from the stored TIME column. */
-function formatTime(value: string | null | undefined): string {
-  if (!value) return "-";
-  const match = /^(\d{1,2}):(\d{2})/.exec(value);
-  if (!match) return "-";
-  return `${match[1].padStart(2, "0")}:${match[2]}`;
-}
-
-function formatDay(date: Date): string {
-  return date.toLocaleDateString("en-NG", { day: "numeric", month: "short", year: "numeric" });
-}
-
 function naira(value: number): string {
   return `₦${value.toLocaleString("en-NG", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-}
-
-/**
- * The API stores an ENVELOPE (start_date → end_date) plus the interior days
- * the customer removed. Rebuild the contiguous spans so the confirmation
- * shows the dates that were actually booked - including single, non-adjacent
- * days - instead of a misleading continuous range. Mirrors resolveStay.
- */
-function bookedSpans(
-  startStr: string,
-  endStr: string,
-  excluded: string[]
-): { from: Date; to: Date }[] {
-  const start = toDay(startStr);
-  const end = toDay(endStr);
-  if (!start || !end || end < start) return [];
-  const holes = new Set<string>();
-  for (const raw of excluded ?? []) {
-    const day = toDay(raw);
-    if (day) holes.add(dayKey(day));
-  }
-  const spans: { from: Date; to: Date }[] = [];
-  let segStart: Date | null = null;
-  for (let cursor = start; cursor <= end; cursor = addDays(cursor, 1)) {
-    if (holes.has(dayKey(cursor))) {
-      if (segStart) {
-        spans.push({ from: segStart, to: addDays(cursor, -1) });
-        segStart = null;
-      }
-    } else if (!segStart) {
-      segStart = cursor;
-    }
-  }
-  if (segStart) spans.push({ from: segStart, to: end });
-  return spans;
-}
-
-function spansLabel(spans: { from: Date; to: Date }[]): string {
-  if (spans.length === 0) return "-";
-  const parts = spans.map((span) =>
-    diffDays(span.from, span.to) === 0
-      ? formatDay(span.from)
-      : `${formatDay(span.from)} – ${formatDay(span.to)}`
-  );
-  if (parts.length <= 3) return parts.join(" · ");
-  return `${parts.slice(0, 3).join(" · ")} +${parts.length - 3} more`;
 }
 
 type StatusTone = "success" | "pending" | "closed";
@@ -261,10 +211,17 @@ export default function ConfirmationStep({ wizard, variant = "desktop" }: Confir
   const tones = TONE_STYLES[meta.tone];
   const StatusIcon = meta.icon;
 
+  // Split-range aware: the days actually booked, rebuilt from envelope + holes.
   const spans = bookedSpans(booking.start_date, booking.end_date, booking.excluded_dates ?? []);
-  const dateLabel = spansLabel(spans);
-  const dayCount = spans.reduce((total, span) => total + diffDays(span.from, span.to) + 1, 0);
-  const timeLabel = `${formatTime(booking.start_time)} – ${formatTime(booking.end_time)}`;
+  const dateLabel = spansLabel(spans, 3);
+  const receiptDateLabel = allSpansLabel(spans);
+  const dayCount = countBookedDays(spans);
+
+  // Event clock is Lagos wall-clock; booked-on / paid-on are instants pinned
+  // to WAT with the label, so this page and the vendor's copy always agree.
+  const timeLabel = formatEventTimeLabel(booking.start_time, booking.end_time);
+  const bookedOnLabel = formatWatDateTimeLabelled(booking.created_at);
+  const paidOnLabel = booking.paid_at ? formatWatDateTimeLabelled(booking.paid_at) : null;
 
   const total = Number(booking.total_amount) || 0;
   const subtotal =
@@ -335,6 +292,7 @@ export default function ConfirmationStep({ wizard, variant = "desktop" }: Confir
       >
         <StatusIcon className={mobile ? "h-9 w-9" : "h-9 w-9"} aria-hidden="true" />
       </motion.span>
+
       <h1
         className={`mt-6 font-extrabold tracking-[-0.02em] text-[#252423] ${
           mobile ? "text-2xl" : "text-4xl md:text-5xl"
@@ -391,7 +349,9 @@ export default function ConfirmationStep({ wizard, variant = "desktop" }: Confir
         label={`Event dates · ${dayCount} ${dayCount === 1 ? "day" : "days"}`}
         value={dateLabel}
       />
-      <SummaryRow icon={Clock} label="Time (24h)" value={timeLabel} />
+      <SummaryRow icon={Clock} label="Event time" value={timeLabel} />
+      <SummaryRow icon={CalendarClock} label="Booked on" value={bookedOnLabel} />
+      {paidOnLabel && <SummaryRow icon={CreditCard} label="Paid on" value={paidOnLabel} />}
       {!isService && (
         <SummaryRow
           icon={UsersRound}
@@ -407,6 +367,9 @@ export default function ConfirmationStep({ wizard, variant = "desktop" }: Confir
         <SummaryRow icon={StickyNote} label="Your notes to the vendor" value={booking.preferences} />
       )}
       <SummaryRow icon={Hash} label="Booking reference" value={booking.booking_reference} />
+      <p className="text-center text-[10px] font-bold uppercase tracking-widest text-[#C4BBAE]">
+        All times shown in West Africa Time (WAT · Lagos)
+      </p>
     </>
   );
 
@@ -422,6 +385,7 @@ export default function ConfirmationStep({ wizard, variant = "desktop" }: Confir
   const vendorCard = (
     <div className={mobile ? "rounded-4xl bg-[#F4F1EA] p-6" : "rounded-4xl bg-[#F4F1EA] p-8"}>
       <h2 className="text-lg font-extrabold text-[#252423] md:text-xl">Your vendor</h2>
+
       <div className="mt-5 flex items-center gap-4">
         <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-white text-xl font-extrabold text-[#B9401D] shadow-sm">
           {vendorName.charAt(0).toUpperCase()}
@@ -576,7 +540,7 @@ export default function ConfirmationStep({ wizard, variant = "desktop" }: Confir
 
               <div className="mt-8 grid gap-7 border-t border-[#E8DED2] pt-8 md:grid-cols-2">
                 <SummaryText label="Event dates" value={dateLabel} />
-                <SummaryText label="Time (24h)" value={timeLabel} />
+                <SummaryText label="Event time" value={timeLabel} />
                 {booking.package_name && (
                   <SummaryText label="Package" value={booking.package_name} />
                 )}
@@ -592,6 +556,8 @@ export default function ConfirmationStep({ wizard, variant = "desktop" }: Confir
                     value={`Up to ${Number(booking.listing_capacity).toLocaleString()} guests`}
                   />
                 )}
+                <SummaryText label="Booked on" value={bookedOnLabel} />
+                {paidOnLabel && <SummaryText label="Paid on" value={paidOnLabel} />}
                 <SummaryText label="Total paid" value={naira(total)} />
                 <SummaryText
                   label="Status"
@@ -602,21 +568,17 @@ export default function ConfirmationStep({ wizard, variant = "desktop" }: Confir
                 <SummaryText label="Reference" value={booking.booking_reference} />
               </div>
 
+              <p className="mt-5 text-[10px] font-bold uppercase tracking-widest text-[#C4BBAE]">
+                All times shown in West Africa Time (WAT · Lagos)
+              </p>
+
               {(booking.excluded_dates?.length ?? 0) > 0 && (
                 <div className="mt-7 rounded-2xl bg-[#F7F2EA] px-4 py-3.5">
                   <p className="text-[10px] font-extrabold uppercase tracking-[0.14em] text-[#9A9AAE]">
                     Removed days · not charged
                   </p>
                   <p className="mt-1 text-sm font-bold text-[#252423]">
-                    {(booking.excluded_dates ?? [])
-                      .map((raw) => {
-                        const day = toDay(raw);
-                        return day
-                          ? day.toLocaleDateString("en-NG", { day: "numeric", month: "short" })
-                          : null;
-                      })
-                      .filter(Boolean)
-                      .join(", ")}
+                    {(booking.excluded_dates ?? []).map((raw) => formatDayShort(raw)).join(", ")}
                   </p>
                 </div>
               )}
@@ -659,14 +621,10 @@ export default function ConfirmationStep({ wizard, variant = "desktop" }: Confir
                     <span>{naira(total)}</span>
                   </div>
                 </div>
-                {booking.paid_at && (
+                {paidOnLabel && (
                   <p className="mt-4 flex items-center gap-2 text-tiny font-semibold text-[#9A9AAE]">
-                    <CheckCircle2 className="h-3.5 w-3.5 text-[#2D5A27]" aria-hidden="true" />
-                    Paid on {new Date(booking.paid_at).toLocaleDateString("en-NG", {
-                      day: "numeric",
-                      month: "long",
-                      year: "numeric",
-                    })}
+                    <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-[#2D5A27]" aria-hidden="true" />
+                    Paid on {paidOnLabel}
                   </p>
                 )}
               </div>
@@ -677,7 +635,8 @@ export default function ConfirmationStep({ wizard, variant = "desktop" }: Confir
 
       {/*  Printable receipt 
           Rendered off-screen so the print stylesheet can promote it without
-          any dependency. Mirrors the saved-hub ReceiptModal pattern. */}
+          any dependency. Mirrors the saved-hub ReceiptModal pattern: every
+          booked day listed, booked-on / paid-on pinned to WAT with the label. */}
       <div
         id="booking-receipt-print"
         aria-hidden="true"
@@ -702,22 +661,14 @@ export default function ConfirmationStep({ wizard, variant = "desktop" }: Confir
               [isService ? "Service" : "Venue", booking.listing_title],
               ["Vendor", vendorName],
               [locationLabel, locationValue],
-              ["Event dates", dateLabel],
-              ["Time (24h)", timeLabel],
+              ["Event dates", receiptDateLabel],
+              ["Event time", timeLabel],
               ...(booking.package_name ? [["Package", booking.package_name]] : []),
               ...(!isService
                 ? [["Guests", `${(booking.guests ?? 1).toLocaleString()} expected`]]
                 : []),
-              [
-                "Paid on",
-                booking.paid_at
-                  ? new Date(booking.paid_at).toLocaleDateString("en-NG", {
-                      day: "numeric",
-                      month: "long",
-                      year: "numeric",
-                    })
-                  : "-",
-              ],
+              ["Booked on", bookedOnLabel],
+              ["Paid on", paidOnLabel ?? "-"],
             ].map(([label, value]) => (
               <tr key={String(label)}>
                 <td className="py-2 pr-6 align-top font-semibold text-[#6B5F57]">{label}</td>
@@ -745,6 +696,9 @@ export default function ConfirmationStep({ wizard, variant = "desktop" }: Confir
         </table>
 
         <p className="mt-8 border-t border-[#E8DED2] pt-4 text-center text-[11px] font-semibold text-[#6B5F57]">
+          All times are West Africa Time (WAT · Lagos, UTC+01:00).
+        </p>
+        <p className="mt-1 text-center text-[11px] font-semibold text-[#6B5F57]">
           Payments are held in escrow until the event is delivered. Quote your booking reference
           when contacting support@eventvnv.com · Thank you for booking with EventVnV.
         </p>

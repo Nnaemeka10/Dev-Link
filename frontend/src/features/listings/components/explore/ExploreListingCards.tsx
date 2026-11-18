@@ -1,180 +1,13 @@
-// import Image from "next/image";
-// import Link from "next/link";
-// import { Check, Heart, MapPin, Star } from "lucide-react";
-// import type { ExploreListing } from "../../explore.types";
-// import VerifiedBadge from "./VerifiedBadge";
-
-// interface ExploreCardProps {
-//   listing: ExploreListing;
-//   selected: boolean;
-//   onToggleCompare: () => void;
-// }
-
-// export function MobileExploreCard({ listing, selected, onToggleCompare }: ExploreCardProps) {
-//   const listingHref = `/listings/${listing.kind === "venue" ? "halls" : "services"}/${listing.id}`;
-
-//   return (
-//     <Link href={listingHref} className="group">
-//       <article className="overflow-hidden rounded-[2rem] bg-white shadow-[0_16px_30px_rgba(50,38,23,0.08)]">
-//         <div className="relative h-[20rem] overflow-hidden rounded-t-[2rem]">
-//           <Image src={listing.image} alt={listing.name} fill className="object-cover" sizes="(max-width: 1024px) 90vw" />
-//           {listing.verified ? (
-//             <div className="absolute left-5 top-4">
-//               <VerifiedBadge />
-//             </div>
-//           ) : null}
-//           <button
-//             type="button"
-//             className="absolute right-4 top-4 inline-flex h-9 w-9 items-center justify-center rounded-full bg-white/90 text-[#5D567B]"
-//             aria-label={`Save ${listing.name}`}
-//             onClick={(e) => e.preventDefault()}
-//           >
-//             <Heart className="h-5 w-5" />
-//           </button>
-//         </div>
-
-//         <div className="px-6 py-5">
-//           <div className="flex items-start justify-between gap-4">
-//             <div>
-//               <h2 className="text-[1.35rem] font-extrabold leading-tight text-[#2A2826]">{listing.name}</h2>
-//               <p className="mt-1 flex items-center gap-1 text-sm font-medium text-[#5E6588]">
-//                 <MapPin className="h-4 w-4" />
-//                 {listing.location}
-//               </p>
-//             </div>
-//             <p className="flex items-center gap-1 text-sm font-extrabold text-[#2A2826]">
-//               <Star className="h-4 w-4 fill-[#E3A700] text-[#E3A700]" />
-//               {listing.rating}
-//             </p>
-//           </div>
-
-//           <p className="mt-3 text-xl font-extrabold text-[#B33E1F]">
-//             {listing.price}
-//             <span className="ml-1 text-sm font-bold text-[#5E6588]">/ {listing.unit}</span>
-//           </p>
-
-//           <div className="mt-4 flex flex-wrap gap-2">
-//             {listing.badges.map((badge) => (
-//               <span
-//                 key={badge}
-//                 className="rounded-full bg-[#EEECE7] px-4 py-2 text-[10px] font-extrabold uppercase tracking-[0.08em] text-[#7A7C94]"
-//               >
-//                 {badge}
-//               </span>
-//             ))}
-//           </div>
-
-//           <div className="mt-5 flex items-center justify-between border-t border-[#ECE7DE] pt-4">
-//             <button
-//               type="button"
-//               onClick={(e) => {
-//                 e.preventDefault();
-//                 onToggleCompare();
-//               }}
-//               className="flex items-center gap-2 text-sm font-bold text-[#6A6786]"
-//             >
-//               <span
-//                 className={`inline-flex h-6 w-6 items-center justify-center rounded-md border ${
-//                   selected ? "border-[#B9401D] bg-[#B9401D] text-white" : "border-[#CFC7BD] bg-white"
-//                 }`}
-//               >
-//                 {selected ? <Check className="h-4 w-4" /> : null}
-//               </span>
-//               Compare {listing.kind}
-//             </button>
-//             <button
-//               type="button"
-//               className="text-sm font-extrabold text-[#B9401D]"
-//               onClick={(e) => e.preventDefault()}
-//             >
-//               View Details
-//             </button>
-//           </div>
-//         </div>
-//       </article>
-//     </Link>
-//   );
-// }
-
-// export function DesktopExploreCard({ listing, selected, onToggleCompare }: ExploreCardProps) {
-//   const listingHref = `/listings/${listing.kind === "venue" ? "halls" : "services"}/${listing.id}`;
-
-//   return (
-//     <Link href={listingHref} className="group">
-//       <article className="overflow-hidden rounded-[2rem] bg-white">
-//         <div className="relative h-[17.25rem] overflow-hidden">
-//           <Image src={listing.image} alt={listing.name} fill className="object-cover" sizes="25vw" />
-//           <button
-//             type="button"
-//             className="absolute right-4 top-4 inline-flex h-8 w-8 items-center justify-center rounded-full bg-white/55 text-[#262624] backdrop-blur"
-//             aria-label={`Save ${listing.name}`}
-//             onClick={(e) => e.preventDefault()}
-//           >
-//             <Heart className="h-5 w-5" />
-//           </button>
-//           {listing.verified ? (
-//             <div className="absolute bottom-4 left-5">
-//               <VerifiedBadge />
-//             </div>
-//           ) : null}
-//         </div>
-
-//         <div className="px-5 py-5">
-//           <div className="flex items-start justify-between gap-4">
-//             <h2 className="text-xl font-extrabold text-[#242322]">{listing.name}</h2>
-//             <p className="flex items-center gap-1 text-sm font-extrabold text-[#242322]">
-//               <Star className="h-4 w-4 fill-[#966B00] text-[#966B00]" />
-//               {listing.rating}
-//             </p>
-//           </div>
-
-//           <p className="mt-2 flex items-center gap-1 text-[0.95rem] font-medium text-[#555B7F]">
-//             <MapPin className="h-4 w-4" />
-//             {listing.location}
-//           </p>
-
-//           <div className="mt-5 flex items-end justify-between">
-//             <p className="text-2xl font-extrabold text-[#A83A1C]">
-//               {listing.price}
-//               <span className="ml-1 text-sm font-semibold text-[#555B7F]">/ {listing.unit}</span>
-//             </p>
-//             <button
-//               type="button"
-//               onClick={(e) => {
-//                 e.preventDefault();
-//                 onToggleCompare();
-//               }}
-//               className="flex items-center gap-2 text-sm font-bold text-[#555B7F]"
-//             >
-//               <span
-//                 className={`inline-flex h-5 w-5 items-center justify-center rounded-full border ${
-//                   selected ? "border-[#A83A1C] bg-[#A83A1C] text-white" : "border-[#E0B7AA] bg-white"
-//                 }`}
-//               >
-//                 {selected ? <Check className="h-3.5 w-3.5" /> : null}
-//               </span>
-//               Compare
-//             </button>
-//           </div>
-//         </div>
-//       </article>
-//     </Link>
-//   );
-// }
-
 import Image from "next/image";
 import Link from "next/link";
 import { Check, Heart, MapPin, Star, Users } from "lucide-react";
+import { useRouter } from "next/navigation";
 import type { ExploreListing } from "../../explore.types";
 import VerifiedBadge from "./VerifiedBadge";
 import { useRemoveSavedListing, useSavedListings, useSaveListing } from "../../hooks/useSavedListings";
-import { useRouter } from "next/navigation";
-interface ApiError {
-  status?: number;
-  message?: string;
-}
+import { ApiError } from "@/lib/api";
+import { getCurrentReturnTo, withReturnTo } from "@/features/auth/auth.utils";
 
-// Added this formatter
 function formatNaira(value: number) {
   return new Intl.NumberFormat("en-NG", {
     style: "currency",
@@ -184,10 +17,9 @@ function formatNaira(value: number) {
 }
 
 function formatCapacity(capacity: number | null): string | null {
-    if (!capacity || capacity <= 0) return null;
-    return `Up to ${capacity.toLocaleString()} guests`;
+  if (!capacity || capacity <= 0) return null;
+  return `Up to ${capacity.toLocaleString()} guests`;
 }
-
 
 interface ExploreCardProps {
   listing: ExploreListing;
@@ -206,12 +38,12 @@ function ListingImage({ src, alt, sizes }: { src: string | null; alt: string; si
   }
 
   return (
-    <Image 
-      src={src} 
-      alt={alt} 
-      fill 
-      className="object-cover" 
-      sizes={sizes} 
+    <Image
+      src={src}
+      alt={alt}
+      fill
+      className="object-cover"
+      sizes={sizes}
     />
   );
 }
@@ -219,36 +51,43 @@ function ListingImage({ src, alt, sizes }: { src: string | null; alt: string; si
 // Reusable Save Button Component
 function SaveButton({ listingId, listingName, className }: { listingId: string; listingName: string; className?: string }) {
   const router = useRouter();
-  const { data: savedListings, isError: isUnauthenticated } = useSavedListings();
+  const { data: savedListings, error } = useSavedListings();
   const saveMutation = useSaveListing();
   const removeMutation = useRemoveSavedListing();
 
+  // A real 401 only - never treat a server/network error as "signed out".
+  const isUnauthenticated = error instanceof ApiError && error.status === 401;
+
   // Check if the current listing is in the user's saved list
   const isSaved = savedListings?.some((l) => l.id === listingId) ?? false;
+
+  /** Sign in, then land back on this exact results page (filters + scroll state). */
+  const goToLogin = () => {
+    router.push(withReturnTo("/login", getCurrentReturnTo()));
+  };
 
   const handleSaveClick = (e: React.MouseEvent<HTMLButtonElement>) => {
     // Prevent clicking the button from triggering the Link navigation
     e.preventDefault();
     e.stopPropagation();
 
-    // If the hook threw a 401 error, the user is not logged in
     if (isUnauthenticated) {
-      router.push("/login");
+      goToLogin();
       return;
     }
 
     // If logged in, call the appropriate mutation
     if (isSaved) {
       removeMutation.mutate(listingId, {
-        onError: (error: ApiError) => {
-          if (error?.status === 401) router.push("/login");
-        }
+        onError: (err) => {
+          if (err instanceof ApiError && err.status === 401) goToLogin();
+        },
       });
     } else {
       saveMutation.mutate(listingId, {
-        onError: (error: ApiError) => {
-          if (error?.status === 401) router.push("/login");
-        }
+        onError: (err) => {
+          if (err instanceof ApiError && err.status === 401) goToLogin();
+        },
       });
     }
   };
@@ -263,8 +102,8 @@ function SaveButton({ listingId, listingName, className }: { listingId: string; 
       onClick={handleSaveClick}
       disabled={isMutating}
     >
-      <Heart 
-        className={`h-5 w-5 transition-colors ${isSaved ? "fill-red-500 text-red-500" : "text-[#262624]"}`} 
+      <Heart
+        className={`h-5 w-5 transition-colors ${isSaved ? "fill-red-500 text-red-500" : "text-[#262624]"}`}
       />
     </button>
   );
@@ -272,60 +111,61 @@ function SaveButton({ listingId, listingName, className }: { listingId: string; 
 
 //  Hall type badge
 function HallTypeBadges({ hallTypes }: { hallTypes: ExploreListing["hallTypes"] }) {
-    if (!hallTypes || hallTypes.length === 0) return null;
-    // Show up to 3, with "+N" overflow
-    const visible = hallTypes.slice(0, 3);
-    const overflow = hallTypes.length - visible.length;
+  if (!hallTypes || hallTypes.length === 0) return null;
 
-    return (
-        <div className="flex flex-wrap gap-1.5">
-            {visible.map((ht) => (
-                <span
-                    key={ht.id}
-                    className="rounded-full bg-[#EEECE7] px-2.5 py-1 text-nano font-bold uppercase tracking-[0.04em] text-[#8B5E14]"
-                >
-                    {ht.label}
-                </span>
-            ))}
-            {overflow > 0 && (
-                <span className="rounded-full bg-[#EEECE7] px-2.5 py-1 text-nano font-bold text-[#7A7C94]">
-                    +{overflow}
-                </span>
-            )}
-        </div>
-    );
-}
+  // Show up to 3, with "+N" overflow
+  const visible = hallTypes.slice(0, 3);
+  const overflow = hallTypes.length - visible.length;
 
-//  Capacity display 
-function CapacityBadge({ capacity }: { capacity: number | null }) {
-    const label = formatCapacity(capacity);
-    if (!label) return null;
-    return (
-        <span className="inline-flex items-center gap-1 text-tiny md:text-xs font-semibold text-[#5E6588]">
-            <Users className="h-3.5 w-3.5" />
-            {label}
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      {visible.map((ht) => (
+        <span
+          key={ht.id}
+          className="rounded-full bg-[#EEECE7] px-2.5 py-1 text-nano font-bold uppercase tracking-[0.04em] text-[#8B5E14]"
+        >
+          {ht.label}
         </span>
-    );
+      ))}
+      {overflow > 0 && (
+        <span className="rounded-full bg-[#EEECE7] px-2.5 py-1 text-nano font-bold text-[#7A7C94]">
+          +{overflow}
+        </span>
+      )}
+    </div>
+  );
 }
 
+//  Capacity display
+function CapacityBadge({ capacity }: { capacity: number | null }) {
+  const label = formatCapacity(capacity);
+  if (!label) return null;
+
+  return (
+    <span className="inline-flex items-center gap-1 text-tiny md:text-xs font-semibold text-[#5E6588]">
+      <Users className="h-3.5 w-3.5" />
+      {label}
+    </span>
+  );
+}
 
 export function MobileExploreCard({ listing, selected, onToggleCompare }: ExploreCardProps) {
   const listingHref = `/listings/${listing.kind === "venue" ? "halls" : "services"}/${listing.id}`;
-  const router = useRouter()
+  const router = useRouter();
 
   return (
     <Link href={listingHref} className="group">
       <article className="overflow-hidden rounded-4xl bg-white shadow-[0_16px_30px_rgba(50,38,23,0.08)]">
         <div className="relative h-80 overflow-hidden rounded-t-4xl">
           <ListingImage src={listing.imageUrl} alt={listing.name} sizes="(max-width: 1024px) 90vw" />
-          
+
           {listing.verified && <div className="absolute left-5 top-4"><VerifiedBadge /></div>}
-          
+
           <SaveButton
             listingId={listing.id}
             listingName={listing.name}
             className="absolute right-4 top-4 inline-flex h-9 w-9 items-center justify-center rounded-full bg-white/90 text-[#5D567B] disabled:opacity-50"
-          />      
+          />
         </div>
 
         <div className="px-6 py-5">
@@ -343,12 +183,11 @@ export function MobileExploreCard({ listing, selected, onToggleCompare }: Explor
             </p>
           </div>
 
-          
-            {listing.kind === "venue" && (
-              <div className="mt-3">
-                <HallTypeBadges hallTypes={listing.hallTypes} />
-              </div>
-            )}
+          {listing.kind === "venue" && (
+            <div className="mt-3">
+              <HallTypeBadges hallTypes={listing.hallTypes} />
+            </div>
+          )}
 
           <p className="mt-3 text-base md:text-xl font-extrabold text-[#B33E1F]">
             {formatNaira(listing.priceFrom)}
@@ -356,9 +195,9 @@ export function MobileExploreCard({ listing, selected, onToggleCompare }: Explor
           </p>
 
           {listing.kind === "venue" && (
-              <div className="mt-2">
-               <CapacityBadge capacity={listing.capacity} />
-               </div>
+            <div className="mt-2">
+              <CapacityBadge capacity={listing.capacity} />
+            </div>
           )}
 
           <div className="mt-4 flex flex-wrap gap-2">
@@ -387,13 +226,14 @@ export function MobileExploreCard({ listing, selected, onToggleCompare }: Explor
               </span>
               Compare {listing.kind}
             </button>
-            <button 
-              type="button" 
-              className="text-small md:text-sm font-extrabold text-[#B9401D]" 
-              onClick={(e) =>{ 
-                e.preventDefault()
-                router.push(listingHref)
-              }}>
+            <button
+              type="button"
+              className="text-small md:text-sm font-extrabold text-[#B9401D]"
+              onClick={(e) => {
+                e.preventDefault();
+                router.push(listingHref);
+              }}
+            >
               View Details
             </button>
           </div>
@@ -404,7 +244,6 @@ export function MobileExploreCard({ listing, selected, onToggleCompare }: Explor
 }
 
 export function DesktopExploreCard({ listing, selected, onToggleCompare }: ExploreCardProps) {
-
   const listingHref = `/listings/${listing.kind === "venue" ? "halls" : "services"}/${listing.id}`;
 
   return (
@@ -412,11 +251,13 @@ export function DesktopExploreCard({ listing, selected, onToggleCompare }: Explo
       <article className="overflow-hidden rounded-4xl bg-white">
         <div className="relative h-69 overflow-hidden">
           <ListingImage src={listing.imageUrl} alt={listing.name} sizes="25vw" />
-           <SaveButton 
-            listingId={listing.id} 
-            listingName={listing.name} 
+
+          <SaveButton
+            listingId={listing.id}
+            listingName={listing.name}
             className="absolute right-4 top-4 inline-flex h-8 w-8 items-center justify-center rounded-full bg-white/55 text-[#262624] backdrop-blur disabled:opacity-50"
           />
+
           {listing.verified && <div className="absolute bottom-4 left-5"><VerifiedBadge /></div>}
         </div>
 
@@ -434,14 +275,14 @@ export function DesktopExploreCard({ listing, selected, onToggleCompare }: Explo
             {listing.location}
           </p>
 
-           {listing.kind === "venue" && (
-              <div className="mt-3 flex items-center justify-between gap-2">
-                <HallTypeBadges hallTypes={listing.hallTypes} />
-                <CapacityBadge capacity={listing.capacity} />
-              </div>
-            )}
+          {listing.kind === "venue" && (
+            <div className="mt-3 flex items-center justify-between gap-2">
+              <HallTypeBadges hallTypes={listing.hallTypes} />
+              <CapacityBadge capacity={listing.capacity} />
+            </div>
+          )}
 
-            <div className="mt-4 flex flex-wrap gap-2">
+          <div className="mt-4 flex flex-wrap gap-2">
             {listing.badges.map((badge) => (
               <span
                 key={badge.id}

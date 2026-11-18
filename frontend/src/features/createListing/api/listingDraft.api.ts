@@ -6,19 +6,24 @@ export interface FetchedDraft {
   kind: "hall" | "service";
   status: string;
   draftPayload: ListingFormState | null;
+  /** A staged edit is awaiting moderation on a live listing. */
+  hasPendingEdits: boolean;
 }
 
+/** Publish outcome. `staged` = edits saved but the live version keeps serving. */
+export interface PublishResult {
+  status: string;
+  staged: boolean;
+  message?: string;
+}
 
 export async function fetchDraft(listingId: string): Promise<FetchedDraft> {
-  const data = await apiFetch<{
-    id: string;
-    kind: "hall" | "service";
-    status: string;
-    draftPayload: ListingFormState | null;
-  }>(`/api/vendor/listings/${listingId}/draft`, { method: "GET" });
+  const data = await apiFetch<FetchedDraft>(
+    `/api/vendor/listings/${listingId}/draft`,
+    { method: "GET" }
+  );
 
   const payload = data.draftPayload;
-
   if (payload?.pricing) {
     payload.pricing = {
       ...payload.pricing,
@@ -37,15 +42,36 @@ export async function createDraft(kind: "hall" | "service"): Promise<{ id: strin
   });
 }
 
+/**
+ * Soft delete. The API answers 409 { code: "ACTIVE_BOOKINGS" } when upcoming
+ * bookings exist - callers catch that ApiError and offer Unlist instead.
+ */
 export async function deleteListingDraft(listingId: string): Promise<void> {
   await apiFetch(`/api/vendor/listings/${listingId}`, { method: "DELETE" });
 }
 
-export async function autosaveDraft(listingId: string, payload: ListingFormState): Promise<void> {
+/** Hide from search. Existing bookings are honoured; relist restores it. */
+export async function unlistListing(
+  listingId: string
+): Promise<{ status: string; message: string }> {
+  return apiFetch(`/api/vendor/listings/${listingId}/unlist`, { method: "PATCH" });
+}
+
+/** Bring an unlisted listing back live (applies any staged edits). */
+export async function relistListing(listingId: string): Promise<PublishResult> {
+  return apiFetch(`/api/vendor/listings/${listingId}/relist`, { method: "PATCH" });
+}
+
+export async function autosaveDraft(
+  listingId: string,
+  payload: ListingFormState
+): Promise<void> {
   // Convert Naira to Kobo before sending to backend
   const pricingPayload = {
     ...payload.pricing,
-    basePrice: payload.pricing.basePrice ? Math.round(payload.pricing.basePrice * 100) : null,
+    basePrice: payload.pricing.basePrice
+      ? Math.round(payload.pricing.basePrice * 100)
+      : null,
     packages: payload.pricing.packages.map((p) => ({
       ...p,
       price: Math.round(p.price * 100),
@@ -58,17 +84,22 @@ export async function autosaveDraft(listingId: string, payload: ListingFormState
   });
 }
 
-export async function publishListing(listingId: string, payload: ListingFormState): Promise<void> {
+export async function publishListing(
+  listingId: string,
+  payload: ListingFormState
+): Promise<PublishResult> {
   const pricingPayload = {
     ...payload.pricing,
-    basePrice: payload.pricing.basePrice ? Math.round(payload.pricing.basePrice * 100) : null,
+    basePrice: payload.pricing.basePrice
+      ? Math.round(payload.pricing.basePrice * 100)
+      : null,
     packages: payload.pricing.packages.map((p) => ({
       ...p,
       price: Math.round(p.price * 100),
     })),
   };
 
-  await apiFetch(`/api/vendor/listings/${listingId}/publish`, {
+  return apiFetch<PublishResult>(`/api/vendor/listings/${listingId}/publish`, {
     method: "POST",
     body: JSON.stringify({ draft_payload: { ...payload, pricing: pricingPayload } }),
   });
@@ -98,7 +129,8 @@ export function uploadToCloudinary(
 ): Promise<{ secure_url: string; public_id: string }> {
   return new Promise(async (resolve, reject) => {
     try {
-      const { signature, timestamp, folder, apiKey, cloudName } = await signCloudinaryUpload(listingId);
+      const { signature, timestamp, folder, apiKey, cloudName } =
+        await signCloudinaryUpload(listingId);
 
       const formData = new FormData();
       formData.append("file", file);
@@ -109,11 +141,11 @@ export function uploadToCloudinary(
 
       const xhr = new XMLHttpRequest();
       xhr.open("POST", `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`);
-      
+
       xhr.upload.onprogress = (e) => {
         if (e.lengthComputable) onProgress(Math.round((e.loaded / e.total) * 100));
       };
-      
+
       xhr.onload = () => {
         if (xhr.status === 200) {
           const res = JSON.parse(xhr.responseText);
@@ -122,7 +154,7 @@ export function uploadToCloudinary(
           reject(new Error("Upload failed"));
         }
       };
-      
+
       xhr.onerror = () => reject(new Error("Network error during upload"));
       xhr.send(formData);
     } catch (error) {

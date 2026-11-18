@@ -1,17 +1,16 @@
+"use client";
+
 import { createPortal } from "react-dom";
 import { ArrowLeft, Check, Copy, Heart, Share2, X } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { useRemoveSavedListing, useSavedListings, useSaveListing } from "../../hooks/useSavedListings";
 import { useState } from "react";
+import { useRemoveSavedListing, useSavedListings, useSaveListing } from "../../hooks/useSavedListings";
+import { ApiError } from "@/lib/api";
+import { getCurrentReturnTo, withReturnTo } from "@/features/auth/auth.utils";
 
-interface ApiError {
-  status?: number;
-  message?: string;
-}
-
-export function MobileDetailsHeader({title} : {title : string}) {
+export function MobileDetailsHeader({ title }: { title: string }) {
   const router = useRouter();
 
   return (
@@ -20,15 +19,18 @@ export function MobileDetailsHeader({title} : {title : string}) {
         <button type="button" aria-label="Go back" className="text-[#B9401D]" onClick={() => router.back()}>
           <ArrowLeft className="h-5 w-5" />
         </button>
-        
+
         <h1 className="text-base max-w-full truncate font-extrabold text-[#252423]">{title}</h1>
       </div>
+
       <DetailsActions />
     </header>
   );
 }
 
 export function TabletDetailsHeader() {
+  const router = useRouter();
+
   return (
     <header className="flex h-16 items-center justify-between bg-bg-primary px-8">
       <h1 className="text-xl font-extrabold text-[#252423]">Eventvnv</h1>
@@ -38,7 +40,11 @@ export function TabletDetailsHeader() {
         <button type="button">Inspiration</button>
         <button type="button">About</button>
       </nav>
-      <button type="button" className="rounded-full border border-[#DDB6AA] px-6 py-2 text-sm font-extrabold text-[#B9401D]">
+      <button
+        type="button"
+        onClick={() => router.push(withReturnTo("/login", getCurrentReturnTo()))}
+        className="rounded-full border border-[#DDB6AA] px-6 py-2 text-sm font-extrabold text-[#B9401D]"
+      >
         Sign In
       </button>
     </header>
@@ -46,15 +52,21 @@ export function TabletDetailsHeader() {
 }
 
 export function DesktopDetailsHeader() {
+  const router = useRouter();
+
   return (
     <header className="mx-auto flex h-16 max-w-360 items-center gap-8 px-8">
       <Link href="/" className="text-2xl flex font-semibold tracking-[-0.02em] text-text-primary items-end gap-1">
-          <Image src="/logo.svg" alt="EventVnv" width={30} height={30} />
-          <p className="font-semibold logo translate-y-1.5">EventVnV </p>
+        <Image src="/logo.svg" alt="EventVnv" width={30} height={30} />
+        <p className="font-semibold logo translate-y-1.5">EventVnV </p>
       </Link>
-      
+
       <div className="ml-auto flex items-center gap-4">
-        <button type="button" className="rounded-full border border-[#DDB6AA] px-6 py-2 text-sm font-extrabold text-[#252423]">
+        <button
+          type="button"
+          onClick={() => router.push(withReturnTo("/login", getCurrentReturnTo()))}
+          className="rounded-full border border-[#DDB6AA] px-6 py-2 text-sm font-extrabold text-[#252423]"
+        >
           Sign In
         </button>
         <button type="button" className="rounded-full bg-[#B9401D] px-6 py-2 text-sm font-extrabold text-white">
@@ -86,7 +98,7 @@ function SharePopover({ onClose }: { onClose: () => void }) {
     // Invisible backdrop covering the whole screen to catch outside clicks
     <div className="fixed inset-0 z-9999 bg-black/50" onClick={onClose}>
       {/* Popover content */}
-      <div 
+      <div
         className="absolute md:right-[30%] md:top-[50%] md:w-100 md:origin-top-right w-[80vw] top-[50%] left-[10vw]  rounded-2xl border border-[#E8DDD2] bg-white p-5 shadow-[0_24px_54px_rgba(34,27,18,0.12)]"
         onClick={(e) => e.stopPropagation()}
       >
@@ -97,15 +109,15 @@ function SharePopover({ onClose }: { onClose: () => void }) {
           </button>
         </div>
         <p className="text-xs text-[#5E6588] mb-4">Share this listings with your friends and followers!</p>
-        
+
         <div className="flex items-center gap-2 rounded-xl border border-[#E8DDD2] bg-[#F9F7F5] p-2">
-          <input 
-            type="text" 
-            value={shareUrl} 
-            readOnly 
+          <input
+            type="text"
+            value={shareUrl}
+            readOnly
             className="w-full bg-transparent text-xs font-medium text-[#252423] outline-none truncate px-1"
           />
-          <button 
+          <button
             onClick={handleCopy}
             className={`flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-extrabold text-white transition-all ${
               isCopied ? "bg-green-600" : "bg-[#B9401D] hover:brightness-95"
@@ -123,43 +135,52 @@ function SharePopover({ onClose }: { onClose: () => void }) {
           </button>
         </div>
       </div>
-    </div>, document.body
+    </div>,
+    document.body
   );
 }
-
 
 export function DetailsActions() {
   const router = useRouter();
   const params = useParams();
   const listingId = params.id as string;
   const [isShareOpen, setIsShareOpen] = useState(false);
-  const { data: savedListings, isError: isUnauthenticated } = useSavedListings();
+
+  const { data: savedListings, error } = useSavedListings();
   const saveMutation = useSaveListing();
   const removeMutation = useRemoveSavedListing();
+
+  // Only a REAL 401 means "not signed in". A 500 or a dropped connection must
+  // never bounce an authenticated user to the login page.
+  const isUnauthenticated = error instanceof ApiError && error.status === 401;
 
   // Check if the current listing is in the user's saved list
   const isSaved = savedListings?.some((l) => l.id === listingId) ?? false;
 
+  /** Sign in, then come straight back to this listing. */
+  const goToLogin = () => {
+    router.push(withReturnTo("/login", getCurrentReturnTo()));
+  };
+
   const handleSaveClick = () => {
-    // If the hook threw a 401 error, the user is not logged in
     if (isUnauthenticated) {
-      router.push("/login");
+      goToLogin();
       return;
     }
 
     // If logged in, call the appropriate mutation
     if (isSaved) {
       removeMutation.mutate(listingId, {
-        onError: (error: ApiError) => {
-          // If their session expired mid-browsing, send them to login
-          if (error?.status === 401) router.push("/login");
-        }
+        onError: (err) => {
+          // Session expired mid-browsing - return here after re-auth.
+          if (err instanceof ApiError && err.status === 401) goToLogin();
+        },
       });
     } else {
       saveMutation.mutate(listingId, {
-        onError: (error: ApiError) => {
-          if (error?.status === 401) router.push("/login");
-        }
+        onError: (err) => {
+          if (err instanceof ApiError && err.status === 401) goToLogin();
+        },
       });
     }
   };
@@ -168,9 +189,9 @@ export function DetailsActions() {
 
   return (
     <div className="flex items-center gap-2 lg:gap-8 text-sm font-extrabold md:text-[#252423] text-[#B9401D]">
-       <div className="relative">
-        <button 
-          type="button" 
+      <div className="relative">
+        <button
+          type="button"
           className="inline-flex items-center gap-2 underline"
           onClick={() => setIsShareOpen(!isShareOpen)}
         >
@@ -182,14 +203,15 @@ export function DetailsActions() {
           <SharePopover onClose={() => setIsShareOpen(false)} />
         )}
       </div>
-      <button 
-        type="button" 
-        onClick={handleSaveClick} 
+
+      <button
+        type="button"
+        onClick={handleSaveClick}
         disabled={isMutating}
         className="inline-flex items-center gap-2 underline disabled:opacity-50 transition-all"
       >
-        <Heart 
-          className={`h-4 w-4 transition-colors ${isSaved ? "fill-red-500 text-red-500" : "text-[#B9401D] md:text-[#252423]"}`} 
+        <Heart
+          className={`h-4 w-4 transition-colors ${isSaved ? "fill-red-500 text-red-500" : "text-[#B9401D] md:text-[#252423]"}`}
         />
         {isSaved ? "Unsave" : "Save"}
       </button>

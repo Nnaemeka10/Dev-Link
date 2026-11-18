@@ -6,8 +6,14 @@ import Link from "next/link";
 import { ChevronDown, ChevronLeft, LifeBuoy, Mail } from "lucide-react";
 import type { LegalBlock, LegalDocument } from "../content/legalTypes";
 
-// Block renderer
+/** Sibling policies - the current document is filtered out by title. */
+const RELATED_POLICIES = [
+  { href: "/terms", label: "Terms & Conditions" },
+  { href: "/privacy", label: "Privacy Policy" },
+  { href: "/cookies", label: "Cookie Policy" },
+];
 
+// Block renderer
 function LegalBlocks({ blocks }: { blocks: LegalBlock[] }) {
   return (
     <div className="mt-4 space-y-4">
@@ -51,15 +57,15 @@ function LegalBlocks({ blocks }: { blocks: LegalBlock[] }) {
   );
 }
 
-//  Shell 
-
-
+//  Shell
 interface LegalShellProps {
   doc: LegalDocument;
 }
 
 export default function LegalShell({ doc }: LegalShellProps) {
   const [activeId, setActiveId] = useState<string>(doc.sections[0]?.id ?? "");
+
+  const related = RELATED_POLICIES.filter((item) => item.label !== doc.title);
 
   // Scroll-spy: highlight the TOC entry for the section in view.
   useEffect(() => {
@@ -157,6 +163,26 @@ export default function LegalShell({ doc }: LegalShellProps) {
                 );
               })}
             </ul>
+
+            {related.length > 0 && (
+              <div className="mt-8 border-t border-border-light pt-5">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-text-primary/48">
+                  Related
+                </p>
+                <ul className="mt-3 space-y-2">
+                  {related.map((item) => (
+                    <li key={item.href}>
+                      <Link
+                        href={item.href}
+                        className="text-[13px] font-medium text-text-primary/65 transition-colors hover:text-accent-primary"
+                      >
+                        {item.label}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </nav>
 
           {/* Mobile TOC (collapsible) */}
@@ -224,13 +250,27 @@ export default function LegalShell({ doc }: LegalShellProps) {
                   Visit Help Center
                 </Link>
                 <a
-                  href="mailto:support@eventvnv.ng"
+                  href="mailto:support@eventvnv.com"
                   className="inline-flex items-center gap-2 rounded-full border border-text-primary/20 bg-white px-6 py-3 text-sm font-semibold text-text-primary transition-colors hover:bg-bg-secondary"
                 >
                   <Mail className="h-4 w-4" />
                   Contact support
                 </a>
               </div>
+
+              {related.length > 0 && (
+                <div className="mt-6 flex flex-wrap gap-2 border-t border-[#F1E5D5] pt-5 lg:hidden">
+                  {related.map((item) => (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      className="rounded-full border border-[#F1E5D5] bg-white px-4 py-2 text-xs font-semibold text-text-primary/75 transition-colors hover:border-accent-primary/40 hover:text-accent-primary"
+                    >
+                      {item.label}
+                    </Link>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </div>

@@ -9,11 +9,10 @@ import type {
   UpdateNotificationsBody,
 } from "../types/profile.types.js";
 
-//  GET /api/profile 
+//  GET /api/profile
 export const getProfile = async (req: Request, res: Response) => {
   try {
     if (!req.user?.userId) return res.status(401).json({ message: "Unauthorized" });
-
     const profile = await ProfileService.getProfile(req.user.userId);
     res.status(200).json(profile);
   } catch (error: any) {
@@ -22,12 +21,12 @@ export const getProfile = async (req: Request, res: Response) => {
   }
 };
 
-//  PATCH /api/profile 
+//  PATCH /api/profile
 export const updateProfile = async (req: Request, res: Response) => {
   try {
     if (!req.user?.userId) return res.status(401).json({ message: "Unauthorized" });
-
     const body: UpdateProfileBody = req.body;
+
     if (!body || typeof body !== "object" || Array.isArray(body)) {
       return res.status(400).json({ message: "Invalid profile payload" });
     }
@@ -61,7 +60,7 @@ export const updateProfile = async (req: Request, res: Response) => {
   }
 };
 
-//  GET /api/profile/avatar/signature 
+//  GET /api/profile/avatar/signature
 export const getAvatarUploadSignature = async (req: Request, res: Response) => {
   try {
     if (!req.user?.userId) return res.status(401).json({ message: "Unauthorized" });
@@ -71,7 +70,6 @@ export const getAvatarUploadSignature = async (req: Request, res: Response) => {
 
     const timestamp = Math.round(new Date().getTime() / 1000);
     const folder = `eventvnv_avatars/${req.user.userId}`;
-
     const signature = cloudinary.utils.api_sign_request(
       { timestamp, folder },
       ENV.CLOUDINARY_API_SECRET
@@ -90,11 +88,10 @@ export const getAvatarUploadSignature = async (req: Request, res: Response) => {
   }
 };
 
-//  GET /api/profile/bookings 
+//  GET /api/profile/bookings
 export const getBookings = async (req: Request, res: Response) => {
   try {
     if (!req.user?.userId) return res.status(401).json({ message: "Unauthorized" });
-
     const bookings = await ProfileService.getBookings(req.user.userId);
     res.status(200).json(bookings);
   } catch (error: any) {
@@ -103,11 +100,10 @@ export const getBookings = async (req: Request, res: Response) => {
   }
 };
 
-//  GET /api/profile/payment-methods 
+//  GET /api/profile/payment-methods
 export const getPaymentMethods = async (req: Request, res: Response) => {
   try {
     if (!req.user?.userId) return res.status(401).json({ message: "Unauthorized" });
-
     const methods = await ProfileService.getPaymentMethods(req.user.userId);
     res.status(200).json(methods);
   } catch (error: any) {
@@ -116,11 +112,10 @@ export const getPaymentMethods = async (req: Request, res: Response) => {
   }
 };
 
-//  PATCH /api/profile/payment-methods/:authCode/default 
+//  PATCH /api/profile/payment-methods/:authCode/default
 export const setDefaultPaymentMethod = async (req: Request, res: Response) => {
   try {
     if (!req.user?.userId) return res.status(401).json({ message: "Unauthorized" });
-
     const { authCode } = req.params;
     if (!authCode) return res.status(400).json({ message: "Authorization code is required" });
 
@@ -137,11 +132,10 @@ export const setDefaultPaymentMethod = async (req: Request, res: Response) => {
   }
 };
 
-//  DELETE /api/profile/payment-methods/:authCode 
+//  DELETE /api/profile/payment-methods/:authCode
 export const removePaymentMethod = async (req: Request, res: Response) => {
   try {
     if (!req.user?.userId) return res.status(401).json({ message: "Unauthorized" });
-
     const { authCode } = req.params;
     if (!authCode) return res.status(400).json({ message: "Authorization code is required" });
 
@@ -153,11 +147,10 @@ export const removePaymentMethod = async (req: Request, res: Response) => {
   }
 };
 
-//  GET /api/profile/notifications 
+//  GET /api/profile/notifications
 export const getNotificationSettings = async (req: Request, res: Response) => {
   try {
     if (!req.user?.userId) return res.status(401).json({ message: "Unauthorized" });
-
     const settings = await ProfileService.getNotificationSettings(req.user.userId);
     res.status(200).json(settings);
   } catch (error: any) {
@@ -166,17 +159,15 @@ export const getNotificationSettings = async (req: Request, res: Response) => {
   }
 };
 
-//  PATCH /api/profile/notifications 
+//  PATCH /api/profile/notifications
 export const updateNotificationSettings = async (req: Request, res: Response) => {
   try {
     if (!req.user?.userId) return res.status(401).json({ message: "Unauthorized" });
-
     const body: UpdateNotificationsBody = req.body;
+
     if (!body || typeof body !== "object" || Array.isArray(body)) {
       return res.status(400).json({ message: "Invalid notification payload" });
     }
-
-    // Ensure at least one field is provided
     if (Object.keys(body).length === 0) {
       return res.status(400).json({ message: "No fields to update" });
     }
@@ -204,17 +195,17 @@ export const updateNotificationSettings = async (req: Request, res: Response) =>
   }
 };
 
-//  POST /api/profile/change-password 
+//  POST /api/profile/change-password
 export const changePassword = async (req: Request, res: Response) => {
   try {
     if (!req.user?.userId) return res.status(401).json({ message: "Unauthorized" });
-
     const body: ChangePasswordBody = req.body;
 
     if (!body.currentPassword || !body.newPassword) {
-      return res.status(400).json({ message: "Current password and new password are required" });
+      return res
+        .status(400)
+        .json({ message: "Current password and new password are required" });
     }
-
     if (body.newPassword.length < 8) {
       return res.status(400).json({ message: "New password must be at least 8 characters" });
     }
@@ -223,7 +214,7 @@ export const changePassword = async (req: Request, res: Response) => {
 
     // changePassword bumped users.token_version, which also killed
     // THIS device's cookie. Mint a fresh cookie carrying the NEW version so the
-    // user stays logged in here , every other device gets logged out.
+    // user stays logged in here - every other device gets logged out.
     await generateToken(
       { userId: req.user.userId, email: req.user.email },
       res
@@ -239,14 +230,23 @@ export const changePassword = async (req: Request, res: Response) => {
   }
 };
 
-//  DELETE /api/profile 
+//  DELETE /api/profile
 export const deactivateAccount = async (req: Request, res: Response) => {
   try {
     if (!req.user?.userId) return res.status(401).json({ message: "Unauthorized" });
 
     await ProfileService.deactivateAccount(req.user.userId);
-    // Clear the auth cookie so the frontend redirects to login
-    res.clearCookie("token", { httpOnly: true, secure: true, sameSite: "lax" });
+
+    // Clear the auth cookie with the SAME attributes it was set with
+    // (generateToken / logout) - a mismatched sameSite or missing path
+    // silently fails to clear the cookie in production.
+    res.clearCookie("token", {
+      httpOnly: true,
+      sameSite: ENV.NODE_ENV === "development" ? "lax" : "none",
+      secure: ENV.NODE_ENV !== "development",
+      path: "/",
+    });
+
     res.status(200).json({ message: "Account deactivated" });
   } catch (error: any) {
     console.error("Deactivate account error:", error);

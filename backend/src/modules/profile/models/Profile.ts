@@ -13,8 +13,7 @@ import type {
   PaystackAuthorization,
 } from "../types/profile.types.js";
 
-//  Helpers 
-
+//  Helpers
 const PROFILE_TEXT_LIMITS: Record<keyof UpdateProfileBody, number> = {
   firstName: 80,
   lastName: 80,
@@ -35,12 +34,10 @@ function normalizeOptionalText(
   if (typeof value !== "string") {
     throw new Error(`${field} must be a string`);
   }
-
   const trimmed = value.trim();
   if (trimmed.length > PROFILE_TEXT_LIMITS[field]) {
     throw new Error(`${field} is too long`);
   }
-
   return trimmed === "" ? null : trimmed;
 }
 
@@ -65,11 +62,12 @@ function mapBookingStatus(dbStatus: string): FrontendBookingStatus {
 }
 
 /** Fetch Paystack customer authorizations */
-async function fetchPaystackAuthorizations(customerCode: string): Promise<PaystackAuthorization[]> {
+async function fetchPaystackAuthorizations(
+  customerCode: string
+): Promise<PaystackAuthorization[]> {
   if (!ENV.PAYSTACK_SECRET_KEY) {
     throw new Error("Paystack is not configured");
   }
-
   const res = await fetch(
     `https://api.paystack.com/customer/${customerCode}/authorization`,
     {
@@ -79,22 +77,18 @@ async function fetchPaystackAuthorizations(customerCode: string): Promise<Paysta
       },
     }
   );
-
   if (!res.ok) {
     const body = await res.json();
     throw new Error(body.message || "Failed to fetch payment methods from Paystack");
   }
-
   const json = await res.json();
   return json.data || [];
 }
 
-//  Service 
-
+//  Service
 export const ProfileService = {
   async getProfile(userId: number): Promise<ProfileResponse> {
     const db = getDB();
-
     const userRes = await db.query(
       `SELECT id, first_name, last_name, email, phone, location, avatar_url,
               is_email_verified, created_at
@@ -135,8 +129,11 @@ export const ProfileService = {
     };
   },
 
-  //  PATCH /api/profile 
-  async updateProfile(userId: number, body: UpdateProfileBody): Promise<ProfileResponse> {
+  //  PATCH /api/profile
+  async updateProfile(
+    userId: number,
+    body: UpdateProfileBody
+  ): Promise<ProfileResponse> {
     const db = getDB();
     const sets: string[] = [];
     const values: any[] = [];
@@ -174,10 +171,9 @@ export const ProfileService = {
     return this.getProfile(userId);
   },
 
-  //  GET /api/profile/bookings 
+  //  GET /api/profile/bookings
   async getBookings(userId: number): Promise<BookingHistoryResponse[]> {
     const db = getDB();
-
     const res = await db.query(
       `SELECT
         b.id,
@@ -215,7 +211,7 @@ export const ProfileService = {
     }));
   },
 
-  //  GET /api/profile/payment-methods 
+  //  GET /api/profile/payment-methods
   async getPaymentMethods(userId: number): Promise<PaymentMethodResponse[]> {
     const db = getDB();
 
@@ -225,7 +221,6 @@ export const ProfileService = {
       [userId]
     );
     const customerCode = userRes.rows[0]?.paystack_customer_code;
-
     if (!customerCode) return [];
 
     // Fetch authorizations from Paystack
@@ -246,6 +241,7 @@ export const ProfileService = {
         [userId]
       ),
     ]);
+
     const defaultAuthCode = defaultRes.rows[0]?.authorization_code;
     const hiddenCodes = new Set(hiddenRes.rows.map((r) => r.authorization_code));
 
@@ -253,28 +249,33 @@ export const ProfileService = {
     const visible = authorizations.filter(
       (a) => a.reusable && !hiddenCodes.has(a.authorization_code)
     );
-
     if (visible.length === 0) return [];
 
-    const effectiveDefault = visible.some((a) => a.authorization_code === defaultAuthCode)
+    const effectiveDefault = visible.some(
+      (a) => a.authorization_code === defaultAuthCode
+    )
       ? defaultAuthCode
       : visible[0].authorization_code;
 
     return visible.map((a) => ({
       id: a.authorization_code,
-      type: a.channel === "card" ? "card" as const : "bank_transfer" as const,
-      label: a.channel === "card" ? (a.brand || a.card_type || "Card").toUpperCase() : a.bank,
+      type: a.channel === "card" ? ("card" as const) : ("bank_transfer" as const),
+      label:
+        a.channel === "card" ? (a.brand || a.card_type || "Card").toUpperCase() : a.bank,
       last4: a.last4,
       expiryDate: a.channel === "card" ? `${a.exp_month}/${a.exp_year}` : undefined,
       isDefault: a.authorization_code === effectiveDefault,
     }));
   },
 
-  //  PATCH /api/profile/payment-methods/:authCode/default 
+  //  PATCH /api/profile/payment-methods/:authCode/default
   async setDefaultPaymentMethod(userId: number, authCode: string): Promise<void> {
     const db = getDB();
     const customerCode = await db
-      .query(`SELECT paystack_customer_code FROM users WHERE id = $1 AND is_active = TRUE`, [userId])
+      .query(
+        `SELECT paystack_customer_code FROM users WHERE id = $1 AND is_active = TRUE`,
+        [userId]
+      )
       .then((r) => r.rows[0]?.paystack_customer_code);
 
     if (!customerCode) throw new Error("No Paystack customer linked to this account");
@@ -283,7 +284,6 @@ export const ProfileService = {
     const isValidAuthorization = authorizations.some(
       (a) => a.authorization_code === authCode && a.reusable
     );
-
     if (!isValidAuthorization) {
       throw new Error("Payment method not found");
     }
@@ -297,25 +297,22 @@ export const ProfileService = {
     );
   },
 
-  //  DELETE /api/profile/payment-methods/:authCode 
+  //  DELETE /api/profile/payment-methods/:authCode
   async removePaymentMethod(userId: number, authCode: string): Promise<void> {
     // Paystack has no delete authorization API.
     // We blacklist it locally so it stops appearing in our UI.
     const db = getDB();
     await db.query(
-      `INSERT INTO user_hidden_payment_methods (user_id, authorization_code)
-       VALUES ($1, $2)
-       ON CONFLICT DO NOTHING`,
+      `INSERT INTO user_hidden_payment_methods (user_id, authorization_code) VALUES ($1, $2) ON CONFLICT DO NOTHING`,
       [userId, authCode]
     );
     await db.query(
-      `DELETE FROM user_default_payment_methods
-       WHERE user_id = $1 AND authorization_code = $2`,
+      `DELETE FROM user_default_payment_methods WHERE user_id = $1 AND authorization_code = $2`,
       [userId, authCode]
     );
   },
 
-  //  GET /api/profile/notifications 
+  //  GET /api/profile/notifications
   async getNotificationSettings(userId: number): Promise<NotificationSettingsResponse> {
     const db = getDB();
     await db.query(
@@ -323,8 +320,7 @@ export const ProfileService = {
       [userId]
     );
     const res = await db.query(
-      `SELECT email_promotions, sms_alerts, push_notifications, booking_updates
-       FROM notifications_preferences WHERE user_id = $1`,
+      `SELECT email_promotions, sms_alerts, push_notifications, booking_updates FROM notifications_preferences WHERE user_id = $1`,
       [userId]
     );
     const r = res.rows[0];
@@ -336,7 +332,7 @@ export const ProfileService = {
     };
   },
 
-  //  PATCH /api/profile/notifications 
+  //  PATCH /api/profile/notifications
   async updateNotificationSettings(
     userId: number,
     body: UpdateNotificationsBody
@@ -363,7 +359,6 @@ export const ProfileService = {
     if (sets.length > 0) {
       sets.push(`updated_at = NOW()`);
       values.push(userId);
-
       await db.query(
         `INSERT INTO notifications_preferences (user_id)
          VALUES ($${idx})
@@ -375,7 +370,7 @@ export const ProfileService = {
     return this.getNotificationSettings(userId);
   },
 
-  //  POST /api/profile/change-password 
+  //  POST /api/profile/change-password
   async changePassword(userId: number, body: ChangePasswordBody): Promise<void> {
     const db = getDB();
 
@@ -394,7 +389,7 @@ export const ProfileService = {
       throw new Error("New password must be at least 8 characters");
     }
 
-    // Hash and save
+    // Hash and save.
     // bump token_version so every JWT issued with the OLD
     // password (including cookies on other devices / stolen cookies) is
     // rejected by verifyToken on their next request.
@@ -410,8 +405,17 @@ export const ProfileService = {
   // DELETE /api/profile
   async deactivateAccount(userId: number): Promise<void> {
     const db = getDB();
+    // Soft deactivate + full session revocation. Bumping token_version kills
+    // every already-issued JWT on its next request (verifyToken compares
+    // versions), and verifyToken's is_active check blocks anything minted
+    // afterwards. Records are preserved; support can reactivate.
     await db.query(
-      `UPDATE users SET is_active = FALSE, deactivated_at = NOW(), updated_at = NOW() WHERE id = $1`,
+      `UPDATE users
+       SET is_active = FALSE,
+           deactivated_at = NOW(),
+           token_version = COALESCE(token_version, 0) + 1,
+           updated_at = NOW()
+       WHERE id = $1`,
       [userId]
     );
   },

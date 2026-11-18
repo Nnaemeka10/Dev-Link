@@ -11,17 +11,19 @@ export default function ContactSupportCta() {
           Still need help?
         </h2>
       </div>
+
       <p className="mt-3 max-w-xl text-sm leading-6 text-text-primary/70">
-        Can&apos;t find what you&apos;re looking for? Our support team replies
+        Can't find what you're looking for? Our support team replies
         within one business day. Include your booking reference (it starts with
         EVV-) if your question is about a specific booking.
       </p>
+
       <a
-        href="mailto:support@eventvnv.ng"
+        href="mailto:support@eventvnv.com"
         className="mt-5 inline-flex items-center gap-2 rounded-full bg-accent-primary px-6 py-3 text-sm font-semibold text-white shadow-[0_12px_28px_rgba(214,92,58,0.3)] transition-transform hover:-translate-y-0.5"
       >
         <Mail className="h-4 w-4" />
-        Email support@eventvnv.ng
+        Email support@eventvnv.com
       </a>
     </section>
   );

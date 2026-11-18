@@ -62,12 +62,19 @@ export const verifyToken = async (token: string): Promise<JwtPayload | null> => 
         // password reset/change and must be rejected 
         const db = getDB();
         const { rows } = await db.query(
-            'SELECT token_version FROM users WHERE id = $1',
+            'SELECT token_version, is_active FROM users WHERE id = $1',
             [decoded.userId]
         );
 
         if (rows.length === 0) {
             // user no longer exists & session is dead
+            return null;
+        }
+
+        // Deactivated accounts cannot keep using an already-issued cookie.
+        // Belt-and-braces with the token_version bump on deactivate: even a
+        // token minted seconds before deactivation dies on its next request.
+        if (rows[0].is_active === false) {
             return null;
         }
 

@@ -8,6 +8,7 @@ import {
   AlertCircle,
   Ban,
   Building2,
+  CalendarClock,
   CalendarDays,
   Check,
   CheckCircle2,
@@ -15,6 +16,7 @@ import {
   Clock3,
   CloudOff,
   Copy,
+  CreditCard,
   Hash,
   Info,
   Landmark,
@@ -41,10 +43,12 @@ import type { BookingDetail } from "../types";
 import {
   EASE_OUT,
   VENDOR_CARD,
+  allSpansLabel,
   bookedSpans,
   countBookedDays,
   formatDay,
   formatDayShort,
+  formatEventTimeLabel,
   formatTimestamp,
   initialsOf,
   naira,
@@ -68,9 +72,11 @@ function useDecisionDeadline(paidAt: string | null, active: boolean) {
   }, [active]);
 
   if (!active || !paidAt) return null;
+
   const deadline = new Date(paidAt).getTime() + CONFIRM_WINDOW_HOURS * 3_600_000;
   const msLeft = deadline - now;
   if (msLeft <= 0) return { expired: true, label: "Auto-refund is due - confirm now" };
+
   const hours = Math.floor(msLeft / 3_600_000);
   const minutes = Math.floor((msLeft % 3_600_000) / 60_000);
   return {
@@ -140,7 +146,6 @@ export default function VendorBookingDetailPage() {
   const id = (params?.id as string) ?? "";
   const { data: booking, isLoading, isError, refetch } = useVendorBooking(id || null);
   const confirmMutation = useConfirmBooking();
-
   const [declineOpen, setDeclineOpen] = useState(false);
   const [copiedRef, setCopiedRef] = useState(false);
   const [soon, setSoon] = useState<string | null>(null);
@@ -220,6 +225,13 @@ export default function VendorBookingDetailPage() {
     booking.excludedDates
   );
   const dayCount = countBookedDays(spans);
+  const receiptDateLabel = allSpansLabel(spans);
+
+  // Event clock is Lagos wall-clock time; booked-on / paid-on are instants
+  // rendered in WAT with the label (formatTimestamp), so this page and the
+  // customer's confirmation always read the same.
+  const eventTime = formatEventTimeLabel(booking.startTime, booking.endTime);
+
   const confirmError =
     confirmMutation.error instanceof ApiError
       ? confirmMutation.error.message
@@ -289,11 +301,24 @@ export default function VendorBookingDetailPage() {
               value={spans.map(spanLabel).join(" · ") || "-"}
               wide
             />
-            <DetailRow icon={Clock} label="Time (24h)" value={booking.time} />
+            <DetailRow icon={Clock} label="Event time" value={eventTime} />
+            <DetailRow
+              icon={CalendarClock}
+              label="Booked on"
+              value={formatTimestamp(booking.createdAt)}
+            />
+            {booking.paidAt && (
+              <DetailRow
+                icon={CreditCard}
+                label="Paid on"
+                value={formatTimestamp(booking.paidAt)}
+              />
+            )}
             <DetailRow
               icon={MapPin}
               label={isService ? "Event location" : "Venue address"}
               value={booking.location ?? "Not provided"}
+              wide
             />
           </div>
 
@@ -461,7 +486,7 @@ export default function VendorBookingDetailPage() {
         )}
 
         <div className="mt-3 grid gap-2.5 sm:grid-cols-2">
-          <DetailRow icon={Clock} label="Time (24h)" value={booking.time} />
+          <DetailRow icon={Clock} label="Event time" value={eventTime} />
           {isService ? (
             <>
               {booking.packageName && (
@@ -530,7 +555,7 @@ export default function VendorBookingDetailPage() {
               {booking.client.name}
             </p>
             <p className="text-tiny font-semibold text-[#9A9AAE]">
-              Booked {formatDay(booking.createdAt)}
+              Booked {formatTimestamp(booking.createdAt)}
             </p>
           </div>
         </div>
@@ -568,6 +593,7 @@ export default function VendorBookingDetailPage() {
         <h2 className="font-man text-base font-extrabold text-[#252423] md:text-lg">
           Payment &amp; payout
         </h2>
+
         <div className="mt-4 grid gap-2.5 sm:grid-cols-2">
           <DetailRow icon={Hash} label="Booking reference" value={booking.bookingRef} />
           <DetailRow
@@ -575,7 +601,12 @@ export default function VendorBookingDetailPage() {
             label="Payment status"
             value={booking.paymentStatus}
           />
-          <DetailRow icon={Clock} label="Paid at" value={formatTimestamp(booking.paidAt)} />
+          <DetailRow
+            icon={CalendarClock}
+            label="Booked on"
+            value={formatTimestamp(booking.createdAt)}
+          />
+          <DetailRow icon={CreditCard} label="Paid on" value={formatTimestamp(booking.paidAt)} />
           <DetailRow
             icon={Landmark}
             label="Payout"
@@ -596,6 +627,10 @@ export default function VendorBookingDetailPage() {
             />
           )}
         </div>
+
+        <p className="mt-3 text-center text-[10px] font-bold uppercase tracking-widest text-[#C4BBAE]">
+          All times shown in West Africa Time (WAT · Lagos)
+        </p>
 
         {booking.refund && (
           <div className="mt-3 flex items-start gap-3 rounded-2xl bg-[#FDF1EC] px-4 py-3">
@@ -715,13 +750,14 @@ export default function VendorBookingDetailPage() {
                 isService ? "Event location" : "Venue address",
                 booking.location ?? "-",
               ],
-              ["Event dates", spans.map(spanLabel).join(" · ") || "-"],
-              ["Time (24h)", booking.time],
+              ["Event dates", receiptDateLabel],
+              ["Event time", eventTime],
               ...(booking.packageName ? [["Package", booking.packageName]] : []),
               ...(!isService
                 ? [["Expected guests", booking.guests.toLocaleString()]]
                 : []),
-              ["Paid at", formatTimestamp(booking.paidAt)],
+              ["Booked on", formatTimestamp(booking.createdAt)],
+              ["Paid on", formatTimestamp(booking.paidAt)],
               ["Payout", payoutLabel],
             ].map(([label, value]) => (
               <tr key={String(label)}>
@@ -766,6 +802,9 @@ export default function VendorBookingDetailPage() {
         )}
 
         <p className="mt-8 border-t border-[#E8DED2] pt-4 text-center text-[11px] font-semibold text-[#6B5F57]">
+          All times are West Africa Time (WAT · Lagos, UTC+01:00).
+        </p>
+        <p className="mt-1 text-center text-[11px] font-semibold text-[#6B5F57]">
           Funds are held in escrow until the event is delivered and the dispute window
           closes · support@eventvnv.com
         </p>

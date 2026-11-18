@@ -7,12 +7,14 @@ import { motion } from "framer-motion";
 import {
   ArrowRight,
   Building2,
+  CalendarClock,
   CalendarDays,
   Check,
   CheckCircle2,
   Clock,
   CloudOff,
   Copy,
+  CreditCard,
   Hash,
   Landmark,
   MapPin,
@@ -29,13 +31,14 @@ import { useVendorTransaction } from "../hooks/useVendorDashboard";
 import {
   EASE_OUT,
   VENDOR_CARD,
+  WAT_LABEL,
+  allSpansLabel,
   bookedSpans,
   countBookedDays,
   formatDay,
   formatTimestamp,
   initialsOf,
   naira,
-  spanLabel,
 } from "../utils";
 
 function DetailRow({
@@ -205,17 +208,25 @@ export default function VendorTransactionDetailPage() {
     ? bookedSpans(booking.startDate, booking.endDate, booking.excludedDates)
     : [];
   const dayCount = countBookedDays(spans);
+  const dateLabel = allSpansLabel(spans);
+
+  // The API pre-formats the event clock as "16:00 – 23:00" (Lagos wall-clock
+  // TIME columns). Label it WAT so it reads identically to the booking page.
+  const eventTimeLabel =
+    booking && booking.time && booking.time !== "-"
+      ? `${booking.time} ${WAT_LABEL}`
+      : "-";
+
   const destinationLabel = data.destination
     ? `${data.destination.bankName} •••• ${data.destination.accountLast4}`
     : "Your registered bank account";
 
+  // Every instant is rendered by formatTimestamp → "18 Nov 2026 · 09:24 WAT".
   const timeline = [
+    { label: "Booking created", at: formatTimestamp(booking?.createdAt) },
     { label: "Customer payment received", at: formatTimestamp(booking?.paidAt) },
     { label: "Event ended", at: booking ? formatDay(booking.endDate) : null },
-    {
-      label: "Dispute window closed",
-      at: formatTimestamp(booking?.disputeWindowClosesAt),
-    },
+    { label: "Dispute window closed", at: formatTimestamp(booking?.disputeWindowClosesAt) },
     { label: "Payout initiated", at: formatTimestamp(data.payout?.dispatchedAt) },
     { label: "Credited to your bank", at: formatTimestamp(data.createdAt) },
   ];
@@ -225,7 +236,7 @@ export default function VendorTransactionDetailPage() {
       width="narrow"
       back={{ href: "/vendor/transactions", label: "All transactions" }}
     >
-      {/*  Hero  */}
+      {/* ── Hero ── */}
       <motion.section
         initial={{ opacity: 0, y: 14 }}
         animate={{ opacity: 1, y: 0 }}
@@ -295,7 +306,7 @@ export default function VendorTransactionDetailPage() {
         </div>
       </motion.section>
 
-      {/*  Money split  */}
+      {/* ── Money split ── */}
       {booking && (
         <section className={`${VENDOR_CARD} p-5 md:p-7`}>
           <h2 className="font-man text-base font-extrabold text-[#252423] md:text-lg">
@@ -335,7 +346,7 @@ export default function VendorTransactionDetailPage() {
         </section>
       )}
 
-      {/*  Booking  */}
+      {/* ── Booking ── */}
       {booking && (
         <section className={`${VENDOR_CARD} p-5 md:p-7`}>
           <div className="flex flex-wrap items-start justify-between gap-3">
@@ -355,9 +366,9 @@ export default function VendorTransactionDetailPage() {
             <DetailRow
               icon={CalendarDays}
               label={`Event dates · ${dayCount} ${dayCount === 1 ? "day" : "days"}`}
-              value={spans.map(spanLabel).join(" · ") || "-"}
+              value={dateLabel}
             />
-            <DetailRow icon={Clock} label="Time (24h)" value={booking.time} />
+            <DetailRow icon={Clock} label="Event time" value={eventTimeLabel} />
             {booking.packageName && (
               <DetailRow icon={Package} label="Package" value={booking.packageName} />
             )}
@@ -368,6 +379,18 @@ export default function VendorTransactionDetailPage() {
                 (data.isService ? booking.eventLocation : data.listing?.location) ??
                 "Not provided"
               }
+            />
+            {/* When it was booked and when it settled - WAT, labelled, so this
+                receipt matches the customer's copy exactly. */}
+            <DetailRow
+              icon={CalendarClock}
+              label="Booked on"
+              value={formatTimestamp(booking.createdAt)}
+            />
+            <DetailRow
+              icon={CreditCard}
+              label="Paid on"
+              value={formatTimestamp(booking.paidAt)}
             />
           </div>
 
@@ -403,7 +426,7 @@ export default function VendorTransactionDetailPage() {
         </section>
       )}
 
-      {/*  Timeline  */}
+      {/* ── Timeline ── */}
       <section className={`${VENDOR_CARD} p-5 md:p-7`}>
         <h2 className="font-man text-base font-extrabold text-[#252423] md:text-lg">
           Payout timeline
@@ -419,9 +442,12 @@ export default function VendorTransactionDetailPage() {
             />
           ))}
         </ol>
+        <p className="mt-4 border-t border-[#F0E9DF] pt-3 text-center text-[10px] font-bold uppercase tracking-widest text-[#C4BBAE]">
+          All times shown in West Africa Time (WAT · Lagos)
+        </p>
       </section>
 
-      {/*  Transfer + ledger references  */}
+      {/* ── Transfer + ledger references ── */}
       <section className={`${VENDOR_CARD} p-5 md:p-7`}>
         <h2 className="font-man text-base font-extrabold text-[#252423] md:text-lg">
           Transfer &amp; ledger references
@@ -461,7 +487,7 @@ export default function VendorTransactionDetailPage() {
         </p>
       </section>
 
-      {/*  Printable payout receipt  */}
+      {/* ── Printable payout receipt ── */}
       <div
         id="vendor-payout-receipt-print"
         aria-hidden="true"
@@ -488,8 +514,13 @@ export default function VendorTransactionDetailPage() {
               ["Credited on", formatTimestamp(data.createdAt)],
               [data.isService ? "Service" : "Venue", data.listing?.title ?? "-"],
               ["Client", data.client?.name ?? "-"],
-              ["Event dates", spans.map(spanLabel).join(" · ") || "-"],
-              ["Time (24h)", booking?.time ?? "-"],
+              ["Event dates", dateLabel],
+              ["Event time", eventTimeLabel],
+              ...(booking ? [["Booked on", formatTimestamp(booking.createdAt)]] : []),
+              ...(booking ? [["Paid on", formatTimestamp(booking.paidAt)]] : []),
+              ...(booking && !data.isService
+                ? [["Expected guests", booking.guests.toLocaleString()]]
+                : []),
               ["Transfer code", data.payout?.transferCode ?? "-"],
             ].map(([label, value]) => (
               <tr key={String(label)}>
@@ -530,6 +561,9 @@ export default function VendorTransactionDetailPage() {
         )}
 
         <p className="mt-8 border-t border-[#E8DED2] pt-4 text-center text-[11px] font-semibold text-[#6B5F57]">
+          All times are West Africa Time (WAT · Lagos, UTC+01:00).
+        </p>
+        <p className="mt-1 text-center text-[11px] font-semibold text-[#6B5F57]">
           Ledger entry {data.id} · VAT is remitted to the tax authority and is not part
           of vendor earnings · support@eventvnv.com
         </p>

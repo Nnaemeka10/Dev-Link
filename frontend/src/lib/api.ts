@@ -1,4 +1,5 @@
 import type { ApiErrorPayload } from "@/types/auth";
+import { getCurrentReturnTo, withReturnTo } from "@/features/auth/auth.utils";
 
 type RequestOptions = RequestInit & {
   redirectOn401?: boolean;
@@ -42,7 +43,9 @@ export async function apiFetch<T>(path: string, options: RequestOptions = {}): P
       typeof window !== "undefined" &&
       !window.location.pathname.startsWith("/login")
     ) {
-      window.location.href = "/login";
+      // Mid-session expiry: come back to the exact page (and query state)
+      // the user was on once they re-authenticate.
+      window.location.href = withReturnTo("/login", getCurrentReturnTo());
     }
 
     throw new ApiError(payload?.message ?? "Request failed", response.status, payload);

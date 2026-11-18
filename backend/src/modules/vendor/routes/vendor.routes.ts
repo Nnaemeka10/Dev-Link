@@ -19,6 +19,8 @@ import {
   publishListing,
   signUpload,
   deleteListingDraft,
+  unlistListing,
+  relistListing,
 } from '../controllers/vendorListing.controller.js';
 
 const router = express.Router();
@@ -47,6 +49,10 @@ router.post('/uploads/cloudinary/sign', signUpload);
 router.post('/listings', createListingDraft);
 router.patch('/listings/:id/draft', autosaveDraft);
 router.post('/listings/:id/publish', publishListing);
+// Lifecycle: unlist keeps every booking and allows relist; delete is refused
+// while upcoming bookings exist (409 ACTIVE_BOOKINGS).
+router.patch('/listings/:id/unlist', unlistListing);
+router.patch('/listings/:id/relist', relistListing);
 router.delete('/listings/:id', deleteListingDraft);
 
 export default router;

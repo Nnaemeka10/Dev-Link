@@ -10,6 +10,10 @@ interface CreateListingFooterProps {
   onNext: () => void;
   onSaveDraft: () => void;
   onPublish: () => void;
+  /** Editing a live listing publishes CHANGES, not a new listing. */
+  publishLabel?: string;
+  /** On a live listing the draft button saves staged changes. */
+  saveLabel?: string;
 }
 
 export default function CreateListingFooter({
@@ -19,37 +23,48 @@ export default function CreateListingFooter({
   onSaveDraft,
   isPublishing,
   onPublish,
+  publishLabel = "Publish Listing",
+  saveLabel = "Save as Draft",
 }: CreateListingFooterProps) {
   const isFirstStep = currentStep === 1;
   const isReviewStep = currentStep === TOTAL_STEPS;
 
   return (
     <footer className="fixed inset-x-0 bottom-19 z-30 border-t border-black/5 bg-bg-primary/90 px-4 py-4 backdrop-blur-xl xs:px-6 xl:bottom-0 xl:left-64 xl:px-8">
-      <div className="mx-auto flex max-w-400 items-center justify-between">
+      <div className="mx-auto flex max-w-400 items-center justify-between gap-3">
         {isReviewStep ? (
           <>
             <button
               type="button"
               onClick={onSaveDraft}
-              className="rounded-full px-5 py-3 text-sm font-semibold text-text-primary/60 transition-colors hover:bg-bg-tertiary hover:text-text-primary"
+              className="rounded-full px-4 py-3 text-sm font-semibold text-text-primary/60 transition-colors hover:bg-bg-tertiary hover:text-text-primary xs:px-5"
             >
-              Save as Draft
+              {saveLabel}
             </button>
             <button
               type="button"
               onClick={onPublish}
               disabled={isPublishing}
-              className="flex items-center gap-2 rounded-full bg-accent-primary px-7 py-3.5 text-sm font-bold text-white shadow-card transition-all hover:scale-[1.02] hover:shadow-card-hover active:scale-95"
+              className="flex items-center gap-2 rounded-full bg-accent-primary px-6 py-3.5 text-sm font-bold text-white shadow-card transition-all hover:scale-[1.02] hover:shadow-card-hover active:scale-95 disabled:cursor-not-allowed disabled:opacity-60 xs:px-7"
             >
               {isPublishing ? (
-                <>Publishing <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" /></>
+                <>
+                  Publishing
+                  <span
+                    className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white"
+                    aria-hidden="true"
+                  />
+                </>
               ) : (
-              <>
-              Publish Listing
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                <path d="M12 2L14.5 8.5L21 9.3L16.2 13.9L17.5 20.5L12 17.2L6.5 20.5L7.8 13.9L3 9.3L9.5 8.5L12 2Z" fill="currentColor" />
-              </svg>
-              </>
+                <>
+                  {publishLabel}
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path
+                      d="M12 2L14.5 8.5L21 9.3L16.2 13.9L17.5 20.5L12 17.2L6.5 20.5L7.8 13.9L3 9.3L9.5 8.5L12 2Z"
+                      fill="currentColor"
+                    />
+                  </svg>
+                </>
               )}
             </button>
           </>
@@ -62,7 +77,13 @@ export default function CreateListingFooter({
               className="flex items-center gap-1.5 rounded-full px-5 py-3 text-sm font-semibold text-text-primary/60 transition-colors hover:bg-bg-tertiary hover:text-text-primary disabled:pointer-events-none disabled:opacity-30"
             >
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                <path d="M15 6L9 12L15 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                <path
+                  d="M15 6L9 12L15 18"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
               </svg>
               Previous
             </button>
@@ -73,7 +94,13 @@ export default function CreateListingFooter({
             >
               Next Step
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                <path d="M9 6L15 12L9 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                <path
+                  d="M9 6L15 12L9 18"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
               </svg>
             </button>
           </>

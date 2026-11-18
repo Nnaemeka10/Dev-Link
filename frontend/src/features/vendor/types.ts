@@ -49,6 +49,7 @@ export const DECLINE_REASONS = [
   { key: "incorrect_details", label: "Booking details are incorrect" },
   { key: "other", label: "Other" },
 ] as const;
+
 export type DeclineReasonKey = (typeof DECLINE_REASONS)[number]["key"];
 
 export interface VendorProfile {
@@ -92,6 +93,7 @@ export interface RevenueTrend {
 
 export type TransactionStatus = "completed" | "processing" | "failed";
 export type TransactionDirection = "credit" | "debit";
+
 export type TransactionIcon =
   | "venue" | "photography" | "sound" | "hosting" | "design" | "withdrawal";
 
@@ -136,6 +138,8 @@ export interface TransactionDetail {
     eventLocation: string | null;
     preferences: string | null;
     packageName: string | null;
+    /** When the booking was made (bookings.created_at) - "Booked on". */
+    createdAt: string | null;
     paidAt: string | null;
     disputeWindowClosesAt: string | null;
     totalAmount: number;
@@ -255,12 +259,35 @@ export interface PaginationState {
   itemsPerPage: number;
 }
 
+/**
+ * `unlisted` is the vendor's own archived state - they took it down and can
+ * relist it. `offline` means WE suspended it, and is not self-serve.
+ */
+export type VendorListingStatus =
+  | "active"
+  | "draft"
+  | "in_review"
+  | "rejected"
+  | "unlisted"
+  | "offline";
+
 export interface VendorListing {
   id: string;
   title: string;
   location: string;
-  status: "active" | "draft" | "in_review" | "rejected" | "offline";
+  status: VendorListingStatus;
+  /** Opens in the wizard. True for drafts, rejected, live and unlisted. */
   canEdit: boolean;
+  /** False while upcoming bookings exist - Unlist is offered instead. */
+  canDelete: boolean;
+  canUnlist: boolean;
+  canRelist: boolean;
+  /** A staged edit is awaiting moderation; the live version keeps serving. */
+  hasPendingEdits: boolean;
+  /** A draft_payload exists, so the wizard opens pre-filled. */
+  hasDraft: boolean;
+  /** Upcoming paid/confirmed events - the reason a delete may be refused. */
+  upcomingBookings: number;
   pricePerUnit: number;
   unit: string;
   thumbnailUrl: string;

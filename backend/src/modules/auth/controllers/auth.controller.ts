@@ -246,7 +246,13 @@ export const getCurrentUser = async (_req: Request, res: Response) => {
             return res.status(404).json({ message: 'User not found' });
         }
 
-       const userResponse = {
+        // Derived vendor identity (published or pending-review listing).
+        // Computed here per request - never stored - so the navbar switch
+        // can never drift from the listings table. Also consumed by the
+        // profile-completion nudge and the contextual vendor/client links.
+        const isVendor = await UserModel.isVendor(user.id!);
+
+        const userResponse = {
             id: user.id,
             email: user.email,
             username: user.username,
@@ -255,12 +261,14 @@ export const getCurrentUser = async (_req: Request, res: Response) => {
             lastName: user.last_name,
             dateOfBirth: user.date_of_birth,
             phone: user.phone,
+            location: user.location,
             avatarUrl: user.avatar_url,
             isEmailVerified: user.is_email_verified,
             isActive: user.is_active,
-            };
+            isVendor,
+        };
 
-            return res.status(200).json({
+        return res.status(200).json({
             user: userResponse,
         });
     } catch (error: any) {
@@ -272,13 +280,27 @@ export const getCurrentUser = async (_req: Request, res: Response) => {
 //send or resend verification email
 export const sendVerificationEmail = async (req: Request, res: Response) => {
     try {
-        if (!req.user) {
-            return res.status(401).json({ message: 'Authorization required, Please login' });
+        // This route is PUBLIC: the login/signup OTP modal calls it before a
+        // session exists, so resolve the user from the body email when there
+        // is no authenticated caller. (Previously it required req.user and
+        // 401'd every unauthenticated resend.)
+        let user: User | null = null;
+
+        if (req.user?.userId) {
+            user = await UserModel.findById(req.user.userId);
         }
 
-        const user = await UserModel.findById(req.user.userId);
         if (!user) {
-            return res.status(404).json({ message: 'User not found' });
+            const rawEmail = (req.body as { email?: unknown })?.email;
+            const email = typeof rawEmail === 'string' ? rawEmail.trim().toLowerCase() : '';
+            if (!email) {
+                return res.status(400).json({ error: 'Email is required' });
+            }
+            user = await UserModel.findByEmail(email);
+        }
+
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
         }
 
         if (user.is_email_verified) {
@@ -303,7 +325,10 @@ export const sendVerificationEmail = async (req: Request, res: Response) => {
 
         res.status(200).json({ 
             message: 'Verification email sent successfully',
-            email: user.email
+            email: user.email,
+            // OtpVerifyModal restarts its countdown from this timestamp -
+            // omitting it previously killed the timer after every resend.
+            expiresAt: verification.expires_at,
         });
 
     } catch (error: any) {

@@ -1,14 +1,13 @@
 import { getDB } from '../../../lib/db.js';
+import type { PoolClient } from 'pg';
 import cloudinary from '../../../lib/cloudinary.js';
 import { ENV } from '../../../lib/env.js';
 
 /**
  * Mirror of the wizard's HALL_AMENITY_DEFINITIONS.
- *
  * `icon` is the stable key that BOTH of these read:
- *   - ListingFeatures.tsx picks the Lucide icon on the details page
- *   - Listing.ts AMENITY_ICONS matches the explore amenity filter
- *
+ *   ListingFeatures.tsx picks the Lucide icon on the details page
+ *   Listing.ts AMENITY_ICONS matches the explore amenity filter
  * Every amenity MUST have a distinct icon. Two ids sharing one icon make them
  * indistinguishable to the filter (selecting either matches both).
  * Keep this map, AMENITY_ICONS and FEATURE_ICONS in lockstep.
@@ -46,25 +45,55 @@ const HALL_TYPE_BADGE_RULES: Record<string, string> = {
   'outdoor-garden': 'Outdoor Space',
 };
 
+/**
+ * Lifecycle guards - one source of truth for every write path.
+ *
+ * EDITABLE  : the owner may open the wizard and autosave.
+ * LIVE      : currently serving in search. Autosave writes ONLY draft_payload;
+ *             the relational columns are the approved version and must not
+ *             move until the staged payload is applied.
+ * OFFLINE   : draft / rejected / archived - nothing is serving, so a publish
+ *             may project the payload straight onto the row.
+ */
+const EDITABLE_STATUSES = ['draft', 'rejected', 'published', 'pending_review', 'archived'];
+const LIVE_STATUSES = ['published', 'pending_review'];
+
+/** Bookings that still owe the customer an event - they block hard deletion. */
+const ACTIVE_BOOKING_STATUSES = `('paid', 'funds_held', 'confirmed', 'completed', 'processing_payout')`;
+
 export const VendorListingModel = {
   /** Listings owned by this vendor + lightweight 30-day engagement stats. */
   async getListingsByVendor(userId: number) {
     const db = getDB();
     const res = await db.query(
       `SELECT l.id, l.title, CONCAT_WS(', ', l.city, l.state) AS location, l.status,
-              l.base_price_kobo, l.price_unit, la.url AS thumbnail_url,
+              l.base_price_kobo, l.price_unit, l.pending_review_at,
+              (l.draft_payload IS NOT NULL) AS has_draft,
+              la.url AS thumbnail_url,
               COALESCE(vc.views, 0) AS views_last_30_days,
-              COALESCE(bc.bookings, 0) AS bookings_last_30_days
+              COALESCE(bc.bookings, 0) AS bookings_last_30_days,
+              COALESCE(ub.upcoming, 0) AS upcoming_bookings
        FROM listings l
        LEFT JOIN listing_assets la ON la.listing_id = l.id AND la.is_primary = TRUE
        LEFT JOIN (
-         SELECT listing_id, COUNT(*) AS views FROM listing_view_events
-         WHERE viewed_at > NOW() - INTERVAL '30 days' GROUP BY listing_id
+         SELECT listing_id, COUNT(*) AS views
+         FROM listing_view_events
+         WHERE viewed_at > NOW() - INTERVAL '30 days'
+         GROUP BY listing_id
        ) vc ON vc.listing_id = l.id
        LEFT JOIN (
-         SELECT listing_id, COUNT(*) AS bookings FROM bookings
-         WHERE created_at > NOW() - INTERVAL '30 days' GROUP BY listing_id
+         SELECT listing_id, COUNT(*) AS bookings
+         FROM bookings
+         WHERE created_at > NOW() - INTERVAL '30 days'
+         GROUP BY listing_id
        ) bc ON bc.listing_id = l.id
+       LEFT JOIN LATERAL (
+         SELECT COUNT(*) AS upcoming
+         FROM bookings b
+         WHERE b.listing_id = l.id
+           AND b.status IN ${ACTIVE_BOOKING_STATUSES}
+           AND b.end_date >= CURRENT_DATE
+       ) ub ON TRUE
        WHERE l.vendor_id = $1 AND l.deleted_at IS NULL
        ORDER BY l.created_at DESC`,
       [userId]
@@ -72,11 +101,16 @@ export const VendorListingModel = {
     return res.rows;
   },
 
-  /** Single listing + saved wizard payload, for reopening a draft. */
+  /**
+   * Single listing + saved wizard payload, for reopening in the wizard.
+   * Ownership and soft-delete are enforced here; the controller decides
+   * whether the status is editable.
+   */
   async getDraftById(listingId: string, userId: number) {
     const db = getDB();
     const res = await db.query(
-      `SELECT id, kind, status, draft_payload FROM listings
+      `SELECT id, kind, status, draft_payload, pending_review_at
+       FROM listings
        WHERE id = $1 AND vendor_id = $2 AND deleted_at IS NULL`,
       [listingId, userId]
     );
@@ -95,51 +129,212 @@ export const VendorListingModel = {
   },
 
   /**
-   * Soft-delete. status='archived' guarantees the autosave/publish guards
-   * (status IN ('draft','rejected')) can never touch the row again.
+   * Debounced autosave target. Never overwrites status.
+   *
+   * On a LIVE (or unlisted) listing this writes ONLY draft_payload. The old
+   * behaviour projected title and base_price_kobo onto the row on every
+   * keystroke - harmless for a draft, but on a published listing it pushed
+   * unreviewed edits straight into search results and the booking price.
    */
-  async deleteDraft(listingId: string, userId: number): Promise<boolean> {
+  async updateDraft(listingId: string, userId: number, payload: any): Promise<void> {
+    const db = getDB();
+    const owner = await db.query(
+      `SELECT status FROM listings
+       WHERE id = $1 AND vendor_id = $2 AND deleted_at IS NULL`,
+      [listingId, userId]
+    );
+    const status = owner.rows[0]?.status;
+    if (!status || !EDITABLE_STATUSES.includes(status)) {
+      throw new Error('NOT_EDITABLE');
+    }
+
+    if (LIVE_STATUSES.includes(status) || status === 'archived') {
+      await db.query(
+        `UPDATE listings SET draft_payload = $3, updated_at = NOW()
+         WHERE id = $1 AND vendor_id = $2`,
+        [listingId, userId, JSON.stringify(payload)]
+      );
+      return;
+    }
+
+    const name = String(payload?.details?.name ?? '').trim();
+    const priceKobo = Number.isFinite(payload?.pricing?.basePrice)
+      ? Math.round(payload.pricing.basePrice) // already kobo - do NOT ×100 again
+      : null;
+
+    await db.query(
+      `UPDATE listings
+       SET draft_payload = $3,
+           title = COALESCE(NULLIF($4, ''), title),
+           base_price_kobo = COALESCE($5, base_price_kobo),
+           updated_at = NOW()
+       WHERE id = $1 AND vendor_id = $2 AND status IN ('draft', 'rejected')`,
+      [listingId, userId, JSON.stringify(payload), name, priceKobo]
+    );
+  },
+
+  /**
+   * Publish / republish / relist - one guarded, atomic path.
+   *
+   * OFFLINE listing (draft, rejected, archived):
+   *   project the payload onto the row, then set status by ENABLE_LISTING_REVIEW.
+   *
+   * LIVE listing (published, pending_review):
+   *   review OFF → apply the payload immediately, stay published, zero downtime.
+   *   review ON  → live columns untouched; the payload is staged and
+   *                pending_review_at is stamped for the moderation queue.
+   *
+   * The row lock plus the single transaction mean a double-click can never
+   * half-apply a payload, and the projection + status flip commit together.
+   */
+  async publishDraft(
+    listingId: string,
+    userId: number,
+    payload?: any
+  ): Promise<{ status: string; staged: boolean }> {
+    const db = getDB();
+    const client = await db.connect();
+    try {
+      await client.query('BEGIN');
+
+      const { rows } = await client.query(
+        `SELECT id, status, draft_payload FROM listings
+         WHERE id = $1 AND vendor_id = $2 AND deleted_at IS NULL
+         FOR UPDATE`,
+        [listingId, userId]
+      );
+      const row = rows[0];
+      if (!row || !EDITABLE_STATUSES.includes(row.status)) {
+        throw new Error('NOT_EDITABLE');
+      }
+
+      const reviewEnabled = ENV.ENABLE_LISTING_REVIEW;
+      const isLive = LIVE_STATUSES.includes(row.status);
+
+      // Staged edit: the approved version keeps serving.
+      if (isLive && reviewEnabled) {
+        if (payload) {
+          await client.query(
+            `UPDATE listings
+             SET draft_payload = $3, pending_review_at = NOW(), updated_at = NOW()
+             WHERE id = $1`,
+            [listingId, userId, JSON.stringify(payload)]
+          );
+        } else {
+          await client.query(
+            `UPDATE listings SET pending_review_at = NOW(), updated_at = NOW()
+             WHERE id = $1`,
+            [listingId]
+          );
+        }
+        await client.query('COMMIT');
+        return { status: row.status, staged: true };
+      }
+
+      const effectivePayload = payload ?? row.draft_payload;
+      if (effectivePayload) {
+        await this.processDraftPayload(listingId, effectivePayload, client);
+      }
+
+      const nextStatus = reviewEnabled ? 'pending_review' : 'published';
+      const updated = await client.query(
+        `UPDATE listings
+         SET status = $3,
+             pending_review_at = CASE WHEN $3 = 'pending_review' THEN NOW() ELSE NULL END,
+             updated_at = NOW()
+         WHERE id = $1 AND vendor_id = $2
+         RETURNING status`,
+        [listingId, userId, nextStatus]
+      );
+
+      await client.query('COMMIT');
+      return { status: updated.rows[0].status, staged: false };
+    } catch (error) {
+      await client.query('ROLLBACK').catch(() => {});
+      throw error;
+    } finally {
+      client.release();
+    }
+  },
+
+  /**
+   * Take a live listing out of search without destroying anything.
+   * Existing bookings are honoured and the row stays in My Listings so the
+   * vendor can relist it. This is the safe alternative to deletion when
+   * events are still owed.
+   */
+  async unlistListing(listingId: string, userId: number): Promise<boolean> {
     const db = getDB();
     const res = await db.query(
-      `UPDATE listings SET deleted_at = NOW(), status = 'archived', updated_at = NOW()
-       WHERE id = $1 AND vendor_id = $2 AND status IN ('draft', 'rejected') AND deleted_at IS NULL
+      `UPDATE listings SET status = 'archived', updated_at = NOW()
+       WHERE id = $1 AND vendor_id = $2
+         AND status IN ('published', 'pending_review')
+         AND deleted_at IS NULL
        RETURNING id`,
       [listingId, userId]
     );
     return (res.rowCount ?? 0) > 0;
   },
 
-  /** Debounced autosave target. Never overwrites status. */
-  async updateDraft(listingId: string, userId: number, payload: any): Promise<void> {
+  /** Bring an unlisted listing back. Applies any staged payload, same as publish. */
+  async relistListing(
+    listingId: string,
+    userId: number
+  ): Promise<{ status: string; staged: boolean }> {
     const db = getDB();
-    const name = String(payload?.details?.name ?? '').trim();
-    const priceKobo = Number.isFinite(payload?.pricing?.basePrice)
-      ? Math.round(payload.pricing.basePrice) // already kobo - do NOT ×100 again
-      : null;
-    await db.query(
-      `UPDATE listings SET draft_payload = $3,
-              title = COALESCE(NULLIF($4, ''), title),
-              base_price_kobo = COALESCE($5, base_price_kobo),
-              updated_at = NOW()
-       WHERE id = $1 AND vendor_id = $2 AND status IN ('draft', 'rejected')`,
-      [listingId, userId, JSON.stringify(payload), name, priceKobo]
+    const { rows } = await db.query(
+      `SELECT status FROM listings
+       WHERE id = $1 AND vendor_id = $2 AND deleted_at IS NULL`,
+      [listingId, userId]
     );
+    if (!rows[0]) throw new Error('NOT_FOUND');
+    if (rows[0].status !== 'archived') throw new Error('NOT_ARCHIVED');
+    return this.publishDraft(listingId, userId);
   },
 
-  async publishDraft(listingId: string, userId: number, payload?: any): Promise<{ status: string }> {
+  /**
+   * Soft delete, refused while the listing still owes someone an event.
+   * The row (and therefore every booking, review and ledger reference) is
+   * preserved; status='archived' + deleted_at guarantees no write path can
+   * resurrect it and public search never sees it again.
+   */
+  async deleteListing(listingId: string, userId: number): Promise<boolean> {
     const db = getDB();
-    if (payload) {
-      await this.processDraftPayload(listingId, payload);
+    const client = await db.connect();
+    try {
+      await client.query('BEGIN');
+
+      const { rows } = await client.query(
+        `SELECT id FROM listings
+         WHERE id = $1 AND vendor_id = $2 AND deleted_at IS NULL
+         FOR UPDATE`,
+        [listingId, userId]
+      );
+      if (!rows[0]) throw new Error('NOT_FOUND');
+
+      const upcoming = await client.query(
+        `SELECT COUNT(*)::int AS n FROM bookings
+         WHERE listing_id = $1
+           AND status IN ${ACTIVE_BOOKING_STATUSES}
+           AND end_date >= CURRENT_DATE`,
+        [listingId]
+      );
+      if ((upcoming.rows[0]?.n ?? 0) > 0) throw new Error('ACTIVE_BOOKINGS');
+
+      await client.query(
+        `UPDATE listings SET deleted_at = NOW(), status = 'archived', updated_at = NOW()
+         WHERE id = $1`,
+        [listingId]
+      );
+
+      await client.query('COMMIT');
+      return true;
+    } catch (error) {
+      await client.query('ROLLBACK').catch(() => {});
+      throw error;
+    } finally {
+      client.release();
     }
-    const nextStatus = ENV.ENABLE_LISTING_REVIEW ? 'pending_review' : 'published';
-    const res = await db.query(
-      `UPDATE listings SET status = $3, updated_at = NOW()
-       WHERE id = $1 AND vendor_id = $2 AND status IN ('draft', 'rejected') AND deleted_at IS NULL
-       RETURNING status`,
-      [listingId, userId, nextStatus]
-    );
-    if (res.rows.length === 0) throw new Error('NOT_EDITABLE');
-    return res.rows[0];
   },
 
   /** Short-lived Cloudinary signature. Ownership validated before issuing. */
@@ -155,6 +350,7 @@ export const VendorListingModel = {
     const timestamp = Math.round(Date.now() / 1000);
     const folder = `eventvnv/listings/${listingId}`;
     const signature = cloudinary.utils.api_sign_request({ timestamp, folder }, ENV.CLOUDINARY_API_SECRET);
+
     return {
       signature,
       timestamp,
@@ -168,12 +364,21 @@ export const VendorListingModel = {
    * Projects draft_payload JSONB into the relational tables the search filters
    * read. Every column written here has a matching predicate in
    * listings/models/Listing.ts, keep the two in lockstep.
+   *
+   * Accepts an existing client so publishDraft can wrap the projection and the
+   * status flip in ONE transaction. Called standalone it owns its transaction.
    */
-  async processDraftPayload(listingId: string, payload: any): Promise<void> {
+  async processDraftPayload(
+    listingId: string,
+    payload: any,
+    existingClient?: PoolClient
+  ): Promise<void> {
     const db = getDB();
-    const client = await db.connect();
+    const client = existingClient ?? (await db.connect());
+    const ownsTransaction = !existingClient;
+
     try {
-      await client.query('BEGIN');
+      if (ownsTransaction) await client.query('BEGIN');
 
       const details = payload.details;
       const category = payload.category;
@@ -191,18 +396,13 @@ export const VendorListingModel = {
         const stateName = await this._resolveStateName(client, details.hallLocation.stateId);
         const lgaName = await this._resolveLgaName(client, details.hallLocation.lgaId);
         await client.query(
-          `UPDATE listings SET
-              title = COALESCE($2, title),
-              headline = COALESCE($3, headline),
-              description = COALESCE($4, description),
-              address_line = $5,
-              city = $6,
-              state = $7,
-              capacity = $8,
-              base_price_kobo = $9,
-              price_unit = COALESCE($10, price_unit),
-              service_metadata = NULL,
-              updated_at = NOW()
+          `UPDATE listings
+           SET title = COALESCE($2, title),
+               headline = COALESCE($3, headline),
+               description = COALESCE($4, description),
+               address_line = $5, city = $6, state = $7, capacity = $8,
+               base_price_kobo = $9, price_unit = COALESCE($10, price_unit),
+               service_metadata = NULL, updated_at = NOW()
            WHERE id = $1`,
           [
             listingId,
@@ -219,18 +419,14 @@ export const VendorListingModel = {
         );
       } else if (category === 'service' && details?.serviceLocation) {
         await client.query(
-          `UPDATE listings SET
-              title = COALESCE($2, title),
-              headline = COALESCE($3, headline),
-              description = COALESCE($4, description),
-              address_line = $5,
-              base_price_kobo = $6,
-              price_unit = COALESCE($7, price_unit),
-              service_metadata = $8,
-              capacity = NULL,
-              city = NULL,
-              state = NULL,
-              updated_at = NOW()
+          `UPDATE listings
+           SET title = COALESCE($2, title),
+               headline = COALESCE($3, headline),
+               description = COALESCE($4, description),
+               address_line = $5, base_price_kobo = $6,
+               price_unit = COALESCE($7, price_unit),
+               service_metadata = $8, capacity = NULL, city = NULL, state = NULL,
+               updated_at = NOW()
            WHERE id = $1`,
           [
             listingId,
@@ -257,8 +453,7 @@ export const VendorListingModel = {
           .join(', ');
         if (values) {
           await client.query(
-            `INSERT INTO listing_hall_types (listing_id, type_id) VALUES ${values}
-             ON CONFLICT DO NOTHING`,
+            `INSERT INTO listing_hall_types (listing_id, type_id) VALUES ${values} ON CONFLICT DO NOTHING`,
             [listingId, ...details.selectedTypeIds]
           );
         }
@@ -321,8 +516,7 @@ export const VendorListingModel = {
         for (let i = 0; i < pricing.packages.length; i++) {
           const pkg = pricing.packages[i];
           const res = await client.query(
-            `INSERT INTO service_packages
-               (listing_id, name, price_kobo, description, is_popular, sort_order)
+            `INSERT INTO service_packages (listing_id, name, price_kobo, description, is_popular, sort_order)
              VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
             [listingId, pkg.name, Math.round(pkg.price), pkg.description ?? null, !!pkg.isPopular, i]
           );
@@ -333,8 +527,7 @@ export const VendorListingModel = {
             const perkParams: any[] = [packageId];
             perks.forEach((p: any, j: number) => perkParams.push(p.label, j));
             await client.query(
-              `INSERT INTO package_features (package_id, text, sort_order)
-               VALUES ${perkValues.join(', ')}`,
+              `INSERT INTO package_features (package_id, text, sort_order) VALUES ${perkValues.join(', ')}`,
               perkParams
             );
           }
@@ -348,11 +541,11 @@ export const VendorListingModel = {
       if (category === 'service' && hasPackages) {
         await client.query(
           `UPDATE listings
-              SET base_price_kobo = COALESCE(
-                    (SELECT MIN(price_kobo) FROM service_packages WHERE listing_id = $1), 0
-                  ),
-                  updated_at = NOW()
-            WHERE id = $1`,
+           SET base_price_kobo = COALESCE(
+                 (SELECT MIN(price_kobo) FROM service_packages WHERE listing_id = $1), 0
+               ),
+               updated_at = NOW()
+           WHERE id = $1`,
           [listingId]
         );
       }
@@ -375,9 +568,8 @@ export const VendorListingModel = {
             await client.query(
               `INSERT INTO listing_service_areas (listing_id, city, state, country)
                SELECT $1, l.name, $2, 'Nigeria'
-                 FROM nigeria_lgas l
-                WHERE l.state_id = $3
-                  AND NOT (l.id = ANY($4::text[]))`,
+               FROM nigeria_lgas l
+               WHERE l.state_id = $3 AND NOT (l.id = ANY($4::text[]))`,
               [listingId, stateName, stateId, deselected]
             );
           }
@@ -426,12 +618,12 @@ export const VendorListingModel = {
         );
       }
 
-      await client.query('COMMIT');
+      if (ownsTransaction) await client.query('COMMIT');
     } catch (error) {
-      await client.query('ROLLBACK');
+      if (ownsTransaction) await client.query('ROLLBACK').catch(() => {});
       throw error;
     } finally {
-      client.release();
+      if (ownsTransaction) client.release();
     }
   },
 

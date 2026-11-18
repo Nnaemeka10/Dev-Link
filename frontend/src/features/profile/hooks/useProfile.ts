@@ -20,12 +20,10 @@ import type {
   UpdateProfilePayload,
 } from "../profile.types";
 
-//  Date Formatting 
-
+//  Date Formatting
 function formatDate(dateStr: string): string {
   const isDateOnly = /^\d{4}-\d{2}-\d{2}$/.test(dateStr);
   const date = new Date(isDateOnly ? `${dateStr}T00:00:00` : dateStr);
-
   return date.toLocaleDateString("en-NG", {
     month: "long",
     day: "numeric",
@@ -40,16 +38,16 @@ function formatMemberSince(dateStr: string): string {
   });
 }
 
-const FALLBACK_AVATAR = "https://ui-avatars.com/api/?name=User&background=D65C3A&color=fff&size=200";
-const FALLBACK_IMAGE = "https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=400&q=80";
+const FALLBACK_AVATAR =
+  "https://ui-avatars.com/api/?name=User&background=D65C3A&color=fff&size=200";
+const FALLBACK_IMAGE =
+  "https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=400&q=80";
 
-//  Hook 
-
+//  Hook
 export function useProfile() {
   const queryClient = useQueryClient();
 
-  //  Queries 
-
+  //  Queries
   const { data: raw, isLoading: isProfileLoading } = useQuery({
     queryKey: ["profile"],
     queryFn: fetchProfile,
@@ -68,8 +66,7 @@ export function useProfile() {
     staleTime: 1000 * 60,
   });
 
-  //  Derived State 
-
+  //  Derived State
   const profile: UserProfile | null = raw
     ? {
         fullName: `${raw.firstName} ${raw.lastName}`.trim() || raw.email,
@@ -101,19 +98,22 @@ export function useProfile() {
     expiry: pm.expiryDate,
   }));
 
-  //  Mutations 
-
+  //  Mutations
   const updateProfileMutation = useMutation({
     mutationFn: (payload: UpdateProfilePayload) => updateProfile(payload),
     onSuccess: (data) => {
       queryClient.setQueryData(["profile"], data);
+      // The navbar, vendor identity and profile-completion nudge all read
+      // ["auth","me"] - keep them in lockstep with profile edits.
+      queryClient.invalidateQueries({ queryKey: ["auth", "me"] });
     },
   });
 
   const updateAvatarMutation = useMutation({
     mutationFn: async (file: File) => {
       // 1. Get signed params
-      const { signature, timestamp, folder, apiKey, cloudName } = await fetchAvatarSignature();
+      const { signature, timestamp, folder, apiKey, cloudName } =
+        await fetchAvatarSignature();
 
       // 2. Upload directly to Cloudinary
       const formData = new FormData();
@@ -127,7 +127,6 @@ export function useProfile() {
         `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
         { method: "POST", body: formData }
       );
-
       if (!res.ok) throw new Error("Cloudinary upload failed");
       const data = await res.json();
 
@@ -136,6 +135,7 @@ export function useProfile() {
     },
     onSuccess: (data) => {
       queryClient.setQueryData(["profile"], data);
+      queryClient.invalidateQueries({ queryKey: ["auth", "me"] });
     },
   });
 
@@ -172,11 +172,9 @@ export function useProfile() {
     mutationFn: deactivateAccount,
   });
 
-  //  Field Update Helper 
-
+  //  Field Update Helper
   const updateField = async (field: string, value: string) => {
     const payload: UpdateProfilePayload = {};
-
     if (field === "fullName") {
       const parts = value.trim().split(" ");
       payload.firstName = parts[0] || "";
@@ -188,18 +186,17 @@ export function useProfile() {
     } else if (field === "location") {
       payload.location = value.trim();
     }
-
     await updateProfileMutation.mutateAsync(payload);
   };
 
-  //  Notification Toggle Helper 
-
+  //  Notification Toggle Helper
   const toggleNotification = async (key: keyof NotificationSettings) => {
-    await updateNotificationsMutation.mutateAsync({ [key]: !notifications[key] });
+    await updateNotificationsMutation.mutateAsync({
+      [key]: !notifications[key],
+    });
   };
 
-  //  Return 
-
+  //  Return
   return {
     // Data
     profile,
@@ -220,7 +217,8 @@ export function useProfile() {
     // Payment mutations
     setDefaultPayment: setDefaultMutation.mutateAsync,
     removePayment: removePaymentMutation.mutateAsync,
-    isUpdatingPayment: setDefaultMutation.isPending || removePaymentMutation.isPending,
+    isUpdatingPayment:
+      setDefaultMutation.isPending || removePaymentMutation.isPending,
 
     // Notification mutation
     toggleNotification,

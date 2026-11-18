@@ -1,20 +1,22 @@
 "use client";
-import { CalendarDays, Clock, MapPin, User, Hash, Receipt, Star, Undo2, Flag, MessageCircle, RotateCcw } from "lucide-react";
+
+import {
+  CalendarDays, CalendarClock, Clock, CreditCard, MapPin, User, Hash, Receipt, Star,
+  Undo2, Flag, MessageCircle, RotateCcw, UsersRound,
+} from "lucide-react";
 import HubModal from "./HubModal";
 import StatusPill from "./StatusPill";
 import { useHubBookingDetails } from "../hooks/useSavedHub";
 import type { BookingActionType } from "./BookingCard";
+import {
+  allSpansLabel,
+  bookedSpans,
+  countBookedDays,
+  formatDay,
+  formatEventTimeLabel,
+  formatWatDateTimeLabelled,
+} from "@/lib/datetime";
 
-function fmtDate(d: string): string {
-  return new Date(`${d}T00:00:00`).toLocaleDateString("en-NG", { weekday: "short", day: "numeric", month: "long", year: "numeric" });
-}
-function fmtTime(t: string | null): string {
-  if (!t) return "-";
-  const [h, m] = t.split(":");
-  const d = new Date();
-  d.setHours(Number(h), Number(m));
-  return d.toLocaleTimeString("en-NG", { hour: "numeric", minute: "2-digit" });
-}
 function naira(n: number): string {
   return `₦${n.toLocaleString("en-NG", { minimumFractionDigits: 2 })}`;
 }
@@ -25,7 +27,7 @@ function Row({ icon: Icon, label, value }: { icon: React.ElementType; label: str
       <Icon className="mt-0.5 h-4 w-4 shrink-0 text-[#B9401D]" />
       <div className="min-w-0">
         <p className="text-[10px] font-extrabold uppercase tracking-widest text-[#9A9AAE]">{label}</p>
-        <p className="mt-0.5 text-sm font-bold text-[#252423]">{value}</p>
+        <p className="mt-0.5 text-sm font-bold leading-snug text-[#252423]">{value}</p>
       </div>
     </div>
   );
@@ -44,6 +46,9 @@ export default function BookingDetailsModal({
 }) {
   const { data, isLoading } = useHubBookingDetails(isOpen ? bookingId : null);
 
+  const spans = data ? bookedSpans(data.startDate, data.endDate, data.excludedDates) : [];
+  const dayCount = countBookedDays(spans);
+
   return (
     <HubModal isOpen={isOpen} title="Booking details" subtitle={data?.bookingReference} onClose={onClose} maxWidth="max-w-xl">
       {isLoading || !data ? (
@@ -57,17 +62,37 @@ export default function BookingDetailsModal({
           <div className="flex items-center justify-between gap-3">
             <div className="min-w-0">
               <h3 className="truncate text-base font-extrabold text-[#252423]">{data.listingTitle}</h3>
-              <p className="text-xs font-semibold text-[#9A9AAE]">{data.kind === "hall" ? "Hall" : "Service"} · {data.vendorName}</p>
+              <p className="text-xs font-semibold text-[#9A9AAE]">
+                {data.kind === "hall" ? "Hall" : "Service"} · {data.vendorName}
+              </p>
             </div>
             <StatusPill status={data.status} />
           </div>
 
           <div className="grid gap-2.5 sm:grid-cols-2">
-            <Row icon={CalendarDays} label="Dates" value={data.startDate === data.endDate ? fmtDate(data.startDate) : `${fmtDate(data.startDate)} - ${fmtDate(data.endDate)}`} />
-            <Row icon={Clock} label="Time" value={`${fmtTime(data.startTime)} – ${fmtTime(data.endTime)}`} />
-            <Row icon={MapPin} label={data.kind === "hall" ? "Venue location" : "Event location"} value={data.location || "Location to be added"} />
+            <Row
+              icon={CalendarDays}
+              label={`Event dates · ${dayCount} ${dayCount === 1 ? "day" : "days"}`}
+              value={allSpansLabel(spans)}
+            />
+            <Row icon={Clock} label="Event time" value={formatEventTimeLabel(data.startTime, data.endTime)} />
+            <Row
+              icon={MapPin}
+              label={data.kind === "hall" ? "Venue location" : "Event location"}
+              value={data.location || "Location to be added"}
+            />
             <Row icon={User} label="Vendor" value={data.vendorName} />
+            {data.kind === "hall" && (
+              <Row icon={UsersRound} label="Guests" value={`${(data.guests ?? 1).toLocaleString()} expected`} />
+            )}
             {data.packageName && <Row icon={Hash} label="Package" value={data.packageName} />}
+
+            {/* When the booking was made / settled - pinned to WAT so the
+                customer and the vendor always read the same clock. */}
+            <Row icon={CalendarClock} label="Booked on" value={formatWatDateTimeLabelled(data.createdAt)} />
+            {data.paidAt && (
+              <Row icon={CreditCard} label="Paid on" value={formatWatDateTimeLabelled(data.paidAt)} />
+            )}
             <Row icon={Hash} label="Reference" value={data.bookingReference} />
           </div>
 
@@ -75,7 +100,7 @@ export default function BookingDetailsModal({
             <div className="rounded-2xl bg-[#F7F2EA] px-4 py-3">
               <p className="text-[10px] font-extrabold uppercase tracking-widest text-[#9A9AAE]">Removed days (not charged)</p>
               <p className="mt-1 text-sm font-bold text-[#252423]">
-                {data.excludedDates.map((d) => new Date(`${d}T00:00:00`).toLocaleDateString("en-NG", { day: "numeric", month: "short" })).join(", ")}
+                {data.excludedDates.map((d) => formatDay(d)).join(", ")}
               </p>
             </div>
           )}
@@ -96,6 +121,7 @@ export default function BookingDetailsModal({
           {data.cancellationReason && (
             <div className="rounded-2xl bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
               Cancelled: {data.cancellationReason.replace(/_/g, " ")}
+              {data.cancelledAt ? ` · ${formatWatDateTimeLabelled(data.cancelledAt)}` : ""}
             </div>
           )}
 
@@ -105,6 +131,10 @@ export default function BookingDetailsModal({
               {data.refund.status === "pending" && " - support is reviewing your request."}
             </div>
           )}
+
+          <p className="text-center text-[10px] font-bold uppercase tracking-widest text-[#C4BBAE]">
+            All times shown in West Africa Time (WAT · Lagos)
+          </p>
 
           {/* Actions */}
           <div className="flex flex-wrap gap-2 pt-1">

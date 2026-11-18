@@ -18,14 +18,14 @@ const FOOTER_COLUMNS: FooterColumnData[] = [
     title: "Company",
     items: [
       { label: "About Us", href: "/about" },
-      { label: "Careers", href: "mailto:careers@eventvnv.ng", external: true },
+      { label: "Careers", href: "mailto:careers@eventvnv.com", external: true },
     ],
   },
   {
     title: "Support",
     items: [
       { label: "Help Center", href: "/help" },
-      { label: "Contact", href: "mailto:support@eventvnv.ng", external: true },
+      { label: "Contact", href: "mailto:support@eventvnv.com", external: true },
     ],
   },
   {
@@ -33,6 +33,7 @@ const FOOTER_COLUMNS: FooterColumnData[] = [
     items: [
       { label: "Terms", href: "/terms" },
       { label: "Privacy", href: "/privacy" },
+      { label: "Cookies", href: "/cookies" },
     ],
   },
 ];
@@ -81,13 +82,15 @@ export default function HomeFooter() {
             <p className="font-semibold logo translate-y-1.5">EventVnV</p>
           </Link>
           <p className="mt-4 max-w-md text-sm text-text-primary/60">
-            © 2026 Eventvnv. Nigeria&apos;s premier event concierge, curating
+            © 2026 Eventvnv. Nigeria's premier event concierge, curating
             elegance across West Africa.
           </p>
         </div>
+
         {FOOTER_COLUMNS.map((column) => (
           <FooterColumn key={column.title} {...column} />
         ))}
+
         <div>
           <h4 className="text-[11px] font-semibold uppercase tracking-[0.16em] text-text-primary/48">
             Social

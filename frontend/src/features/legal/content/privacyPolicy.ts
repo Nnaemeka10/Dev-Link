@@ -1,7 +1,7 @@
 import type { LegalDocument } from "./legalTypes";
 
 // Update whenever the policy changes - it renders in the hero.
-const LAST_UPDATED = "7 November 2026";
+const LAST_UPDATED = "18 November 2026";
 
 export const PRIVACY_POLICY: LegalDocument = {
   eyebrow: "Legal · Privacy",
@@ -24,7 +24,7 @@ export const PRIVACY_POLICY: LegalDocument = {
         },
         {
           type: "p",
-          text: "If you have questions about this policy or how we handle your data, contact us at privacy@eventvnv.ng.",
+          text: "If you have questions about this policy or how we handle your data, contact us at privacy@eventvnv.com.",
         },
       ],
     },
@@ -40,8 +40,8 @@ export const PRIVACY_POLICY: LegalDocument = {
           type: "list",
           items: [
             "Account information - your name, email address, phone number and password (stored only as a secure hash).",
-            "Profile information - whether you use EventVnV as a customer, a vendor, or both.",
-            "Booking information - the listing, selected dates and times, event details and booking references for bookings you make.",
+            "Profile information - your photo, primary location, and whether you use EventVnV as a customer, a vendor, or both.",
+            "Booking information - the listing, selected dates and times, guest count, notes for the vendor, delivery address for services, and booking references for bookings you make.",
             "Transaction information - amounts, VAT, payment status and payout status. Card details are processed by our payment partner; we never store full card numbers.",
             "Listing information - for vendors: listing details, photos, pricing, packages, location and payout details.",
             "Communications - messages you exchange with other users on the platform, and conversations with our support team.",
@@ -100,7 +100,7 @@ export const PRIVACY_POLICY: LegalDocument = {
           items: [
             "With vendors - the details they need to host your event (name, contact information and booking details) once a booking is paid for and shared for fulfilment.",
             "With payment partners - our payment processor handles card payments and bank transfers and receives the data needed to complete them.",
-            "With service providers - hosting, analytics and communication tools that help us run the platform, bound by confidentiality obligations.",
+            "With service providers - hosting, image delivery and communication tools that help us run the platform, bound by confidentiality obligations.",
             "With authorities - where we are legally required, or to protect the rights, property or safety of our users.",
             "In a business transfer - if EventVnV is merged or acquired, with notice to you beforehand where possible.",
           ],
@@ -135,6 +135,7 @@ export const PRIVACY_POLICY: LegalDocument = {
             "Transaction and payout records are retained for the period required by Nigerian tax and financial record-keeping law.",
             "Booking history is retained so both customers and vendors have a reliable record of what was agreed.",
             "Unpaid, expired bookings are cleaned up automatically.",
+            "Deactivating your account disables it and signs you out everywhere; your booking history is preserved and existing bookings are honoured. Contact support to reactivate.",
             "When you ask us to delete your account, we remove or anonymise your data unless the law requires us to keep it.",
           ],
         },
@@ -146,7 +147,11 @@ export const PRIVACY_POLICY: LegalDocument = {
       blocks: [
         {
           type: "p",
-          text: "We protect your data with encryption in transit, strict access controls and monitoring for suspicious activity. Payments run through a PCI-compliant processor.",
+          text: "We protect your data with encryption in transit, strict access controls and monitoring for suspicious activity. Payments run through a PCI-compliant processor. Bank account numbers and government ID numbers held for vendor verification are encrypted at rest.",
+        },
+        {
+          type: "p",
+          text: "Changing your password or deactivating your account immediately invalidates every sign-in session on every device.",
         },
         {
           type: "p",
@@ -175,21 +180,25 @@ export const PRIVACY_POLICY: LegalDocument = {
         },
         {
           type: "p",
-          text: "To exercise any of these rights, email privacy@eventvnv.ng. If you are unhappy with our response, you may complain to the Nigeria Data Protection Commission (NDPC).",
+          text: "To exercise any of these rights, email privacy@eventvnv.com. If you are unhappy with our response, you may complain to the Nigeria Data Protection Commission (NDPC).",
         },
       ],
     },
     {
       id: "cookies",
-      heading: "Cookies and analytics",
+      heading: "Cookies and browser storage",
       blocks: [
         {
           type: "p",
-          text: "We use a small number of cookies and similar technologies: essential ones that keep you signed in and the platform secure, analytics ones that help us understand which features matter, and preference ones that remember your settings.",
+          text: "We use one strictly necessary cookie to keep you signed in, plus a small amount of browser storage that remembers your search, your booking draft and your listing draft. We do not use advertising cookies or third-party analytics.",
         },
         {
           type: "p",
-          text: "You can control or delete cookies through your browser settings. Blocking essential cookies will stop parts of EventVnV from working.",
+          text: "Our payment partner (Paystack) and Google sign-in set their own cookies on their own domains when you use those features. Their handling is governed by their policies, not ours.",
+        },
+        {
+          type: "p",
+          text: "Our Cookie Policy lists every cookie and storage key by name, what it does and how long it lasts. You can control or delete them through your browser settings; blocking the sign-in cookie will stop you from booking, saving listings or messaging vendors.",
         },
       ],
     },
@@ -199,7 +208,7 @@ export const PRIVACY_POLICY: LegalDocument = {
       blocks: [
         {
           type: "p",
-          text: "EventVnV is intended for users aged 18 and over. Accounts and bookings require an adult, and we do not knowingly collect data from children. If you believe a child has given us personal data, contact privacy@eventvnv.ng and we will delete it.",
+          text: "EventVnV is intended for users aged 18 and over. Accounts and bookings require an adult, and we do not knowingly collect data from children. If you believe a child has given us personal data, contact privacy@eventvnv.com and we will delete it.",
         },
       ],
     },
@@ -224,8 +233,8 @@ export const PRIVACY_POLICY: LegalDocument = {
         {
           type: "list",
           items: [
-            "General support - support@eventvnv.ng",
-            "Privacy and data requests - privacy@eventvnv.ng",
+            "General support - support@eventvnv.com",
+            "Privacy and data requests - privacy@eventvnv.com",
             "EventVnV Support, Lagos, Nigeria",
           ],
         },

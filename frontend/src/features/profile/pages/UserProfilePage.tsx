@@ -1,11 +1,17 @@
-import { useBankDirectory, usePayoutMethodStatus, useRemovePayoutMethod } from "@/features/profile/hooks/usePayoutVerification";
+import {
+  useBankDirectory,
+  usePayoutMethodStatus,
+  useRemovePayoutMethod,
+} from "@/features/profile/hooks/usePayoutVerification";
 import PayoutMethodForm from "@/features/profile/components/PayoutMethodForm";
+import ChangePasswordModal from "@/features/profile/components/ChangePasswordModal";
 import { Loader2, AlertCircle, Banknote, Trash2 } from "lucide-react";
 import MobileDock from "@/components/layout/MobileDock";
 import SideNavBar from "@/components/layout/SideNavBar";
 import VendorMobileDock from "@/components/layout/VendorMobileDock";
 import VendorSideNavBar from "@/components/layout/VendorSideNavBar";
 import { apiFetch } from "@/lib/api";
+import { useAuth } from "@/features/auth/useAuth";
 import { useAuthStore } from "@/features/auth/auth.store";
 import { useProfile } from "@/features/profile/hooks/useProfile";
 import type {
@@ -19,11 +25,9 @@ import type React from "react";
 import { useState, useRef, useEffect } from "react";
 import { usePathname } from "next/navigation";
 
-
 type ProfileState = ReturnType<typeof useProfile>;
 
-//  Icons (inline SVG helpers) 
-
+//  Icons (inline SVG helpers)
 const ChevronRight = () => (
   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
@@ -36,20 +40,21 @@ const BackArrow = () => (
   </svg>
 );
 
-//  Shared Atoms 
-
-function SectionHeader({
-  icon,
-  title,
-}: {
-  icon: React.ReactNode;
-  title: string;
-}) {
+//  Shared Atoms
+function SectionHeader({ icon, title }: { icon: React.ReactNode; title: string }) {
   return (
     <div className="flex items-center gap-2 mb-3 px-1">
       <span className="text-[#D65C3A]">{icon}</span>
       <h3 className="text-base font-bold text-stone-800">{title}</h3>
     </div>
+  );
+}
+
+function ComingSoonBadge() {
+  return (
+    <span className="rounded-full bg-stone-100 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-stone-400">
+      Coming soon
+    </span>
   );
 }
 
@@ -59,18 +64,18 @@ function PreferenceRow({
   sublabel,
   right,
   onClick,
+  badge,
 }: {
   icon: React.ReactNode;
   label: string;
   sublabel?: string;
   right?: React.ReactNode;
   onClick?: () => void;
+  /** Renders a "Coming soon" chip and makes the row inert. */
+  badge?: boolean;
 }) {
-  return (
-    <div
-      onClick={onClick}
-      className="w-full flex items-center justify-between px-5 py-4 hover:bg-stone-50 transition-colors text-left first:rounded-t-3xl last:rounded-b-3xl"
-    >
+  const inner = (
+    <>
       <div className="flex items-center gap-3">
         <span className="text-stone-400">{icon}</span>
         <div>
@@ -78,9 +83,29 @@ function PreferenceRow({
           {sublabel && <p className="md:text-xs text-tiny text-stone-400">{sublabel}</p>}
         </div>
       </div>
-      {right && <span className="text-stone-300">{right}</span>}
-    </div>
+      {badge ? (
+        <ComingSoonBadge />
+      ) : (
+        right && <span className="text-stone-300">{right}</span>
+      )}
+    </>
   );
+
+  const base =
+    "w-full flex items-center justify-between px-5 py-4 text-left first:rounded-t-3xl last:rounded-b-3xl";
+
+  if (onClick && !badge) {
+    return (
+      <button
+        type="button"
+        onClick={onClick}
+        className={`${base} hover:bg-stone-50 transition-colors focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[#D65C3A]`}
+      >
+        {inner}
+      </button>
+    );
+  }
+  return <div className={base}>{inner}</div>;
 }
 
 function Toggle({
@@ -114,8 +139,7 @@ function Toggle({
   );
 }
 
-//  Inline Edit Field 
-
+//  Inline Edit Field
 function InlineEditField({
   label,
   value,
@@ -149,7 +173,6 @@ function InlineEditField({
       setEditing(false);
       return;
     }
-
     await onChange(draft);
     setEditing(false);
   };
@@ -209,7 +232,9 @@ function InlineEditField({
         >
           <div className="flex items-center gap-3">
             {icon && <span className="text-stone-400">{icon}</span>}
-            <span className="text-sm font-medium text-stone-700">{value}</span>
+            <span className="text-sm font-medium text-stone-700">
+              {value || <span className="text-stone-300">Not set</span>}
+            </span>
           </div>
           <span className="text-xs text-[#D65C3A] font-semibold opacity-0 group-hover:opacity-100 transition-opacity">
             Edit
@@ -220,8 +245,7 @@ function InlineEditField({
   );
 }
 
-//  Payment Drawer 
-
+//  Payment Drawer
 function PaymentDrawer({
   open,
   onClose,
@@ -278,88 +302,91 @@ function PaymentDrawer({
               <div className="py-8 text-center text-sm font-medium text-stone-400">
                 No reusable payment methods yet.
               </div>
-            ) : payments.map((pm) => (
-              <div
-                key={pm.id}
-                className="flex items-center justify-between p-4 rounded-2xl border border-stone-100 bg-stone-50 hover:border-stone-200 transition-all"
-              >
-                <div className="flex items-center gap-3">
-                  {pm.type === "card" ? (
-                    <div className="w-12 h-8 bg-[#1a1f36] rounded-lg flex items-center justify-center shrink-0">
-                      <span className="text-white text-[9px] font-black tracking-wider">
-                        {pm.label.toUpperCase()}
+            ) : (
+              payments.map((pm) => (
+                <div
+                  key={pm.id}
+                  className="flex items-center justify-between p-4 rounded-2xl border border-stone-100 bg-stone-50 hover:border-stone-200 transition-all"
+                >
+                  <div className="flex items-center gap-3">
+                    {pm.type === "card" ? (
+                      <div className="w-12 h-8 bg-[#1a1f36] rounded-lg flex items-center justify-center shrink-0">
+                        <span className="text-white text-[9px] font-black tracking-wider">
+                          {pm.label.toUpperCase()}
+                        </span>
+                      </div>
+                    ) : (
+                      <div className="w-12 h-8 bg-stone-200 rounded-lg flex items-center justify-center shrink-0">
+                        <svg
+                          className="w-4 h-4 text-stone-500"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M3 6l9-3 9 3M3 6v12a2 2 0 002 2h14a2 2 0 002-2V6M3 6h18"
+                          />
+                        </svg>
+                      </div>
+                    )}
+                    <div>
+                      <p className="text-sm font-semibold text-stone-800">
+                        {pm.type === "card"
+                          ? `${pm.label} •••• ${pm.last4}`
+                          : pm.label}
+                      </p>
+                      <p className="text-xs text-stone-400">
+                        {pm.type === "card"
+                          ? `Expires ${pm.expiry}`
+                          : `Account ending in ${pm.last4}`}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    {pm.isDefault ? (
+                      <span className="text-tiny bg-amber-100 text-amber-700 font-bold px-2 py-1 rounded-full">
+                        Default
                       </span>
-                    </div>
-                  ) : (
-                    <div className="w-12 h-8 bg-stone-200 rounded-lg flex items-center justify-center shrink-0">
-                      <svg
-                        className="w-4 h-4 text-stone-500"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
+                    ) : (
+                      <button
+                        onClick={() => onSetDefault(pm.id)}
+                        disabled={isUpdating}
+                        className="text-tiny text-stone-400 font-semibold hover:text-[#D65C3A] transition-colors"
                       >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M3 6l9-3 9 3M3 6v12a2 2 0 002 2h14a2 2 0 002-2V6M3 6h18"
-                        />
-                      </svg>
-                    </div>
-                  )}
-                  <div>
-                    <p className="text-sm font-semibold text-stone-800">
-                      {pm.type === "card"
-                        ? `${pm.label} •••• ${pm.last4}`
-                        : pm.label}
-                    </p>
-                    <p className="text-xs text-stone-400">
-                      {pm.type === "card"
-                        ? `Expires ${pm.expiry}`
-                        : `Account ending in ${pm.last4}`}
-                    </p>
+                        Set default
+                      </button>
+                    )}
+                    {!pm.isDefault && (
+                      <button
+                        onClick={() => onRemove(pm.id)}
+                        disabled={isUpdating}
+                        className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-red-50 text-stone-300 hover:text-red-400 transition-all"
+                      >
+                        <svg
+                          className="w-3.5 h-3.5"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                          />
+                        </svg>
+                      </button>
+                    )}
                   </div>
                 </div>
-                <div className="flex items-center gap-2 shrink-0">
-                  {pm.isDefault ? (
-                    <span className="text-tiny bg-amber-100 text-amber-700 font-bold px-2 py-1 rounded-full">
-                      Default
-                    </span>
-                  ) : (
-                    <button
-                      onClick={() => onSetDefault(pm.id)}
-                      disabled={isUpdating}
-                      className="text-tiny text-stone-400 font-semibold hover:text-[#D65C3A] transition-colors"
-                    >
-                      Set default
-                    </button>
-                  )}
-                  {!pm.isDefault && (
-                    <button
-                      onClick={() => onRemove(pm.id)}
-                      disabled={isUpdating}
-                      className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-red-50 text-stone-300 hover:text-red-400 transition-all"
-                    >
-                      <svg
-                        className="w-3.5 h-3.5"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                        />
-                      </svg>
-                    </button>
-                  )}
-                </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
-          {/* Footer CTA */}
+          {/* Footer CTA - cards are saved by Paystack during checkout, so the
+              honest path to "add a method" is to make a booking. */}
           <div className="px-6 py-4 border-t border-stone-100">
             <button
               onClick={onAdd}
@@ -367,6 +394,9 @@ function PaymentDrawer({
             >
               + Add new payment method
             </button>
+            <p className="mt-2 text-center text-[11px] font-medium text-stone-300">
+              Cards are saved securely by Paystack when you pay for a booking.
+            </p>
           </div>
         </div>
       </div>
@@ -374,36 +404,36 @@ function PaymentDrawer({
   );
 }
 
-//  Bookings Section 
-
+//  Bookings Section
 type BookingTab = "pending" | "past";
 
-function BookingCard({ booking }: { booking: Booking }) {
+function BookingCard({
+  booking,
+  onOpen,
+}: {
+  booking: Booking;
+  onOpen: () => void;
+}) {
   const statusConfig: Record<
     BookingStatus,
     { label: string; bg: string; text: string }
   > = {
-    pending: {
-      label: "Awaiting Approval",
-      bg: "bg-amber-50",
-      text: "text-amber-700",
-    },
-    confirmed: {
-      label: "Confirmed",
-      bg: "bg-emerald-50",
-      text: "text-emerald-700",
-    },
+    pending: { label: "Awaiting Approval", bg: "bg-amber-50", text: "text-amber-700" },
+    confirmed: { label: "Confirmed", bg: "bg-emerald-50", text: "text-emerald-700" },
     past: { label: "Completed", bg: "bg-stone-100", text: "text-stone-500" },
     cancelled: { label: "Cancelled", bg: "bg-red-50", text: "text-red-500" },
   };
-
   const cfg = statusConfig[booking.status];
 
   return (
-    <div className="flex flex-col gap-4 p-4 bg-stone-50 rounded-2xl hover:bg-white border border-transparent hover:border-stone-200 hover:shadow-sm transition-all group cursor-pointer">
-
+    <button
+      type="button"
+      onClick={onOpen}
+      className="w-full text-left flex flex-col gap-4 p-4 bg-stone-50 rounded-2xl hover:bg-white border border-transparent hover:border-stone-200 hover:shadow-sm transition-all group cursor-pointer focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[#D65C3A]"
+    >
       <div className="flex gap-4 items-center">
         <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-xl overflow-hidden shrink-0 bg-stone-200">
+          {/* eslint-disable-next-line @next/next/no-img-element -- booking thumbnails may be remote */}
           <img
             src={booking.imageUrl}
             alt={booking.eventTitle}
@@ -424,17 +454,11 @@ function BookingCard({ booking }: { booking: Booking }) {
         </div>
       </div>
 
-
-      <div className="flex-1 flex-col min-w-0">       
+      <div className="flex-1 flex-col min-w-0">
         <p className="text-xs text-stone-400 mb-2">{booking.vendorName}</p>
         <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-stone-500">
           <span className="flex items-center gap-1">
-            <svg
-              className="w-3 h-3"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
+            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -445,12 +469,7 @@ function BookingCard({ booking }: { booking: Booking }) {
             {booking.eventDate}
           </span>
           <span className="flex items-center gap-1">
-            <svg
-              className="w-3 h-3"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
+            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -467,12 +486,7 @@ function BookingCard({ booking }: { booking: Booking }) {
             {booking.location}
           </span>
           <span className="flex items-center gap-1">
-            <svg
-              className="w-3 h-3"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
+            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -487,11 +501,17 @@ function BookingCard({ booking }: { booking: Booking }) {
           ₦{booking.amount.toLocaleString()}
         </p>
       </div>
-    </div>
+    </button>
   );
 }
 
-function BookingsSection({ bookings }: { bookings: Booking[] }) {
+function BookingsSection({
+  bookings,
+  onOpen,
+}: {
+  bookings: Booking[];
+  onOpen: () => void;
+}) {
   const [tab, setTab] = useState<BookingTab>("pending");
   const pending = bookings.filter(
     (b) => b.status === "pending" || b.status === "confirmed"
@@ -548,7 +568,7 @@ function BookingsSection({ bookings }: { bookings: Booking[] }) {
       ) : (
         <div className="space-y-3">
           {displayed.map((b) => (
-            <BookingCard key={b.id} booking={b} />
+            <BookingCard key={b.id} booking={b} onOpen={onOpen} />
           ))}
         </div>
       )}
@@ -556,28 +576,31 @@ function BookingsSection({ bookings }: { bookings: Booking[] }) {
   );
 }
 
-//  Main Profile Content (shared across all breakpoints) 
-
-function ProfileContent({
-  profileState,
-}: {
-  profileState: ProfileState;
-}) {
+//  Main Profile Content (shared across all breakpoints)
+function ProfileContent({ profileState }: { profileState: ProfileState }) {
   const router = useRouter();
   const pathname = usePathname();
-  const isVendor = pathname.startsWith("/vendor")
+  const onVendorSurface = pathname.startsWith("/vendor");
+
+  const { user, queryClient } = useAuth();
+  // Derived server-side on /me: true once the user has a published or
+  // pending-review listing. Never inferred from the URL.
+  const isVendorAccount = user?.isVendor === true;
 
   const clearAuth = useAuthStore((state) => state.clearAuth);
   const [paymentDrawerOpen, setPaymentDrawerOpen] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [showDeactivateConfirm, setShowDeactivateConfirm] = useState(false);
+  const [passwordModalOpen, setPasswordModalOpen] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
   const [payoutFormOpen, setPayoutFormOpen] = useState(false);
 
-   const { data: payoutStatus, isLoading: isLoadingPayoutStatus } = usePayoutMethodStatus();
-   const { data: banks = [] } = useBankDirectory();
-   const removePayoutMutation = useRemovePayoutMethod();
-   const bankName = banks.find((b) => b.code === payoutStatus?.bankCode)?.name || "Bank";
+  const { data: payoutStatus, isLoading: isLoadingPayoutStatus } =
+    usePayoutMethodStatus();
+  const { data: banks = [] } = useBankDirectory();
+  const removePayoutMutation = useRemovePayoutMethod();
+  const bankName =
+    banks.find((b) => b.code === payoutStatus?.bankCode)?.name || "Bank";
 
   const {
     profile,
@@ -595,6 +618,8 @@ function ProfileContent({
     isUpdatingPayment,
     toggleNotification,
     isUpdatingNotifications,
+    changePassword,
+    isChangingPassword,
     deactivateAccount,
     isDeactivating,
   } = profileState;
@@ -609,30 +634,74 @@ function ProfileContent({
     await removePayment(id);
   };
 
-  const handleUpdateField = (field: "fullName" | "email" | "phone" | "location") =>
+  const handleUpdateField =
+    (field: "fullName" | "email" | "phone" | "location") =>
     async (value: string) => {
       setActionError(null);
       try {
         await updateField(field, value);
       } catch (error) {
-        setActionError(error instanceof Error ? error.message : "Profile update failed");
+        setActionError(
+          error instanceof Error ? error.message : "Profile update failed"
+        );
         throw error;
       }
     };
 
   const handleLogout = async () => {
-    await apiFetch("/api/auth/logout", { method: "POST", redirectOn401: false });
-    clearAuth();
-    router.push("/login");
+    try {
+      await apiFetch("/api/auth/logout", {
+        method: "POST",
+        redirectOn401: false,
+      });
+    } finally {
+      clearAuth();
+      queryClient.clear();
+      router.push("/login");
+    }
   };
 
   const handleDeactivate = async () => {
-    await deactivateAccount();
-    clearAuth();
-    router.push("/login");
+    setActionError(null);
+    try {
+      await deactivateAccount();
+      clearAuth();
+      queryClient.clear();
+      router.push("/login");
+    } catch (error) {
+      setActionError(
+        error instanceof Error
+          ? error.message
+          : "We couldn't deactivate your account. Please try again."
+      );
+      setShowDeactivateConfirm(false);
+    }
   };
 
-
+  // Contextual vendor/client card - three states, derived identity.
+  const vendorCard = !isVendorAccount
+    ? {
+        href: "/vendor/create-listing",
+        eyebrow: "Start listing",
+        title: "Become a Vendor",
+        body: "List your halls and services on our platform and reach thousands of customers looking for event spaces and services.",
+        dark: false,
+      }
+    : onVendorSurface
+      ? {
+          href: "/",
+          eyebrow: "Go to Client Home",
+          title: "Back to Client",
+          body: "View halls, services and book the one that suits your needs.",
+          dark: true,
+        }
+      : {
+          href: "/vendor",
+          eyebrow: "Open your vendor dashboard",
+          title: "Go to Vendor",
+          body: "Track bookings, payouts and listings in your vendor dashboard.",
+          dark: true,
+        };
 
   if (isProfileLoading || !profile) {
     return (
@@ -649,6 +718,7 @@ function ProfileContent({
       <div className="flex items-center gap-5">
         <div className="relative shrink-0">
           <div className="w-16 h-16 md:w-24 md:h-24 rounded-full overflow-hidden ring-4 ring-white shadow-lg">
+            {/* eslint-disable-next-line @next/next/no-img-element -- avatar may be Google/Cloudinary hosted */}
             <img
               src={profile.avatarUrl}
               alt={profile.fullName}
@@ -668,7 +738,9 @@ function ProfileContent({
                 try {
                   await uploadAvatar(file);
                 } catch (error) {
-                  setActionError(error instanceof Error ? error.message : "Avatar upload failed");
+                  setActionError(
+                    error instanceof Error ? error.message : "Avatar upload failed"
+                  );
                 } finally {
                   event.target.value = "";
                 }
@@ -704,7 +776,12 @@ function ProfileContent({
         <SectionHeader
           icon={
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+              />
             </svg>
           }
           title="Personal Information"
@@ -736,27 +813,33 @@ function ProfileContent({
               value={profile.location}
               icon={
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+                  />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                  />
                 </svg>
               }
               onChange={handleUpdateField("location")}
               disabled={isUpdatingField}
             />
           </div>
-          {actionError && <p className="text-xs font-semibold text-red-500">{actionError}</p>}
+          {actionError && (
+            <p className="text-xs font-semibold text-red-500">{actionError}</p>
+          )}
         </div>
       </section>
 
-
-      {/* //payout method */}
-
+      {/*  Payout Method  */}
       <section>
-        <SectionHeader
-          icon={<Banknote className="w-5 h-5" />}
-          title="Payout Method"
-        />
-        
+        <SectionHeader icon={<Banknote className="w-5 h-5" />} title="Payout Method" />
         {isLoadingPayoutStatus ? (
           <div className="bg-white rounded-3xl p-6 shadow-sm border border-stone-100 flex items-center gap-3">
             <Loader2 className="w-5 h-5 text-stone-400 animate-spin" />
@@ -770,24 +853,30 @@ function ProfileContent({
                   <Banknote className="w-6 h-6 text-stone-600" />
                 </div>
                 <div>
-                  <p className="text-sm font-bold text-stone-800">{payoutStatus.resolvedAccountName || "Unknown Account"}</p>
+                  <p className="text-sm font-bold text-stone-800">
+                    {payoutStatus.resolvedAccountName || "Unknown Account"}
+                  </p>
                   <p className="text-xs text-stone-500 mt-0.5">
                     {bankName} •••• {payoutStatus.accountLast4 || "****"}
                   </p>
                 </div>
               </div>
-              
-              {/* Status Badge */}
-              <span className={`text-tiny font-bold px-2.5 py-1 rounded-full ${
-                payoutStatus.status === "verified" ? "bg-emerald-100 text-emerald-700" :
-                payoutStatus.status === "pending" ? "bg-amber-100 text-amber-700" :
-                "bg-red-100 text-red-600"
-              }`}>
-                {payoutStatus.status === "manual_review" ? "Action Required" : payoutStatus.status.charAt(0).toUpperCase() + payoutStatus.status.slice(1)}
+              <span
+                className={`text-tiny font-bold px-2.5 py-1 rounded-full ${
+                  payoutStatus.status === "verified"
+                    ? "bg-emerald-100 text-emerald-700"
+                    : payoutStatus.status === "pending"
+                      ? "bg-amber-100 text-amber-700"
+                      : "bg-red-100 text-red-600"
+                }`}
+              >
+                {payoutStatus.status === "manual_review"
+                  ? "Action Required"
+                  : payoutStatus.status.charAt(0).toUpperCase() +
+                    payoutStatus.status.slice(1)}
               </span>
             </div>
 
-            {/* Contextual Message */}
             {payoutStatus.status === "pending" && (
               <div className="flex items-center gap-2 bg-amber-50 text-amber-700 p-3 rounded-xl text-xs font-medium">
                 <Loader2 className="w-4 h-4 animate-spin" />
@@ -797,19 +886,19 @@ function ProfileContent({
             {payoutStatus.status === "manual_review" && (
               <div className="flex items-center gap-2 bg-red-50 text-red-600 p-3 rounded-xl text-xs font-medium">
                 <AlertCircle className="w-4 h-4" />
-                We need to manually confirm your account details. Please contact support.
+                We need to manually confirm your account details. Please contact
+                support.
               </div>
             )}
 
-            {/* Actions */}
             <div className="flex gap-2 pt-2 border-t border-stone-100">
-              <button 
+              <button
                 onClick={() => setPayoutFormOpen(true)}
                 className="flex-1 py-2.5 rounded-xl bg-stone-100 text-stone-700 text-xs font-bold hover:bg-stone-200 transition-colors"
               >
                 Replace Payout Method
               </button>
-              <button 
+              <button
                 onClick={() => removePayoutMutation.mutate()}
                 disabled={removePayoutMutation.isPending}
                 className="flex-1 py-2.5 rounded-xl border border-red-200 text-red-500 text-xs font-bold hover:bg-red-50 transition-colors disabled:opacity-50 flex items-center justify-center gap-1.5"
@@ -824,8 +913,7 @@ function ProfileContent({
             </div>
           </div>
         ) : (
-          // Empty State (Unregistered)
-          <button 
+          <button
             onClick={() => setPayoutFormOpen(true)}
             className="w-full bg-white rounded-3xl p-5 shadow-sm border border-stone-100 hover:border-stone-200 hover:shadow-md transition-all text-left group"
           >
@@ -836,24 +924,40 @@ function ProfileContent({
                 </div>
                 <div>
                   <p className="text-sm font-bold text-stone-800">Add Payout Method</p>
-                  <p className="text-xs text-stone-400 mt-0.5">Verify your bank account and BVN/NIN to receive payouts.</p>
+                  <p className="text-xs text-stone-400 mt-0.5">
+                    Verify your bank account and BVN/NIN to receive payouts.
+                  </p>
                 </div>
               </div>
-              <svg className="w-5 h-5 text-stone-300 group-hover:text-[#D65C3A] transition-colors shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              <svg
+                className="w-5 h-5 text-stone-300 group-hover:text-[#D65C3A] transition-colors shrink-0"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9 5l7 7-7 7"
+                />
               </svg>
             </div>
           </button>
         )}
       </section>
 
-
       {/*  Bookings  */}
       <section id="bookings">
         <SectionHeader
           icon={
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z" />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z"
+              />
             </svg>
           }
           title="Bookings"
@@ -865,7 +969,10 @@ function ProfileContent({
               <div className="h-24 rounded-2xl bg-stone-50 animate-pulse" />
             </div>
           ) : (
-            <BookingsSection bookings={bookings} />
+            <BookingsSection
+              bookings={bookings}
+              onOpen={() => router.push("/saved?tab=bookings")}
+            />
           )}
         </div>
       </section>
@@ -875,7 +982,12 @@ function ProfileContent({
         <SectionHeader
           icon={
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"
+              />
             </svg>
           }
           title="Preferences"
@@ -884,7 +996,12 @@ function ProfileContent({
           <PreferenceRow
             icon={
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
+                />
               </svg>
             }
             label="Push Notifications"
@@ -900,7 +1017,12 @@ function ProfileContent({
           <PreferenceRow
             icon={
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8m-18 8h18a2 2 0 002-2V8a2 2 0 00-2-2H3a2 2 0 00-2 2v6a2 2 0 002 2z" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8m-18 8h18a2 2 0 002-2V8a2 2 0 00-2-2H3a2 2 0 00-2 2v6a2 2 0 002 2z"
+                />
               </svg>
             }
             label="Booking Updates"
@@ -916,7 +1038,12 @@ function ProfileContent({
           <PreferenceRow
             icon={
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8V6m0 10v2" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8V6m0 10v2"
+                />
               </svg>
             }
             label="Promotions"
@@ -932,7 +1059,12 @@ function ProfileContent({
           <PreferenceRow
             icon={
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M21 12c0 4.418-4.03 8-9 8a9.77 9.77 0 01-4-.8L3 20l1.8-3.6A7.06 7.06 0 013 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M8 10h.01M12 10h.01M16 10h.01M21 12c0 4.418-4.03 8-9 8a9.77 9.77 0 01-4-.8L3 20l1.8-3.6A7.06 7.06 0 013 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+                />
               </svg>
             }
             label="SMS Alerts"
@@ -948,22 +1080,32 @@ function ProfileContent({
           <PreferenceRow
             icon={
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129"
+                />
               </svg>
             }
             label="Language"
             sublabel="English (UK)"
-            right={<ChevronRight />}
+            badge
           />
           <PreferenceRow
             icon={
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
               </svg>
             }
             label="Timezone"
-            sublabel="(GMT +01:00) Lagos"
-            right={<ChevronRight />}
+            sublabel="(GMT +01:00) Lagos · WAT"
+            badge
           />
         </div>
       </section>
@@ -973,7 +1115,12 @@ function ProfileContent({
         <SectionHeader
           icon={
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+              />
             </svg>
           }
           title="Security"
@@ -982,66 +1129,96 @@ function ProfileContent({
           <PreferenceRow
             icon={
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"
+                />
               </svg>
             }
             label="Change Password"
-            sublabel="Last changed 3 months ago"
+            sublabel="Signs out every other device"
             right={<ChevronRight />}
+            onClick={() => setPasswordModalOpen(true)}
           />
           <PreferenceRow
             icon={
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
+                />
               </svg>
             }
             label="Two-Factor Authentication"
-            sublabel="Not enabled"
-            right={<ChevronRight />}
+            sublabel="Extra security at sign-in"
+            badge
           />
         </div>
       </section>
 
-      {/*  Become a Vendor  */}
-      <section onClick={() => router.push(isVendor ? "/" : "/vendor/create-listing")}>
-        <div className={`relative overflow-hidden rounded-3xl p-7 shadow-lg transition-all group cursor-pointer ${
-          isVendor 
-            ? "bg-linear-to-br from-stone-800 to-stone-900 shadow-stone-900/20 hover:shadow-stone-900/30" 
-            : "bg-linear-to-br from-[#D65C3A] to-[#8c2a09] shadow-[#D65C3A]/20 hover:shadow-[#D65C3A]/30"
-        }`}>
-          {/* Decorative circles */}
+      {/*  Vendor / Client switch - derived identity, contextual destination  */}
+      <section>
+        <button
+          type="button"
+          onClick={() => router.push(vendorCard.href)}
+          className={`relative w-full overflow-hidden rounded-3xl p-7 text-left shadow-lg transition-all group cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D65C3A] ${
+            vendorCard.dark
+              ? "bg-linear-to-br from-stone-800 to-stone-900 shadow-stone-900/20 hover:shadow-stone-900/30"
+              : "bg-linear-to-br from-[#D65C3A] to-[#8c2a09] shadow-[#D65C3A]/20 hover:shadow-[#D65C3A]/30"
+          }`}
+        >
           <div className="absolute -right-8 -top-8 w-36 h-36 rounded-full bg-white/10 pointer-events-none" />
           <div className="absolute right-4 bottom-2 w-20 h-20 rounded-full bg-white/5 pointer-events-none" />
           <div className="relative">
             <div className="flex items-start justify-between mb-4">
               <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center">
-                {isVendor ? (
+                {onVendorSurface && isVendorAccount ? (
                   <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
+                    />
                   </svg>
                 ) : (
                   <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
+                    />
                   </svg>
                 )}
               </div>
               <span className="flex items-center gap-1 text-white/70 text-xs font-semibold group-hover:text-white transition-colors">
-                {isVendor ? "Go to Client Home" : "Go to Vendor Portal"}
-                <svg className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
+                {vendorCard.eyebrow}
+                <svg
+                  className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2.5}
+                    d="M9 5l7 7-7 7"
+                  />
                 </svg>
               </span>
             </div>
             <h3 className="text-xl font-extrabold text-white mb-1 tracking-tight">
-              {isVendor ? "Back to Client" : "Become a Vendor"}
+              {vendorCard.title}
             </h3>
-            <p className="text-sm text-white/70 leading-relaxed">
-              {isVendor 
-                ? "View halls, services and book the one that suits your needs." 
-                : "List your halls, and services on our platform and reach thousands of customers looking for event spaces and services."}
-            </p>
+            <p className="text-sm text-white/70 leading-relaxed">{vendorCard.body}</p>
           </div>
-        </div>
+        </button>
       </section>
 
       {/*  Help & Support  */}
@@ -1049,7 +1226,12 @@ function ProfileContent({
         <SectionHeader
           icon={
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z" />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z"
+              />
             </svg>
           }
           title="Help & Support"
@@ -1058,22 +1240,37 @@ function ProfileContent({
           <PreferenceRow
             icon={
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
               </svg>
             }
             label="Help Center"
             sublabel="FAQs and support guides"
             right={<ChevronRight />}
+            onClick={() => router.push("/help")}
           />
           <PreferenceRow
             icon={
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"
+                />
               </svg>
             }
             label="Contact Us"
-            sublabel="Chat with our support team"
+            sublabel="support@eventvnv.com"
             right={<ChevronRight />}
+            onClick={() => {
+              window.location.href =
+                "mailto:support@eventvnv.com?subject=EventVnV%20Support";
+            }}
           />
         </div>
       </section>
@@ -1083,28 +1280,55 @@ function ProfileContent({
         <SectionHeader
           icon={
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+              />
             </svg>
           }
           title="Legal"
         />
         <div className="bg-white rounded-3xl divide-y divide-stone-50 shadow-sm border border-stone-100">
           {[
-            { label: "Terms of Service", sublabel: "Last updated Jan 2025" },
-            { label: "Privacy Policy", sublabel: "How we handle your data" },
-            { label: "Cookie Policy", sublabel: "Cookie preferences" },
-            { label: "Cancellation Policy", sublabel: "Refunds & cancellations" },
+            {
+              label: "Terms of Service",
+              sublabel: "The rules of using EventVnV",
+              href: "/terms",
+            },
+            {
+              label: "Privacy Policy",
+              sublabel: "How we handle your data",
+              href: "/privacy",
+            },
+            {
+              label: "Cookie Policy",
+              sublabel: "Cookies & local storage",
+              href: "/cookies",
+            },
+            {
+              label: "Cancellation Policy",
+              sublabel: "Refunds & cancellations",
+              href: "/help/cancellations-and-refunds",
+            },
           ].map((item) => (
             <PreferenceRow
               key={item.label}
               icon={
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"
+                  />
                 </svg>
               }
               label={item.label}
               sublabel={item.sublabel}
               right={<ChevronRight />}
+              onClick={() => router.push(item.href)}
             />
           ))}
         </div>
@@ -1135,13 +1359,15 @@ function ProfileContent({
         </div>
       </section>
 
-      {/*  Danger Zone  */}
+      {/*  Danger Zone - copy matches what the backend actually does:
+           soft deactivate + session revocation, records preserved.  */}
       <section className="pb-4">
         <div className="rounded-3xl border border-red-100 bg-red-50/50 p-6">
           <h4 className="text-sm font-bold text-red-500 mb-1">Danger Zone</h4>
           <p className="text-xs text-stone-400 mb-4 leading-relaxed">
-            Once you deactivate your account, all your data will be permanently
-            removed. This cannot be undone.
+            Deactivating disables your account and signs you out on every
+            device. Your booking history is preserved and existing bookings
+            are honoured. Contact support@eventvnv.com to reactivate.
           </p>
           <button
             onClick={() => setShowDeactivateConfirm(true)}
@@ -1162,20 +1388,33 @@ function ProfileContent({
           try {
             await handleSetDefault(id);
           } catch (error) {
-            setActionError(error instanceof Error ? error.message : "Payment update failed");
+            setActionError(
+              error instanceof Error ? error.message : "Payment update failed"
+            );
           }
         }}
         onRemove={async (id) => {
           try {
             await handleRemove(id);
           } catch (error) {
-            setActionError(error instanceof Error ? error.message : "Payment update failed");
+            setActionError(
+              error instanceof Error ? error.message : "Payment update failed"
+            );
           }
         }}
         onAdd={() => {
-          router.push("/bookings");
+          setPaymentDrawerOpen(false);
+          router.push("/listings");
         }}
         isUpdating={isUpdatingPayment}
+      />
+
+      {/*  Change Password Modal  */}
+      <ChangePasswordModal
+        isOpen={passwordModalOpen}
+        onClose={() => setPasswordModalOpen(false)}
+        onSubmit={changePassword}
+        isSubmitting={isChangingPassword}
       />
 
       {/*  Logout Confirmation Modal  */}
@@ -1221,9 +1460,13 @@ function ProfileContent({
           />
           <div className="fixed inset-0 z-50 flex items-center justify-center p-6 pointer-events-none">
             <div className="pointer-events-auto bg-white rounded-3xl p-7 w-full max-w-sm shadow-2xl">
-              <h3 className="text-lg font-bold text-stone-900 mb-2">Deactivate account?</h3>
+              <h3 className="text-lg font-bold text-stone-900 mb-2">
+                Deactivate account?
+              </h3>
               <p className="text-sm text-stone-400 mb-6">
-                Your account will be disabled and you will be signed out.
+                Your account will be disabled and signed out on every device.
+                Existing bookings are honoured and your records are kept -
+                contact support to reactivate.
               </p>
               <div className="flex gap-3">
                 <button
@@ -1239,32 +1482,37 @@ function ProfileContent({
                   disabled={isDeactivating}
                   className="flex-1 py-3 rounded-2xl bg-red-500 text-white text-sm font-bold hover:bg-red-600 transition-colors disabled:opacity-60"
                 >
-                  Deactivate
+                  {isDeactivating ? "Deactivating…" : "Deactivate"}
                 </button>
               </div>
             </div>
           </div>
         </>
       )}
-      <PayoutMethodForm isOpen={payoutFormOpen} onClose={() => setPayoutFormOpen(false)} />
+
+      <PayoutMethodForm
+        isOpen={payoutFormOpen}
+        onClose={() => setPayoutFormOpen(false)}
+      />
     </div>
   );
 }
 
-
-
 function MobileProfileView({ profileState }: { profileState: ProfileState }) {
-    const router = useRouter();
-    const path = useTheparam();
-      
-    const pathMapping = {
-      vendor: <VendorMobileDock />,
-      home: <MobileDock />
-    }
+  const router = useRouter();
+  const path = useTheparam();
+  const pathMapping = {
+    vendor: <VendorMobileDock />,
+    home: <MobileDock />,
+  };
+
   return (
     <section className="flex flex-col md:hidden min-h-screen bg-bg-primary pb-32">
       <header className="sticky top-0 z-40 flex items-center justify-between px-5 py-4 bg-bg-primary/90 backdrop-blur-sm border-b border-stone-100">
-        <button onClick={() => router.back()} className="w-9 h-9 flex items-center justify-center rounded-full bg-white border border-stone-100 shadow-sm">
+        <button
+          onClick={() => router.back()}
+          className="w-9 h-9 flex items-center justify-center rounded-full bg-white border border-stone-100 shadow-sm"
+        >
           <BackArrow />
         </button>
         <h1 className="text-base font-bold text-stone-900">Profile</h1>
@@ -1282,15 +1530,18 @@ function MobileProfileView({ profileState }: { profileState: ProfileState }) {
 function TabletProfileView({ profileState }: { profileState: ProfileState }) {
   const router = useRouter();
   const path = useTheparam();
-    
   const pathMapping = {
     vendor: <VendorMobileDock />,
-    home: <MobileDock />
-  }
+    home: <MobileDock />,
+  };
+
   return (
     <section className="hidden md:flex xl:hidden flex-col min-h-screen bg-bg-primary pb-32">
       <header className="sticky top-0 z-40 flex items-center px-8 py-5 bg-bg-primary/90 backdrop-blur-sm border-b border-stone-100 gap-4">
-        <button onClick={() => router.back()} className="w-9 h-9 flex items-center justify-center rounded-full bg-white border border-stone-100 shadow-sm">
+        <button
+          onClick={() => router.back()}
+          className="w-9 h-9 flex items-center justify-center rounded-full bg-white border border-stone-100 shadow-sm"
+        >
           <BackArrow />
         </button>
         <h1 className="text-xl font-extrabold text-stone-900 tracking-tight">
@@ -1306,16 +1557,15 @@ function TabletProfileView({ profileState }: { profileState: ProfileState }) {
 }
 
 function DesktopProfileView({ profileState }: { profileState: ProfileState }) {
-    const path = useTheparam();
-    const pathMapping = {
-          vendor: <VendorSideNavBar />,
-          home: <SideNavBar />
-        }
+  const path = useTheparam();
+  const pathMapping = {
+    vendor: <VendorSideNavBar />,
+    home: <SideNavBar />,
+  };
+
   return (
     <section className="hidden xl:flex min-h-screen bg-bg-primary">
-      
       {pathMapping[path]}
-
       <div className="w-[85%] ml-[15%]">
         <div className="px-4 pb-28 pt-8 md:px-10 lg:px-14 xl:px-16">
           <div className="mb-10">
@@ -1333,11 +1583,9 @@ function DesktopProfileView({ profileState }: { profileState: ProfileState }) {
   );
 }
 
-//  Page Export 
-
+//  Page Export
 export default function ProfilePage() {
   const profileState = useProfile();
-
   return (
     <>
       <MobileProfileView profileState={profileState} />

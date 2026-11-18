@@ -13,6 +13,7 @@ const userPublicFields = `
   last_name,
   date_of_birth,
   phone,
+  location,
   avatar_url,
   is_email_verified,
   is_active
@@ -101,6 +102,27 @@ export const UserModel = {
         const query = `SELECT ${userPublicFields} FROM users WHERE id = $1`;
         const result = await db.query(query, [id]);
         return result.rows[0] || null;
+    },
+
+    /**
+     * Derived vendor identity - the single source of truth for "is this user
+     * a vendor?". A user is a vendor the moment they have a published OR
+     * pending-review listing. Computed per request (one indexed EXISTS on
+     * idx_listings_vendor), never stored on users, so it can never drift
+     * from the listings table. Drafts do not count.
+     */
+    async isVendor(userId: number): Promise<boolean> {
+        const db = getDB();
+        const { rows } = await db.query(
+            `SELECT EXISTS (
+                SELECT 1 FROM listings
+                WHERE vendor_id = $1
+                  AND status IN ('published', 'pending_review')
+                  AND deleted_at IS NULL
+            ) AS is_vendor`,
+            [userId]
+        );
+        return rows[0]?.is_vendor === true;
     },
 
     //verify password
