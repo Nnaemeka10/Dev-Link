@@ -186,6 +186,11 @@ export const VendorListingModel = {
    *
    * The row lock plus the single transaction mean a double-click can never
    * half-apply a payload, and the projection + status flip commit together.
+   *
+   * BIND-PARAMETER RULE: a parameter may appear in only ONE type context.
+   * `status = $3` deduces listing_status while `$3 = 'pending_review'` deduces
+   * text, and Postgres rejects the pair (42P08 inconsistent types). Hence one
+   * explicitly-cast parameter per column: $3::listing_status, $4::boolean.
    */
   async publishDraft(
     listingId: string,
@@ -216,9 +221,9 @@ export const VendorListingModel = {
         if (payload) {
           await client.query(
             `UPDATE listings
-             SET draft_payload = $3, pending_review_at = NOW(), updated_at = NOW()
+             SET draft_payload = $2::jsonb, pending_review_at = NOW(), updated_at = NOW()
              WHERE id = $1`,
-            [listingId, userId, JSON.stringify(payload)]
+            [listingId, JSON.stringify(payload)]
           );
         } else {
           await client.query(
@@ -239,12 +244,12 @@ export const VendorListingModel = {
       const nextStatus = reviewEnabled ? 'pending_review' : 'published';
       const updated = await client.query(
         `UPDATE listings
-         SET status = $3,
-             pending_review_at = CASE WHEN $3 = 'pending_review' THEN NOW() ELSE NULL END,
+         SET status = $3::listing_status,
+             pending_review_at = CASE WHEN $4::boolean THEN NOW() ELSE NULL END,
              updated_at = NOW()
          WHERE id = $1 AND vendor_id = $2
          RETURNING status`,
-        [listingId, userId, nextStatus]
+        [listingId, userId, nextStatus, reviewEnabled]
       );
 
       await client.query('COMMIT');
