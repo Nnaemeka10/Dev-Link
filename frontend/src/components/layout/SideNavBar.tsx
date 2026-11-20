@@ -5,7 +5,8 @@ import { usePathname, useRouter } from "next/navigation";
 import Image from "next/image";
 import Button from "@/components/ui/Button";
 import { Compass, Heart, MessageCircleMore, UserRound } from "lucide-react";
-import { useVendorSwitch } from "../../hooks/useVendorSwitch";
+import { useVendorSwitch } from "@/hooks/useVendorSwitch";
+import { useChatUnread } from "@/features/chat/hooks/useChatUnread";
 
 const navLinks = [
   { id: "explore", icon: Compass, label: "Explore", href: "/" },
@@ -21,6 +22,7 @@ export default function SideNavBar() {
   const pathname = usePathname() ?? "";
   const router = useRouter();
   const { isVendor, target } = useVendorSwitch();
+  const { clientUnread } = useChatUnread();
 
   return (
     <aside
@@ -44,11 +46,14 @@ export default function SideNavBar() {
             (link.href === "/" &&
               pathname.startsWith("/listings") &&
               !pathname.startsWith("/saved"));
+          const badge = link.id === "messages" ? clientUnread : 0;
+
           return (
             <Link
               key={link.id}
               href={link.href}
               aria-current={isActive ? "page" : undefined}
+              aria-label={badge > 0 ? `${link.label}, ${badge} unread` : link.label}
               className={`mx-2 flex items-center gap-4 rounded-[1.15rem] px-6 py-3 text-sm font-semibold uppercase tracking-[0.08em] transition-colors ${
                 isActive
                   ? "bg-[#FFF1DE] text-[#5A2A12] shadow-[inset_0_1px_0_rgba(255,255,255,0.6)]"
@@ -56,7 +61,12 @@ export default function SideNavBar() {
               }`}
             >
               <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
-              {link.label}
+              <span className="min-w-0 flex-1 truncate">{link.label}</span>
+              {badge > 0 && (
+                <span className="flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-accent-primary px-1.5 text-[10px] font-extrabold normal-case tracking-normal text-white">
+                  {badge > 99 ? "99+" : badge}
+                </span>
+              )}
             </Link>
           );
         })}

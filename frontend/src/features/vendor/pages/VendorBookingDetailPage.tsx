@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
@@ -25,6 +25,7 @@ import {
   MapPin,
   MessageSquare,
   Package,
+  Pencil,
   Phone,
   Printer,
   RotateCcw,
@@ -38,6 +39,7 @@ import VendorPageShell from "../components/VendorPageShell";
 import BookingStatusPill from "../components/BookingStatusPill";
 import DeclineBookingModal from "../components/DeclineBookingModal";
 import { useConfirmBooking, useVendorBooking } from "../hooks/useVendorDashboard";
+import { useStartConversation } from "@/features/chat/hooks/useStartConversation";
 import { ApiError } from "@/lib/api";
 import type { BookingDetail } from "../types";
 import {
@@ -146,21 +148,12 @@ export default function VendorBookingDetailPage() {
   const id = (params?.id as string) ?? "";
   const { data: booking, isLoading, isError, refetch } = useVendorBooking(id || null);
   const confirmMutation = useConfirmBooking();
+  const chat = useStartConversation();
   const [declineOpen, setDeclineOpen] = useState(false);
   const [copiedRef, setCopiedRef] = useState(false);
-  const [soon, setSoon] = useState<string | null>(null);
-  const soonTimer = useRef<number | undefined>(undefined);
-
-  useEffect(() => () => window.clearTimeout(soonTimer.current), []);
 
   const awaiting = !!booking && (booking.status === "paid" || booking.status === "funds_held");
   const deadline = useDecisionDeadline(booking?.paidAt ?? null, awaiting);
-
-  function showSoon(message: string) {
-    setSoon(message);
-    window.clearTimeout(soonTimer.current);
-    soonTimer.current = window.setTimeout(() => setSoon(null), 2800);
-  }
 
   async function copyReference() {
     if (!booking) return;
@@ -228,8 +221,8 @@ export default function VendorBookingDetailPage() {
   const receiptDateLabel = allSpansLabel(spans);
 
   // Event clock is Lagos wall-clock time; booked-on / paid-on are instants
-  // rendered in WAT with the label (formatTimestamp), so this page and the
-  // customer's confirmation always read the same.
+  // rendered in WAT with the label, so this page and the customer's
+  // confirmation always read the same.
   const eventTime = formatEventTimeLabel(booking.startTime, booking.endTime);
 
   const confirmError =
@@ -575,14 +568,40 @@ export default function VendorBookingDetailPage() {
           )}
         </div>
 
+        {/* Opens the SAME thread the customer is in - the booking path accepts
+            the host as well as the guest, so this resolves rather than forks. */}
         <button
           type="button"
-          onClick={() => showSoon("In-app chat with clients is coming soon.")}
-          className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#F4F1EA] px-6 py-3.5 text-sm font-extrabold text-[#252423] transition-all hover:brightness-95 active:scale-[0.99]"
+          onClick={() => void chat.start({ bookingId: booking.id }, { surface: "vendor" })}
+          disabled={chat.pending}
+          className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#B9401D] px-6 py-3.5 text-sm font-extrabold text-white transition-all hover:brightness-95 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
         >
-          <MessageSquare className="h-4 w-4 text-[#B9401D]" aria-hidden="true" />
-          Chat with client
+          {chat.pending ? (
+            <>
+              Opening chat
+              <span
+                className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white"
+                aria-hidden="true"
+              />
+            </>
+          ) : (
+            <>
+              <MessageSquare className="h-4 w-4" aria-hidden="true" />
+              Chat with client
+            </>
+          )}
         </button>
+
+        {chat.error && (
+          <p
+            role="alert"
+            className="mt-3 flex items-start gap-2 rounded-2xl bg-red-50 px-4 py-3 text-tiny font-semibold text-red-700"
+          >
+            <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+            {chat.error}
+          </p>
+        )}
+
         <p className="mt-2.5 text-center text-tiny font-semibold text-[#9A9AAE]">
           Keep coordination on EventVnV so escrow protection applies.
         </p>
@@ -596,28 +615,16 @@ export default function VendorBookingDetailPage() {
 
         <div className="mt-4 grid gap-2.5 sm:grid-cols-2">
           <DetailRow icon={Hash} label="Booking reference" value={booking.bookingRef} />
-          <DetailRow
-            icon={ShieldCheck}
-            label="Payment status"
-            value={booking.paymentStatus}
-          />
+          <DetailRow icon={ShieldCheck} label="Payment status" value={booking.paymentStatus} />
           <DetailRow
             icon={CalendarClock}
             label="Booked on"
             value={formatTimestamp(booking.createdAt)}
           />
           <DetailRow icon={CreditCard} label="Paid on" value={formatTimestamp(booking.paidAt)} />
-          <DetailRow
-            icon={Landmark}
-            label="Payout"
-            value={payoutLabel}
-          />
+          <DetailRow icon={Landmark} label="Payout" value={payoutLabel} />
           {booking.payout?.transferCode && (
-            <DetailRow
-              icon={Wallet}
-              label="Transfer code"
-              value={booking.payout.transferCode}
-            />
+            <DetailRow icon={Wallet} label="Transfer code" value={booking.payout.transferCode} />
           )}
           {booking.payout?.completedAt && (
             <DetailRow
@@ -679,9 +686,10 @@ export default function VendorBookingDetailPage() {
             )}
             {copiedRef ? "Copied" : "Copy reference"}
           </button>
-          <button
-            type="button"
-            onClick={() => showSoon("Listing preview from bookings is coming soon.")}
+          {/* The wizard accepts published and unlisted listings, so this always
+              resolves - unlike a public details link on an unlisted listing. */}
+          <Link
+            href={`/vendor/create-listing?edit=${booking.listing.id}`}
             className="inline-flex items-center justify-center gap-2 rounded-full border border-[#E8DDD2] px-5 py-3.5 text-sm font-extrabold text-[#252423] transition-colors hover:bg-[#F7F2EA] active:scale-[0.99]"
           >
             {isService ? (
@@ -689,22 +697,10 @@ export default function VendorBookingDetailPage() {
             ) : (
               <Building2 className="h-4 w-4 text-[#B9401D]" aria-hidden="true" />
             )}
-            View listing
-          </button>
+            Edit listing
+            <Pencil className="h-3.5 w-3.5 text-[#9A9AAE]" aria-hidden="true" />
+          </Link>
         </div>
-
-        <AnimatePresence>
-          {soon && (
-            <motion.p
-              initial={{ opacity: 0, y: -6 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -6 }}
-              className="mt-3 rounded-full bg-[#F7F2EA] px-4 py-2 text-center text-tiny font-bold text-[#6B5F57]"
-            >
-              {soon}
-            </motion.p>
-          )}
-        </AnimatePresence>
       </section>
 
       <DeclineBookingModal
@@ -746,16 +742,11 @@ export default function VendorBookingDetailPage() {
               ["Client email", booking.client.email ?? "-"],
               ["Client phone", booking.client.phone ?? "-"],
               [isService ? "Service" : "Venue", booking.listing.name],
-              [
-                isService ? "Event location" : "Venue address",
-                booking.location ?? "-",
-              ],
+              [isService ? "Event location" : "Venue address", booking.location ?? "-"],
               ["Event dates", receiptDateLabel],
               ["Event time", eventTime],
               ...(booking.packageName ? [["Package", booking.packageName]] : []),
-              ...(!isService
-                ? [["Expected guests", booking.guests.toLocaleString()]]
-                : []),
+              ...(!isService ? [["Expected guests", booking.guests.toLocaleString()]] : []),
               ["Booked on", formatTimestamp(booking.createdAt)],
               ["Paid on", formatTimestamp(booking.paidAt)],
               ["Payout", payoutLabel],

@@ -114,7 +114,7 @@ function mapTransactionListItem(t: any) {
     };
 }
 
-// ── Summary ──────────────────────────────────────────────────────────────────
+//  Summary 
 
 export const getSummary = async (req: Request, res: Response) => {
     try {
@@ -149,7 +149,7 @@ export const getSummary = async (req: Request, res: Response) => {
     }
 };
 
-// ── Transactions ─────────────────────────────────────────────────────────────
+//  Transactions 
 
 /** GET /api/vendor/transactions?page=1&perPage=10 */
 export const getTransactions = async (req: Request, res: Response) => {
@@ -272,7 +272,7 @@ export const getTransactionDetails = async (req: Request, res: Response) => {
     }
 };
 
-// ── Bookings ─────────────────────────────────────────────────────────────────
+//  Bookings 
 
 export const getBookings = async (req: Request, res: Response) => {
     try {

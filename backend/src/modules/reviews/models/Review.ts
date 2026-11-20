@@ -19,14 +19,14 @@ async function recomputeAggregates(client: PoolClient, listingId: string, kind: 
         `SELECT
             COUNT(*)::int AS review_count,
             COALESCE(AVG(rating), 0) AS average_rating,
-            AVG((sub_ratings->'cleanliness')::numeric)      AS cleanliness,
-            AVG((sub_ratings->'communication')::numeric)    AS communication,
-            AVG((sub_ratings->'value_for_money')::numeric)  AS value_for_money,
-            AVG((sub_ratings->'location')::numeric)         AS location,
-            AVG((sub_ratings->'facility_quality')::numeric) AS facility_quality,
-            AVG((sub_ratings->'quality_of_work')::numeric)  AS quality_of_work,
-            AVG((sub_ratings->'professionalism')::numeric)  AS professionalism,
-            AVG((sub_ratings->'punctuality')::numeric)      AS punctuality
+            AVG((sub_ratings-'cleanliness')::numeric)      AS cleanliness,
+            AVG((sub_ratings-'communication')::numeric)    AS communication,
+            AVG((sub_ratings-'value_for_money')::numeric)  AS value_for_money,
+            AVG((sub_ratings-'location')::numeric)         AS location,
+            AVG((sub_ratings-'facility_quality')::numeric) AS facility_quality,
+            AVG((sub_ratings-'quality_of_work')::numeric)  AS quality_of_work,
+            AVG((sub_ratings-'professionalism')::numeric)  AS professionalism,
+            AVG((sub_ratings-'punctuality')::numeric)      AS punctuality
          FROM listing_reviews
          WHERE listing_id = $1`,
         [listingId]

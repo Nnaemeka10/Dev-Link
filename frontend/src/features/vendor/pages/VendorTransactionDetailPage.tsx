@@ -236,7 +236,7 @@ export default function VendorTransactionDetailPage() {
       width="narrow"
       back={{ href: "/vendor/transactions", label: "All transactions" }}
     >
-      {/* ── Hero ── */}
+      {/*  Hero  */}
       <motion.section
         initial={{ opacity: 0, y: 14 }}
         animate={{ opacity: 1, y: 0 }}
@@ -306,7 +306,7 @@ export default function VendorTransactionDetailPage() {
         </div>
       </motion.section>
 
-      {/* ── Money split ── */}
+      {/*  Money split  */}
       {booking && (
         <section className={`${VENDOR_CARD} p-5 md:p-7`}>
           <h2 className="font-man text-base font-extrabold text-[#252423] md:text-lg">
@@ -346,7 +346,7 @@ export default function VendorTransactionDetailPage() {
         </section>
       )}
 
-      {/* ── Booking ── */}
+      {/*  Booking  */}
       {booking && (
         <section className={`${VENDOR_CARD} p-5 md:p-7`}>
           <div className="flex flex-wrap items-start justify-between gap-3">
@@ -426,7 +426,7 @@ export default function VendorTransactionDetailPage() {
         </section>
       )}
 
-      {/* ── Timeline ── */}
+      {/*  Timeline  */}
       <section className={`${VENDOR_CARD} p-5 md:p-7`}>
         <h2 className="font-man text-base font-extrabold text-[#252423] md:text-lg">
           Payout timeline
@@ -447,7 +447,7 @@ export default function VendorTransactionDetailPage() {
         </p>
       </section>
 
-      {/* ── Transfer + ledger references ── */}
+      {/*  Transfer + ledger references  */}
       <section className={`${VENDOR_CARD} p-5 md:p-7`}>
         <h2 className="font-man text-base font-extrabold text-[#252423] md:text-lg">
           Transfer &amp; ledger references
@@ -487,7 +487,7 @@ export default function VendorTransactionDetailPage() {
         </p>
       </section>
 
-      {/* ── Printable payout receipt ── */}
+      {/*  Printable payout receipt  */}
       <div
         id="vendor-payout-receipt-print"
         aria-hidden="true"

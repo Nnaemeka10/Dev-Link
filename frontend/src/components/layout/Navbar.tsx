@@ -5,7 +5,9 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { MessageSquare } from "lucide-react";
 import UserMenu from "./UserMenu";
-import { useVendorSwitch } from "../../hooks/useVendorSwitch";
+import { useVendorSwitch } from "@/hooks/useVendorSwitch";
+import { useAuth } from "@/features/auth/useAuth";
+import { useChatUnread } from "@/features/chat/hooks/useChatUnread";
 
 interface NavbarProps {
   /**
@@ -15,15 +17,19 @@ interface NavbarProps {
    *            name + avatar cluster. Always visible.
    */
   variant?: "client" | "vendor";
+  /**
+   * Optional override. Unread is normally sourced live from the shared chat
+   * query so the badge can never be a hardcoded zero.
+   */
   unreadMessages?: number;
 }
 
-export default function Navbar({
-  variant = "client",
-  unreadMessages = 0,
-}: NavbarProps) {
+export default function Navbar({ variant = "client", unreadMessages }: NavbarProps) {
   const pathname = usePathname() ?? "";
   const { target } = useVendorSwitch();
+  const { isAuthenticated } = useAuth();
+  const { clientUnread, vendorUnread } = useChatUnread();
+
   const SwitchIcon = target.icon;
   const isVendorVariant = variant === "vendor";
 
@@ -43,6 +49,8 @@ export default function Navbar({
       ];
 
   const messagesHref = isVendorVariant ? "/vendor/messages" : "/messages";
+  const liveUnread = isVendorVariant ? vendorUnread : clientUnread;
+  const badge = unreadMessages ?? liveUnread;
 
   const switchPill = (
     <Link
@@ -55,22 +63,20 @@ export default function Navbar({
     </Link>
   );
 
-  const messagesLink = (
+  const messagesLink = isAuthenticated ? (
     <Link
       href={messagesHref}
-      aria-label={
-        unreadMessages > 0 ? `Messages, ${unreadMessages} unread` : "Messages"
-      }
+      aria-label={badge > 0 ? `Messages, ${badge} unread` : "Messages"}
       className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-text-primary/55 transition-colors hover:bg-bg-tertiary hover:text-accent-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-primary"
     >
       <MessageSquare className="h-5 w-5" aria-hidden="true" />
-      {unreadMessages > 0 && (
+      {badge > 0 && (
         <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-accent-primary px-1 text-[10px] font-extrabold leading-none text-white">
-          {unreadMessages > 9 ? "9+" : unreadMessages}
+          {badge > 9 ? "9+" : badge}
         </span>
       )}
     </Link>
-  );
+  ) : null;
 
   return (
     <header className="sticky top-0 z-40 border-b border-[#F1E5D5]/70 bg-bg-primary/90 backdrop-blur-md">
@@ -108,26 +114,21 @@ export default function Navbar({
 
         <div className="flex shrink-0 items-center gap-3">
           {switchPill}
-          {isVendorVariant && messagesLink}
+          {messagesLink}
           <UserMenu />
         </div>
       </div>
 
       {/* Mobile / tablet */}
       <div className="flex items-center justify-between gap-2 px-4 py-3 md:hidden">
-        <Link
-          href="/"
-          className="flex min-w-0 items-end gap-1 text-text-primary"
-        >
+        <Link href="/" className="flex min-w-0 items-end gap-1 text-text-primary">
           <Image src="/logo.svg" alt="EventVnV" width={26} height={26} />
-          <span className="logo translate-y-1 truncate font-semibold">
-            EventVnV
-          </span>
+          <span className="logo translate-y-1 truncate font-semibold">EventVnV</span>
         </Link>
 
         <div className="flex shrink-0 items-center gap-1.5">
           {switchPill}
-          {isVendorVariant && messagesLink}
+          {messagesLink}
           <UserMenu />
         </div>
       </div>

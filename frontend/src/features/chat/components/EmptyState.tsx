@@ -1,15 +1,63 @@
 "use client";
 
-export function EmptyState() {
+import Link from "next/link";
+import { MessageSquare, Search } from "lucide-react";
+
+interface EmptyStateProps {
+  variant?: "no-selection" | "no-conversations" | "no-messages" | "no-results";
+  onContactSupport?: () => void;
+}
+
+const COPY = {
+  "no-selection": {
+    title: "Your messages",
+    body: "Pick a conversation to read it, or message a vendor from any hall or service.",
+  },
+  "no-conversations": {
+    title: "No conversations yet",
+    body: "When you message a vendor about a hall or service, the conversation shows up here.",
+  },
+  "no-messages": {
+    title: "Say hello",
+    body: "Ask about availability, pricing or what's included. Keep it here so escrow protection applies.",
+  },
+  "no-results": {
+    title: "Nothing matches",
+    body: "Try a different name, listing or word from the conversation.",
+  },
+} as const;
+
+export function EmptyState({ variant = "no-selection", onContactSupport }: EmptyStateProps) {
+  const copy = COPY[variant];
+
   return (
-    <div className="flex flex-col items-center justify-center h-full text-center px-8">
-      <div className="w-16 h-16 bg-orange-50 rounded-full flex items-center justify-center mb-4">
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.3} stroke="currentColor" className="w-8 h-8 text-orange-400">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M8.625 9.75a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375m-13.5 3.01c0 1.6 1.123 2.994 2.707 3.227 1.087.16 2.185.283 3.293.369V21l4.184-4.183a1.14 1.14 0 01.778-.332 48.294 48.294 0 005.83-.498c1.585-.233 2.708-1.626 2.708-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0012 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018z" />
-        </svg>
-      </div>
-      <p className="text-base font-medium text-gray-700 mb-1">Your messages</p>
-      <p className="text-sm text-gray-400 max-w-xs">Select a conversation to read messages or start a new one.</p>
+    <div className="flex h-full flex-col items-center justify-center px-8 py-16 text-center">
+      <span className="flex h-16 w-16 items-center justify-center rounded-full bg-[#FFF1E6] text-[#B9401D]">
+        <MessageSquare className="h-7 w-7" aria-hidden="true" />
+      </span>
+      <p className="mt-5 font-headline text-lg font-bold text-[#252423]">{copy.title}</p>
+      <p className="mt-2 max-w-xs text-sm font-semibold leading-6 text-[#9A9AAE]">{copy.body}</p>
+
+      {variant === "no-conversations" && (
+        <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+          <Link
+            href="/listings"
+            className="inline-flex items-center gap-2 rounded-full bg-[#B9401D] px-6 py-3 text-sm font-extrabold text-white transition-all hover:brightness-95 active:scale-[0.98]"
+          >
+            <Search className="h-4 w-4" aria-hidden="true" />
+            Browse listings
+          </Link>
+          {onContactSupport && (
+            <button
+              type="button"
+              onClick={onContactSupport}
+              className="rounded-full border border-[#E8DDD2] px-6 py-3 text-sm font-extrabold text-[#252423] transition-colors hover:bg-[#F7F2EA]"
+            >
+              Contact support
+            </button>
+          )}
+        </div>
+      )}
     </div>
   );
 }

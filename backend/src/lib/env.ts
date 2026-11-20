@@ -36,6 +36,11 @@ export const ENV = {
     GOOGLE_CLIENT_ID: required('GOOGLE_CLIENT_ID'),
     ENABLE_BVN_VERIFICATION: process.env.ENABLE_BVN_VERIFICATION !== 'false',
     ENABLE_LISTING_REVIEW: process.env.ENABLE_LISTING_REVIEW !== 'false',
+
+    // Chat: the account that is always a support agent, even if support_agents
+    // was emptied. Seeded by migration 036 and re-asserted lazily on inbox load,
+    // so creating the account after migrating needs no redeploy.
+    SUPPORT_BOOTSTRAP_EMAIL: process.env.SUPPORT_BOOTSTRAP_EMAIL || 'konohadev@gmail.com',
 }
 
 // Add this safety check to catch configuration errors instantly

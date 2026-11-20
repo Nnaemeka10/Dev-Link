@@ -1,29 +1,85 @@
 import type { Server as SocketIOServer, Socket } from "socket.io";
-import { verifyToken } from "../../../lib/utils.js";
+import { verifyToken, type JwtPayload } from "../../../lib/utils.js";
+import { getDB } from "../../../lib/db.js";
 import { ChatModel } from "../models/Chat.js";
-import type { Message } from "../types/chat.js";
+import { SupportAgentModel } from "../models/SupportAgents.js";
+import { detectOffPlatform } from "../utils/moderation.js";
+import { conversationRoom, userRoom } from "../../../lib/socket.js";
+import {
+  CHAT_LIMITS,
+  type MessageSendAck,
+  type MessageSendPayload,
+  type MessagePage,
+} from "../types/chat.js";
 
-export function registerChatHandlers(io: SocketIOServer) {
-  //Authentication Middleware for Socket.IO 
-  io.use(async (socket: Socket, next) => {
+interface SocketData {
+  user: JwtPayload;
+  displayName: string;
+  /** Rooms this socket joined, so presence can be broadcast on disconnecting. */
+  conversationIds: Set<string>;
+  focusedConversationId: string | null;
+}
+
+type ChatSocket = Socket & { data: SocketData };
+
+/** userId - live socket ids. Single instance, so in-memory is authoritative. */
+const onlineSockets = new Map<number, Set<string>>();
+
+/** Auto-expiry for typing so a lost typing:stop can never stick forever. */
+const typingTimers = new Map<string, NodeJS.Timeout>();
+const typingKey = (conversationId: string, userId: number) => `${conversationId}:${userId}`;
+
+function isMember(socket: ChatSocket, conversationId: string): boolean {
+  return socket.rooms.has(conversationRoom(conversationId));
+}
+
+function clearTyping(io: SocketIOServer, conversationId: string, userId: number, name: string): void {
+  const key = typingKey(conversationId, userId);
+  const timer = typingTimers.get(key);
+  if (timer) {
+    clearTimeout(timer);
+    typingTimers.delete(key);
+  }
+  io.to(conversationRoom(conversationId)).emit("typing:stop", {
+    conversationId,
+    userId,
+    name,
+    isTyping: false,
+  });
+}
+
+export function registerChatHandlers(io: SocketIOServer): void {
+  //  Authentication 
+  io.use(async (socket, next) => {
     try {
-      // Extract token from handshake auth or cookie
-      const cookieHeader = socket.handshake.headers.cookie ?? '';
-      const token = socket.handshake.auth.token ||
+      const cookieHeader = socket.handshake.headers.cookie ?? "";
+      const raw =
+        (socket.handshake.auth?.token as string | undefined) ||
         /(?:^|;\s*)token=([^;]+)/.exec(cookieHeader)?.[1];
 
-      if (!token) {
-        return next(new Error("Authentication token required."));
-      }
+      if (!raw) return next(new Error("Authentication token required."));
 
-      //verifyToken is now async (DB token_version check) - must be awaited
-      const decoded = await verifyToken(token);
-      if (!decoded) {
-        return next(new Error("Invalid or expired token."));
-      }
+      // verifyToken is async: it checks users.token_version AND is_active, so a
+      // deactivated account or a pre-password-change cookie cannot connect.
+      const decoded = await verifyToken(decodeURIComponent(raw));
+      if (!decoded) return next(new Error("Invalid or expired token."));
 
-      // Attach user to socket
-      (socket as any).user = decoded;
+      const db = getDB();
+      const res = await db.query(
+        `SELECT first_name, last_name, email FROM users WHERE id = $1`,
+        [decoded.userId]
+      );
+      const row = res.rows[0];
+      const name =
+        [row?.first_name, row?.last_name].filter(Boolean).join(" ").trim() ||
+        (row?.email ? String(row.email).split("@")[0] : "Guest");
+
+      const data = socket.data as SocketData;
+      data.user = decoded;
+      data.displayName = name;
+      data.conversationIds = new Set();
+      data.focusedConversationId = null;
+
       next();
     } catch (error) {
       console.error("Socket auth error:", error);
@@ -31,114 +87,304 @@ export function registerChatHandlers(io: SocketIOServer) {
     }
   });
 
-  io.on("connection", (socket: Socket) => {
-    const user = (socket as any).user;
-    console.log(` User connected: ${user.userId} (Socket: ${socket.id})`);
+  io.on("connection", async (rawSocket) => {
+    const socket = rawSocket as ChatSocket;
+    const { userId } = socket.data.user;
 
-    // Join Conversation Room 
-    socket.on("conversation:join", async (conversationId: string, callback: (success: boolean) => void) => {
-      try {
-        // Security: Validate user is a participant before joining
-        const isParticipant = await ChatModel.isParticipant(conversationId, user.userId);
-        if (!isParticipant) {
-          return callback(false);
-        }
+    //  Rooms 
+    // user:<id> drives inbox + unread badges. We also join every conversation
+    // the user belongs to, so a message for ANY thread reaches this client
+    // without it having to open that thread first.
+    socket.join(userRoom(userId));
 
-        socket.join(`conversation:${conversationId}`);
-        console.log(`User ${user.userId} joined conversation:${conversationId}`);
-        
-        // Broadcast presence to the room
-        socket.to(`conversation:${conversationId}`).emit("presence:update", {
-          userId: user.userId,
-          isOnline: true
+    try {
+      const ids = await ChatModel.getConversationIdsForUser(userId);
+      for (const id of ids) {
+        socket.join(conversationRoom(id));
+        socket.data.conversationIds.add(id);
+      }
+    } catch (error) {
+      console.error("Room bootstrap failed:", error);
+    }
+
+    //  Presence 
+    const sockets = onlineSockets.get(userId) ?? new Set<string>();
+    const wasOffline = sockets.size === 0;
+    sockets.add(socket.id);
+    onlineSockets.set(userId, sockets);
+
+    if (wasOffline) {
+      for (const id of socket.data.conversationIds) {
+        socket.to(conversationRoom(id)).emit("presence:update", {
+          userId,
+          isOnline: true,
+          lastSeenAt: null,
         });
+      }
+    }
 
-        callback(true);
-      } catch (error) {
-        console.error("Join conversation error:", error);
-        callback(false);
+    //  Delivery catch-up 
+    // Everything outstanding is marked delivered the moment the device is back.
+    try {
+      const delivered = await ChatModel.markAllDelivered(userId);
+      for (const row of delivered) {
+        io.to(conversationRoom(row.conversation_id)).emit("message:delivered", {
+          conversationId: row.conversation_id,
+          userId,
+          deliveredUpToSeq: row.seq,
+        });
+      }
+    } catch (error) {
+      console.error("Delivery catch-up failed:", error);
+    }
+
+    socket.emit("session:ready", {
+      userId,
+      conversationIds: [...socket.data.conversationIds],
+      isSupportAgent: await SupportAgentModel.isAgent(userId).catch(() => false),
+    });
+
+    //  Join / leave 
+    socket.on(
+      "conversation:join",
+      async (conversationId: string, callback?: (ok: boolean) => void) => {
+        try {
+          if (!conversationId) return callback?.(false);
+          const ok = await ChatModel.isParticipant(conversationId, userId);
+          if (!ok) return callback?.(false);
+
+          socket.join(conversationRoom(conversationId));
+          socket.data.conversationIds.add(conversationId);
+          callback?.(true);
+        } catch (error) {
+          console.error("Join conversation error:", error);
+          callback?.(false);
+        }
+      }
+    );
+
+    // Explicit opt-out only. The client does NOT call this when closing a
+    // thread - staying in the room is what keeps the inbox live.
+    socket.on("conversation:leave", (conversationId: string) => {
+      if (!conversationId) return;
+      clearTyping(io, conversationId, userId, socket.data.displayName);
+      socket.leave(conversationRoom(conversationId));
+      socket.data.conversationIds.delete(conversationId);
+      if (socket.data.focusedConversationId === conversationId) {
+        socket.data.focusedConversationId = null;
       }
     });
 
-    //Send Message 
-    socket.on("message:send", async (payload: {
-      conversationId: string;
-      clientId: string; // Idempotency key from frontend
-      type: 'text' | 'image' | 'file' | 'system';
-      body?: string;
-      attachments?: Array<{ url: string; mime_type: string; size: number; width?: number; height?: number; duration?: number }>;
-    }, callback: (message: Message | null, error?: string) => void) => {
-      try {
-        // Security: Validate participant again
-        const isParticipant = await ChatModel.isParticipant(payload.conversationId, user.userId);
-        if (!isParticipant) {
-          return callback(null, "Forbidden: You are not in this conversation.");
-        }
+    // Which thread is on screen. Drives read receipts and nothing else.
+    socket.on("conversation:focus", (conversationId: string | null) => {
+      socket.data.focusedConversationId = conversationId || null;
+    });
 
-        // Save message to DB (handles sequence + idempotency)
-        const message = await ChatModel.createMessage(
-          payload.conversationId,
-          user.userId,
-          payload.clientId,
-          payload.type,
-          payload.body || null,
-          payload.attachments
+    //  Gap fill on reconnect 
+    socket.on(
+      "conversation:sync",
+      async (
+        payload: { conversationId: string; afterSeq?: number },
+        callback?: (page: MessagePage | null, error?: string) => void
+      ) => {
+        try {
+          if (!payload?.conversationId || !isMember(socket, payload.conversationId)) {
+            return callback?.(null, "Forbidden");
+          }
+          const after = Number(payload.afterSeq);
+          const page = await ChatModel.getMessages(
+            payload.conversationId,
+            Number.isFinite(after) && after > 0 ? String(after) : null,
+            "after",
+            CHAT_LIMITS.MAX_PAGE_SIZE
+          );
+          callback?.(page);
+        } catch (error) {
+          console.error("Conversation sync error:", error);
+          callback?.(null, "Sync failed");
+        }
+      }
+    );
+
+    //  Send 
+    // Writes + acks ONLY. The LISTEN bridge owns the broadcast, so there is
+    // exactly one emission per message regardless of origin.
+    socket.on(
+      "message:send",
+      async (payload: MessageSendPayload, callback?: (ack: MessageSendAck) => void) => {
+        const fail = (error: string, code?: string) => callback?.({ ok: false, error, code });
+        try {
+          if (!payload?.conversationId || !payload?.clientId) {
+            return fail("conversationId and clientId are required", "BAD_REQUEST");
+          }
+          if (!isMember(socket, payload.conversationId)) {
+            const ok = await ChatModel.isParticipant(payload.conversationId, userId);
+            if (!ok) return fail("You are not in this conversation.", "FORBIDDEN");
+            socket.join(conversationRoom(payload.conversationId));
+            socket.data.conversationIds.add(payload.conversationId);
+          }
+
+          const body = typeof payload.body === "string" ? payload.body : null;
+          const moderation = detectOffPlatform(body);
+
+          const message = await ChatModel.createMessage(
+            payload.conversationId,
+            userId,
+            payload.clientId,
+            payload.type ?? "text",
+            body,
+            payload.attachments ?? [],
+            payload.replyToMessageId ?? null,
+            moderation
+          );
+
+          if (!message) return fail("Failed to save message.", "SAVE_FAILED");
+
+          clearTyping(io, payload.conversationId, userId, socket.data.displayName);
+
+          // The sender's own unread must not include what they just wrote.
+          await ChatModel.markAsRead(payload.conversationId, userId, message.conversation_seq);
+
+          callback?.({ ok: true, message, warning: moderation.warning });
+        } catch (error: any) {
+          const code = String(error?.message ?? "");
+          const known: Record<string, string> = {
+            EMPTY_MESSAGE: "Write a message or attach a file.",
+            TOO_MANY_ATTACHMENTS: `Up to ${CHAT_LIMITS.MAX_ATTACHMENTS} attachments per message.`,
+            UNSUPPORTED_ATTACHMENT_TYPE: "That file type isn't supported.",
+            IMAGE_TOO_LARGE: "Images must be 10 MB or smaller.",
+            FILE_TOO_LARGE: "Files must be 25 MB or smaller.",
+            INVALID_ATTACHMENT_URL: "That attachment failed to upload. Please try again.",
+            INVALID_ATTACHMENT_SIZE: "That attachment failed to upload. Please try again.",
+            REPLY_TARGET_NOT_FOUND: "The message you replied to no longer exists.",
+          };
+          if (known[code]) return fail(known[code], code);
+          console.error("Message send error:", error);
+          fail("Couldn't send your message. Please try again.", "INTERNAL");
+        }
+      }
+    );
+
+    //  Receipts 
+    socket.on(
+      "conversation:read",
+      async (payload: { conversationId: string; seq: number }) => {
+        try {
+          if (!payload?.conversationId || !isMember(socket, payload.conversationId)) return;
+          const seq = Number(payload.seq);
+          if (!Number.isFinite(seq) || seq <= 0) return;
+
+          const readUpToSeq = await ChatModel.markAsRead(payload.conversationId, userId, seq);
+
+          // to the whole room (not socket.to) so the reader's OTHER devices
+          // clear their badges too.
+          io.to(conversationRoom(payload.conversationId)).emit("message:read", {
+            conversationId: payload.conversationId,
+            readerId: userId,
+            readUpToSeq,
+          });
+          io.to(userRoom(userId)).emit("conversation:read:sync", {
+            conversationId: payload.conversationId,
+            readUpToSeq,
+          });
+        } catch (error) {
+          console.error("Read receipt error:", error);
+        }
+      }
+    );
+
+    socket.on(
+      "conversation:delivered",
+      async (payload: { conversationId: string; seq: number }) => {
+        try {
+          if (!payload?.conversationId || !isMember(socket, payload.conversationId)) return;
+          const seq = Number(payload.seq);
+          if (!Number.isFinite(seq) || seq <= 0) return;
+
+          const deliveredUpToSeq = await ChatModel.markAsDelivered(
+            payload.conversationId,
+            userId,
+            seq
+          );
+          io.to(conversationRoom(payload.conversationId)).emit("message:delivered", {
+            conversationId: payload.conversationId,
+            userId,
+            deliveredUpToSeq,
+          });
+        } catch (error) {
+          console.error("Delivered receipt error:", error);
+        }
+      }
+    );
+
+    //  Typing 
+    // Membership-gated (rooms are only ever joined after a participant check),
+    // so no DB hit per keystroke and no cross-conversation spoofing.
+    const emitTyping = (conversationId: string, isTyping: boolean) => {
+      if (!conversationId || !isMember(socket, conversationId)) return;
+
+      socket.to(conversationRoom(conversationId)).emit(isTyping ? "typing:start" : "typing:stop", {
+        conversationId,
+        userId,
+        name: socket.data.displayName,
+        isTyping,
+      });
+
+      const key = typingKey(conversationId, userId);
+      const existing = typingTimers.get(key);
+      if (existing) clearTimeout(existing);
+
+      if (isTyping) {
+        typingTimers.set(
+          key,
+          setTimeout(() => {
+            typingTimers.delete(key);
+            io.to(conversationRoom(conversationId)).emit("typing:stop", {
+              conversationId,
+              userId,
+              name: socket.data.displayName,
+              isTyping: false,
+            });
+          }, CHAT_LIMITS.TYPING_TTL_MS)
         );
-
-        if (!message) {
-          return callback(null, "Failed to save message.");
-        }
-
-        // Acknowledge sender immediately (Optimistic UI will replace temp ID)
-        callback(message, undefined);
-
-        // Emit the full message directly to the room. 
-        // This bypasses the need for the LISTEN/NOTIFY bridge for socket messages,
-        // making delivery instantaneous instead of requiring a follow-up HTTP request.
-        io.to(`conversation:${payload.conversationId}`).emit("message.created", message);
-        
-      } catch (error: any) {
-        console.error("Message send error:", error);
-        callback(null, error.message || "Internal server error.");
+      } else {
+        typingTimers.delete(key);
       }
-    });
+    };
 
-    // Read Receipts 
-    socket.on("conversation:read", async (payload: { conversationId: string, messageSeq: number }) => {
-      try {
-        await ChatModel.markAsRead(payload.conversationId, user.userId, payload.messageSeq);
-        
-        // Notify the room that messages up to this seq have been read
-        socket.to(`conversation:${payload.conversationId}`).emit("message:read", {
-          conversationId: payload.conversationId,
-          readerId: user.userId,
-          readUpToSeq: payload.messageSeq
+    socket.on("typing:start", (conversationId: string) => emitTyping(conversationId, true));
+    socket.on("typing:stop", (conversationId: string) => emitTyping(conversationId, false));
+
+    //  Teardown 
+    // `disconnecting` fires while socket.rooms is still populated; `disconnect`
+    // fires after Socket.IO has cleared them. Presence must go out here.
+    socket.on("disconnecting", () => {
+      const set = onlineSockets.get(userId);
+      const goingOffline = !!set && set.size <= 1;
+      if (!goingOffline) return;
+
+      const lastSeenAt = new Date().toISOString();
+      for (const id of socket.data.conversationIds) {
+        clearTyping(io, id, userId, socket.data.displayName);
+        socket.to(conversationRoom(id)).emit("presence:update", {
+          userId,
+          isOnline: false,
+          lastSeenAt,
         });
-      } catch (error) {
-        console.error("Read receipt error:", error);
       }
     });
 
-    //Typing Indicators 
-    socket.on("typing:start", (conversationId: string) => {
-      socket.to(`conversation:${conversationId}`).emit("typing:start", {
-        userId: user.userId,
-        conversationId
-      });
-    });
-
-    socket.on("typing:stop", (conversationId: string) => {
-      socket.to(`conversation:${conversationId}`).emit("typing:stop", {
-        userId: user.userId,
-        conversationId
-      });
-    });
-
-    // Disconnect 
     socket.on("disconnect", () => {
-      console.log(` User disconnected: ${user.userId} (Socket: ${socket.id})`);
-      //important Note: In a multi-instance environment, we would update Redis presence here.
-      // For now, we rely on the user's other sockets or next connection to re-establish presence.
+      const set = onlineSockets.get(userId);
+      if (set) {
+        set.delete(socket.id);
+        if (set.size === 0) onlineSockets.delete(userId);
+      }
     });
   });
+}
+
+/** Live presence lookup for the REST layer (thread header on first paint). */
+export function isUserOnline(userId: number): boolean {
+  return (onlineSockets.get(userId)?.size ?? 0) > 0;
 }

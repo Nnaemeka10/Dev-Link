@@ -5,13 +5,14 @@ import type { VendorProfile } from "../types";
 
 interface VendorHeaderProps {
   /**
-   * Kept for the unread badge. Identity and navigation now come from the
-   * shared Navbar (logo + contextual client/vendor switch + user menu),
-   * replacing the old name + avatar cluster.
+   * Retained for callers that pass the dashboard profile. Identity and
+   * navigation come from the shared Navbar; unread is sourced live from the
+   * chat query, so a stale `0` on the profile can never suppress the badge.
    */
   vendor?: VendorProfile;
 }
 
 export default function VendorHeader({ vendor }: VendorHeaderProps) {
-  return <Navbar variant="vendor" unreadMessages={vendor?.unreadMessages ?? 0} />;
+  const override = vendor?.unreadMessages ? vendor.unreadMessages : undefined;
+  return <Navbar variant="vendor" unreadMessages={override} />;
 }

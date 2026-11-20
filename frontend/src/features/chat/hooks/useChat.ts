@@ -1,165 +1,708 @@
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { fetchConversations, fetchMessages, uploadAttachment } from "../chat.api";
-import { useChatSocket } from "./useChatWebsocket";
-import { useCallback, useState } from "react";
-import type { ChatMessage, ChatAttachment, AttachmentType } from "../chat.types";
+"use client";
 
-export function useChat(userId: number | undefined, activeThreadId: string | null) {
-  const queryClient = useQueryClient();
-  const [typingUsers, setTypingUsers] = useState<Record<string, boolean>>({});
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  useInfiniteQuery,
+  useMutation,
+  useQuery,
+  useQueryClient,
+  type InfiniteData,
+} from "@tanstack/react-query";
+import { ApiError } from "@/lib/api";
+import * as api from "../chat.api";
+import {
+  CHAT_LIMITS,
+  isPendingMessage,
+  type ChatAttachment,
+  type ChatMessage,
+  type ChatRole,
+  type ChatThread,
+  type MessagePage,
+  type TypingPayload,
+} from "../chat.types";
+import {
+  highestSeq,
+  mergeWithPending,
+  newClientId,
+  sortById,
+} from "../utils";
+import { useChatWebsocket } from "./useChatWebsocket";
 
-  // 1. Fetch Conversations
-  const { data: conversations = [], isLoading: isLoadingThreads } = useQuery({
-    queryKey: ["chat", "conversations"],
-    queryFn: fetchConversations,
-    enabled: !!userId,
-  });
+export const chatKeys = {
+  all: ["chat"] as const,
+  conversations: (role: ChatRole) => ["chat", "conversations", role] as const,
+  conversation: (id: string) => ["chat", "conversation", id] as const,
+  messages: (id: string) => ["chat", "messages", id] as const,
+  unread: ["chat", "unread"] as const,
+  supportAgents: ["chat", "support", "agents"] as const,
+};
 
- // 2. Fetch Active Thread Messages based on URL parameter
-  const { data: activeMessages = [], isLoading: isLoadingMessages } = useQuery({
-    queryKey: ["chat", "messages", activeThreadId],
-    queryFn: () => activeThreadId ? fetchMessages(activeThreadId) : Promise.resolve([]),
-    enabled: !!activeThreadId,
-  });
+type MessagesData = InfiniteData<MessagePage, string | undefined>;
 
-   // Helper to infer attachment type from mime_type
-  const inferAttachmentType = (mimeType: string): AttachmentType => {
-    if (mimeType.startsWith("image/")) return "image";
-    if (mimeType.startsWith("video/")) return "video";
-    if (mimeType.startsWith("audio/")) return "audio";
-    return "document";
-  };
+export interface SendInput {
+  body: string;
+  files?: File[];
+  replyTo?: ChatMessage | null;
+}
 
-  // 3. Socket.IO Integration (Handles real-time updates & cache invalidation)
-  const {emitSendMessage, emitTyping} = useChatSocket({
-    userId,
-    activeThreadId,
-    onMessageReceived: (conversationId, message) => {
-      // If the message belongs to the active thread, append it to the cache
-      if (conversationId === activeThreadId) {
-        queryClient.setQueryData<ChatMessage[]>(["chat", "messages", conversationId], (old = []) => {
-          // Prevent duplicates (idempotency safety net)
-          if (old.some(m => m.id === message.id)) return old;
+interface PendingPayload {
+  body: string | null;
+  attachments: api.UploadedAttachment[];
+  replyToMessageId: number | null;
+}
 
-          //If we have an optimistic message with this client_id, replace it
-          if (message.client_id && old.some(m => m.client_id === message.client_id)) {
-            return old.map(m => m.client_id === message.client_id ? { ...message, status: "sent" } : m);
-          }
-          
-          return [...old, message];
-        });
-      }
-      // Always invalidate conversations list to update last_message preview & unread count
-      queryClient.invalidateQueries({ queryKey: ["chat", "conversations"] });
-    },
-    onTyping: (conversationId, isTyping) => {
-      if (conversationId === activeThreadId) {
-        setTypingUsers(prev => ({ ...prev, [conversationId]: isTyping }));
+/** Insert or replace by id, and drop any optimistic row sharing a client_id. */
+function upsertIntoPages(data: MessagesData | undefined, message: ChatMessage): MessagesData | undefined {
+  if (!data || data.pages.length === 0) return data;
+
+  const pages = data.pages.map((page) => ({
+    ...page,
+    messages: page.messages.filter(
+      (existing) =>
+        existing.id !== message.id &&
+        !(message.client_id && existing.client_id === message.client_id && isPendingMessage(existing))
+    ),
+  }));
+
+  const alreadyPlaced = pages.some((page) => page.messages.some((m) => m.id === message.id));
+  if (!alreadyPlaced) {
+    // Newest page is index 0; append then keep ascending order.
+    pages[0] = { ...pages[0], messages: sortById([...pages[0].messages, message]) };
+  } else {
+    for (let i = 0; i < pages.length; i += 1) {
+      const index = pages[i].messages.findIndex((m) => m.id === message.id);
+      if (index !== -1) {
+        const next = [...pages[i].messages];
+        next[index] = message;
+        pages[i] = { ...pages[i], messages: next };
+        break;
       }
     }
+  }
+
+  return { ...data, pages };
+}
+
+export function useChat(
+  userId: number | undefined,
+  activeThreadId: string | null,
+  role: ChatRole
+) {
+  const queryClient = useQueryClient();
+
+  const [pending, setPending] = useState<ChatMessage[]>([]);
+  const [isSending, setIsSending] = useState(false);
+  const [warning, setWarning] = useState<string | null>(null);
+  const [sendError, setSendError] = useState<string | null>(null);
+  const [typingUsers, setTypingUsers] = useState<Array<{ userId: number; name: string }>>([]);
+
+  const pendingPayloadsRef = useRef(new Map<string, PendingPayload>());
+  const activeThreadRef = useRef<string | null>(activeThreadId);
+  const typingTimersRef = useRef(new Map<number, number>());
+  const uploadAbortRef = useRef<AbortController | null>(null);
+
+  useEffect(() => {
+    activeThreadRef.current = activeThreadId;
+  }, [activeThreadId]);
+
+  // ── Queries ───────────────────────────────────────────────────────────────
+  const conversationsQuery = useQuery({
+    queryKey: chatKeys.conversations(role),
+    queryFn: () => api.fetchConversations(role),
+    enabled: !!userId,
+    staleTime: 30_000,
   });
 
-  
+  const unreadQuery = useQuery({
+    queryKey: chatKeys.unread,
+    queryFn: api.fetchUnread,
+    enabled: !!userId,
+    staleTime: 15_000,
+  });
 
- 
-
-   const [isSending] = useState(false);
-
-  const handleSendMessage = useCallback(
-    async (content: string, files?: File[]) => {
-      if (!activeThreadId || !userId) return;
-
-
-      const clientId = crypto.randomUUID();
-
-      let attachments: ChatAttachment[] = [] ;
-      if (files?.length) {
-        const uploaded = await Promise.all(files.map((file) => uploadAttachment(file)));
-        attachments = uploaded.map((att, i) => ({
-          id: `temp-${Date.now()}-${i}`,
-          type: inferAttachmentType(att.mime_type),
-          ...att,
-        }));
-      }
-
-      const optimisticMessage: ChatMessage = {
-        id: Date.now(),
-        conversation_id: activeThreadId,
-        sender_id: userId,
-        conversation_seq: Date.now(),
-        client_id: clientId,
-        type: "text",
-        body: content,
-        created_at: new Date().toISOString(),
-        status: "sending",
-        attachments,
-      };
-
-      queryClient.setQueryData<ChatMessage[]>(
-        ["chat", "messages", activeThreadId],
-        (old = []) => [...old, optimisticMessage]
-      );
-
-      emitSendMessage(
-        {
-          conversationId: activeThreadId,
-          clientId,
-          type: "text",
-          body: content,
-          attachments,
-        },
-        (serverMessage, error) => {
-          if (error || !serverMessage) {
-            queryClient.setQueryData<ChatMessage[]>(
-              ["chat", "messages", activeThreadId],
-              (old = []) =>
-                old.map((msg) =>
-                  msg.client_id === clientId
-                    ? { ...msg, status: "failed" }
-                    : msg
-                )
-            );
-            return;
-          }
-
-          queryClient.setQueryData<ChatMessage[]>(
-            ["chat", "messages", activeThreadId],
-            (old = []) =>
-              old.map((msg) =>
-                msg.client_id === clientId
-                  ? { ...serverMessage, status: "sent" }
-                  : msg
-              )
-          );
-
-          queryClient.invalidateQueries({ queryKey: ["chat", "conversations"] });
-        }
-      );
-
-      return clientId;
+  const messagesQuery = useInfiniteQuery<MessagePage, Error, MessagesData, readonly unknown[], string | undefined>({
+    queryKey: chatKeys.messages(activeThreadId ?? ""),
+    queryFn: ({ pageParam }) =>
+      api.fetchMessages(activeThreadId!, { cursor: pageParam, direction: "before" }),
+    enabled: !!userId && !!activeThreadId,
+    initialPageParam: undefined,
+    getNextPageParam: (lastPage) => {
+      if (!lastPage.has_more || lastPage.messages.length === 0) return undefined;
+      const oldest = lastPage.messages[0]?.conversation_seq;
+      return oldest != null ? String(oldest) : undefined;
     },
-    [activeThreadId, userId, queryClient, emitSendMessage]
+    staleTime: Infinity, // socket + explicit gap fill own freshness
+    gcTime: 5 * 60_000,
+  });
+
+  const serverMessages = useMemo(() => {
+    const pages = messagesQuery.data?.pages ?? [];
+    return [...pages].reverse().flatMap((page) => page.messages);
+  }, [messagesQuery.data]);
+
+  // Deep link to a thread that is not in the first inbox page.
+  const missingActive =
+    !!activeThreadId &&
+    !conversationsQuery.isLoading &&
+    !(conversationsQuery.data ?? []).some((thread) => thread.id === activeThreadId);
+
+  const singleThreadQuery = useQuery({
+    queryKey: chatKeys.conversation(activeThreadId ?? ""),
+    queryFn: () => api.fetchConversation(activeThreadId!),
+    enabled: !!userId && missingActive,
+    staleTime: 30_000,
+  });
+
+  const conversations = conversationsQuery.data ?? [];
+  const activeThread = useMemo(() => {
+    const found = conversations.find((thread) => thread.id === activeThreadId);
+    if (found) return found;
+    if (singleThreadQuery.data?.id === activeThreadId) return singleThreadQuery.data;
+    return null;
+  }, [conversations, activeThreadId, singleThreadQuery.data]);
+
+  const activePending = useMemo(
+    () => pending.filter((message) => message.conversation_id === activeThreadId),
+    [pending, activeThreadId]
   );
 
-  const handleTyping = useCallback(
-  (isTyping: boolean) => {
-    if (!activeThreadId) return;
-    emitTyping(activeThreadId, isTyping);
-  },
-  [activeThreadId, emitTyping]
-);
+  const messages = useMemo(
+    () => mergeWithPending(serverMessages, activePending),
+    [serverMessages, activePending]
+  );
 
-   return {
+  const latestSeq = useMemo(() => highestSeq(serverMessages), [serverMessages]);
+
+  // ── Cache writers ─────────────────────────────────────────────────────────
+  const writeMessage = useCallback(
+    (message: ChatMessage) => {
+      queryClient.setQueryData<MessagesData>(
+        chatKeys.messages(message.conversation_id),
+        (data) => upsertIntoPages(data, message)
+      );
+      if (message.client_id) {
+        const clientId = message.client_id;
+        setPending((current) => current.filter((item) => item.client_id !== clientId));
+        pendingPayloadsRef.current.delete(clientId);
+      }
+    },
+    [queryClient]
+  );
+
+  const bumpThread = useCallback(
+    (conversationId: string, message?: ChatMessage) => {
+      queryClient.setQueryData<ChatThread[]>(chatKeys.conversations(role), (current) => {
+        if (!current) return current;
+        const index = current.findIndex((thread) => thread.id === conversationId);
+        if (index === -1) {
+          // Unknown thread (new inquiry) - let the server tell us about it.
+          void queryClient.invalidateQueries({ queryKey: chatKeys.conversations(role) });
+          return current;
+        }
+
+        const thread = current[index];
+        const isActive = activeThreadRef.current === conversationId;
+        const fromMe = !!message && Number(message.sender_id) === Number(userId);
+        const countsAsUnread = !!message && (!fromMe || message.type === "system");
+
+        const updated: ChatThread = {
+          ...thread,
+          last_message_at: message?.created_at ?? new Date().toISOString(),
+          updated_at: message?.created_at ?? thread.updated_at,
+          unread_count: isActive || !countsAsUnread ? thread.unread_count : thread.unread_count + 1,
+          last_message: message
+            ? {
+                id: message.id,
+                seq: message.conversation_seq ?? 0,
+                sender_id: message.sender_id,
+                type: message.type,
+                body: message.deleted_at ? null : message.body,
+                deleted: !!message.deleted_at,
+                has_attachments: (message.attachments?.length ?? 0) > 0,
+                created_at: message.created_at,
+              }
+            : thread.last_message,
+        };
+
+        return [updated, ...current.filter((_, i) => i !== index)];
+      });
+
+      void queryClient.invalidateQueries({ queryKey: chatKeys.unread });
+    },
+    [queryClient, role, userId]
+  );
+
+  const applyReceipt = useCallback(
+    (conversationId: string, readerId: number, upToSeq: number, status: "read" | "delivered") => {
+      queryClient.setQueryData<MessagesData>(chatKeys.messages(conversationId), (data) => {
+        if (!data) return data;
+        return {
+          ...data,
+          pages: data.pages.map((page) => ({
+            ...page,
+            messages: page.messages.map((message) => {
+              // Only OUR messages can be read/delivered by someone else.
+              if (Number(message.sender_id) !== Number(userId)) return message;
+              if (Number(readerId) === Number(userId)) return message;
+              if (message.conversation_seq == null || message.conversation_seq > upToSeq) return message;
+              if (status === "delivered" && message.status === "read") return message;
+              return { ...message, status };
+            }),
+          })),
+        };
+      });
+
+      queryClient.setQueryData<ChatThread[]>(chatKeys.conversations(role), (current) =>
+        current?.map((thread) =>
+          thread.id === conversationId
+            ? {
+                ...thread,
+                participants: thread.participants.map((participant) =>
+                  participant.user_id === readerId
+                    ? {
+                        ...participant,
+                        last_read_seq:
+                          status === "read"
+                            ? Math.max(participant.last_read_seq, upToSeq)
+                            : participant.last_read_seq,
+                        delivered_seq: Math.max(participant.delivered_seq, upToSeq),
+                      }
+                    : participant
+                ),
+              }
+            : thread
+        )
+      );
+    },
+    [queryClient, role, userId]
+  );
+
+  // ── Socket ────────────────────────────────────────────────────────────────
+  const socket = useChatWebsocket(userId, {
+    onMessageCreated: (message) => {
+      writeMessage(message);
+      bumpThread(message.conversation_id, message);
+      if (
+        message.conversation_id === activeThreadRef.current &&
+        message.conversation_seq != null &&
+        typeof document !== "undefined" &&
+        document.visibilityState === "visible"
+      ) {
+        socketRef.current?.markRead(message.conversation_id, message.conversation_seq);
+      }
+    },
+    onMessageUpdated: (message) => writeMessage(message),
+    onMessageDeleted: (message) => {
+      if (message.conversation_seq != null) {
+        writeMessage(message as ChatMessage);
+      } else {
+        queryClient.setQueryData<MessagesData>(chatKeys.messages(message.conversation_id), (data) =>
+          data
+            ? {
+                ...data,
+                pages: data.pages.map((page) => ({
+                  ...page,
+                  messages: page.messages.map((item) =>
+                    item.id === message.id
+                      ? { ...item, deleted_at: message.deleted_at ?? new Date().toISOString(), body: null, attachments: [] }
+                      : item
+                  ),
+                })),
+              }
+            : data
+        );
+      }
+      bumpThread(message.conversation_id);
+    },
+    onInboxUpdate: ({ conversationId, message }) => bumpThread(conversationId, message),
+    onGapFill: (conversationId, page) => {
+      for (const message of page.messages) writeMessage(message);
+      const last = page.messages[page.messages.length - 1];
+      if (last) bumpThread(conversationId, last);
+    },
+    onRead: ({ conversationId, readerId, readUpToSeq }) =>
+      applyReceipt(conversationId, readerId, readUpToSeq, "read"),
+    onDelivered: ({ conversationId, userId: readerId, deliveredUpToSeq }) =>
+      applyReceipt(conversationId, readerId, deliveredUpToSeq, "delivered"),
+    onReadSync: ({ conversationId, readUpToSeq }) => {
+      queryClient.setQueryData<ChatThread[]>(chatKeys.conversations(role), (current) =>
+        current?.map((thread) =>
+          thread.id === conversationId
+            ? { ...thread, unread_count: 0, last_read_seq: Math.max(thread.last_read_seq, readUpToSeq) }
+            : thread
+        )
+      );
+      void queryClient.invalidateQueries({ queryKey: chatKeys.unread });
+    },
+    onPresence: ({ userId: otherId, isOnline }) => {
+      queryClient.setQueryData<ChatThread[]>(chatKeys.conversations(role), (current) =>
+        current?.map((thread) =>
+          thread.counterparty?.user_id === otherId
+            ? { ...thread, counterparty_online: isOnline }
+            : thread
+        )
+      );
+    },
+    onTyping: (payload: TypingPayload) => {
+      if (Number(payload.userId) === Number(userId)) return;
+      if (payload.conversationId !== activeThreadRef.current) return;
+
+      const existing = typingTimersRef.current.get(payload.userId);
+      if (existing) window.clearTimeout(existing);
+
+      if (!payload.isTyping) {
+        typingTimersRef.current.delete(payload.userId);
+        setTypingUsers((current) => current.filter((entry) => entry.userId !== payload.userId));
+        return;
+      }
+
+      setTypingUsers((current) =>
+        current.some((entry) => entry.userId === payload.userId)
+          ? current
+          : [...current, { userId: payload.userId, name: payload.name }]
+      );
+
+      // Local safety net on top of the server TTL - a lost stop can never stick.
+      typingTimersRef.current.set(
+        payload.userId,
+        window.setTimeout(() => {
+          typingTimersRef.current.delete(payload.userId);
+          setTypingUsers((current) => current.filter((entry) => entry.userId !== payload.userId));
+        }, CHAT_LIMITS.PAGE_SIZE * 120)
+      );
+    },
+  });
+
+  const socketRef = useRef(socket);
+  useEffect(() => {
+    socketRef.current = socket;
+  });
+
+  // Seed the resume cursor from loaded history (real seqs only).
+  useEffect(() => {
+    if (activeThreadId && latestSeq > 0) socket.registerSeq(activeThreadId, latestSeq);
+  }, [activeThreadId, latestSeq, socket]);
+
+  // Focus + read on open, on new messages, and on returning to the tab.
+  useEffect(() => {
+    socket.focusConversation(activeThreadId);
+    setTypingUsers([]);
+    if (!activeThreadId || latestSeq <= 0) return;
+
+    const readIfVisible = () => {
+      if (typeof document === "undefined" || document.visibilityState === "visible") {
+        socket.markRead(activeThreadId, latestSeq);
+        queryClient.setQueryData<ChatThread[]>(chatKeys.conversations(role), (current) =>
+          current?.map((thread) =>
+            thread.id === activeThreadId ? { ...thread, unread_count: 0 } : thread
+          )
+        );
+      }
+    };
+
+    readIfVisible();
+    document.addEventListener("visibilitychange", readIfVisible);
+    window.addEventListener("focus", readIfVisible);
+    return () => {
+      document.removeEventListener("visibilitychange", readIfVisible);
+      window.removeEventListener("focus", readIfVisible);
+    };
+  }, [activeThreadId, latestSeq, socket, queryClient, role]);
+
+  useEffect(
+    () => () => {
+      for (const timer of typingTimersRef.current.values()) window.clearTimeout(timer);
+      typingTimersRef.current.clear();
+      uploadAbortRef.current?.abort();
+    },
+    []
+  );
+
+  // ── Send ──────────────────────────────────────────────────────────────────
+  const dispatch = useCallback(
+    async (clientId: string, payload: PendingPayload) => {
+      if (!activeThreadId) return;
+      const ack = await socketRef.current.sendMessage({
+        conversationId: activeThreadId,
+        clientId,
+        body: payload.body,
+        attachments: payload.attachments,
+        replyToMessageId: payload.replyToMessageId,
+      });
+
+      if (!ack.ok || !ack.message) {
+        const message = ack.error ?? "Couldn't send your message.";
+        setPending((current) =>
+          current.map((item) =>
+            item.client_id === clientId ? { ...item, status: "failed", error: message } : item
+          )
+        );
+        setSendError(message);
+        return;
+      }
+
+      writeMessage({ ...ack.message, status: "sent" });
+      bumpThread(ack.message.conversation_id, ack.message);
+      if (ack.warning) setWarning(ack.warning);
+      setSendError(null);
+    },
+    [activeThreadId, writeMessage, bumpThread]
+  );
+
+  const sendMessage = useCallback(
+    async ({ body, files = [], replyTo = null }: SendInput) => {
+      if (!activeThreadId || !userId) return;
+
+      const trimmed = body.trim();
+      if (!trimmed && files.length === 0) return;
+      if (trimmed.length > CHAT_LIMITS.MAX_BODY) {
+        setSendError(`Messages are limited to ${CHAT_LIMITS.MAX_BODY} characters.`);
+        return;
+      }
+      if (files.length > CHAT_LIMITS.MAX_ATTACHMENTS) {
+        setSendError(`Up to ${CHAT_LIMITS.MAX_ATTACHMENTS} attachments per message.`);
+        return;
+      }
+      for (const file of files) {
+        const problem = api.validateFile(file);
+        if (problem) {
+          setSendError(problem);
+          return;
+        }
+      }
+
+      setSendError(null);
+      const clientId = newClientId();
+      const now = new Date().toISOString();
+
+      // Optimistic row appears BEFORE any upload so the user gets instant
+      // feedback. conversation_seq stays null - it must never enter the cursor.
+      const localAttachments: ChatAttachment[] = files.map((file, index) => ({
+        id: `local-${clientId}-${index}`,
+        message_id: 0,
+        url: "",
+        local_url: URL.createObjectURL(file),
+        mime_type: file.type || "application/octet-stream",
+        size: file.size,
+        kind: api.attachmentKindFor(file.type || ""),
+        progress: 0,
+      }));
+
+      const optimistic: ChatMessage = {
+        id: -Date.now(),
+        conversation_id: activeThreadId,
+        sender_id: userId,
+        conversation_seq: null,
+        client_id: clientId,
+        type: files.length > 0 ? (files.every((f) => f.type.startsWith("image/")) ? "image" : "file") : "text",
+        body: trimmed || null,
+        created_at: now,
+        reply_to_message_id: replyTo?.id ?? null,
+        reply_preview: replyTo
+          ? {
+              id: replyTo.id,
+              seq: replyTo.conversation_seq ?? 0,
+              sender_id: replyTo.sender_id,
+              sender_name: Number(replyTo.sender_id) === Number(userId) ? "You" : activeThread?.display_name ?? "Guest",
+              type: replyTo.type,
+              body: replyTo.body?.slice(0, 160) ?? null,
+              deleted: false,
+              has_attachments: (replyTo.attachments?.length ?? 0) > 0,
+            }
+          : null,
+        attachments: localAttachments,
+        status: "sending",
+      };
+
+      setPending((current) => [...current, optimistic]);
+      setIsSending(true);
+      socketRef.current.setTyping(activeThreadId, false);
+
+      const abort = new AbortController();
+      uploadAbortRef.current = abort;
+
+      try {
+        let uploaded: api.UploadedAttachment[] = [];
+
+        if (files.length > 0) {
+          const signature = await api.getUploadSignature();
+          uploaded = [];
+          for (let index = 0; index < files.length; index += 1) {
+            const result = await api.uploadAttachment(
+              files[index],
+              signature,
+              (percent) => {
+                setPending((current) =>
+                  current.map((item) =>
+                    item.client_id === clientId
+                      ? {
+                          ...item,
+                          attachments: item.attachments.map((attachment, i) =>
+                            i === index ? { ...attachment, progress: percent } : attachment
+                          ),
+                        }
+                      : item
+                  )
+                );
+              },
+              abort.signal
+            );
+            uploaded.push(result);
+          }
+        }
+
+        const payload: PendingPayload = {
+          body: trimmed || null,
+          attachments: uploaded,
+          replyToMessageId: replyTo?.id ?? null,
+        };
+        pendingPayloadsRef.current.set(clientId, payload);
+        await dispatch(clientId, payload);
+      } catch (error) {
+        const message =
+          error instanceof ApiError ? error.message : error instanceof Error ? error.message : "Upload failed.";
+        setPending((current) =>
+          current.map((item) =>
+            item.client_id === clientId ? { ...item, status: "failed", error: message } : item
+          )
+        );
+        setSendError(message);
+      } finally {
+        uploadAbortRef.current = null;
+        setIsSending(false);
+      }
+    },
+    [activeThreadId, userId, activeThread, dispatch]
+  );
+
+  /** Retry reuses the SAME client_id, so the server dedupes instead of duplicating. */
+  const retryMessage = useCallback(
+    async (clientId: string) => {
+      const payload = pendingPayloadsRef.current.get(clientId);
+      if (!payload) {
+        setSendError("This message needs to be sent again from the composer.");
+        return;
+      }
+      setSendError(null);
+      setPending((current) =>
+        current.map((item) =>
+          item.client_id === clientId ? { ...item, status: "sending", error: null } : item
+        )
+      );
+      setIsSending(true);
+      try {
+        await dispatch(clientId, payload);
+      } finally {
+        setIsSending(false);
+      }
+    },
+    [dispatch]
+  );
+
+  const discardPending = useCallback((clientId: string) => {
+    setPending((current) => {
+      const target = current.find((item) => item.client_id === clientId);
+      target?.attachments.forEach((attachment) => {
+        if (attachment.local_url) URL.revokeObjectURL(attachment.local_url);
+      });
+      return current.filter((item) => item.client_id !== clientId);
+    });
+    pendingPayloadsRef.current.delete(clientId);
+  }, []);
+
+  // ── Mutations ─────────────────────────────────────────────────────────────
+  const editMutation = useMutation({
+    mutationFn: ({ messageId, body }: { messageId: number; body: string }) =>
+      api.editMessage(activeThreadId!, messageId, body),
+    onSuccess: (message) => writeMessage(message),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (messageId: number) => api.deleteMessage(activeThreadId!, messageId),
+    onSuccess: (message) => {
+      writeMessage(message);
+      bumpThread(message.conversation_id, message);
+    },
+  });
+
+  const archiveMutation = useMutation({
+    mutationFn: ({ conversationId, archived }: { conversationId: string; archived: boolean }) =>
+      api.setArchived(conversationId, archived),
+    onSuccess: (_result, variables) => {
+      queryClient.setQueryData<ChatThread[]>(chatKeys.conversations(role), (current) =>
+        current?.map((thread) =>
+          thread.id === variables.conversationId
+            ? { ...thread, archived_at: variables.archived ? new Date().toISOString() : null }
+            : thread
+        )
+      );
+      void queryClient.invalidateQueries({ queryKey: chatKeys.conversations(role) });
+    },
+  });
+
+  const muteMutation = useMutation({
+    mutationFn: ({ conversationId, until }: { conversationId: string; until: string | null }) =>
+      api.setMuted(conversationId, until),
+    onSuccess: (result, variables) => {
+      queryClient.setQueryData<ChatThread[]>(chatKeys.conversations(role), (current) =>
+        current?.map((thread) =>
+          thread.id === variables.conversationId ? { ...thread, muted_until: result.mutedUntil } : thread
+        )
+      );
+    },
+  });
+
+  const setTyping = useCallback(
+    (isTyping: boolean) => {
+      if (activeThreadId) socketRef.current.setTyping(activeThreadId, isTyping);
+    },
+    [activeThreadId]
+  );
+
+  return {
+    // inbox
     conversations,
-    activeThreadId,
-    activeMessages,
-    isLoadingThreads,
-    isLoadingMessages,
-    isSending,
-    handleSendMessage,
-    handleTyping,
-    typingStatus: activeThreadId ? typingUsers[activeThreadId] : false,
-  };
+    isLoadingThreads: conversationsQuery.isLoading,
+    threadsError: conversationsQuery.error,
+    refetchThreads: conversationsQuery.refetch,
+    unread: unreadQuery.data ?? { total: 0, guest: 0, host: 0, support: 0 },
 
-  
+    // active thread
+    activeThread,
+    isLoadingThread: missingActive ? singleThreadQuery.isLoading : conversationsQuery.isLoading,
+    messages,
+    isLoadingMessages: messagesQuery.isLoading,
+    messagesError: messagesQuery.error,
+    hasOlderMessages: messagesQuery.hasNextPage ?? false,
+    isLoadingOlder: messagesQuery.isFetchingNextPage,
+    loadOlderMessages: messagesQuery.fetchNextPage,
+    refetchMessages: messagesQuery.refetch,
+
+    // realtime
+    isConnected: socket.isConnected,
+    connectionError: socket.connectionError,
+    isSupportAgent: socket.isSupportAgent,
+    typingUsers,
+
+    // compose
+    isSending,
+    warning,
+    dismissWarning: () => setWarning(null),
+    sendError,
+    clearSendError: () => setSendError(null),
+    sendMessage,
+    retryMessage,
+    discardPending,
+    setTyping,
+
+    // message actions
+    editMessage: editMutation.mutateAsync,
+    isEditing: editMutation.isPending,
+    deleteMessage: deleteMutation.mutateAsync,
+    isDeleting: deleteMutation.isPending,
+
+    // thread actions
+    setArchived: archiveMutation.mutateAsync,
+    setMuted: muteMutation.mutateAsync,
+  };
 }

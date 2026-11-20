@@ -1,27 +1,68 @@
+"use client";
+
+import { initialsOf } from "../utils";
+
 interface AvatarProps {
-  name?: string;
-  avatarUrl?: string;
+  name?: string | null;
+  avatarUrl?: string | null;
   isOnline?: boolean;
-  size?: "sm" | "md" | "lg";
+  size?: "xs" | "sm" | "md" | "lg";
+  className?: string;
 }
 
-export function Avatar({ name = "User", avatarUrl, isOnline, size = "md" }: AvatarProps) {
-  const sizeClasses = {
-    sm: "w-8 h-8 text-xs",
-    md: "w-11 h-11 text-sm",
-    lg: "w-12 h-12 text-sm",
-  };
+const SIZES = {
+  xs: "h-7 w-7 text-[10px]",
+  sm: "h-9 w-9 text-xs",
+  md: "h-11 w-11 text-sm",
+  lg: "h-14 w-14 text-base",
+} as const;
+
+const DOT = {
+  xs: "h-2 w-2",
+  sm: "h-2.5 w-2.5",
+  md: "h-3 w-3",
+  lg: "h-3.5 w-3.5",
+} as const;
+
+/**
+ * Avatars may be Google- or Cloudinary-hosted, so a plain <img> is used rather
+ * than next/image (no remote-pattern coupling, and referrerPolicy is required
+ * for Google URLs). Initials are derived from the server's display_name.
+ */
+export function Avatar({
+  name = "Guest",
+  avatarUrl,
+  isOnline,
+  size = "md",
+  className = "",
+}: AvatarProps) {
+  const label = name?.trim() || "Guest";
 
   return (
-    <div className="relative flex-shrink-0">
+    <div className={`relative shrink-0 ${className}`}>
       {avatarUrl ? (
-        <img src={avatarUrl} alt={name} className={`${sizeClasses[size]} rounded-full object-cover`} />
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={avatarUrl}
+          alt={label}
+          referrerPolicy="no-referrer"
+          className={`${SIZES[size]} rounded-full object-cover ring-1 ring-[#F0E9DF]`}
+        />
       ) : (
-        <div className={`${sizeClasses[size]} rounded-full bg-orange-100 flex items-center justify-center font-semibold text-orange-800`}>
-          {name.slice(0, 2).toUpperCase()}
-        </div>
+        <span
+          aria-hidden="true"
+          className={`${SIZES[size]} flex items-center justify-center rounded-full bg-[#F7D1C8] font-extrabold uppercase text-[#B9401D] ring-1 ring-[#F0E9DF]`}
+        >
+          {initialsOf(label)}
+        </span>
       )}
-      {isOnline && <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 border-2 border-white rounded-full" />}
+
+      {isOnline && (
+        <span
+          aria-label="Online"
+          className={`absolute bottom-0 right-0 ${DOT[size]} rounded-full bg-[#2D5A27] ring-2 ring-white`}
+        />
+      )}
     </div>
   );
 }
