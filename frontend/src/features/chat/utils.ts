@@ -8,11 +8,56 @@ import {
   type LastMessagePreview,
 } from "./chat.types";
 
-/** Server owns display_name; this is only a defensive fallback. */
+/**
+ * True when a SUPPORT AGENT is looking at a support thread - i.e. the
+ * EventVnV support account reading a customer's conversation.
+ *
+ * This is the only gate for showing customer identity (name, id, email).
+ * The customer's own view of the same thread must keep showing
+ * "EventVnV Support", and buyer↔vendor threads must never expose an email.
+ */
+export function isSupportAgentView(thread?: ChatThread | null): boolean {
+  return !!thread && thread.is_support && thread.my_role === "support";
+}
+
+/**
+ * Role-aware thread label.
+ *
+ * Agent side: the CUSTOMER's name, so every row in the support inbox is
+ * distinguishable. Falls back to the email handle, then to the user id.
+ * Customer side: always "EventVnV Support".
+ *
+ * The name is derived from `counterparty` rather than trusting `display_name`
+ * alone, so the agent's inbox is correct even against a server that still
+ * hardcodes the support label.
+ */
 export function getConversationName(thread?: ChatThread | null): string {
   if (!thread) return "Conversation";
+
+  if (isSupportAgentView(thread)) {
+    const person = thread.counterparty;
+    const named = participantName(person?.first_name, person?.last_name);
+    if (named) return named;
+    if (person?.email) return person.email.split("@")[0];
+    if (person?.user_id != null) return `User #${person.user_id}`;
+    return thread.display_name?.trim() || "Customer";
+  }
+
   if (thread.is_support) return "EventVnV Support";
   return thread.display_name?.trim() || "Guest";
+}
+
+/** "#19" - shown beside the customer's name in the agent's inbox and header. */
+export function supportCustomerId(thread?: ChatThread | null): string | null {
+  if (!isSupportAgentView(thread)) return null;
+  const id = thread?.counterparty?.user_id;
+  return id == null ? null : `#${id}`;
+}
+
+/** Null until the server exposes it; never present outside the agent view. */
+export function supportCustomerEmail(thread?: ChatThread | null): string | null {
+  if (!isSupportAgentView(thread)) return null;
+  return thread?.counterparty?.email ?? null;
 }
 
 export function initialsOf(name?: string | null): string {

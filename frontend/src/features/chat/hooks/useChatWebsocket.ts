@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { io, type Socket } from "socket.io-client";
 import type {
   ChatMessage,
@@ -37,12 +37,15 @@ export interface ChatSocketHandlers {
 /**
  * ONE socket per authenticated session.
  *
- * The previous implementation listed inline callback props in the connect
- * effect's dependency array. Because those arrows were recreated on every
- * render, the effect tore down and reconnected the socket continuously -
- * dropping events and re-running catch-up in a loop. Here the effect depends
- * on `userId` only, handlers are read through a ref, and every emitted action
- * is a stable useCallback.
+ * The effect depends on `userId` only; handlers are read through a ref so new
+ * closures never rebuild the connection.
+ *
+ * The returned API is MEMOIZED. Returning a fresh object literal every render
+ * made any consumer effect that listed it as a dependency re-run on every
+ * render - which, combined with a setState inside that effect, produced
+ * "Maximum update depth exceeded". Every action below is already a stable
+ * useCallback, so the object identity now only changes when connection state
+ * genuinely changes.
  */
 export function useChatWebsocket(userId: number | undefined, handlers: ChatSocketHandlers) {
   const socketRef = useRef<Socket | null>(null);
@@ -50,11 +53,11 @@ export function useChatWebsocket(userId: number | undefined, handlers: ChatSocke
   const seqRef = useRef(new Map<string, number>());
   const activeThreadRef = useRef<string | null>(null);
   const typingStateRef = useRef(new Map<string, { lastSent: number; idleTimer?: number }>());
-  const authFailedRef = useRef(false);
 
   const [isConnected, setIsConnected] = useState(false);
   const [connectionError, setConnectionError] = useState<string | null>(null);
   const [isSupportAgent, setIsSupportAgent] = useState(false);
+  const [authFailed, setAuthFailed] = useState(false);
 
   // Latest-handler ref. No dependency array: refresh after every render so the
   // socket never needs to be rebuilt to see new closures.
@@ -85,7 +88,7 @@ export function useChatWebsocket(userId: number | undefined, handlers: ChatSocke
 
   useEffect(() => {
     if (!userId) return;
-    authFailedRef.current = false;
+    setAuthFailed(false);
 
     const socket = io(API_URL, {
       withCredentials: true,
@@ -110,6 +113,7 @@ export function useChatWebsocket(userId: number | undefined, handlers: ChatSocke
     socket.on("connect", () => {
       setIsConnected(true);
       setConnectionError(null);
+      setAuthFailed(false);
       if (activeThreadRef.current) {
         socket.emit("conversation:focus", activeThreadRef.current);
       }
@@ -124,7 +128,7 @@ export function useChatWebsocket(userId: number | undefined, handlers: ChatSocke
       setConnectionError(message);
       // A rejected token will never succeed on retry - stop hammering the server.
       if (/auth|token|expired|invalid/i.test(message)) {
-        authFailedRef.current = true;
+        setAuthFailed(true);
         socket.io.opts.reconnection = false;
         socket.disconnect();
       }
@@ -251,18 +255,34 @@ export function useChatWebsocket(userId: number | undefined, handlers: ChatSocke
     typingStateRef.current.set(conversationId, state);
   }, []);
 
-  return {
-    isConnected,
-    connectionError,
-    isSupportAgent,
-    authFailed: authFailedRef.current,
-    sendMessage,
-    markRead,
-    markDelivered,
-    setTyping,
-    focusConversation,
-    joinConversation,
-    syncConversation,
-    registerSeq,
-  };
+  return useMemo(
+    () => ({
+      isConnected,
+      connectionError,
+      isSupportAgent,
+      authFailed,
+      sendMessage,
+      markRead,
+      markDelivered,
+      setTyping,
+      focusConversation,
+      joinConversation,
+      syncConversation,
+      registerSeq,
+    }),
+    [
+      isConnected,
+      connectionError,
+      isSupportAgent,
+      authFailed,
+      sendMessage,
+      markRead,
+      markDelivered,
+      setTyping,
+      focusConversation,
+      joinConversation,
+      syncConversation,
+      registerSeq,
+    ]
+  );
 }

@@ -19,6 +19,17 @@ const userPublicFields = `
   is_active
 `;
 
+/**
+ * New accounts start at token_version 0.
+ *
+ * users.token_version is NOT NULL (migration 026) and now DEFAULT 0
+ * (migration 037). It is still supplied explicitly here so account creation
+ * does not depend on that default having been applied yet, and so the intent
+ * is visible at the insert site. It is deliberately NOT in userPublicFields -
+ * a session-revocation counter must never reach the client.
+ */
+const INITIAL_TOKEN_VERSION = 0;
+
 export const UserModel = {
     // Create a new user
     async create(userData: CreateUserInput): Promise<User> {
@@ -29,8 +40,8 @@ export const UserModel = {
         const password_hash = await bcrypt.hash(userData.password, salt);
 
         const query = `
-            INSERT INTO users (email, username, password_hash, first_name, last_name, date_of_birth, headline, phone)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+            INSERT INTO users (email, username, password_hash, first_name, last_name, date_of_birth, headline, phone, token_version)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
             RETURNING id, email, username, first_name, last_name, date_of_birth, headline, phone, is_email_verified, is_active, created_at, updated_at
         `;
        
@@ -43,6 +54,7 @@ export const UserModel = {
             userData.date_of_birth || null,
             userData.headline || null,
             userData.phone || null,
+            INITIAL_TOKEN_VERSION,
         ];
 
         const result = await db.query(query, values);
@@ -58,8 +70,8 @@ export const UserModel = {
         const password_hash = await bcrypt.hash(randomPassword, salt);
 
         const query = `
-            INSERT INTO users (email, username, password_hash, first_name, last_name, avatar_url, is_email_verified)
-            VALUES ($1, $2, $3, $4, $5, $6, TRUE)
+            INSERT INTO users (email, username, password_hash, first_name, last_name, avatar_url, is_email_verified, token_version)
+            VALUES ($1, $2, $3, $4, $5, $6, TRUE, $7)
             RETURNING id, email, username, first_name, last_name, date_of_birth, headline, phone, avatar_url, is_email_verified, is_active, created_at, updated_at
         `;
 
@@ -69,7 +81,8 @@ export const UserModel = {
             password_hash,
             userData.first_name || null,
             userData.last_name || null,
-            userData.avatar_url || null
+            userData.avatar_url || null,
+            INITIAL_TOKEN_VERSION,
         ];
 
         const result = await db.query(query, values);

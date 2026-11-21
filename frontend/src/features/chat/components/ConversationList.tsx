@@ -23,7 +23,10 @@ import type { ChatRole, ChatThread } from "../chat.types";
 import {
   formatInboxTimestamp,
   getConversationName,
+  isSupportAgentView,
   lastMessagePreviewText,
+  supportCustomerEmail,
+  supportCustomerId,
 } from "../utils";
 
 const EASE_OUT = [0.16, 1, 0.3, 1] as const;
@@ -108,11 +111,16 @@ function ConversationRow({
   const isMuted = !!thread.muted_until && new Date(thread.muted_until).getTime() > Date.now();
   const isArchived = !!thread.archived_at;
 
-  const contextLabel = thread.is_support
-    ? "Support"
-    : thread.booking
-      ? thread.booking.reference
-      : thread.listing?.title ?? null;
+  // Agent support rows are labelled by the CUSTOMER, with id + email in the
+  // chip so two customers with the same display name stay distinguishable.
+  const agentSupport = isSupportAgentView(thread);
+  const contextLabel = agentSupport
+    ? [supportCustomerId(thread), supportCustomerEmail(thread)].filter(Boolean).join(" · ") || null
+    : thread.is_support
+      ? "Support"
+      : thread.booking
+        ? thread.booking.reference
+        : thread.listing?.title ?? null;
 
   return (
     <div className="relative">
@@ -168,7 +176,9 @@ function ConversationRow({
 
           {contextLabel && (
             <span className="mt-1.5 inline-flex max-w-full items-center gap-1 rounded-full bg-white px-2 py-0.5 text-[10px] font-bold text-[#8A7F75] ring-1 ring-[#F0E9DF]">
-              {thread.is_support ? (
+              {agentSupport ? (
+                <Hash className="h-2.5 w-2.5 shrink-0 text-[#B9401D]" aria-hidden="true" />
+              ) : thread.is_support ? (
                 <LifeBuoy className="h-2.5 w-2.5 shrink-0 text-[#B9401D]" aria-hidden="true" />
               ) : thread.booking ? (
                 <Hash className="h-2.5 w-2.5 shrink-0 text-[#B9401D]" aria-hidden="true" />
@@ -277,6 +287,8 @@ export function ConversationList({
             thread.listing?.title ?? "",
             thread.booking?.reference ?? "",
             thread.last_message?.body ?? "",
+            supportCustomerEmail(thread) ?? "",
+            supportCustomerId(thread) ?? "",
           ]
             .join(" ")
             .toLowerCase();

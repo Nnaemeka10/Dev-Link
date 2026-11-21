@@ -37,9 +37,17 @@ export const ENV = {
     ENABLE_BVN_VERIFICATION: process.env.ENABLE_BVN_VERIFICATION !== 'false',
     ENABLE_LISTING_REVIEW: process.env.ENABLE_LISTING_REVIEW !== 'false',
 
-    // Chat: the account that is always a support agent, even if support_agents
-    // was emptied. Seeded by migration 036 and re-asserted lazily on inbox load,
-    // so creating the account after migrating needs no redeploy.
+    // Chat support roster - DECLARATIVE. Comma/semicolon/space separated emails.
+    // This list is the source of truth: adding an email grants support access,
+    // removing one revokes it. Applied lazily on inbox load, so editing the
+    // variable in the host dashboard is all that is ever required - no code
+    // change, no migration, no admin UI.
+    //   SUPPORT_AGENT_EMAILS="konohadev@gmail.com,helper@example.com"
+    // Accounts must already exist on EventVnV; unknown emails are ignored.
+    SUPPORT_AGENT_EMAILS: process.env.SUPPORT_AGENT_EMAILS,
+
+    // Legacy single-account fallback, used only when SUPPORT_AGENT_EMAILS is
+    // unset. Kept so an existing deployment keeps working unchanged.
     SUPPORT_BOOTSTRAP_EMAIL: process.env.SUPPORT_BOOTSTRAP_EMAIL || 'konohadev@gmail.com',
 }
 

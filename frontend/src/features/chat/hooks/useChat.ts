@@ -37,7 +37,15 @@ export const chatKeys = {
   supportAgents: ["chat", "support", "agents"] as const,
 };
 
+/**
+ * Local backstop for a lost typing:stop. Slightly longer than the server's
+ * CHAT_LIMITS.TYPING_TTL_MS so the server normally clears it first and this
+ * only fires when that event never arrived.
+ */
+const TYPING_EXPIRY_MS = 8_000;
+
 type MessagesData = InfiniteData<MessagePage, string | undefined>;
+type ChatSocketApi = ReturnType<typeof useChatWebsocket>;
 
 export interface SendInput {
   body: string;
@@ -100,6 +108,13 @@ export function useChat(
   const activeThreadRef = useRef<string | null>(activeThreadId);
   const typingTimersRef = useRef(new Map<number, number>());
   const uploadAbortRef = useRef<AbortController | null>(null);
+
+  /**
+   * Declared BEFORE the socket hook so the handlers below close over an
+   * initialised binding rather than one still in its temporal dead zone.
+   * Assigned immediately after the hook returns - never read during render.
+   */
+  const socketRef = useRef<ChatSocketApi | null>(null);
 
   useEffect(() => {
     activeThreadRef.current = activeThreadId;
@@ -246,33 +261,38 @@ export function useChat(
               if (Number(readerId) === Number(userId)) return message;
               if (message.conversation_seq == null || message.conversation_seq > upToSeq) return message;
               if (status === "delivered" && message.status === "read") return message;
+              if (message.status === status) return message;
               return { ...message, status };
             }),
           })),
         };
       });
 
-      queryClient.setQueryData<ChatThread[]>(chatKeys.conversations(role), (current) =>
-        current?.map((thread) =>
-          thread.id === conversationId
-            ? {
-                ...thread,
-                participants: thread.participants.map((participant) =>
-                  participant.user_id === readerId
-                    ? {
-                        ...participant,
-                        last_read_seq:
-                          status === "read"
-                            ? Math.max(participant.last_read_seq, upToSeq)
-                            : participant.last_read_seq,
-                        delivered_seq: Math.max(participant.delivered_seq, upToSeq),
-                      }
-                    : participant
-                ),
-              }
-            : thread
-        )
-      );
+      queryClient.setQueryData<ChatThread[]>(chatKeys.conversations(role), (current) => {
+        if (!current) return current;
+        let changed = false;
+        const next = current.map((thread) => {
+          if (thread.id !== conversationId) return thread;
+          const participants = thread.participants.map((participant) => {
+            if (participant.user_id !== readerId) return participant;
+            const nextRead =
+              status === "read"
+                ? Math.max(participant.last_read_seq, upToSeq)
+                : participant.last_read_seq;
+            const nextDelivered = Math.max(participant.delivered_seq, upToSeq);
+            if (
+              nextRead === participant.last_read_seq &&
+              nextDelivered === participant.delivered_seq
+            ) {
+              return participant;
+            }
+            changed = true;
+            return { ...participant, last_read_seq: nextRead, delivered_seq: nextDelivered };
+          });
+          return participants === thread.participants ? thread : { ...thread, participants };
+        });
+        return changed ? next : current;
+      });
     },
     [queryClient, role, userId]
   );
@@ -325,23 +345,32 @@ export function useChat(
     onDelivered: ({ conversationId, userId: readerId, deliveredUpToSeq }) =>
       applyReceipt(conversationId, readerId, deliveredUpToSeq, "delivered"),
     onReadSync: ({ conversationId, readUpToSeq }) => {
-      queryClient.setQueryData<ChatThread[]>(chatKeys.conversations(role), (current) =>
-        current?.map((thread) =>
-          thread.id === conversationId
-            ? { ...thread, unread_count: 0, last_read_seq: Math.max(thread.last_read_seq, readUpToSeq) }
-            : thread
-        )
-      );
+      queryClient.setQueryData<ChatThread[]>(chatKeys.conversations(role), (current) => {
+        if (!current) return current;
+        let changed = false;
+        const next = current.map((thread) => {
+          if (thread.id !== conversationId) return thread;
+          const nextRead = Math.max(thread.last_read_seq, readUpToSeq);
+          if (thread.unread_count === 0 && nextRead === thread.last_read_seq) return thread;
+          changed = true;
+          return { ...thread, unread_count: 0, last_read_seq: nextRead };
+        });
+        return changed ? next : current;
+      });
       void queryClient.invalidateQueries({ queryKey: chatKeys.unread });
     },
     onPresence: ({ userId: otherId, isOnline }) => {
-      queryClient.setQueryData<ChatThread[]>(chatKeys.conversations(role), (current) =>
-        current?.map((thread) =>
-          thread.counterparty?.user_id === otherId
-            ? { ...thread, counterparty_online: isOnline }
-            : thread
-        )
-      );
+      queryClient.setQueryData<ChatThread[]>(chatKeys.conversations(role), (current) => {
+        if (!current) return current;
+        let changed = false;
+        const next = current.map((thread) => {
+          if (thread.counterparty?.user_id !== otherId) return thread;
+          if (thread.counterparty_online === isOnline) return thread;
+          changed = true;
+          return { ...thread, counterparty_online: isOnline };
+        });
+        return changed ? next : current;
+      });
     },
     onTyping: (payload: TypingPayload) => {
       if (Number(payload.userId) === Number(userId)) return;
@@ -352,7 +381,11 @@ export function useChat(
 
       if (!payload.isTyping) {
         typingTimersRef.current.delete(payload.userId);
-        setTypingUsers((current) => current.filter((entry) => entry.userId !== payload.userId));
+        setTypingUsers((current) =>
+          current.some((entry) => entry.userId === payload.userId)
+            ? current.filter((entry) => entry.userId !== payload.userId)
+            : current
+        );
         return;
       }
 
@@ -367,37 +400,57 @@ export function useChat(
         payload.userId,
         window.setTimeout(() => {
           typingTimersRef.current.delete(payload.userId);
-          setTypingUsers((current) => current.filter((entry) => entry.userId !== payload.userId));
-        }, CHAT_LIMITS.PAGE_SIZE * 120)
+          setTypingUsers((current) =>
+            current.some((entry) => entry.userId === payload.userId)
+              ? current.filter((entry) => entry.userId !== payload.userId)
+              : current
+          );
+        }, TYPING_EXPIRY_MS)
       );
     },
   });
 
-  const socketRef = useRef(socket);
-  useEffect(() => {
-    socketRef.current = socket;
-  });
+  socketRef.current = socket;
+
+  /**
+   * Destructured so effects depend on the STABLE callbacks, never on the
+   * wrapper object. Listing `socket` itself is what previously re-ran the
+   * focus effect on every render and, with a setState inside it, looped.
+   */
+  const { focusConversation, markRead, registerSeq, setTyping: emitTyping } = socket;
 
   // Seed the resume cursor from loaded history (real seqs only).
   useEffect(() => {
-    if (activeThreadId && latestSeq > 0) socket.registerSeq(activeThreadId, latestSeq);
-  }, [activeThreadId, latestSeq, socket]);
+    if (activeThreadId && latestSeq > 0) registerSeq(activeThreadId, latestSeq);
+  }, [activeThreadId, latestSeq, registerSeq]);
 
-  // Focus + read on open, on new messages, and on returning to the tab.
+  // Thread-scoped: tell the server which thread is on screen and drop any
+  // typing indicators belonging to the previous one. Runs ONLY on thread
+  // change, and the clearing setState bails out when already empty.
   useEffect(() => {
-    socket.focusConversation(activeThreadId);
-    setTypingUsers([]);
+    focusConversation(activeThreadId);
+    for (const timer of typingTimersRef.current.values()) window.clearTimeout(timer);
+    typingTimersRef.current.clear();
+    setTypingUsers((current) => (current.length === 0 ? current : []));
+  }, [activeThreadId, focusConversation]);
+
+  // Seq-scoped: mark read on open, on new messages, and on returning to the tab.
+  useEffect(() => {
     if (!activeThreadId || latestSeq <= 0) return;
 
     const readIfVisible = () => {
-      if (typeof document === "undefined" || document.visibilityState === "visible") {
-        socket.markRead(activeThreadId, latestSeq);
-        queryClient.setQueryData<ChatThread[]>(chatKeys.conversations(role), (current) =>
-          current?.map((thread) =>
-            thread.id === activeThreadId ? { ...thread, unread_count: 0 } : thread
-          )
-        );
-      }
+      if (typeof document !== "undefined" && document.visibilityState !== "visible") return;
+      markRead(activeThreadId, latestSeq);
+      queryClient.setQueryData<ChatThread[]>(chatKeys.conversations(role), (current) => {
+        if (!current) return current;
+        let changed = false;
+        const next = current.map((thread) => {
+          if (thread.id !== activeThreadId || thread.unread_count === 0) return thread;
+          changed = true;
+          return { ...thread, unread_count: 0 };
+        });
+        return changed ? next : current;
+      });
     };
 
     readIfVisible();
@@ -407,7 +460,7 @@ export function useChat(
       document.removeEventListener("visibilitychange", readIfVisible);
       window.removeEventListener("focus", readIfVisible);
     };
-  }, [activeThreadId, latestSeq, socket, queryClient, role]);
+  }, [activeThreadId, latestSeq, markRead, queryClient, role]);
 
   useEffect(
     () => () => {
@@ -422,7 +475,20 @@ export function useChat(
   const dispatch = useCallback(
     async (clientId: string, payload: PendingPayload) => {
       if (!activeThreadId) return;
-      const ack = await socketRef.current.sendMessage({
+
+      const socketApi = socketRef.current;
+      if (!socketApi) {
+        const message = "You're offline. Reconnecting…";
+        setPending((current) =>
+          current.map((item) =>
+            item.client_id === clientId ? { ...item, status: "failed", error: message } : item
+          )
+        );
+        setSendError(message);
+        return;
+      }
+
+      const ack = await socketApi.sendMessage({
         conversationId: activeThreadId,
         clientId,
         body: payload.body,
@@ -516,7 +582,7 @@ export function useChat(
 
       setPending((current) => [...current, optimistic]);
       setIsSending(true);
-      socketRef.current.setTyping(activeThreadId, false);
+      socketRef.current?.setTyping(activeThreadId, false);
 
       const abort = new AbortController();
       uploadAbortRef.current = abort;
@@ -654,9 +720,9 @@ export function useChat(
 
   const setTyping = useCallback(
     (isTyping: boolean) => {
-      if (activeThreadId) socketRef.current.setTyping(activeThreadId, isTyping);
+      if (activeThreadId) emitTyping(activeThreadId, isTyping);
     },
-    [activeThreadId]
+    [activeThreadId, emitTyping]
   );
 
   return {

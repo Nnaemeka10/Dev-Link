@@ -12,17 +12,21 @@ import {
   Bell,
   Building2,
   CalendarDays,
+  Check,
   ChevronDown,
   ChevronUp,
   Clock,
+  Copy,
   ExternalLink,
   Hash,
   LifeBuoy,
   Loader2,
+  Mail,
   MapPin,
   MoreVertical,
   Package,
   RefreshCw,
+  UserRound,
   WifiOff,
 } from "lucide-react";
 import { Avatar } from "./Avatar";
@@ -33,10 +37,11 @@ import type { useChat } from "../hooks/useChat";
 import type { ChatMessage, ChatRole, ChatThread } from "../chat.types";
 import {
   computeGroupFlags,
-  formatLastSeen,
   getConversationName,
-  messagePreviewText,
+  isSupportAgentView,
   participantName,
+  supportCustomerEmail,
+  supportCustomerId,
 } from "../utils";
 import { bookedSpans, formatEventTimeLabel, spansLabel } from "@/lib/datetime";
 
@@ -71,11 +76,94 @@ function nairaFromKobo(kobo: number): string {
  * The persisted thread context. This is a property of the conversation, not of
  * the navigation - it renders however the user arrived, so opening a thread
  * from the inbox never loses the listing or booking it is about.
+ *
+ * Support threads are role-aware:
+ *  - the customer sees the EventVnV Support card;
+ *  - the agent sees a pinned customer identity strip (name, user id, email)
+ *    so every conversation is attributable at a glance.
  */
 function ThreadContextCard({ thread, role }: { thread: ChatThread; role: ChatRole }) {
   const [collapsed, setCollapsed] = useState(false);
+  const [copiedField, setCopiedField] = useState<"id" | "email" | null>(null);
+  const copyTimerRef = useRef<number | undefined>(undefined);
+
+  useEffect(() => () => window.clearTimeout(copyTimerRef.current), []);
+
+  const copyValue = (field: "id" | "email", value: string) => {
+    void navigator.clipboard?.writeText(value);
+    setCopiedField(field);
+    window.clearTimeout(copyTimerRef.current);
+    copyTimerRef.current = window.setTimeout(() => setCopiedField(null), 1600);
+  };
 
   if (thread.is_support) {
+    if (isSupportAgentView(thread)) {
+      const idLabel = supportCustomerId(thread);
+      const email = supportCustomerEmail(thread);
+      const rawId = thread.counterparty?.user_id;
+
+      return (
+        <div className="shrink-0 border-b border-[#F0E9DF] bg-[#F7F2EA] px-4 py-3">
+          <div className="flex items-start gap-3">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-[#B9401D]">
+              <UserRound className="h-4 w-4" aria-hidden="true" />
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="text-[10px] font-extrabold uppercase tracking-widest text-[#9A9AAE]">
+                Customer
+              </p>
+              <p className="truncate text-sm font-extrabold text-[#252423]">
+                {getConversationName(thread)}
+              </p>
+
+              <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                {idLabel && rawId != null && (
+                  <button
+                    type="button"
+                    onClick={() => copyValue("id", String(rawId))}
+                    className="inline-flex items-center gap-1 rounded-full border border-[#E8DDD2] bg-white px-2.5 py-1 text-[10px] font-extrabold text-[#6B5F57] transition-colors hover:border-[#B9401D]/40 hover:text-[#B9401D]"
+                    aria-label={`Copy user id ${rawId}`}
+                  >
+                    <Hash className="h-3 w-3" aria-hidden="true" />
+                    {idLabel}
+                    {copiedField === "id" ? (
+                      <Check className="h-3 w-3 text-[#2D5A27]" aria-hidden="true" />
+                    ) : (
+                      <Copy className="h-3 w-3 opacity-60" aria-hidden="true" />
+                    )}
+                  </button>
+                )}
+
+                {email && (
+                  <>
+                    <a
+                      href={`mailto:${email}`}
+                      className="inline-flex min-w-0 items-center gap-1 rounded-full border border-[#E8DDD2] bg-white px-2.5 py-1 text-[10px] font-extrabold text-[#6B5F57] transition-colors hover:border-[#B9401D]/40 hover:text-[#B9401D]"
+                    >
+                      <Mail className="h-3 w-3 shrink-0" aria-hidden="true" />
+                      <span className="truncate">{email}</span>
+                    </a>
+                    <button
+                      type="button"
+                      onClick={() => copyValue("email", email)}
+                      className="inline-flex items-center gap-1 rounded-full border border-[#E8DDD2] bg-white px-2.5 py-1 text-[10px] font-extrabold text-[#6B5F57] transition-colors hover:border-[#B9401D]/40 hover:text-[#B9401D]"
+                      aria-label={`Copy email ${email}`}
+                    >
+                      {copiedField === "email" ? (
+                        <Check className="h-3 w-3 text-[#2D5A27]" aria-hidden="true" />
+                      ) : (
+                        <Copy className="h-3 w-3 opacity-60" aria-hidden="true" />
+                      )}
+                    </button>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className="shrink-0 border-b border-[#F0E9DF] bg-[#F7F2EA] px-4 py-3">
         <div className="flex items-start gap-3">
@@ -415,12 +503,29 @@ export function ChatWindow({ chat, currentUserId, role, onBack }: ChatWindowProp
     [messages, virtualizer]
   );
 
+  // The mutations resolve to the updated ChatMessage; MessageBubble only needs
+  // to know when the work settled, so narrow the result to void here.
+  const handleEditMessage = useCallback(
+    async (messageId: number, body: string): Promise<void> => {
+      await chat.editMessage({ messageId, body });
+    },
+    [chat]
+  );
+
+  const handleDeleteMessage = useCallback(
+    async (messageId: number): Promise<void> => {
+      await chat.deleteMessage(messageId);
+    },
+    [chat]
+  );
+
   if (!thread) {
     if (chat.isLoadingThread) return <ThreadSkeleton />;
     return <EmptyState variant="no-selection" />;
   }
 
   const displayName = getConversationName(thread);
+  const agentView = isSupportAgentView(thread);
   const isMuted = !!thread.muted_until && new Date(thread.muted_until).getTime() > Date.now();
   const isArchived = !!thread.archived_at;
   const typingLabel =
@@ -430,12 +535,11 @@ export function ChatWindow({ chat, currentUserId, role, onBack }: ChatWindowProp
         ? "Several people are typing…"
         : null;
 
-  const subtitle = thread.is_support
-    ? "We reply within one business day"
-    : typingLabel ??
-      (thread.counterparty_online
-        ? "Active now"
-        : formatLastSeen(null));
+  const subtitle = agentView
+    ? typingLabel ?? (thread.counterparty_online ? "Active now" : "Offline")
+    : thread.is_support
+      ? "We reply within one business day"
+      : typingLabel ?? (thread.counterparty_online ? "Active now" : "Offline");
 
   async function handleMute(hours: number | null) {
     if (!thread) return;
@@ -670,8 +774,8 @@ export function ChatWindow({ chat, currentUserId, role, onBack }: ChatWindowProp
                         endsRun={flags.endsRun}
                         receiptState={receiptFor(message)}
                         onReply={setReplyTo}
-                        onEdit={(messageId, body) => chat.editMessage({ messageId, body })}
-                        onDelete={(messageId) => chat.deleteMessage(messageId)}
+                        onEdit={handleEditMessage}
+                        onDelete={handleDeleteMessage}
                         onRetry={chat.retryMessage}
                         onDiscard={chat.discardPending}
                         onJumpToMessage={jumpToMessage}

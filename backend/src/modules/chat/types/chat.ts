@@ -1,3 +1,9 @@
+// src/modules/chat/types/chat.ts
+//
+// Single source of truth for the chat contract. Row types mirror the tables;
+// the *View types are what the API actually returns. The frontend never has to
+// guess a shape or derive a display name.
+
 export type ConversationType = 'direct' | 'support';
 export type ContextType = 'listing' | 'booking' | 'support';
 export type ParticipantRole = 'host' | 'guest' | 'support';
@@ -139,6 +145,13 @@ export interface CounterpartyView {
   first_name: string | null;
   last_name: string | null;
   avatar_url: string | null;
+  /**
+   * PRIVACY: populated ONLY when the viewer is a support agent looking at a
+   * support thread, so the agent can identify and contact the customer.
+   * Always null in buyer↔vendor threads and for the customer's own view -
+   * a marketplace conversation must never hand out the other party's email.
+   */
+  email?: string | null;
 }
 
 export interface ListingContextCard {
@@ -172,6 +185,10 @@ export interface BookingContextCard {
  * The persisted thread context. Rendered in the thread header regardless of
  * how the user arrived - it is a property of the conversation, not of the
  * navigation. A support thread has neither card.
+ *
+ * `display_name` is role-aware: a customer sees "EventVnV Support", while a
+ * support agent sees the CUSTOMER's name - otherwise every thread in the
+ * agent's inbox would carry the same label.
  */
 export interface ConversationView {
   id: string;

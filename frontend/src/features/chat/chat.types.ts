@@ -112,6 +112,12 @@ export interface CounterpartyView {
   first_name: string | null;
   last_name: string | null;
   avatar_url: string | null;
+  /**
+   * PRIVACY: only ever populated for a support agent viewing a support
+   * thread. Null in buyer↔vendor threads and in the customer's own view.
+   * Render it only behind `isSupportAgentView()` - never unconditionally.
+   */
+  email?: string | null;
 }
 
 export interface ListingContextCard {

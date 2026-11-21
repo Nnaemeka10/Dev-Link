@@ -144,6 +144,14 @@ function mapMessage(row: any): Message {
 // `other` picks exactly ONE counterparty via LATERAL - the old LEFT JOIN fanned
 // out to N rows per thread, which would have broken the moment support had
 // more than one agent.
+//
+// SUPPORT IS ROLE-AWARE. The same row is two different conversations depending
+// on who reads it:
+//   customer (cp.role = 'guest')  -> "EventVnV Support", no counterparty email
+//   agent    (cp.role = 'support')-> the CUSTOMER's name, id and email
+// Hardcoding "EventVnV Support" for both made every thread in the agent's inbox
+// carry the same label. The email is gated on the agent role so a buyer↔vendor
+// thread can never hand out the other party's address.
 // ---------------------------------------------------------------------------
 const CONVERSATION_SELECT = `
   SELECT
@@ -157,10 +165,16 @@ const CONVERSATION_SELECT = `
     other.last_name AS other_last_name,
     other.avatar_url AS other_avatar_url,
     CASE
-      WHEN c.type = 'support' THEN 'EventVnV Support'
+      WHEN c.type = 'support' AND cp.role = 'support' THEN other.email
+      ELSE NULL
+    END AS other_email,
+    CASE
+      WHEN c.type = 'support' AND cp.role <> 'support' THEN 'EventVnV Support'
       WHEN NULLIF(TRIM(COALESCE(other.first_name,'') || ' ' || COALESCE(other.last_name,'')), '') IS NOT NULL
         THEN TRIM(COALESCE(other.first_name,'') || ' ' || COALESCE(other.last_name,''))
       WHEN other.email IS NOT NULL THEN split_part(other.email, '@', 1)
+      WHEN c.type = 'support' AND cp.role = 'support' AND other.user_id IS NOT NULL
+        THEN 'User #' || other.user_id::text
       ELSE 'Guest'
     END AS display_name,
     l.id AS l_id, l.title AS l_title, l.kind AS l_kind,
@@ -275,6 +289,9 @@ function mapConversation(row: any): ConversationView {
           first_name: row.other_first_name ?? null,
           last_name: row.other_last_name ?? null,
           avatar_url: row.other_avatar_url ?? null,
+          // Non-null ONLY for an agent reading a support thread. The SQL gate
+          // is the authority; this never widens it.
+          email: row.other_email ?? null,
         }
       : null,
     listing,
